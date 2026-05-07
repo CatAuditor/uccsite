@@ -1,3 +1,4 @@
 .wrangler/
 .env
 .env.local
+testing/

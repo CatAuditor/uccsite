@@ -142,6 +142,20 @@ input, textarea, select { font: inherit; }
   color: var(--white);
 }
 .btn-full { width: 100%; justify-content: center; }
+.btn-donate {
+  background: var(--navy);
+  color: var(--white);
+  border: 2px solid var(--navy);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+.btn-donate:hover {
+  background: var(--navy-dark);
+  border-color: var(--navy-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(27,47,78,0.3);
+}
 
 /* ============================================
    NAVIGATION
