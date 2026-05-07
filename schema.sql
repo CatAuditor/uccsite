@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS members (
   first_name TEXT,
   last_name TEXT,
   zip TEXT,
+  newsletter_opt_in INTEGER NOT NULL DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
 

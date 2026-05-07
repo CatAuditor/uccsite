@@ -41,18 +41,20 @@ export async function onRequestPost({ request, env }) {
 async function handleCheckoutComplete(session, db) {
   const customerId = session.customer;
   const email = session.customer_email || session.customer_details?.email;
-  const { firstName, lastName, zip } = session.metadata || {};
+  const { firstName, lastName, zip, newsletterOptIn } = session.metadata || {};
 
   if (email && customerId) {
+    const optIn = newsletterOptIn === '1' ? 1 : 0;
     await db.prepare(
-      `INSERT INTO members (stripe_customer_id, email, first_name, last_name, zip)
-       VALUES (?, ?, ?, ?, ?)
+      `INSERT INTO members (stripe_customer_id, email, first_name, last_name, zip, newsletter_opt_in)
+       VALUES (?, ?, ?, ?, ?, ?)
        ON CONFLICT(stripe_customer_id) DO UPDATE SET
          email = excluded.email,
          first_name = COALESCE(excluded.first_name, first_name),
          last_name = COALESCE(excluded.last_name, last_name),
-         zip = COALESCE(excluded.zip, zip)`
-    ).bind(customerId, email, firstName || null, lastName || null, zip || null).run();
+         zip = COALESCE(excluded.zip, zip),
+         newsletter_opt_in = excluded.newsletter_opt_in`
+    ).bind(customerId, email, firstName || null, lastName || null, zip || null, optIn).run();
   }
 
   if (session.mode === 'payment' && session.payment_intent) {

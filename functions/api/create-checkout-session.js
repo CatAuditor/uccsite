@@ -12,7 +12,7 @@ const MAX_AMOUNT_CENTS = 10_000_000; // $100k sanity ceiling
 
 export async function onRequestPost({ request, env }) {
   try {
-    const { type, priceId, amountCents, email, firstName, lastName, zip } = await request.json();
+    const { type, priceId, amountCents, email, firstName, lastName, zip, newsletterOptIn } = await request.json();
 
     if (!['subscription', 'onetime'].includes(type)) {
       return json({ error: 'Invalid type' }, 400);
@@ -71,17 +71,17 @@ export async function onRequestPost({ request, env }) {
     if (email) sessionParams.customer_email = email;
     sessionParams.success_url = `${origin}/success?session_id={CHECKOUT_SESSION_ID}`;
     sessionParams.cancel_url = `${origin}/#donate`;
-    sessionParams.metadata = { firstName: firstName || '', lastName: lastName || '', zip: zip || '' };
+    sessionParams.metadata = { firstName: firstName || '', lastName: lastName || '', zip: zip || '', newsletterOptIn: newsletterOptIn ? '1' : '0' };
 
     const session = await stripePost(env.STRIPE_SECRET_KEY, 'checkout/sessions', sessionParams);
 
     // Upsert member into D1 if we have an email
     if (email && env.DB) {
       await env.DB.prepare(
-        `INSERT INTO members (stripe_customer_id, email, first_name, last_name, zip)
-         VALUES (?, ?, ?, ?, ?)
+        `INSERT INTO members (stripe_customer_id, email, first_name, last_name, zip, newsletter_opt_in)
+         VALUES (?, ?, ?, ?, ?, ?)
          ON CONFLICT(stripe_customer_id) DO NOTHING`
-      ).bind(session.customer || 'pending_' + session.id, email, firstName || null, lastName || null, zip || null).run();
+      ).bind(session.customer || 'pending_' + session.id, email, firstName || null, lastName || null, zip || null, newsletterOptIn ? 1 : 0).run();
     }
 
     return json({ url: session.url });

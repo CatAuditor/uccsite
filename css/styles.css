@@ -971,6 +971,23 @@ input, textarea, select { font: inherit; }
 .donate-fields { margin-bottom: 20px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+.form-group-check { margin-bottom: 16px; }
+.check-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  cursor: pointer;
+}
+.check-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--navy);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .donate-error {
   color: var(--red);
   font-size: 0.85rem;

@@ -154,6 +154,7 @@ const STRIPE_PK = 'pk_test_51TUY6qRpmK1SjHcTmt9gtSea94QhozPKF3TxUfJbDkiXd5xSTw9M
     const lastName = document.getElementById('donate-last').value.trim();
     const email = document.getElementById('donate-email').value.trim();
     const zip = document.getElementById('donate-zip').value.trim();
+    const newsletterOptIn = document.getElementById('donate-newsletter').checked;
 
     let amountCents = selectedAmountCents;
     let priceId = selectedPriceId;
@@ -178,7 +179,7 @@ const STRIPE_PK = 'pk_test_51TUY6qRpmK1SjHcTmt9gtSea94QhozPKF3TxUfJbDkiXd5xSTw9M
     errorEl.style.display = 'none';
 
     try {
-      const body = { type: currentType, email, firstName, lastName, zip };
+      const body = { type: currentType, email, firstName, lastName, zip, newsletterOptIn };
       if (currentType === 'subscription' && priceId) {
         body.priceId = priceId;
       } else {
