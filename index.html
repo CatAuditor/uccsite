@@ -274,6 +274,63 @@
     </div>
   </section>
 
+  <!-- DONATE -->
+  <section class="donate section" id="donate">
+    <div class="container">
+      <div class="donate-inner">
+        <div class="donate-text">
+          <div class="section-label">Support the Work</div>
+          <h2 class="section-title">Fund the Compact</h2>
+          <p>Utah Compact runs on community support. Every dollar goes directly to defending the agreement between Utahns and their government — monitoring, organizing, and holding institutions accountable.</p>
+          <p class="donate-legal">Utah Compact is a 501(c)(4) social welfare organization. Contributions are <strong>not</strong> tax-deductible as charitable donations.</p>
+        </div>
+        <div class="donate-form-wrap">
+          <div class="donate-type-toggle">
+            <button class="toggle-btn active" data-type="subscription">Monthly</button>
+            <button class="toggle-btn" data-type="onetime">One-Time</button>
+          </div>
+
+          <div class="donate-tiers" id="donate-tiers">
+            <button class="tier-btn" data-price-id="price_1TUYkERpmK1SjHcTTLQtmoma" data-amount="500">$5<span>/mo</span></button>
+            <button class="tier-btn" data-price-id="price_1TUYkERpmK1SjHcTVIVSLS2f" data-amount="1000">$10<span>/mo</span></button>
+            <button class="tier-btn active" data-price-id="price_1TUYkERpmK1SjHcT1coNdzwN" data-amount="2500">$25<span>/mo</span></button>
+            <button class="tier-btn" data-price-id="price_1TUYkFRpmK1SjHcTh7g0nWcf" data-amount="5000">$50<span>/mo</span></button>
+            <button class="tier-btn tier-custom" data-price-id="custom">Other</button>
+          </div>
+
+          <div class="donate-custom-wrap" id="donate-custom-wrap" style="display:none;">
+            <label for="donate-custom-amount">Enter amount ($)</label>
+            <input type="number" id="donate-custom-amount" min="1" max="100000" placeholder="Enter amount" />
+          </div>
+
+          <div class="donate-fields">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="donate-first">First Name</label>
+                <input type="text" id="donate-first" placeholder="First name" />
+              </div>
+              <div class="form-group">
+                <label for="donate-last">Last Name</label>
+                <input type="text" id="donate-last" placeholder="Last name" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="donate-email">Email</label>
+              <input type="email" id="donate-email" placeholder="you@example.com" />
+            </div>
+            <div class="form-group">
+              <label for="donate-zip">ZIP Code</label>
+              <input type="text" id="donate-zip" placeholder="Utah ZIP" maxlength="5" />
+            </div>
+          </div>
+
+          <button class="btn btn-accent btn-full" id="donate-submit">Support Utah Compact</button>
+          <p class="donate-error" id="donate-error" style="display:none;"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- FOOTER -->
   <footer class="site-footer">
     <div class="container">
@@ -301,7 +358,7 @@
             <li><a href="#join">Join the Compact</a></li>
             <li><a href="#join">Newsletter</a></li>
             <li><a href="#">Volunteer</a></li>
-            <li><a href="#">Donate</a></li>
+            <li><a href="#donate">Donate</a></li>
           </ul>
         </div>
         <div class="footer-col">
