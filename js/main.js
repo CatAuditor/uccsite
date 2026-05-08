@@ -99,6 +99,7 @@ if (form) {
           email: form.querySelector('#email').value,
           firstName: form.querySelector('#first-name').value,
           lastName: form.querySelector('#last-name').value,
+          address: form.querySelector('#address').value,
           zip: form.querySelector('#zip').value,
         }),
       });

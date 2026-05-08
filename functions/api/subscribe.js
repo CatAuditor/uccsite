@@ -11,6 +11,7 @@ export async function onRequestPost(context) {
   const email = (body.email || '').trim().toLowerCase();
   const firstName = (body.firstName || '').trim();
   const lastName = (body.lastName || '').trim();
+  const address = (body.address || '').trim();
   const zip = (body.zip || '').trim();
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -20,14 +21,15 @@ export async function onRequestPost(context) {
   // Upsert — if they sign up again, update their info but don't error
   try {
     await env.DB.prepare(
-      `INSERT INTO subscribers (email, first_name, last_name, zip)
-       VALUES (?, ?, ?, ?)
+      `INSERT INTO subscribers (email, first_name, last_name, address, zip)
+       VALUES (?, ?, ?, ?, ?)
        ON CONFLICT(email) DO UPDATE SET
          first_name = excluded.first_name,
          last_name  = excluded.last_name,
+         address    = excluded.address,
          zip        = excluded.zip`
     )
-      .bind(email, firstName || null, lastName || null, zip || null)
+      .bind(email, firstName || null, lastName || null, address || null, zip || null)
       .run();
   } catch (err) {
     console.error('DB error:', err);

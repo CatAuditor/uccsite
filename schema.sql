@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS subscribers (
   email TEXT UNIQUE NOT NULL,
   first_name TEXT,
   last_name TEXT,
+  address TEXT,
   zip TEXT,
   source TEXT DEFAULT 'join_form',
   created_at TEXT DEFAULT (datetime('now'))
