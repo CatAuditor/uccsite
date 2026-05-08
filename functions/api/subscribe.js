@@ -46,9 +46,9 @@ export async function onRequestPost(context) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Utah Compact Caucus <hello@utahcompact.org>',
+        from: 'Utah Civic Compact <hello@utahciviccompact.org>',
         to: [email],
-        subject: "You're in — welcome to Utah Compact",
+        subject: "You're in. Here's what that means.",
         html: buildWelcomeEmail(greeting),
       }),
     });
@@ -69,7 +69,7 @@ function buildWelcomeEmail(greeting) {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Welcome to Utah Compact</title>
+<title>Welcome to Utah Civic Compact</title>
 </head>
 <body style="margin:0;padding:0;background:#f5f5f0;font-family:'Georgia',serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f0;padding:40px 0;">
@@ -78,7 +78,7 @@ function buildWelcomeEmail(greeting) {
 
       <!-- Header -->
       <tr><td style="background:#1a3a2a;padding:36px 40px;">
-        <p style="margin:0;color:#c8a84b;font-size:12px;letter-spacing:3px;text-transform:uppercase;">Utah Compact Caucus</p>
+        <p style="margin:0;color:#c8a84b;font-size:12px;letter-spacing:3px;text-transform:uppercase;">Utah Civic Compact</p>
         <h1 style="margin:8px 0 0;color:#ffffff;font-size:28px;font-weight:400;line-height:1.3;">
           Democracy is not a spectator sport.
         </h1>
@@ -88,23 +88,24 @@ function buildWelcomeEmail(greeting) {
       <tr><td style="padding:40px;">
         <p style="margin:0 0 20px;color:#2c2c2c;font-size:17px;line-height:1.7;">${greeting}</p>
         <p style="margin:0 0 20px;color:#2c2c2c;font-size:17px;line-height:1.7;">
-          You've joined the Utah Compact Caucus — a coalition of residents committed to honest government, genuine civic participation, and the long-term health of Utah democracy.
+          You didn't sign up for a newsletter. You joined a compact, and we mean that.
         </p>
         <p style="margin:0 0 20px;color:#2c2c2c;font-size:17px;line-height:1.7;">
-          Here's what to expect from us:
+          A lot of us looked at how politics works in Utah and decided we weren't okay with it. Not outraged. Just done waiting for it to fix itself. This is what we're building instead.
         </p>
-        <ul style="margin:0 0 24px;padding-left:24px;color:#2c2c2c;font-size:17px;line-height:2;">
-          <li>Updates on the issues that matter most to Utah communities</li>
-          <li>Action alerts when your voice is needed</li>
-          <li>Resources to stay informed and engaged</li>
-        </ul>
+        <p style="margin:0 0 20px;color:#2c2c2c;font-size:17px;line-height:1.7;">
+          You're a founding member.
+        </p>
         <p style="margin:0 0 32px;color:#2c2c2c;font-size:17px;line-height:1.7;">
-          We're glad you're here.
+          We're going to ask things of you. Not constantly, not with a donation button every third email. But when something matters and your voice can move it, we'll tell you. That's the deal. And it goes both ways. You need us, we'll show up.
+        </p>
+        <p style="margin:0 0 32px;color:#2c2c2c;font-size:17px;line-height:1.7;">
+          Welcome. Tell someone.
         </p>
         <table cellpadding="0" cellspacing="0">
           <tr><td style="background:#1a3a2a;border-radius:4px;">
-            <a href="https://utahcompact.org" style="display:inline-block;padding:14px 28px;color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:600;text-decoration:none;letter-spacing:0.5px;">
-              Visit Utah Compact →
+            <a href="https://utahciviccompact.org" style="display:inline-block;padding:14px 28px;color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:600;text-decoration:none;letter-spacing:0.5px;">
+              utahciviccompact.org &rarr;
             </a>
           </td></tr>
         </table>
@@ -113,9 +114,9 @@ function buildWelcomeEmail(greeting) {
       <!-- Footer -->
       <tr><td style="background:#f5f5f0;padding:24px 40px;border-top:1px solid #e8e4d9;">
         <p style="margin:0;color:#888;font-family:sans-serif;font-size:12px;line-height:1.6;">
-          Utah Compact Caucus · Salt Lake City, UT<br />
-          You're receiving this because you signed up at utahcompact.org.<br />
-          <a href="https://utahcompact.org" style="color:#1a3a2a;">Unsubscribe</a>
+          Utah Civic Compact &middot; Salt Lake City, UT<br />
+          You're getting this because you signed up at utahciviccompact.org.<br />
+          <a href="https://utahciviccompact.org" style="color:#1a3a2a;">Unsubscribe</a>
         </p>
       </td></tr>
 
