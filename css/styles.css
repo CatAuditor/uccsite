@@ -198,13 +198,6 @@ input, textarea, select { font: inherit; }
   gap: 10px;
   flex-shrink: 0;
 }
-.nav-logo img {
-  height: 40px;
-  width: auto;
-  display: block;
-  flex-shrink: 0;
-}
-
 .logo-mark {
   width: 36px; height: 36px;
   background: var(--red);
@@ -383,6 +376,13 @@ input, textarea, select { font: inherit; }
   z-index: 1;
   max-width: 720px;
 }
+.hero-logo {
+  width: 180px;
+  height: auto;
+  margin-bottom: 32px;
+  display: block;
+}
+
 .hero-tag {
   display: inline-flex;
   align-items: center;
