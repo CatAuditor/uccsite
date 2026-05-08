@@ -102,10 +102,17 @@ function buildWelcomeEmail(greeting) {
         <p style="margin:0 0 32px;color:#2c2c2c;font-size:17px;line-height:1.7;">
           Welcome. Tell someone.
         </p>
-        <table cellpadding="0" cellspacing="0">
+        <table cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
           <tr><td style="background:#1a3a2a;border-radius:4px;">
             <a href="https://utahciviccompact.org" style="display:inline-block;padding:14px 28px;color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:600;text-decoration:none;letter-spacing:0.5px;">
               utahciviccompact.org &rarr;
+            </a>
+          </td></tr>
+        </table>
+        <table cellpadding="0" cellspacing="0">
+          <tr><td style="background:#4a154b;border-radius:4px;">
+            <a href="https://join.slack.com/t/utahciviccompact/shared_invite/zt-3xj2m02aq-BVUgI_0DshSwsEsfWy9DIg" style="display:inline-block;padding:14px 28px;color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:600;text-decoration:none;letter-spacing:0.5px;">
+              Join our Slack &rarr;
             </a>
           </td></tr>
         </table>
