@@ -259,6 +259,91 @@ input, textarea, select { font: inherit; }
 }
 
 /* ============================================
+   DROPDOWN NAV
+   ============================================ */
+.nav-dropdown { position: relative; }
+
+.nav-dropdown-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  transition: color 0.2s, background 0.2s;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+.nav-dropdown-toggle:hover {
+  color: var(--white);
+  background: rgba(255,255,255,0.1);
+}
+.site-header.scrolled .nav-dropdown-toggle {
+  color: var(--navy-dark);
+}
+.site-header.scrolled .nav-dropdown-toggle:hover {
+  background: var(--gray-100);
+  color: var(--navy-dark);
+}
+
+.chevron {
+  transition: transform 0.2s var(--ease);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  background: var(--white);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.05);
+  padding: 6px;
+  min-width: 190px;
+  list-style: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s var(--ease), transform 0.18s var(--ease);
+  z-index: 200;
+}
+.nav-dropdown-menu li a {
+  display: block;
+  padding: 9px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--navy-dark);
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.nav-dropdown-menu li a:hover { background: var(--gray-100); }
+
+/* Desktop: open on hover */
+@media (hover: hover) and (min-width: 861px) {
+  .nav-dropdown:hover .nav-dropdown-menu {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(-50%) translateY(0);
+  }
+  .nav-dropdown:hover .chevron { transform: rotate(180deg); }
+}
+
+/* Open via JS (keyboard / click) */
+.nav-dropdown.open .nav-dropdown-menu {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(-50%) translateY(0);
+}
+.nav-dropdown.open .chevron { transform: rotate(180deg); }
+
+/* ============================================
    HERO
    ============================================ */
 .hero {
@@ -826,20 +911,54 @@ input, textarea, select { font: inherit; }
 .footer-links a:hover { color: rgba(255,255,255,0.7); }
 
 /* ============================================
+   HERO ENTRANCE
+   ============================================ */
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(36px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hero-tag     { animation: heroFadeUp 0.8s var(--ease) 0.1s  both; }
+.hero-headline { animation: heroFadeUp 0.9s var(--ease) 0.28s both; }
+.hero-sub     { animation: heroFadeUp 0.8s var(--ease) 0.48s both; }
+.hero-actions { animation: heroFadeUp 0.8s var(--ease) 0.64s both; }
+.hero-scroll-hint { animation: heroFadeUp 0.8s var(--ease) 0.9s both; }
+
+/* ============================================
    SCROLL ANIMATIONS
    ============================================ */
 [data-animate] {
   opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+  transform: translateY(28px);
+  transition: opacity 0.75s var(--ease), transform 0.75s var(--ease);
 }
 [data-animate].visible {
   opacity: 1;
   transform: translateY(0);
 }
-[data-animate-delay="1"] { transition-delay: 0.1s; }
-[data-animate-delay="2"] { transition-delay: 0.2s; }
-[data-animate-delay="3"] { transition-delay: 0.3s; }
+
+/* Section labels slide in from left instead of up */
+.section-label[data-animate] {
+  transform: translateX(-20px);
+}
+.section-label[data-animate].visible {
+  transform: translateX(0);
+}
+
+/* Cards scale in as they rise */
+.pillar-card[data-animate],
+.issue-card[data-animate] {
+  transform: translateY(28px) scale(0.96);
+}
+.pillar-card[data-animate].visible,
+.issue-card[data-animate].visible {
+  transform: translateY(0) scale(1);
+}
+
+[data-animate-delay="1"] { transition-delay: 0.08s; }
+[data-animate-delay="2"] { transition-delay: 0.16s; }
+[data-animate-delay="3"] { transition-delay: 0.24s; }
+[data-animate-delay="4"] { transition-delay: 0.32s; }
 
 /* ============================================
    MOBILE NAV
@@ -873,6 +992,75 @@ input, textarea, select { font: inherit; }
   }
   .nav-links a:hover { background: var(--gray-100) !important; }
   .nav-cta { margin-left: 0 !important; }
+
+  /* Mobile dropdowns — expand inline */
+  .nav-dropdown { width: 100%; }
+  .nav-dropdown-toggle {
+    width: 100%;
+    justify-content: space-between;
+    color: var(--navy-dark) !important;
+    padding: 12px 16px;
+  }
+  .nav-dropdown-toggle:hover { background: var(--gray-100) !important; }
+  .nav-dropdown-menu {
+    position: static;
+    transform: none !important;
+    opacity: 1;
+    pointer-events: all;
+    box-shadow: none;
+    background: var(--gray-50);
+    border-radius: var(--radius);
+    transition: none;
+    max-height: 0;
+    overflow: hidden;
+    padding: 0;
+    margin-top: 2px;
+  }
+  .nav-dropdown.open .nav-dropdown-menu {
+    max-height: 300px;
+    padding: 6px;
+  }
+  .nav-dropdown-menu li a { color: var(--navy-dark) !important; }
+}
+
+/* ============================================
+   FOOTER SOCIAL ICONS
+   ============================================ */
+.footer-social {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.footer-social a {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.45);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.footer-social a:hover {
+  background: rgba(255,255,255,0.14);
+  color: var(--white);
+  border-color: rgba(255,255,255,0.25);
+}
+
+/* ============================================
+   ABOUT LOGO
+   ============================================ */
+.about-logo-wrap {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+}
+.about-logo-img {
+  max-width: 220px;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-lg);
 }
 
 /* ============================================

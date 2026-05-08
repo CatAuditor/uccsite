@@ -1,12 +1,18 @@
 /* Utah Compact — Main JS */
 
-// Sticky nav on scroll
+// Sticky nav + hero parallax on scroll
 const header = document.getElementById('site-header');
+const heroBg = document.querySelector('.hero-bg');
+
 function onScroll() {
-  if (window.scrollY > 40) {
-    header.classList.add('scrolled');
-  } else {
-    header.classList.remove('scrolled');
+  const sy = window.scrollY;
+
+  if (sy > 40) header.classList.add('scrolled');
+  else header.classList.remove('scrolled');
+
+  // Subtle parallax — only while hero is in view
+  if (heroBg && sy < window.innerHeight) {
+    heroBg.style.transform = `translateY(${sy * 0.22}px)`;
   }
 }
 window.addEventListener('scroll', onScroll, { passive: true });
@@ -244,9 +250,71 @@ const STRIPE_PK = 'pk_test_51TUY6qRpmK1SjHcTmt9gtSea94QhozPKF3TxUfJbDkiXd5xSTw9M
   }
 })();
 
+// Animated counter for impact stats
+function animateCounter(el, target, duration = 1400) {
+  const start = performance.now();
+  const update = (now) => {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    el.textContent = Math.round(eased * target);
+    if (progress < 1) requestAnimationFrame(update);
+  };
+  requestAnimationFrame(update);
+}
+
+const counterEl = document.querySelector('[data-count]');
+if (counterEl) {
+  const target = parseInt(counterEl.dataset.count, 10);
+  const counterObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          animateCounter(entry.target, target);
+          counterObserver.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.6 }
+  );
+  counterObserver.observe(counterEl);
+}
+
+// Dropdown navigation
+const navDropdowns = document.querySelectorAll('.nav-dropdown');
+navDropdowns.forEach(dropdown => {
+  const toggle = dropdown.querySelector('.nav-dropdown-toggle');
+
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = dropdown.classList.contains('open');
+    navDropdowns.forEach(d => {
+      d.classList.remove('open');
+      d.querySelector('.nav-dropdown-toggle').setAttribute('aria-expanded', 'false');
+    });
+    if (!isOpen) {
+      dropdown.classList.add('open');
+      toggle.setAttribute('aria-expanded', 'true');
+    }
+  });
+
+  dropdown.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      dropdown.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.focus();
+    }
+  });
+});
+document.addEventListener('click', () => {
+  navDropdowns.forEach(d => {
+    d.classList.remove('open');
+    d.querySelector('.nav-dropdown-toggle').setAttribute('aria-expanded', 'false');
+  });
+});
+
 // Active nav link highlighting
 const sections = document.querySelectorAll('section[id]');
-const navAnchors = document.querySelectorAll('.nav-links a[href^="#"]');
+const navAnchors = document.querySelectorAll('.nav-links a[href^="/#"]');
 
 const sectionObserver = new IntersectionObserver(
   (entries) => {
@@ -254,7 +322,7 @@ const sectionObserver = new IntersectionObserver(
       if (entry.isIntersecting) {
         const id = entry.target.id;
         navAnchors.forEach(a => {
-          a.classList.toggle('active', a.getAttribute('href') === `#${id}`);
+          a.classList.toggle('active', a.getAttribute('href') === `/#${id}`);
         });
       }
     });
