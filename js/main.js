@@ -79,21 +79,53 @@ function addStaggeredAnimations() {
 }
 addStaggeredAnimations();
 
-// Form submission (client-side demo)
+// Join form submission
 const form = document.getElementById('join-form');
 const formSuccess = document.getElementById('form-success');
 if (form) {
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = form.querySelector('button[type="submit"]');
+    const errorEl = form.querySelector('.form-error');
     btn.textContent = 'Joining...';
     btn.disabled = true;
-    // Simulate network request
-    setTimeout(() => {
-      form.style.display = 'none';
-      formSuccess.style.display = 'block';
-    }, 900);
+    if (errorEl) errorEl.remove();
+
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: form.querySelector('#email').value,
+          firstName: form.querySelector('#first-name').value,
+          lastName: form.querySelector('#last-name').value,
+          zip: form.querySelector('#zip').value,
+        }),
+      });
+
+      if (res.ok) {
+        form.style.display = 'none';
+        formSuccess.style.display = 'block';
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showFormError(form, data.error || 'Something went wrong. Please try again.');
+        btn.textContent = 'Join the Compact';
+        btn.disabled = false;
+      }
+    } catch {
+      showFormError(form, 'Network error. Please check your connection and try again.');
+      btn.textContent = 'Join the Compact';
+      btn.disabled = false;
+    }
   });
+}
+
+function showFormError(form, msg) {
+  const p = document.createElement('p');
+  p.className = 'form-error';
+  p.style.cssText = 'color:#c0392b;font-size:14px;margin-top:8px;';
+  p.textContent = msg;
+  form.appendChild(p);
 }
 
 // ── Donate form ──────────────────────────────────────────────────
