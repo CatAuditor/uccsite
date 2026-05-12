@@ -1208,6 +1208,102 @@ input, textarea, select { font: inherit; }
 }
 
 /* ============================================
+   DONATION MODAL
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 30, 51, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s var(--ease);
+}
+.modal-overlay.modal-visible {
+  opacity: 1;
+  pointer-events: all;
+}
+.modal-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 48px 40px 40px;
+  max-width: 480px;
+  width: 100%;
+  position: relative;
+  transform: translateY(28px);
+  transition: transform 0.4s var(--ease);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.28);
+}
+.modal-overlay.modal-visible .modal-card {
+  transform: translateY(0);
+}
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.modal-close:hover { background: var(--gray-200); }
+.modal-badge {
+  display: inline-block;
+  background: var(--red);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 100px;
+  margin-bottom: 20px;
+}
+.modal-title {
+  font-family: var(--font-serif);
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 800;
+  color: var(--navy-dark);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+.modal-body {
+  font-size: 16px;
+  color: var(--gray-600);
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.modal-cta-btn { text-align: center; }
+.modal-dismiss {
+  font-size: 14px;
+  color: var(--gray-400);
+  padding: 8px;
+  text-align: center;
+  transition: color 0.15s;
+}
+.modal-dismiss:hover { color: var(--gray-600); }
+@media (max-width: 480px) {
+  .modal-card { padding: 36px 24px 32px; }
+}
+
+/* ============================================
    RESPONSIVE ADJUSTMENTS
    ============================================ */
 @media (max-width: 600px) {

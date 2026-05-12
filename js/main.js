@@ -334,3 +334,29 @@ const sectionObserver = new IntersectionObserver(
   { rootMargin: '-40% 0px -55% 0px' }
 );
 sections.forEach(s => sectionObserver.observe(s));
+
+// Donation modal — shows after 1.75s, dismissed per session
+(function () {
+  if (sessionStorage.getItem('modal-dismissed')) return;
+  const overlay = document.getElementById('donate-modal');
+  if (!overlay) return;
+
+  function hide() {
+    overlay.classList.remove('modal-visible');
+    sessionStorage.setItem('modal-dismissed', '1');
+  }
+
+  setTimeout(function () {
+    overlay.classList.add('modal-visible');
+  }, 1750);
+
+  document.getElementById('modal-close').addEventListener('click', hide);
+  document.getElementById('modal-dismiss').addEventListener('click', hide);
+  document.getElementById('modal-cta').addEventListener('click', hide);
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) hide();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') hide();
+  });
+}());
