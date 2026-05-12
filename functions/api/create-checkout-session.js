@@ -12,6 +12,11 @@ const MAX_AMOUNT_CENTS = 10_000_000; // $100k sanity ceiling
 
 export async function onRequestPost({ request, env }) {
   try {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    if (env.DB && !await checkRateLimit(env.DB, ip, 'checkout', 10, 3600)) {
+      return json({ error: 'Too many requests. Please try again later.' }, 429);
+    }
+
     const { type, priceId, amountCents, email, firstName, lastName, zip, newsletterOptIn } = await request.json();
 
     if (!['subscription', 'onetime'].includes(type)) {
@@ -132,4 +137,16 @@ function json(data, status = 200) {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+async function checkRateLimit(db, ip, endpoint, limit, windowSeconds) {
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = now - windowSeconds;
+  await db.prepare('DELETE FROM rate_limits WHERE timestamp < ?').bind(windowStart).run();
+  const row = await db.prepare(
+    'SELECT COUNT(*) as count FROM rate_limits WHERE ip = ? AND endpoint = ? AND timestamp > ?'
+  ).bind(ip, endpoint, windowStart).first();
+  if ((row?.count ?? 0) >= limit) return false;
+  await db.prepare('INSERT INTO rate_limits (ip, endpoint, timestamp) VALUES (?, ?, ?)').bind(ip, endpoint, now).run();
+  return true;
 }

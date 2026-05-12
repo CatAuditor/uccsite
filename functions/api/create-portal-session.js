@@ -1,9 +1,17 @@
 export async function onRequestPost({ request, env }) {
   try {
-    const { customerId } = await request.json();
+    const { email } = await request.json();
 
-    if (!customerId || typeof customerId !== 'string') {
-      return json({ error: 'Missing customerId' }, 400);
+    if (!email || typeof email !== 'string') {
+      return json({ error: 'Missing email' }, 400);
+    }
+
+    const member = await env.DB.prepare(
+      'SELECT stripe_customer_id FROM members WHERE email = ?'
+    ).bind(email.trim().toLowerCase()).first();
+
+    if (!member?.stripe_customer_id) {
+      return json({ error: 'No account found for that email' }, 404);
     }
 
     const origin = new URL(request.url).origin;
@@ -15,7 +23,7 @@ export async function onRequestPost({ request, env }) {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        customer: customerId,
+        customer: member.stripe_customer_id,
         return_url: `${origin}/#donate`,
       }),
     });

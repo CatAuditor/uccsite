@@ -127,6 +127,15 @@ async function getMemberByStripeId(db, stripeCustomerId) {
   ).bind(stripeCustomerId).first();
 }
 
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 // Stripe webhook signature verification using Web Crypto API (no Node.js required)
 async function verifyStripeSignature(payload, sigHeader, secret) {
   if (!sigHeader || !secret) throw new Error('Missing signature or secret');
@@ -152,7 +161,7 @@ async function verifyStripeSignature(payload, sigHeader, secret) {
   const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signed));
   const expected = Array.from(new Uint8Array(mac)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-  if (expected !== signature) throw new Error('Signature mismatch');
+  if (!timingSafeEqual(expected, signature)) throw new Error('Signature mismatch');
 
   // Reject webhooks older than 5 minutes
   if (Math.abs(Date.now() / 1000 - parseInt(timestamp, 10)) > 300) {

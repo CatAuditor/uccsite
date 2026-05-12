@@ -1,6 +1,11 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
 
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  if (env.DB && !await checkRateLimit(env.DB, ip, 'subscribe', 5, 3600)) {
+    return json({ error: 'Too many requests. Please try again later.' }, 429);
+  }
+
   let body;
   try {
     body = await request.json();
@@ -9,10 +14,10 @@ export async function onRequestPost(context) {
   }
 
   const email = (body.email || '').trim().toLowerCase();
-  const firstName = (body.firstName || '').trim();
-  const lastName = (body.lastName || '').trim();
-  const address = (body.address || '').trim();
-  const zip = (body.zip || '').trim();
+  const firstName = (body.firstName || '').trim().slice(0, 100);
+  const lastName = (body.lastName || '').trim().slice(0, 100);
+  const address = (body.address || '').trim().slice(0, 200);
+  const zip = (body.zip || '').trim().slice(0, 10);
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json({ error: 'A valid email address is required' }, 400);
@@ -38,7 +43,7 @@ export async function onRequestPost(context) {
 
   // Send welcome email via Resend
   if (env.RESEND_API_KEY) {
-    const greeting = firstName ? `Hi ${firstName},` : 'Welcome,';
+    const greeting = firstName ? `Hi ${escapeHtml(firstName)},` : 'Welcome,';
     const emailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -139,4 +144,20 @@ function json(data, status = 200) {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+async function checkRateLimit(db, ip, endpoint, limit, windowSeconds) {
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = now - windowSeconds;
+  await db.prepare('DELETE FROM rate_limits WHERE timestamp < ?').bind(windowStart).run();
+  const row = await db.prepare(
+    'SELECT COUNT(*) as count FROM rate_limits WHERE ip = ? AND endpoint = ? AND timestamp > ?'
+  ).bind(ip, endpoint, windowStart).first();
+  if ((row?.count ?? 0) >= limit) return false;
+  await db.prepare('INSERT INTO rate_limits (ip, endpoint, timestamp) VALUES (?, ?, ?)').bind(ip, endpoint, now).run();
+  return true;
 }
