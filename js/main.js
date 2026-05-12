@@ -251,12 +251,13 @@ const STRIPE_PK = 'pk_test_51TUY6qRpmK1SjHcTmt9gtSea94QhozPKF3TxUfJbDkiXd5xSTw9M
 })();
 
 // Animated counter for impact stats
-function animateCounter(el, target, duration = 1400) {
+function animateCounter(el, target, suffix, decimals, duration = 1400) {
   const start = performance.now();
   const update = (now) => {
     const progress = Math.min((now - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-    el.textContent = Math.round(eased * target);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const value = eased * target;
+    el.textContent = (decimals > 0 ? value.toFixed(decimals) : Math.round(value)) + suffix;
     if (progress < 1) requestAnimationFrame(update);
   };
   requestAnimationFrame(update);
@@ -264,12 +265,15 @@ function animateCounter(el, target, duration = 1400) {
 
 const counterEl = document.querySelector('[data-count]');
 if (counterEl) {
-  const target = parseInt(counterEl.dataset.count, 10);
+  const raw = counterEl.dataset.count;
+  const suffix = raw.replace(/[\d.]/g, '');
+  const numeric = parseFloat(raw);
+  const decimals = raw.includes('.') ? raw.split('.')[1].replace(/\D/g, '').length : 0;
   const counterObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          animateCounter(entry.target, target);
+          animateCounter(entry.target, numeric, suffix, decimals);
           counterObserver.unobserve(entry.target);
         }
       });
