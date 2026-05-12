@@ -348,7 +348,7 @@ sections.forEach(s => sectionObserver.observe(s));
 
   setTimeout(function () {
     overlay.classList.add('modal-visible');
-  }, 1750);
+  }, 7500);
 
   document.getElementById('modal-close').addEventListener('click', hide);
   document.getElementById('modal-dismiss').addEventListener('click', hide);
