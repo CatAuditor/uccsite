@@ -1058,6 +1058,51 @@ input, textarea, select { font: inherit; }
 }
 
 /* ============================================
+   SUBPAGE HERO
+   ============================================ */
+.subpage-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 160px 48px 80px;
+  text-align: center;
+}
+
+/* The background layer — target this for video, canvas, animations, etc. */
+.subpage-hero .hero-bg {
+  background: linear-gradient(135deg, var(--navy-dark) 0%, #1B3A5C 100%);
+}
+
+/* Content sits above the background */
+.subpage-hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.subpage-hero .section-label {
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 16px;
+}
+.subpage-hero h1 {
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 900;
+  color: var(--white);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin-bottom: 16px;
+}
+.subpage-hero p {
+  font-size: 18px;
+  color: rgba(255,255,255,0.65);
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.65;
+}
+
+@media (max-width: 600px) {
+  .subpage-hero { padding: 140px 24px 64px; }
+}
+
+/* ============================================
    ABOUT LOGO
    ============================================ */
 .about-logo-wrap {
@@ -1070,6 +1115,47 @@ input, textarea, select { font: inherit; }
   width: 100%;
   height: auto;
   border-radius: var(--radius-lg);
+}
+
+/* ============================================
+   CONSTRUCTION / COMING SOON
+   ============================================ */
+.construction-section {
+  padding: 100px 48px;
+  background: var(--cream);
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.construction-inner {
+  max-width: 560px;
+  text-align: center;
+}
+.construction-icon {
+  width: 72px; height: 72px;
+  background: var(--navy-dark);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 32px;
+}
+.construction-inner h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--navy-dark);
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+.construction-inner p {
+  font-size: 17px;
+  color: var(--gray-600);
+  line-height: 1.7;
+  margin-bottom: 36px;
+}
+@media (max-width: 600px) {
+  .construction-section { padding: 64px 24px; }
 }
 
 /* ============================================

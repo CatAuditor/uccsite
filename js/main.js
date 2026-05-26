@@ -149,7 +149,6 @@ const STRIPE_PK = 'pk_test_51TUY6qRpmK1SjHcTmt9gtSea94QhozPKF3TxUfJbDkiXd5xSTw9M
   if (!submitBtn) return;
 
   let currentType = 'subscription';
-  let selectedPriceId = 'price_1TUYkERpmK1SjHcT1coNdzwN'; // $25/mo default
   let selectedAmountCents = 2500;
   let isCustom = false;
 
@@ -175,12 +174,10 @@ const STRIPE_PK = 'pk_test_51TUY6qRpmK1SjHcTmt9gtSea94QhozPKF3TxUfJbDkiXd5xSTw9M
 
       if (btn.dataset.priceId === 'custom') {
         isCustom = true;
-        selectedPriceId = null;
         customWrap.style.display = 'block';
         customInput.focus();
       } else {
         isCustom = false;
-        selectedPriceId = btn.dataset.priceId;
         selectedAmountCents = parseInt(btn.dataset.amount, 10);
         customWrap.style.display = 'none';
       }
@@ -196,7 +193,6 @@ const STRIPE_PK = 'pk_test_51TUY6qRpmK1SjHcTmt9gtSea94QhozPKF3TxUfJbDkiXd5xSTw9M
     const newsletterOptIn = document.getElementById('donate-newsletter').checked;
 
     let amountCents = selectedAmountCents;
-    let priceId = selectedPriceId;
 
     if (isCustom) {
       const raw = parseFloat(customInput.value);
@@ -205,7 +201,6 @@ const STRIPE_PK = 'pk_test_51TUY6qRpmK1SjHcTmt9gtSea94QhozPKF3TxUfJbDkiXd5xSTw9M
         return;
       }
       amountCents = Math.round(raw * 100);
-      priceId = null;
     }
 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -218,12 +213,7 @@ const STRIPE_PK = 'pk_test_51TUY6qRpmK1SjHcTmt9gtSea94QhozPKF3TxUfJbDkiXd5xSTw9M
     errorEl.style.display = 'none';
 
     try {
-      const body = { type: currentType, email, firstName, lastName, zip, newsletterOptIn };
-      if (currentType === 'subscription' && priceId) {
-        body.priceId = priceId;
-      } else {
-        body.amountCents = amountCents;
-      }
+      const body = { type: currentType, amountCents, email, firstName, lastName, zip, newsletterOptIn };
 
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
