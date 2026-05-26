@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>News &amp; Blog | Utah Civic Compact</title>
-  <meta name="description" content="News, updates, and analysis from Utah Civic Compact on civic accountability, community rights, and democracy in Utah." />
-  <link rel="canonical" href="https://utahcompact.org/blog.html" />
+  <title>News &amp; Press | Utah Civic Compact</title>
+  <meta name="description" content="Press coverage and updates from Utah Civic Compact — including Fox 13's reporting on MIDA violating state law in the Stratos Project approval, Box Elder County data center opposition, and civic accountability across Utah." />
+  <link rel="canonical" href="https://utahciviccompact.org/blog.html" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -33,43 +33,105 @@
       margin: 0 auto;
       line-height: 1.65;
     }
-    .construction-section {
-      padding: 100px 48px;
+    .news-section {
+      padding: 80px 48px 100px;
       background: var(--cream);
-      min-height: 50vh;
+    }
+    .news-inner {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .news-section-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 32px;
+    }
+    .news-card {
       display: flex;
-      align-items: center;
-      justify-content: center;
+      gap: 32px;
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 32px 36px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      text-decoration: none;
+      transition: box-shadow 0.2s, transform 0.2s;
     }
-    .construction-inner {
-      max-width: 560px;
-      text-align: center;
+    .news-card:hover {
+      box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
     }
-    .construction-icon {
-      width: 72px; height: 72px;
-      background: var(--navy-dark);
-      border-radius: 16px;
+    .news-outlet {
+      flex-shrink: 0;
+      width: 80px;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 32px;
+      align-items: flex-start;
+      padding-top: 4px;
     }
-    .construction-inner h2 {
-      font-size: 28px;
+    .outlet-badge {
+      font-size: 11px;
       font-weight: 800;
-      color: var(--navy-dark);
-      letter-spacing: -0.02em;
-      margin-bottom: 16px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--white);
+      background: #e8272a;
+      padding: 5px 9px;
+      border-radius: 4px;
+      line-height: 1;
     }
-    .construction-inner p {
-      font-size: 17px;
+    .news-content { flex: 1; }
+    .news-meta {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      margin-bottom: 10px;
+    }
+    .news-headline {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--navy-dark);
+      line-height: 1.4;
+      letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
+    .news-excerpt {
+      font-size: 15px;
       color: var(--gray-600);
       line-height: 1.7;
-      margin-bottom: 36px;
+      margin-bottom: 16px;
     }
-    @media (max-width: 600px) {
+    .news-read-more {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--red);
+      letter-spacing: 0.02em;
+    }
+    .news-more-cta {
+      margin-top: 48px;
+      padding: 36px 40px;
+      background: var(--navy-dark);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .news-more-cta p {
+      font-size: 16px;
+      color: rgba(255,255,255,0.7);
+      margin: 0;
+    }
+    @media (max-width: 640px) {
       .subpage-hero { padding: 140px 24px 64px; }
-      .construction-section { padding: 64px 24px; }
+      .news-section { padding: 56px 24px 72px; }
+      .news-card { flex-direction: column; gap: 16px; padding: 24px 20px; }
+      .news-more-cta { flex-direction: column; text-align: center; }
     }
   </style>
 </head>
@@ -111,19 +173,33 @@
   </header>
 
   <div class="subpage-hero">
-    <div class="section-label">Updates</div>
-    <h1>News &amp; Blog</h1>
-    <p>Analysis, updates, and dispatches from the front lines of Utah civic accountability.</p>
+    <div class="section-label">Press &amp; Updates</div>
+    <h1>News &amp; Coverage</h1>
+    <p>Press coverage and dispatches from the front lines of Utah civic accountability.</p>
   </div>
 
-  <div class="construction-section">
-    <div class="construction-inner">
-      <div class="construction-icon">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+  <div class="news-section">
+    <div class="news-inner">
+
+      <div class="news-section-label">In the Press</div>
+
+      <a class="news-card" href="https://www.fox13now.com/news/local-news/box-elder-county/mida-violated-state-law-in-approval-process-of-box-elder-county-data-center-group-claims" target="_blank" rel="noopener">
+        <div class="news-outlet">
+          <span class="outlet-badge">FOX 13</span>
+        </div>
+        <div class="news-content">
+          <div class="news-meta">May 26, 2026 &nbsp;·&nbsp; Box Elder County</div>
+          <div class="news-headline">MIDA violated state law in approval process of Box Elder County data center, group claims</div>
+          <div class="news-excerpt">Utah Civic Compact released a detailed briefing alleging that the Military Installation Development Authority broke three provisions of state law in fast-tracking approval of the Stratos Project — a proposed 9-gigawatt natural gas data center in Hansel Valley backed by Kevin O'Leary.</div>
+          <div class="news-read-more">Read on Fox 13 →</div>
+        </div>
+      </a>
+
+      <div class="news-more-cta">
+        <p>Read the full UCC briefing on the Stratos Project and the legal violations we documented.</p>
+        <a href="/stratos.html" class="btn btn-primary" style="white-space:nowrap;">Read the Briefing</a>
       </div>
-      <h2>Coming Soon</h2>
-      <p>Our news and blog section is on the way. Sign up below to be the first to hear when we publish updates on Box Elder, redistricting, and civic accountability across Utah.</p>
-      <a href="/#join" class="btn btn-primary">Get Notified</a>
+
     </div>
   </div>
 
