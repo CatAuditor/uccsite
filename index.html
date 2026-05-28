@@ -66,6 +66,84 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .press { background: var(--white); }
+    .press-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+    .press-header .section-title { margin-bottom: 0; }
+    .btn-outline {
+      display: inline-block;
+      padding: 10px 22px;
+      border: 2px solid var(--navy-dark);
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--navy-dark);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-outline:hover { background: var(--navy-dark); color: var(--white); }
+    .press-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .press-card {
+      background: var(--cream);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: box-shadow 0.2s, transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .press-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .press-card-top { display: flex; align-items: center; gap: 12px; }
+    .press-badge {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--white);
+      padding: 4px 8px;
+      border-radius: 4px;
+      line-height: 1;
+    }
+    .press-date {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+    }
+    .press-headline {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--navy-dark);
+      line-height: 1.45;
+      letter-spacing: -0.01em;
+      flex: 1;
+    }
+    .press-more {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--red);
+    }
+    @media (max-width: 640px) {
+      .press-grid { grid-template-columns: 1fr; }
+      .press-see-all { display: none; }
+      .press-header { margin-bottom: 28px; }
+    }
+  </style>
 </head>
 <body>
 
@@ -293,6 +371,37 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IN THE PRESS -->
+  <section class="press section" id="press">
+    <div class="container">
+      <div class="press-header">
+        <div>
+          <div class="section-label" data-animate>In the Press</div>
+          <h2 class="section-title" data-animate>Recent Coverage</h2>
+        </div>
+        <a href="/blog.html" class="btn btn-outline press-see-all">All News &amp; Coverage →</a>
+      </div>
+      <div class="press-grid">
+        <a class="press-card" href="https://www.ksl.com/article/51502781/data-center-official-counters-worries-about-project-footprint-foes-raise-new-concerns" target="_blank" rel="noopener">
+          <div class="press-card-top">
+            <span class="press-badge" style="background:#0057a8;">KSL</span>
+            <span class="press-date">May 27, 2026</span>
+          </div>
+          <div class="press-headline">Data center official counters worries about project footprint; foes raise new concerns</div>
+          <div class="press-more">Read on KSL →</div>
+        </a>
+        <a class="press-card" href="https://www.fox13now.com/news/local-news/box-elder-county/mida-violated-state-law-in-approval-process-of-box-elder-county-data-center-group-claims" target="_blank" rel="noopener">
+          <div class="press-card-top">
+            <span class="press-badge" style="background:#e8272a;">FOX 13</span>
+            <span class="press-date">May 26, 2026</span>
+          </div>
+          <div class="press-headline">MIDA violated state law in approval process of Box Elder County data center, group claims</div>
+          <div class="press-more">Read on Fox 13 →</div>
+        </a>
       </div>
     </div>
   </section>
