@@ -127,11 +127,54 @@
       color: rgba(255,255,255,0.7);
       margin: 0;
     }
+    .video-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 32px 36px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .video-card-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .video-embed {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .video-embed iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      border: 0;
+    }
+    .video-meta {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      margin-bottom: 8px;
+    }
+    .video-headline {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--navy-dark);
+      line-height: 1.4;
+      letter-spacing: -0.01em;
+    }
     @media (max-width: 640px) {
       .subpage-hero { padding: 140px 24px 64px; }
       .news-section { padding: 56px 24px 72px; }
       .news-card { flex-direction: column; gap: 16px; padding: 24px 20px; }
       .news-more-cta { flex-direction: column; text-align: center; }
+      .video-card { padding: 24px 20px; }
     }
   </style>
 </head>
@@ -194,6 +237,46 @@
           <div class="news-read-more">Read on Fox 13 →</div>
         </div>
       </a>
+
+      <a class="news-card" href="https://www.ksl.com/article/51502781/data-center-official-counters-worries-about-project-footprint-foes-raise-new-concerns" target="_blank" rel="noopener">
+        <div class="news-outlet">
+          <span class="outlet-badge" style="background: #0057a8;">KSL</span>
+        </div>
+        <div class="news-content">
+          <div class="news-meta">May 27, 2026 &nbsp;·&nbsp; Box Elder County</div>
+          <div class="news-headline">Data center official counters worries about project footprint; foes raise new concerns</div>
+          <div class="news-excerpt">O'Leary Digital's CEO argues the proposed Hansel Valley development will occupy a limited footprint with most land preserved as open space, while Utah Civic Compact challenges whether state officials followed proper legal procedures in approving the controversial project.</div>
+          <div class="news-read-more">Read on KSL →</div>
+        </div>
+      </a>
+
+      <div class="news-section-label" style="margin-top: 56px;">On Television</div>
+
+      <div class="video-card">
+        <div class="video-card-header">
+          <span class="outlet-badge">FOX 13</span>
+          <div>
+            <div class="video-meta">May 26, 2026 &nbsp;·&nbsp; Box Elder County</div>
+            <div class="video-headline">MIDA violated state law in approval process of Box Elder County data center, group claims</div>
+          </div>
+        </div>
+        <div class="video-embed">
+          <iframe src="https://www.youtube.com/embed/SoMlZxDFHHw" title="MIDA violated state law in approval process of Box Elder County data center, group claims — Fox 13" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <div class="video-card">
+        <div class="video-card-header">
+          <span class="outlet-badge" style="background: #1a6bbd;">KUTV 2</span>
+          <div>
+            <div class="video-meta">May 2026 &nbsp;·&nbsp; Box Elder County</div>
+            <div class="video-headline">Group claims Stratos data center approval process in Box Elder County violated state law</div>
+          </div>
+        </div>
+        <div class="video-embed">
+          <iframe src="https://www.youtube.com/embed/12Tm7xid80s" title="Group claims Stratos data center approval process in Box Elder County violated state law — KUTV 2" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
 
       <div class="news-more-cta">
         <p>Read the full UCC briefing on the Stratos Project and the legal violations we documented.</p>
