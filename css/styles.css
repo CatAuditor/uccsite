@@ -1376,7 +1376,7 @@ input, textarea, select { font: inherit; }
   flex-direction: column;
   gap: 10px;
 }
-.modal-cta-btn { text-align: center; }
+.modal-cta-btn { justify-content: center; }
 .modal-dismiss {
   font-size: 14px;
   color: var(--gray-400);
