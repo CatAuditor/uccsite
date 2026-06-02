@@ -6,6 +6,7 @@ D1-based. Table: `rate_limits (id, ip, endpoint, timestamp)`.
 Limits:
 - `subscribe` — 5 req / IP / hour
 - `checkout` — 10 req / IP / hour
+- `tip` — 5 req / IP / hour
 
 Uses `CF-Connecting-IP` header for IP. Old rows deleted on each check (cleanup-on-read).
 
