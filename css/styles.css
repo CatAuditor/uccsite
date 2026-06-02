@@ -1233,21 +1233,36 @@ input, textarea, select { font: inherit; }
   color: var(--navy);
   margin-bottom: 12px;
 }
+.tracker-recent-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin: 20px 0 0;
+  padding: 14px 16px 0;
+}
 .tracker-recent {
   list-style: none;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px 16px;
+  flex-direction: column;
+  gap: 0;
+  background: var(--navy);
+  border-radius: var(--radius);
+  padding: 10px 16px 4px;
+  margin-top: 8px;
 }
 .tracker-recent li {
-  font-size: 0.8rem;
-  color: var(--gray-600);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
-.tracker-recent li::before {
-  content: '·';
-  margin-right: 6px;
-  color: var(--gray-400);
-}
+.tracker-recent li:last-child { border-bottom: none; }
+.tracker-donor-name { font-weight: 600; color: var(--white); }
+.tracker-donor-amount { font-weight: 500; color: rgba(255,255,255,0.55); }
 
 .donate-form-wrap {
   background: var(--white);

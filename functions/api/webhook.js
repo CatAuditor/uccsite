@@ -78,6 +78,17 @@ async function handleInvoicePaid(invoice, db) {
     `UPDATE subscriptions SET status = 'active', updated_at = datetime('now')
      WHERE stripe_subscription_id = ?`
   ).bind(subscriptionId).run();
+
+  if (invoice.payment_intent && invoice.amount_paid > 0) {
+    const member = await getMemberByStripeId(db, invoice.customer);
+    if (member) {
+      await db.prepare(
+        `INSERT INTO donations (member_id, stripe_payment_intent_id, amount_cents)
+         VALUES (?, ?, ?)
+         ON CONFLICT(stripe_payment_intent_id) DO NOTHING`
+      ).bind(member.id, invoice.payment_intent, invoice.amount_paid).run();
+    }
+  }
 }
 
 async function handlePaymentFailed(invoice, db) {

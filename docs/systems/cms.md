@@ -5,11 +5,12 @@ Editors can change site copy at `/admin` without touching code. Changes commit t
 ## Architecture
 
 ```
-content/*.json   ← editor changes these via /admin
-templates/*.html ← HTML with {{placeholders}}
-build.js         ← merges content into templates → dist/
-static/admin/    ← Decap CMS UI (copied to dist/admin/ at build)
-dist/            ← Cloudflare Pages serves this (.gitignored)
+content/*.json      ← editor changes these via /admin
+templates/*.html    ← HTML with {{placeholders}}
+build.js            ← merges content into templates → dist/
+static/admin/       ← Decap CMS UI + local decap-cms.js bundle
+workers/auth/       ← Cloudflare Worker: GitHub OAuth proxy
+dist/               ← Cloudflare Pages serves this (.gitignored)
 ```
 
 ## What's editable
@@ -25,22 +26,31 @@ Pillars, issues grid, stats, and nav/footer are hardcoded in templates (change r
 ## Build
 
 **Local:** `node build.js` (zero npm dependencies)  
-**Cloudflare Pages:** set build command to `node build.js`, output directory to `dist`
+**Cloudflare Pages:** build command `node build.js`, output directory `dist`
+
+The Decap CMS JS bundle (`static/admin/decap-cms.js`) is served locally to avoid CSP conflicts — update it by downloading a new version from unpkg and replacing the file.
 
 ## Accessing the admin
 
 **URL:** https://utahciviccompact.org/admin/  
 **Login:** GitHub account (must have repo access to CatAuditor/uccsite)
 
-The admin always commits to the `main` branch regardless of what URL you access it from. Use it on the production domain for real content edits. Staging is for design/code experiments only.
+The admin always commits to the `main` branch. Use it on the production domain for real content edits. Staging (`staging.uccsite.pages.dev`) is for design/code experiments only.
 
-## GitHub OAuth App (already configured)
+## Auth — OAuth Worker
 
-- **App ID:** 3942868
-- **Callback URL:** `https://utahciviccompact.org/admin/`
-- Stored in `static/admin/config.yml` → `app_id`
+Decap authenticates via a Cloudflare Worker at `https://uccsite-auth.cothv.workers.dev` that handles the GitHub OAuth exchange. This replaces the Netlify auth service.
 
-If the callback URL ever needs to change (e.g. to support a different domain), update it at github.com/settings/developers → OAuth Apps.
+**Worker:** `workers/auth/index.js` — deployed as `uccsite-auth`  
+**Secrets stored in Cloudflare (not in git):** `CLIENT_ID`, `CLIENT_SECRET`
+
+**GitHub OAuth App settings:**
+- Client ID: `Iv23lifWTq1jKRvmzuLX`
+- Callback URL: `https://uccsite-auth.cothv.workers.dev/callback`
+- Managed at: github.com/settings/developers → OAuth Apps
+
+To redeploy the worker after changes: `cd workers/auth && npx wrangler deploy`  
+To rotate the client secret: generate a new one on GitHub, then `echo "NEW_SECRET" | npx wrangler secret put CLIENT_SECRET` from `workers/auth/`.
 
 ## Template syntax
 
