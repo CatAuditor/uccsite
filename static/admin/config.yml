@@ -2,12 +2,7 @@ backend:
   name: github
   repo: CatAuditor/uccsite
   branch: main
-  auth_type: pkce
-  # Create a GitHub OAuth App at github.com/settings/developers
-  # Homepage URL: https://utahciviccompact.org
-  # Callback URL: https://utahciviccompact.org/admin/
-  # Then paste the Client ID below:
-  app_id: Iv23lifWTq1jKRvmzuLX
+  base_url: https://uccsite-auth.cothv.workers.dev
 
 media_folder: assets/uploads
 public_folder: /assets/uploads
