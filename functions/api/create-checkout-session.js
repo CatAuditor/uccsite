@@ -3,7 +3,7 @@ const MAX_AMOUNT_CENTS = 10_000_000; // $100k sanity ceiling
 
 export async function onRequestPost({ request, env }) {
   try {
-    const { type, amountCents, email, firstName, lastName, zip, newsletterOptIn } = await request.json();
+    const { type, amountCents, email, firstName, lastName, zip, newsletterOptIn, publicDonor } = await request.json();
 
     if (!['subscription', 'onetime'].includes(type)) {
       return json({ error: 'Invalid type' }, 400);
@@ -38,6 +38,7 @@ export async function onRequestPost({ request, env }) {
         lastName: lastName || '',
         zip: zip || '',
         newsletterOptIn: newsletterOptIn ? '1' : '0',
+        publicDonor: publicDonor === false ? '0' : '1',
       },
     };
 

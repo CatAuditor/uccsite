@@ -1,6 +1,9 @@
 name = "uccsite"
-pages_build_output_dir = "."
+pages_build_output_dir = "dist"
 compatibility_date = "2024-01-01"
+
+[build]
+command = "node build.js"
 
 [[d1_databases]]
 binding = "DB"

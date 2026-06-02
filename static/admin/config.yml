@@ -1,0 +1,236 @@
+backend:
+  name: github
+  repo: CatAuditor/uccsite
+  branch: main
+  auth_type: pkce
+  # Create a GitHub OAuth App at github.com/settings/developers
+  # Homepage URL: https://utahciviccompact.org
+  # Callback URL: https://utahciviccompact.org/admin/
+  # Then paste the Client ID below:
+  app_id: 3942868
+
+media_folder: assets/uploads
+public_folder: /assets/uploads
+
+collections:
+
+  # ── Homepage ──────────────────────────────────────────────────────────────
+  - name: homepage
+    label: Homepage
+    files:
+      - name: homepage_content
+        label: Homepage Content
+        file: content/homepage.json
+        format: json
+        fields:
+          - label: Hero Section
+            name: hero
+            widget: object
+            fields:
+              - label: Headline (HTML allowed — use &lt;em&gt; for italic, &lt;br /&gt; for line break)
+                name: headline
+                widget: text
+              - label: Subtitle
+                name: subtitle
+                widget: text
+              - label: Primary Button Text
+                name: cta_primary
+                widget: string
+              - label: Secondary Button Text
+                name: cta_secondary
+                widget: string
+
+          - label: Mission Statement
+            name: mission
+            widget: object
+            fields:
+              - label: Quote
+                name: quote
+                widget: text
+
+          - label: About Section
+            name: about
+            widget: object
+            fields:
+              - label: Title
+                name: title
+                widget: string
+              - label: Paragraph 1
+                name: body1
+                widget: text
+              - label: Paragraph 2
+                name: body2
+                widget: text
+              - label: Paragraph 3
+                name: body3
+                widget: text
+              - label: Pull Quote
+                name: quote
+                widget: text
+
+          - label: Join Section
+            name: join
+            widget: object
+            fields:
+              - label: Title
+                name: title
+                widget: string
+              - label: Body
+                name: body
+                widget: text
+              - label: List Item 1
+                name: item1
+                widget: string
+              - label: List Item 2
+                name: item2
+                widget: string
+              - label: List Item 3
+                name: item3
+                widget: string
+              - label: List Item 4
+                name: item4
+                widget: string
+
+          - label: Donate Section
+            name: donate
+            widget: object
+            fields:
+              - label: Label (small uppercase tag)
+                name: label
+                widget: string
+              - label: Title
+                name: title
+                widget: string
+              - label: Body
+                name: body
+                widget: text
+
+          - label: Donation Modal
+            name: modal
+            widget: object
+            fields:
+              - label: Badge Text
+                name: badge
+                widget: string
+              - label: Title
+                name: title
+                widget: string
+              - label: Body
+                name: body
+                widget: text
+              - label: CTA Button Text
+                name: cta
+                widget: string
+
+          - label: Featured Press
+            name: press
+            widget: list
+            fields:
+              - label: Outlet Name
+                name: outlet
+                widget: string
+              - label: Badge Color (CSS color)
+                name: badge_color
+                widget: string
+                hint: "e.g. #e8272a"
+              - label: Date
+                name: date
+                widget: string
+              - label: Headline
+                name: headline
+                widget: text
+              - label: Article URL
+                name: url
+                widget: string
+              - label: Read More Text
+                name: read_more
+                widget: string
+
+  # ── Team ──────────────────────────────────────────────────────────────────
+  - name: team
+    label: Team & Bios
+    files:
+      - name: team_members
+        label: Team Members
+        file: content/team.json
+        format: json
+        fields:
+          - label: Members
+            name: members
+            widget: list
+            fields:
+              - label: Full Name
+                name: name
+                widget: string
+              - label: Title / Role
+                name: title
+                widget: string
+              - label: Bio (supports **bold**, *italic*, blank line = new paragraph)
+                name: bio
+                widget: markdown
+
+  # ── News & Press ──────────────────────────────────────────────────────────
+  - name: blog
+    label: News & Press
+    files:
+      - name: blog_content
+        label: News & Press Content
+        file: content/blog.json
+        format: json
+        fields:
+          - label: Press Articles
+            name: articles
+            widget: list
+            fields:
+              - label: Outlet Name
+                name: outlet
+                widget: string
+              - label: Badge Color
+                name: badge_color
+                widget: string
+                hint: "e.g. #e8272a for Fox 13, #0057a8 for KSL"
+              - label: Date
+                name: date
+                widget: string
+              - label: Region/Tag
+                name: region
+                widget: string
+              - label: Headline
+                name: headline
+                widget: text
+              - label: Excerpt
+                name: excerpt
+                widget: text
+              - label: Article URL
+                name: url
+                widget: string
+              - label: Read More Text
+                name: read_more
+                widget: string
+
+          - label: Video Coverage
+            name: videos
+            widget: list
+            fields:
+              - label: Outlet Name
+                name: outlet
+                widget: string
+              - label: Badge Color
+                name: badge_color
+                widget: string
+              - label: Date
+                name: date
+                widget: string
+              - label: Region/Tag
+                name: region
+                widget: string
+              - label: Headline
+                name: headline
+                widget: text
+              - label: YouTube Video ID
+                name: youtube_id
+                widget: string
+                hint: "The ID at the end of a YouTube URL, e.g. SoMlZxDFHHw"
+              - label: YouTube Title (for accessibility)
+                name: youtube_title
+                widget: string

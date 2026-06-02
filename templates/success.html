@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thank You | Utah Civic Compact</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .success-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--cream);
+      padding: 40px 24px;
+    }
+    .success-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 60px 48px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+    }
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--navy);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 28px;
+    }
+    .success-icon svg { color: white; }
+    .success-card h1 { font-family: var(--font-serif); font-size: 2rem; color: var(--navy); margin-bottom: 16px; }
+    .success-card p { color: var(--gray-600); line-height: 1.7; margin-bottom: 12px; }
+    .success-legal { font-size: 0.82rem; color: var(--gray-400); margin-top: 24px; border-top: 1px solid var(--gray-200); padding-top: 20px; }
+    .success-actions { display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 32px; flex-wrap: wrap; }
+    @media (max-width: 480px) { .success-card { padding: 40px 24px; } }
+  </style>
+</head>
+<body>
+  <div class="success-page">
+    <div class="success-card">
+      <div class="success-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h1>You're in.</h1>
+      <p>Thank you for supporting Utah Civic Compact. Your contribution goes directly to defending the agreement between Utah communities and their government.</p>
+      <p>Check your email for a receipt from Stripe.</p>
+      <p class="success-legal">Utah Civic Compact is a 501(c)(4) social welfare organization. This contribution is <strong>not</strong> tax-deductible as a charitable donation.</p>
+      <div class="success-actions">
+        <a href="/" class="btn btn-primary">Back to Home</a>
+        <a href="/#join" class="btn btn-outline">Get Updates</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

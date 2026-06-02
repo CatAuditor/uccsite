@@ -41,7 +41,7 @@ export async function onRequestPost({ request, env }) {
 async function handleCheckoutComplete(session, db) {
   const customerId = session.customer;
   const email = session.customer_email || session.customer_details?.email;
-  const { firstName, lastName, zip, newsletterOptIn } = session.metadata || {};
+  const { firstName, lastName, zip, newsletterOptIn, publicDonor } = session.metadata || {};
 
   if (email && customerId) {
     const optIn = newsletterOptIn === '1' ? 1 : 0;
@@ -60,11 +60,12 @@ async function handleCheckoutComplete(session, db) {
   if (session.mode === 'payment' && session.payment_intent) {
     const member = await getMemberByStripeId(db, customerId);
     if (member) {
+      const isPublic = publicDonor === '0' ? 0 : 1;
       await db.prepare(
-        `INSERT INTO donations (member_id, stripe_payment_intent_id, amount_cents)
-         VALUES (?, ?, ?)
+        `INSERT INTO donations (member_id, stripe_payment_intent_id, amount_cents, public)
+         VALUES (?, ?, ?, ?)
          ON CONFLICT(stripe_payment_intent_id) DO NOTHING`
-      ).bind(member.id, session.payment_intent, session.amount_total).run();
+      ).bind(member.id, session.payment_intent, session.amount_total, isPublic).run();
     }
   }
 }

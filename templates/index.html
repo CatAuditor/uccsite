@@ -150,7 +150,7 @@
   <!-- NAVIGATION -->
   <header class="site-header" id="site-header">
     <nav class="nav-inner">
-      
+
       <button class="nav-toggle" id="nav-toggle" aria-label="Open menu">
         <span></span><span></span><span></span>
       </button>
@@ -188,16 +188,14 @@
     <div class="hero-content">
       <img src="/UCC.png" alt="Utah Civic Compact" class="hero-logo" />
       <h1 class="hero-headline">
-        The Compact Between<br />
-        Utahns and Their<br />
-        <em>Government.</em>
+        {{{hero.headline}}}
       </h1>
       <p class="hero-sub">
-        We defend the agreement that residents deserve genuine voice and consent in the decisions that shape their lives, and we work to hold institutions accountable when they break it.
+        {{hero.subtitle}}
       </p>
       <div class="hero-actions">
-        <a href="#join" class="btn btn-primary">Join the Compact</a>
-        <a href="#mission" class="btn btn-ghost">Our Mission</a>
+        <a href="#join" class="btn btn-primary">{{hero.cta_primary}}</a>
+        <a href="#mission" class="btn btn-ghost">{{hero.cta_secondary}}</a>
       </div>
     </div>
     <div class="hero-scroll-hint">
@@ -210,7 +208,7 @@
   <section class="mission-strip" id="mission">
     <div class="container">
       <p class="mission-text" data-animate>
-        "Ensuring residents have genuine voice and consent in the decisions that shape their lives and building the civic capacity to make it stick."
+        {{mission.quote}}
       </p>
     </div>
   </section>
@@ -336,10 +334,10 @@
       <div class="about-grid">
         <div class="about-text">
           <div class="section-label">About Us</div>
-          <h2 class="section-title">Why Utah Civic Compact?</h2>
-          <p>A compact is a mutual obligation between a community and the institutions that govern it. Utah Civic Compact was founded on the belief that this agreement has eroded, and that residents deserve an organization explicitly dedicated to restoring and defending it.</p>
-          <p>We are organized under Section 501(c)(4) as a social welfare organization. That means our mission is the health of Utah communities, not electoral advantages for any party or candidate.</p>
-          <p>We believe in building the long-term infrastructure that makes democracy resilient: informed residents, accountable institutions, and communities with the capacity to hold the line.</p>
+          <h2 class="section-title">{{about.title}}</h2>
+          <p>{{about.body1}}</p>
+          <p>{{about.body2}}</p>
+          <p>{{about.body3}}</p>
           <a href="#join" class="btn btn-primary">Join Our Work</a>
         </div>
         <div class="about-visual">
@@ -348,7 +346,7 @@
           </div>
           <div class="about-card">
             <blockquote>
-              "Democracy is not a spectator sport. The relationship between Utahns and their government only holds when residents show up organized, informed, and ready to act."
+              {{about.quote}}
             </blockquote>
             <div class="about-card-footer">Utah Civic Compact</div>
           </div>
@@ -386,22 +384,16 @@
         <a href="/blog.html" class="btn btn-outline press-see-all">All News &amp; Coverage →</a>
       </div>
       <div class="press-grid">
-        <a class="press-card" href="https://www.ksl.com/article/51502781/data-center-official-counters-worries-about-project-footprint-foes-raise-new-concerns" target="_blank" rel="noopener">
+        {{#press}}
+        <a class="press-card" href="{{{url}}}" target="_blank" rel="noopener">
           <div class="press-card-top">
-            <span class="press-badge" style="background:#0057a8;">KSL</span>
-            <span class="press-date">May 27, 2026</span>
+            <span class="press-badge" style="background:{{badge_color}};">{{outlet}}</span>
+            <span class="press-date">{{date}}</span>
           </div>
-          <div class="press-headline">Data center official counters worries about project footprint; foes raise new concerns</div>
-          <div class="press-more">Read on KSL →</div>
+          <div class="press-headline">{{headline}}</div>
+          <div class="press-more">{{read_more}}</div>
         </a>
-        <a class="press-card" href="https://www.fox13now.com/news/local-news/box-elder-county/mida-violated-state-law-in-approval-process-of-box-elder-county-data-center-group-claims" target="_blank" rel="noopener">
-          <div class="press-card-top">
-            <span class="press-badge" style="background:#e8272a;">FOX 13</span>
-            <span class="press-date">May 26, 2026</span>
-          </div>
-          <div class="press-headline">MIDA violated state law in approval process of Box Elder County data center, group claims</div>
-          <div class="press-more">Read on Fox 13 →</div>
-        </a>
+        {{/press}}
       </div>
     </div>
   </section>
@@ -412,24 +404,24 @@
       <div class="join-inner">
         <div class="join-text">
           <div class="section-label light">Get Involved</div>
-          <h2 class="section-title light">The Compact Needs You</h2>
-          <p>Whether you're a longtime civic activist or just getting started, Utah civic Compact is your home. Sign up to receive updates, action alerts, and opportunities to defend the agreement between Utah communities and their government.</p>
+          <h2 class="section-title light">{{join.title}}</h2>
+          <p>{{join.body}}</p>
           <ul class="join-list">
             <li>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Stay informed on the issues that matter
+              {{join.item1}}
             </li>
             <li>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Take action when the compact is threatened
+              {{join.item2}}
             </li>
             <li>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Connect with others in your community
+              {{join.item3}}
             </li>
             <li>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Build lasting civic capacity in Utah
+              {{join.item4}}
             </li>
           </ul>
         </div>
@@ -474,9 +466,9 @@
     <div class="container">
       <div class="donate-inner">
         <div class="donate-text">
-          <div class="section-label">Support the Work</div>
-          <h2 class="section-title">Fund the Compact</h2>
-          <p>Utah Civic Compact runs on community support. Every dollar helps defend the agreement between Utahns and their government, while monitoring, organizing, and holding institutions accountable.</p>
+          <div class="section-label">{{donate.label}}</div>
+          <h2 class="section-title">{{donate.title}}</h2>
+          <p>{{donate.body}}</p>
 
           <div class="donation-tracker" id="donation-tracker" aria-hidden="true">
             <div class="tracker-bar-wrap">
@@ -603,11 +595,11 @@
   <div class="modal-overlay" id="donate-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-card">
       <button class="modal-close" id="modal-close" aria-label="Close">&#x2715;</button>
-      <div class="modal-badge">Urgent</div>
-      <h2 class="modal-title" id="modal-title">We need your help.</h2>
-      <p class="modal-body">Data centers are consuming Utah's already limited water and power without community consent. Help us fight back before it's too late.</p>
+      <div class="modal-badge">{{modal.badge}}</div>
+      <h2 class="modal-title" id="modal-title">{{modal.title}}</h2>
+      <p class="modal-body">{{modal.body}}</p>
       <div class="modal-actions">
-        <a href="#donate" class="btn btn-donate modal-cta-btn" id="modal-cta">Support the Fight</a>
+        <a href="#donate" class="btn btn-donate modal-cta-btn" id="modal-cta">{{modal.cta}}</a>
         <button class="modal-dismiss" id="modal-dismiss">Not now</button>
       </div>
     </div>

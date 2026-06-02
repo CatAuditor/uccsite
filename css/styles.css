@@ -1173,6 +1173,49 @@ input, textarea, select { font: inherit; }
 .donate-text p { color: var(--gray-600); margin-bottom: 16px; line-height: 1.7; }
 .donate-legal { font-size: 0.82rem; color: var(--gray-400); margin-top: 24px; }
 
+.donation-tracker {
+  margin: 28px 0 0;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.donation-tracker.tracker-loaded { opacity: 1; }
+
+.tracker-bar-wrap {
+  height: 8px;
+  background: var(--gray-200);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.tracker-bar-fill {
+  height: 100%;
+  background: var(--navy);
+  border-radius: 99px;
+  width: 0%;
+  transition: width 1s var(--ease);
+}
+.tracker-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 12px;
+}
+.tracker-recent {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+.tracker-recent li {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+}
+.tracker-recent li::before {
+  content: '·';
+  margin-right: 6px;
+  color: var(--gray-400);
+}
+
 .donate-form-wrap {
   background: var(--white);
   border-radius: var(--radius-lg);

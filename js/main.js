@@ -213,7 +213,8 @@ const STRIPE_PK = 'pk_test_51TUY6qRpmK1SjHcTmt9gtSea94QhozPKF3TxUfJbDkiXd5xSTw9M
     errorEl.style.display = 'none';
 
     try {
-      const body = { type: currentType, amountCents, email, firstName, lastName, zip, newsletterOptIn };
+      const publicDonor = document.getElementById('donate-public')?.checked !== false;
+      const body = { type: currentType, amountCents, email, firstName, lastName, zip, newsletterOptIn, publicDonor };
 
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -349,4 +350,37 @@ sections.forEach(s => sectionObserver.observe(s));
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') hide();
   });
+}());
+
+// Donation tracker
+(async function initDonationTracker() {
+  const tracker = document.getElementById('donation-tracker');
+  if (!tracker) return;
+
+  try {
+    const res = await fetch('/api/donations/stats');
+    if (!res.ok) return;
+    const { totalCents, goalCents, recent } = await res.json();
+
+    const pct = Math.min((totalCents / goalCents) * 100, 100);
+    const fmt = cents => '$' + (cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+    document.getElementById('tracker-bar-fill').style.width = pct + '%';
+    document.getElementById('tracker-label').textContent =
+      `${fmt(totalCents)} raised of ${fmt(goalCents)} goal`;
+
+    if (recent && recent.length) {
+      const list = document.getElementById('tracker-recent');
+      recent.forEach(({ firstName, amountCents }) => {
+        const li = document.createElement('li');
+        li.textContent = `${firstName} · ${fmt(amountCents)}`;
+        list.appendChild(li);
+      });
+    }
+
+    tracker.removeAttribute('aria-hidden');
+    tracker.classList.add('tracker-loaded');
+  } catch (_) {
+    // fail silently — tracker is non-critical
+  }
 }());

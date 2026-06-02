@@ -1,0 +1,55 @@
+{
+  "hero": {
+    "headline": "The Compact Between<br />\nUtahns and Their<br />\n<em>Government.</em>",
+    "subtitle": "We defend the agreement that residents deserve genuine voice and consent in the decisions that shape their lives, and we work to hold institutions accountable when they break it.",
+    "cta_primary": "Join the Compact",
+    "cta_secondary": "Our Mission"
+  },
+  "mission": {
+    "quote": "\"Ensuring residents have genuine voice and consent in the decisions that shape their lives and building the civic capacity to make it stick.\""
+  },
+  "about": {
+    "title": "Why Utah Civic Compact?",
+    "body1": "A compact is a mutual obligation between a community and the institutions that govern it. Utah Civic Compact was founded on the belief that this agreement has eroded, and that residents deserve an organization explicitly dedicated to restoring and defending it.",
+    "body2": "We are organized under Section 501(c)(4) as a social welfare organization. That means our mission is the health of Utah communities, not electoral advantages for any party or candidate.",
+    "body3": "We believe in building the long-term infrastructure that makes democracy resilient: informed residents, accountable institutions, and communities with the capacity to hold the line.",
+    "quote": "\"Democracy is not a spectator sport. The relationship between Utahns and their government only holds when residents show up organized, informed, and ready to act.\""
+  },
+  "join": {
+    "title": "The Compact Needs You",
+    "body": "Whether you're a longtime civic activist or just getting started, Utah Civic Compact is your home. Sign up to receive updates, action alerts, and opportunities to defend the agreement between Utah communities and their government.",
+    "item1": "Stay informed on the issues that matter",
+    "item2": "Take action when the compact is threatened",
+    "item3": "Connect with others in your community",
+    "item4": "Build lasting civic capacity in Utah"
+  },
+  "donate": {
+    "label": "Support the Work",
+    "title": "Fund the Compact",
+    "body": "Utah Civic Compact runs on community support. Every dollar helps defend the agreement between Utahns and their government, while monitoring, organizing, and holding institutions accountable."
+  },
+  "modal": {
+    "badge": "Urgent",
+    "title": "We need your help.",
+    "body": "Data centers are consuming Utah's already limited water and power without community consent. Help us fight back before it's too late.",
+    "cta": "Support the Fight"
+  },
+  "press": [
+    {
+      "outlet": "KSL",
+      "badge_color": "#0057a8",
+      "date": "May 27, 2026",
+      "headline": "Data center official counters worries about project footprint; foes raise new concerns",
+      "url": "https://www.ksl.com/article/51502781/data-center-official-counters-worries-about-project-footprint-foes-raise-new-concerns",
+      "read_more": "Read on KSL →"
+    },
+    {
+      "outlet": "FOX 13",
+      "badge_color": "#e8272a",
+      "date": "May 26, 2026",
+      "headline": "MIDA violated state law in approval process of Box Elder County data center, group claims",
+      "url": "https://www.fox13now.com/news/local-news/box-elder-county/mida-violated-state-law-in-approval-process-of-box-elder-county-data-center-group-claims",
+      "read_more": "Read on Fox 13 →"
+    }
+  ]
+}

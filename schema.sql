@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS donations (
   member_id INTEGER REFERENCES members(id),
   stripe_payment_intent_id TEXT UNIQUE NOT NULL,
   amount_cents INTEGER NOT NULL,
+  public INTEGER NOT NULL DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -45,3 +46,12 @@ CREATE TABLE IF NOT EXISTS subscribers (
 );
 
 CREATE INDEX IF NOT EXISTS idx_subscribers_email ON subscribers(email);
+
+CREATE TABLE IF NOT EXISTS rate_limits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ip TEXT NOT NULL,
+  endpoint TEXT NOT NULL,
+  timestamp INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_limits_lookup ON rate_limits(ip, endpoint, timestamp);
