@@ -245,6 +245,30 @@ input, textarea, select { font: inherit; }
 }
 .nav-cta:hover { background: var(--red-light) !important; }
 
+.nav-donate {
+  background: var(--red) !important;
+  color: var(--white) !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  margin-left: 12px;
+  padding: 10px 22px !important;
+  border-radius: var(--radius);
+}
+.nav-donate:hover { background: var(--red-light) !important; }
+
+.nav-logo-torch {
+  flex-shrink: 0;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+.nav-torch-img {
+  height: 44px;
+  width: auto;
+  display: block;
+}
+
 .nav-toggle {
   display: none;
   flex-direction: column;
@@ -1008,6 +1032,8 @@ input, textarea, select { font: inherit; }
   }
   .nav-links a:hover { background: var(--gray-100) !important; }
   .nav-cta { margin-left: 0 !important; }
+  .nav-donate { margin-left: 0 !important; }
+  .nav-logo-torch { display: none; }
 
   /* Mobile dropdowns — expand inline */
   .nav-dropdown { width: 100%; }
