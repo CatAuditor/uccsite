@@ -2,8 +2,12 @@ export async function onRequestPost(context) {
   const { request, env } = context;
 
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  if (env.DB && !await checkRateLimit(env.DB, ip, 'subscribe', 5, 3600)) {
-    return json({ error: 'Too many requests. Please try again later.' }, 429);
+  try {
+    if (env.DB && !await checkRateLimit(env.DB, ip, 'subscribe', 5, 3600)) {
+      return json({ error: 'Too many requests. Please try again later.' }, 429);
+    }
+  } catch (err) {
+    console.error('Rate limit check failed:', err);
   }
 
   let body;
