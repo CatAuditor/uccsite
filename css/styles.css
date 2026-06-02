@@ -236,24 +236,16 @@ input, textarea, select { font: inherit; }
 }
 .nav-links a:hover { color: var(--white); background: rgba(255,255,255,0.1); }
 .site-header.scrolled .nav-links a:hover { color: var(--navy-dark); background: var(--gray-100); }
-.nav-cta {
-  background: var(--red) !important;
-  color: var(--white) !important;
-  font-weight: 600 !important;
-  margin-left: 8px;
-  padding: 8px 18px !important;
-}
-.nav-cta:hover { background: var(--red-light) !important; }
-
+.nav-cta,
 .nav-donate {
   background: var(--red) !important;
   color: var(--white) !important;
   font-weight: 700 !important;
-  font-size: 15px !important;
-  margin-left: 12px;
-  padding: 10px 22px !important;
+  padding: 8px 18px !important;
   border-radius: var(--radius);
+  margin-left: 6px;
 }
+.nav-cta:hover,
 .nav-donate:hover { background: var(--red-light) !important; }
 
 .nav-logo-torch {
