@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Submit a Tip | Utah Civic Compact</title>
+  <meta name="description" content="Have information about government misconduct, conflicts of interest, or violations of public trust in Utah? Submit a confidential tip to the Utah Civic Compact." />
+  <meta name="robots" content="noindex" />
+
+  <link rel="icon" type="image/svg+xml" href="/torch.svg" />
+  <link rel="shortcut icon" href="/torch.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    /* ── Tipline hero ─────────────────────────────────────────────────────── */
+    .tipline-hero {
+      background: var(--navy-dark);
+      padding: 140px 0 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tipline-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 60% 40%, rgba(192,57,43,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .tipline-hero .container {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .tipline-hero-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--red-light);
+      margin-bottom: 18px;
+    }
+
+    .tipline-hero h1 {
+      font-family: var(--font-sans);
+      font-size: clamp(32px, 4.5vw, 52px);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.025em;
+      color: var(--white);
+      margin-bottom: 24px;
+    }
+
+    .tipline-hero h1 em {
+      font-style: normal;
+      color: var(--red-light);
+    }
+
+    .tipline-hero-body {
+      font-size: 17px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.72);
+      max-width: 480px;
+      margin-bottom: 40px;
+    }
+
+    .tipline-trust {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .tipline-trust-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .tipline-trust-icon {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+
+    .tipline-trust-icon svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--red-light);
+    }
+
+    .tipline-trust-text {
+      font-size: 14px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.65);
+    }
+
+    .tipline-trust-text strong {
+      display: block;
+      color: rgba(255,255,255,0.9);
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    /* ── Right panel (pulls up over hero) ────────────────────────────────── */
+    .tipline-form-panel {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 44px 40px 40px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.28), 0 0 0 1px rgba(0,0,0,0.06);
+    }
+
+    .tipline-form-panel h2 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--navy-dark);
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+    }
+
+    .tipline-form-panel .form-sub {
+      font-size: 13px;
+      color: var(--gray-600);
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    /* ── Form fields ──────────────────────────────────────────────────────── */
+    .field-group {
+      margin-bottom: 20px;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--navy);
+      margin-bottom: 7px;
+    }
+
+    .field-label .req {
+      color: var(--red);
+      margin-left: 2px;
+    }
+
+    .field-input,
+    .field-textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius);
+      font-size: 14.5px;
+      color: var(--gray-900);
+      background: var(--gray-50);
+      font-family: var(--font-sans);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .field-input:focus,
+    .field-textarea:focus {
+      outline: none;
+      border-color: var(--navy);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(27,47,78,0.08);
+    }
+
+    .field-input.disabled {
+      background: var(--gray-100);
+      color: var(--gray-400);
+      cursor: not-allowed;
+      border-color: var(--gray-200);
+    }
+
+    .field-textarea {
+      resize: vertical;
+      min-height: 130px;
+    }
+
+    /* Anonymous row */
+    .anon-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 9px;
+    }
+
+    .anon-row input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--navy);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .anon-row label {
+      font-size: 13px;
+      color: var(--gray-600);
+      cursor: pointer;
+    }
+
+    /* File input */
+    .field-file {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px dashed var(--gray-200);
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: var(--gray-600);
+      background: var(--gray-50);
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+
+    .file-note {
+      margin-top: 7px;
+      font-size: 12px;
+      color: var(--gray-400);
+      line-height: 1.5;
+    }
+
+    .file-note a {
+      color: var(--navy);
+      text-decoration: underline;
+    }
+
+    /* Divider */
+    .form-divider {
+      border: none;
+      border-top: 1px solid var(--gray-200);
+      margin: 24px 0;
+    }
+
+    /* Submit */
+    .submit-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: var(--red);
+      color: var(--white);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+    }
+
+    .submit-btn:hover {
+      background: var(--red-light);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(192,57,43,0.3);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Status messages */
+    .status-msg {
+      display: none;
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+
+    .status-msg.success {
+      background: #eef6ef;
+      border: 1px solid #a8d5ab;
+      color: #1a4a1e;
+    }
+
+    .status-msg.error {
+      background: #fdf2f0;
+      border: 1px solid #e8a99e;
+      color: #6b2318;
+    }
+
+    .status-msg a { color: inherit; text-decoration: underline; }
+
+    /* ── Responsive ───────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .tipline-hero .container {
+        grid-template-columns: 1fr;
+        gap: 48px;
+      }
+      .tipline-hero {
+        padding: 120px 0 60px;
+      }
+      .tipline-form-panel {
+        padding: 36px 28px 32px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .tipline-form-panel {
+        padding: 28px 20px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav ──────────────────────────────────────────────────────────────── -->
+  <header class="site-header scrolled" id="site-header">
+    <nav class="nav-inner">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/#mission">Mission</a></li>
+        <li><a href="/team.html">About Us</a></li>
+        <li><a href="/theory.html">Theory of Change</a></li>
+        <li><a href="/blog.html">News &amp; Media</a></li>
+        <li><a href="/stratos.html">Stratos</a></li>
+        <li><a href="/#donate" class="nav-donate">Donate</a></li>
+        <li><a href="/#join" class="nav-cta">Get Involved</a></li>
+      </ul>
+      <a href="/" class="nav-logo-torch" aria-label="Utah Civic Compact home">
+        <img src="/torch.svg" alt="" class="nav-torch-img" />
+      </a>
+    </nav>
+  </header>
+
+  <!-- ── Hero + Form ───────────────────────────────────────────────────────── -->
+  <section class="tipline-hero">
+    <div class="container">
+
+      <!-- Left: copy -->
+      <div class="tipline-hero-left">
+        <p class="tipline-hero-label">Confidential Tipline</p>
+        <h1>Know something the<br /><em>public deserves</em><br />to know?</h1>
+        <p class="tipline-hero-body">
+          Utah Civic Compact investigates government misconduct, conflicts of interest,
+          and violations of public trust across Utah. Your tip could be the start
+          of something important.
+        </p>
+
+        <div class="tipline-trust">
+          <div class="tipline-trust-item">
+            <div class="tipline-trust-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+            <div class="tipline-trust-text">
+              <strong>Handled with care</strong>
+              Tips are reviewed internally and not shared without your knowledge.
+            </div>
+          </div>
+          <div class="tipline-trust-item">
+            <div class="tipline-trust-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div class="tipline-trust-text">
+              <strong>Anonymous submissions welcome</strong>
+              You can submit without your name. An email is still required so we can follow up if needed.
+            </div>
+          </div>
+          <div class="tipline-trust-item">
+            <div class="tipline-trust-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+            </div>
+            <div class="tipline-trust-text">
+              <strong>We follow up</strong>
+              If we need more detail, we'll reach out before taking any action.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: form card -->
+      <div class="tipline-form-panel">
+        <h2>Submit a Tip</h2>
+        <p class="form-sub">We may need to follow up with you, so a valid email is required.</p>
+
+        <form id="tipForm" novalidate>
+
+          <!-- Name -->
+          <div class="field-group">
+            <label class="field-label" for="name">Your Name</label>
+            <input class="field-input" type="text" id="name" name="name"
+                   placeholder="Full name" autocomplete="name" />
+            <div class="anon-row">
+              <input type="checkbox" id="anonymous" name="anonymous" />
+              <label for="anonymous">I'd prefer to remain anonymous</label>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="field-group">
+            <label class="field-label" for="email">Email <span class="req">*</span></label>
+            <input class="field-input" type="email" id="email" name="email"
+                   placeholder="you@example.com" autocomplete="email" required />
+          </div>
+
+          <!-- Subject -->
+          <div class="field-group">
+            <label class="field-label" for="subject">Who is this about?</label>
+            <input class="field-input" type="text" id="subject" name="subject"
+                   placeholder="Name, agency, or company" />
+          </div>
+
+          <!-- Tip body -->
+          <div class="field-group">
+            <label class="field-label" for="tipBody">Tell us what you know <span class="req">*</span></label>
+            <textarea class="field-textarea" id="tipBody" name="tipBody"
+                      placeholder="Share what you know. Dates, names, documents, and specifics all help." required></textarea>
+          </div>
+
+          <hr class="form-divider" />
+
+          <!-- Attachments -->
+          <div class="field-group">
+            <label class="field-label" for="attachments">Attachments</label>
+            <input class="field-file" type="file" id="attachments" name="attachments"
+                   multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip" />
+            <p class="file-note">
+              If files are too large, email
+              <a href="mailto:info@utahciviccompact.org">info@utahciviccompact.org</a>
+              to make arrangements.
+            </p>
+          </div>
+
+          <button type="submit" class="submit-btn" id="submitBtn">Submit Tip</button>
+
+          <div class="status-msg success" id="successMsg">
+            Your tip has been received. Thank you — we'll be in touch if we need more information.
+          </div>
+          <div class="status-msg error" id="errorMsg">
+            Something went wrong. Please try again or email
+            <a href="mailto:info@utahciviccompact.org">info@utahciviccompact.org</a> directly.
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Footer ────────────────────────────────────────────────────────────── -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="logo logo-light">
+            <span class="logo-mark">UCC</span>
+            <span class="logo-text">Utah Civic Compact</span>
+          </a>
+          <p>Defending the compact between Utah communities and their government.</p>
+          <p class="footer-legal">Utah Civic Compact is a 501(c)(4) social welfare organization. Contributions are not tax-deductible as charitable donations.</p>
+          <div class="footer-social">
+            <a href="https://www.instagram.com/utahciviccompact/" aria-label="Instagram" target="_blank" rel="noopener">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h5>Organization</h5>
+          <ul>
+            <li><a href="/#mission">Mission</a></li>
+            <li><a href="/#issues">Issues</a></li>
+            <li><a href="/team.html">Team &amp; Bios</a></li>
+            <li><a href="/theory.html">Theory of Change</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Get Involved</h5>
+          <ul>
+            <li><a href="/#join">Join the Compact</a></li>
+            <li><a href="/blog.html">News &amp; Blog</a></li>
+            <li><a href="/#donate">Donate</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Contact</h5>
+          <ul>
+            <li><a href="mailto:info@utahciviccompact.org">info@utahciviccompact.org</a></li>
+            <li><a href="mailto:info@utahciviccompact.org">Press Inquiries</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Utah Civic Compact. All rights reserved.</p>
+        <div class="footer-links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Use</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    // Anonymous checkbox — clears and locks the name field
+    const anonymousCheckbox = document.getElementById("anonymous");
+    const nameField = document.getElementById("name");
+
+    anonymousCheckbox.addEventListener("change", () => {
+      if (anonymousCheckbox.checked) {
+        nameField.value = "";
+        nameField.disabled = true;
+        nameField.classList.add("disabled");
+      } else {
+        nameField.disabled = false;
+        nameField.classList.remove("disabled");
+      }
+    });
+
+    // Form submits to /api/tip (Cloudflare Pages Function — token never hits browser)
+    document.getElementById("tipForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const submitBtn  = document.getElementById("submitBtn");
+      const successMsg = document.getElementById("successMsg");
+      const errorMsg   = document.getElementById("errorMsg");
+
+      successMsg.style.display = "none";
+      errorMsg.style.display   = "none";
+
+      const email   = document.getElementById("email").value.trim();
+      const tipBody = document.getElementById("tipBody").value.trim();
+
+      if (!email || !tipBody) {
+        errorMsg.textContent = "Please provide your email and tip details before submitting.";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      submitBtn.disabled    = true;
+      submitBtn.textContent = "Submitting…";
+
+      // Field names match Airtable base — see functions/api/tip.js for full mapping
+      const payload = {
+        name:           document.getElementById("name").value.trim(),
+        anonymous:      anonymousCheckbox.checked,
+        email:          email,
+        subject_of_tip: document.getElementById("subject").value.trim(),
+        tip_summary:    tipBody,
+      };
+
+      try {
+        const res = await fetch("/api/tip", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(payload),
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        successMsg.style.display = "block";
+        document.getElementById("tipForm").reset();
+        nameField.disabled = false;
+        nameField.classList.remove("disabled");
+      } catch (err) {
+        console.error("Tip submission failed:", err);
+        errorMsg.style.display = "block";
+      } finally {
+        submitBtn.disabled    = false;
+        submitBtn.textContent = "Submit Tip";
+      }
+    });
+  </script>
+
+</body>
+</html>
