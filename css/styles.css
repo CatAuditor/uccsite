@@ -1023,9 +1023,24 @@ input, textarea, select { font: inherit; }
     border-radius: var(--radius);
   }
   .nav-links a:hover { background: var(--gray-100) !important; }
-  .nav-cta { margin-left: 0 !important; }
-  .nav-donate { margin-left: 0 !important; }
-  .nav-logo-torch { display: none; }
+  .nav-cta,
+  .nav-donate {
+    display: block !important;
+    width: 100%;
+    text-align: center;
+    padding: 12px 16px !important;
+    margin-left: 0 !important;
+    border-radius: var(--radius);
+  }
+  li:has(> .nav-donate) {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--gray-200);
+  }
+  .nav-logo-torch {
+    display: flex;
+  }
+  .nav-torch-img { height: 36px; }
 
   /* Mobile dropdowns — expand inline */
   .nav-dropdown { width: 100%; }
