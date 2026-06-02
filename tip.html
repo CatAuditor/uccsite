@@ -246,6 +246,58 @@
       margin: 24px 0;
     }
 
+    /* Disclaimers */
+    .disclaimers {
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .disclaimer-item {
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .disclaimer-item:last-child {
+      border-bottom: none;
+    }
+
+    .disclaimer-item summary {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-600);
+      letter-spacing: 0.03em;
+      padding: 10px 14px;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+
+    .disclaimer-item summary::-webkit-details-marker { display: none; }
+
+    .disclaimer-item summary::after {
+      content: '+';
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--gray-400);
+      flex-shrink: 0;
+      transition: transform 0.15s;
+    }
+
+    .disclaimer-item[open] summary::after {
+      content: '−';
+    }
+
+    .disclaimer-item p {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--gray-600);
+      padding: 0 14px 12px;
+    }
+
     /* Submit */
     .submit-btn {
       display: block;
@@ -446,6 +498,22 @@
               <a href="mailto:info@utahciviccompact.org">info@utahciviccompact.org</a>
               to make arrangements.
             </p>
+          </div>
+
+          <!-- Disclaimers accordion -->
+          <div class="disclaimers">
+            <details class="disclaimer-item">
+              <summary>Documents &amp; liability</summary>
+              <p>We work from public records and don't encourage obtaining documents improperly. If you send us something you weren't supposed to have, that liability is yours, not ours.</p>
+            </details>
+            <details class="disclaimer-item">
+              <summary>Anonymity</summary>
+              <p>Providing your name is optional. We take anonymity seriously and won't publish your identity. If a court orders us to disclose it, we would be bound to comply.</p>
+            </details>
+            <details class="disclaimer-item">
+              <summary>No investigation guarantee</summary>
+              <p>Submitting a tip doesn't mean we'll investigate it, and doesn't create an attorney-client or journalist-source relationship.</p>
+            </details>
           </div>
 
           <button type="submit" class="submit-btn" id="submitBtn">Submit Tip</button>
