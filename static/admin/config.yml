@@ -7,7 +7,7 @@ backend:
   # Homepage URL: https://utahciviccompact.org
   # Callback URL: https://utahciviccompact.org/admin/
   # Then paste the Client ID below:
-  app_id: 3942868
+  app_id: Iv23lifWTq1jKRvmzuLX
 
 media_folder: assets/uploads
 public_folder: /assets/uploads
