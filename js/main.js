@@ -371,9 +371,13 @@ sections.forEach(s => sectionObserver.observe(s));
 
     if (recent && recent.length) {
       const list = document.getElementById('tracker-recent');
+      const heading = document.createElement('p');
+      heading.className = 'tracker-recent-heading';
+      heading.textContent = 'Recent donors';
+      list.parentElement.insertBefore(heading, list);
       recent.forEach(({ firstName, amountCents }) => {
         const li = document.createElement('li');
-        li.textContent = `${firstName} · ${fmt(amountCents)}`;
+        li.innerHTML = `<span class="tracker-donor-name">${firstName}</span><span class="tracker-donor-amount">${fmt(amountCents)}</span>`;
         list.appendChild(li);
       });
     }

@@ -197,6 +197,31 @@
     </div>
   </section>
 
+  <!-- IN THE PRESS -->
+  <section class="press section" id="press">
+    <div class="container">
+      <div class="press-header">
+        <div>
+          <div class="section-label" data-animate>In the Press</div>
+          <h2 class="section-title" data-animate>Recent Coverage</h2>
+        </div>
+        <a href="/blog.html" class="btn btn-outline press-see-all">All News &amp; Coverage →</a>
+      </div>
+      <div class="press-grid">
+        {{#press}}
+        <a class="press-card" href="{{{url}}}" target="_blank" rel="noopener">
+          <div class="press-card-top">
+            <span class="press-badge" style="background:{{badge_color}};">{{outlet}}</span>
+            <span class="press-date">{{date}}</span>
+          </div>
+          <div class="press-headline">{{headline}}</div>
+          <div class="press-more">{{read_more}}</div>
+        </a>
+        {{/press}}
+      </div>
+    </div>
+  </section>
+
   <!-- THREE PILLARS -->
   <section class="pillars section" id="pillars">
     <div class="container">
@@ -353,31 +378,6 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- IN THE PRESS -->
-  <section class="press section" id="press">
-    <div class="container">
-      <div class="press-header">
-        <div>
-          <div class="section-label" data-animate>In the Press</div>
-          <h2 class="section-title" data-animate>Recent Coverage</h2>
-        </div>
-        <a href="/blog.html" class="btn btn-outline press-see-all">All News &amp; Coverage →</a>
-      </div>
-      <div class="press-grid">
-        {{#press}}
-        <a class="press-card" href="{{{url}}}" target="_blank" rel="noopener">
-          <div class="press-card-top">
-            <span class="press-badge" style="background:{{badge_color}};">{{outlet}}</span>
-            <span class="press-date">{{date}}</span>
-          </div>
-          <div class="press-headline">{{headline}}</div>
-          <div class="press-more">{{read_more}}</div>
-        </a>
-        {{/press}}
       </div>
     </div>
   </section>

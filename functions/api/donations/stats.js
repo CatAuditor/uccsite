@@ -1,5 +1,5 @@
 const DEFAULT_GOAL_CENTS = 100000; // $1,000 — override with DONATION_GOAL_CENTS env var
-const RECENT_LIMIT = 5;
+const RECENT_LIMIT = 3;
 
 export async function onRequestGet({ env }) {
   if (!env.DB) {
