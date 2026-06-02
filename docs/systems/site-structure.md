@@ -15,7 +15,15 @@ Static HTML site deployed via Cloudflare Pages. No build step.
 - `js/main.js` — single JS file (nav, animations, join form, donate form, modal)
 
 ## Nav pattern
-All pages share identical nav HTML. To add/change a nav link, update all 5 pages manually. Nav includes: Mission, About (dropdown), Our Work (dropdown), Stratos, Get Involved (CTA).
+All pages share identical nav HTML. To add/change a nav link, update all 5 source pages **and** all 5 templates in `templates/` (the build script uses templates to generate `dist/`).
+
+Current links: Mission, About Us → `/team.html`, Theory of Change → `/theory.html`, News & Media → `/blog.html`, Stratos, **Donate** (red CTA → `/#donate`), Get Involved (red CTA → `/#join`).
+
+Torch SVG logo (`/torch.svg`) is displayed at far right of nav bar on desktop, and at far right of the nav bar on mobile (36px). Favicon also uses `torch.svg`.
+
+No dropdowns — all links are flat.
+
+Mobile nav: panel slides down from `top: var(--nav-h)` with white background. CTAs are full-width. Torch stays visible in the bar for branding.
 
 ## Backend
 Cloudflare Pages Functions in `functions/api/`:

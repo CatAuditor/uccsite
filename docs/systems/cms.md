@@ -27,19 +27,20 @@ Pillars, issues grid, stats, and nav/footer are hardcoded in templates (change r
 **Local:** `node build.js` (zero npm dependencies)  
 **Cloudflare Pages:** set build command to `node build.js`, output directory to `dist`
 
-## One-time setup: GitHub OAuth App
+## Accessing the admin
 
-Decap uses PKCE OAuth to authenticate editors via their GitHub account.
+**URL:** https://utahciviccompact.org/admin/  
+**Login:** GitHub account (must have repo access to CatAuditor/uccsite)
 
-1. Go to **github.com/settings/developers → OAuth Apps → New OAuth App**
-2. Fill in:
-   - Homepage URL: `https://utahciviccompact.org`
-   - Authorization callback URL: `https://utahciviccompact.org/admin/`
-3. Copy the **Client ID**
-4. Paste it into `static/admin/config.yml` → `app_id`
-5. Commit and redeploy
+The admin always commits to the `main` branch regardless of what URL you access it from. Use it on the production domain for real content edits. Staging is for design/code experiments only.
 
-After that, anyone with repo access can log into `/admin` with their GitHub account.
+## GitHub OAuth App (already configured)
+
+- **App ID:** 3942868
+- **Callback URL:** `https://utahciviccompact.org/admin/`
+- Stored in `static/admin/config.yml` → `app_id`
+
+If the callback URL ever needs to change (e.g. to support a different domain), update it at github.com/settings/developers → OAuth Apps.
 
 ## Template syntax
 
