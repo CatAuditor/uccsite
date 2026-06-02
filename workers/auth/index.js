@@ -35,7 +35,17 @@ export default {
       }
 
       const payload = JSON.stringify({ token: access_token, provider: 'github' });
-      return htmlResponse(`window.opener.postMessage('authorization:github:success:${payload}','${ALLOWED_ORIGIN}');window.close();`);
+      return htmlResponse(`
+        (function() {
+          function send() {
+            window.opener.postMessage(
+              'authorization:github:success:' + JSON.stringify(${payload}),
+              '${ALLOWED_ORIGIN}'
+            );
+          }
+          if (window.opener) { send(); setTimeout(function(){ window.close(); }, 1000); }
+        })();
+      `);
     }
 
     return new Response('Not found', { status: 404 });
