@@ -516,6 +516,14 @@
             </details>
           </div>
 
+          <!-- Privacy consent -->
+          <div class="anon-row" style="margin-bottom: 16px;">
+            <input type="checkbox" id="privacyConsent" name="privacyConsent" required />
+            <label for="privacyConsent" style="font-size: 12.5px; color: var(--gray-600);">
+              I have read and agree to the <a href="/privacy.html" target="_blank" style="color: var(--navy); text-decoration: underline;">Privacy Policy</a>, including how my submission will be stored and used. <span style="color: var(--red);">*</span>
+            </label>
+          </div>
+
           <button type="submit" class="submit-btn" id="submitBtn">Submit Tip</button>
 
           <div class="status-msg success" id="successMsg">
@@ -577,7 +585,7 @@
       <div class="footer-bottom">
         <p>© 2026 Utah Civic Compact. All rights reserved.</p>
         <div class="footer-links">
-          <a href="#">Privacy Policy</a>
+          <a href="/privacy.html">Privacy Policy</a>
           <a href="#">Terms of Use</a>
         </div>
       </div>
@@ -612,11 +620,18 @@
       successMsg.style.display = "none";
       errorMsg.style.display   = "none";
 
-      const email   = document.getElementById("email").value.trim();
-      const tipBody = document.getElementById("tipBody").value.trim();
+      const email          = document.getElementById("email").value.trim();
+      const tipBody        = document.getElementById("tipBody").value.trim();
+      const privacyConsent = document.getElementById("privacyConsent").checked;
 
       if (!email || !tipBody) {
         errorMsg.textContent = "Please provide your email and tip details before submitting.";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      if (!privacyConsent) {
+        errorMsg.textContent = "Please confirm you have read and agree to the Privacy Policy.";
         errorMsg.style.display = "block";
         return;
       }
