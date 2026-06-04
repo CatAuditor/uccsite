@@ -1,0 +1,56 @@
+{
+  "projects": [
+    {
+      "name": "Stratos Project",
+      "slug": "stratos",
+      "status": "Active",
+      "status_color": "#c0392b",
+      "region": "Box Elder County",
+      "tagline": "Fighting MIDA's unlawful approval of a 9-gigawatt natural gas data center in Hansel Valley.",
+      "cta_url": "/stratos.html",
+      "cta_text": "Read the Briefing",
+      "articles": [
+        {
+          "outlet": "FOX 13",
+          "badge_color": "#e8272a",
+          "date": "May 26, 2026",
+          "region": "Box Elder County",
+          "headline": "MIDA violated state law in approval process of Box Elder County data center, group claims",
+          "excerpt": "Utah Civic Compact released a detailed briefing alleging that the Military Installation Development Authority broke three provisions of state law in fast-tracking approval of the Stratos Project — a proposed 9-gigawatt natural gas data center in Hansel Valley backed by Kevin O'Leary.",
+          "url": "https://www.fox13now.com/news/local-news/box-elder-county/mida-violated-state-law-in-approval-process-of-box-elder-county-data-center-group-claims",
+          "read_more": "Read on Fox 13 →"
+        },
+        {
+          "outlet": "KSL",
+          "badge_color": "#0057a8",
+          "date": "May 27, 2026",
+          "region": "Box Elder County",
+          "headline": "Data center official counters worries about project footprint; foes raise new concerns",
+          "excerpt": "O'Leary Digital's CEO argues the proposed Hansel Valley development will occupy a limited footprint with most land preserved as open space, while Utah Civic Compact challenges whether state officials followed proper legal procedures in approving the controversial project.",
+          "url": "https://www.ksl.com/article/51502781/data-center-official-counters-worries-about-project-footprint-foes-raise-new-concerns",
+          "read_more": "Read on KSL →"
+        }
+      ],
+      "videos": [
+        {
+          "outlet": "FOX 13",
+          "badge_color": "#e8272a",
+          "date": "May 26, 2026",
+          "region": "Box Elder County",
+          "headline": "MIDA violated state law in approval process of Box Elder County data center, group claims",
+          "youtube_id": "SoMlZxDFHHw",
+          "youtube_title": "MIDA violated state law in approval process of Box Elder County data center, group claims — Fox 13"
+        },
+        {
+          "outlet": "KUTV 2",
+          "badge_color": "#1a6bbd",
+          "date": "May 2026",
+          "region": "Box Elder County",
+          "headline": "Group claims Stratos data center approval process in Box Elder County violated state law",
+          "youtube_id": "12Tm7xid80s",
+          "youtube_title": "Group claims Stratos data center approval process in Box Elder County violated state law — KUTV 2"
+        }
+      ]
+    }
+  ]
+}

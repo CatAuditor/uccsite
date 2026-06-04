@@ -29,9 +29,12 @@
       }, opts);
     };
 
-    // Relay token from popup (via BroadcastChannel or localStorage fallback)
+    // Relay token from popup — guard ensures it fires exactly once
+    var _relayed = false;
     function relayAuth(msg) {
-      if (!msg || !msg.startsWith('authorization:')) return;
+      if (_relayed || !msg || !msg.startsWith('authorization:')) return;
+      _relayed = true;
+      localStorage.removeItem('decap-auth');
       window.postMessage(msg, window.location.origin);
     }
     try {
@@ -39,7 +42,7 @@
     } catch(e) {}
     var _poll = setInterval(function() {
       var msg = localStorage.getItem('decap-auth');
-      if (msg) { localStorage.removeItem('decap-auth'); relayAuth(msg); clearInterval(_poll); }
+      if (msg) { clearInterval(_poll); relayAuth(msg); }
     }, 300);
   </script>
 </head>
