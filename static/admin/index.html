@@ -6,13 +6,15 @@
   <title>Content Manager | Utah Civic Compact</title>
   <script>
     var AUTH_ORIGIN = 'https://uccsite-auth.cothv.workers.dev';
-    console.log('[PATCH] Installing monkey-patch');
+    console.log('[PATCH] Installing prototype-level patch');
 
-    var _origAEL = window.addEventListener.bind(window);
-    window.addEventListener = function(type, handler, opts) {
-      if (type === 'message') {
-        console.log('[PATCH] Wrapping message listener');
-        return _origAEL(type, function(e) {
+    // Patch EventTarget.prototype so we intercept ALL addEventListener calls,
+    // including ones from bundled code that captures the native reference.
+    var _origAEL = EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener = function(type, handler, opts) {
+      if (type === 'message' && this === window) {
+        console.log('[PATCH] Wrapping window message listener (prototype)');
+        return _origAEL.call(this, type, function(e) {
           if (typeof e.data === 'string' &&
               e.data.startsWith('authorization:') &&
               e.origin === window.location.origin) {
@@ -26,10 +28,13 @@
           }
         }, opts);
       }
-      return _origAEL(type, handler, opts);
+      return _origAEL.call(this, type, handler, opts);
     };
 
-    // Reset relay state on each page load
+    // Also keep window.addEventListener patched for good measure
+    window.addEventListener = EventTarget.prototype.addEventListener.bind(window);
+
+    // Reset stale token on page load
     try { localStorage.removeItem('decap-auth'); } catch(e) {}
 
     var _relayed = false;
