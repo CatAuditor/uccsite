@@ -5,17 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager | Utah Civic Compact</title>
   <script>
-    // Relay auth token from popup to Decap via BroadcastChannel / localStorage
-    // (window.opener is unreliable in Safari after cross-origin redirects)
+    // Decap checks event.origin === base_url on auth messages.
+    // Safari kills window.opener on cross-origin popups, so the worker can't
+    // postMessage directly. Instead: relay via localStorage/BroadcastChannel
+    // from the same-origin callback.html, then spoof the origin here so Decap
+    // accepts the message.
+    var AUTH_ORIGIN = 'https://uccsite-auth.cothv.workers.dev';
+    var _origAddListener = window.addEventListener.bind(window);
+    window.addEventListener = function(type, handler, opts) {
+      if (type !== 'message') return _origAddListener(type, handler, opts);
+      return _origAddListener(type, function(e) {
+        if (typeof e.data === 'string' &&
+            e.data.startsWith('authorization:') &&
+            e.origin === window.location.origin) {
+          // Re-dispatch with the auth worker origin so Decap accepts it
+          handler.call(this, new MessageEvent('message', {
+            data: e.data,
+            origin: AUTH_ORIGIN,
+          }));
+        } else {
+          handler.call(this, e);
+        }
+      }, opts);
+    };
+
+    // Relay token from popup (via BroadcastChannel or localStorage fallback)
     function relayAuth(msg) {
       if (!msg || !msg.startsWith('authorization:')) return;
       window.postMessage(msg, window.location.origin);
     }
-
     try {
       new BroadcastChannel('decap-auth').onmessage = function(e) { relayAuth(e.data); };
     } catch(e) {}
-
     var _poll = setInterval(function() {
       var msg = localStorage.getItem('decap-auth');
       if (msg) { localStorage.removeItem('decap-auth'); relayAuth(msg); clearInterval(_poll); }
