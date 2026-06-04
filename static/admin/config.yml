@@ -2,7 +2,7 @@ backend:
   name: github
   repo: CatAuditor/uccsite
   branch: main
-  base_url: https://uccsite-auth.cothv.workers.dev
+  base_url: https://utahciviccompact.org
 
 media_folder: assets/uploads
 public_folder: /assets/uploads
