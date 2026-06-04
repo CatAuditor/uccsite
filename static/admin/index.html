@@ -5,12 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager | Utah Civic Compact</title>
   <script>
-    // callback.html (same origin) sends postMessage to window.opener here.
-    // Decap checks event.origin === base_url (workers.dev), but our message
-    // arrives from utahciviccompact.org (same origin). The monkey-patch below
-    // intercepts Decap's addEventListener calls and rewrites the origin check
-    // so it accepts our same-origin relay.
     var AUTH_ORIGIN = 'https://uccsite-auth.cothv.workers.dev';
+
+    // Decap checks event.origin === base_url. Our relay sends from same-origin
+    // (utahciviccompact.org), so we intercept Decap's message listeners and
+    // rewrite the origin before passing the event through.
     var _origAEL = window.addEventListener.bind(window);
     window.addEventListener = function(type, handler, opts) {
       if (type !== 'message') return _origAEL(type, handler, opts);
@@ -27,6 +26,25 @@
         }
       }, opts);
     };
+
+    // Receive token from callback.html via BroadcastChannel or localStorage.
+    // Guard prevents double-fire if both channels deliver.
+    var _relayed = false;
+    function relay(msg) {
+      if (_relayed || !msg || !msg.startsWith('authorization:')) return;
+      _relayed = true;
+      try { localStorage.removeItem('decap-auth'); } catch(e) {}
+      window.postMessage(msg, window.location.origin);
+    }
+    try {
+      new BroadcastChannel('decap-auth').onmessage = function(e) { relay(e.data); };
+    } catch(e) {}
+    var _poll = setInterval(function() {
+      try {
+        var msg = localStorage.getItem('decap-auth');
+        if (msg) { clearInterval(_poll); relay(msg); }
+      } catch(e) { clearInterval(_poll); }
+    }, 200);
   </script>
 </head>
 <body>

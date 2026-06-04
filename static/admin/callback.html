@@ -4,10 +4,14 @@
 <body>
 <script>
   var msg = decodeURIComponent(location.hash.slice(1));
-  if (msg && window.opener) {
-    window.opener.postMessage(msg, window.location.origin);
+  if (msg) {
+    try { new BroadcastChannel('decap-auth').postMessage(msg); } catch(e) {}
+    try { localStorage.setItem('decap-auth', msg); } catch(e) {}
+    if (window.opener) {
+      try { window.opener.postMessage(msg, window.location.origin); } catch(e) {}
+    }
   }
-  setTimeout(function() { window.close(); }, 1000);
+  setTimeout(function() { window.close(); }, 800);
 </script>
 </body>
 </html>
