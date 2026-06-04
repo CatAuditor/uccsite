@@ -6,43 +6,55 @@
   <title>Content Manager | Utah Civic Compact</title>
   <script>
     var AUTH_ORIGIN = 'https://uccsite-auth.cothv.workers.dev';
+    console.log('[PATCH] Installing monkey-patch');
 
-    // Decap checks event.origin === base_url. Our relay sends from same-origin
-    // (utahciviccompact.org), so we intercept Decap's message listeners and
-    // rewrite the origin before passing the event through.
     var _origAEL = window.addEventListener.bind(window);
     window.addEventListener = function(type, handler, opts) {
-      if (type !== 'message') return _origAEL(type, handler, opts);
-      return _origAEL(type, function(e) {
-        if (typeof e.data === 'string' &&
-            e.data.startsWith('authorization:') &&
-            e.origin === window.location.origin) {
-          handler.call(this, new MessageEvent('message', {
-            data: e.data,
-            origin: AUTH_ORIGIN,
-          }));
-        } else {
-          handler.call(this, e);
-        }
-      }, opts);
+      if (type === 'message') {
+        console.log('[PATCH] Wrapping message listener');
+        return _origAEL(type, function(e) {
+          if (typeof e.data === 'string' &&
+              e.data.startsWith('authorization:') &&
+              e.origin === window.location.origin) {
+            console.log('[PATCH] Intercepted auth message, spoofing origin');
+            handler.call(this, new MessageEvent('message', {
+              data: e.data,
+              origin: AUTH_ORIGIN,
+            }));
+          } else {
+            handler.call(this, e);
+          }
+        }, opts);
+      }
+      return _origAEL(type, handler, opts);
     };
 
-    // Receive token from callback.html via BroadcastChannel or localStorage.
-    // Guard prevents double-fire if both channels deliver.
+    // Reset relay state on each page load
+    try { localStorage.removeItem('decap-auth'); } catch(e) {}
+
     var _relayed = false;
     function relay(msg) {
+      console.log('[RELAY] Called, already relayed:', _relayed);
       if (_relayed || !msg || !msg.startsWith('authorization:')) return;
       _relayed = true;
+      console.log('[RELAY] Firing window.postMessage');
       try { localStorage.removeItem('decap-auth'); } catch(e) {}
       window.postMessage(msg, window.location.origin);
     }
     try {
-      new BroadcastChannel('decap-auth').onmessage = function(e) { relay(e.data); };
+      new BroadcastChannel('decap-auth').onmessage = function(e) {
+        console.log('[BC] BroadcastChannel received token');
+        relay(e.data);
+      };
     } catch(e) {}
     var _poll = setInterval(function() {
       try {
         var msg = localStorage.getItem('decap-auth');
-        if (msg) { clearInterval(_poll); relay(msg); }
+        if (msg) {
+          console.log('[POLL] Found token in localStorage');
+          clearInterval(_poll);
+          relay(msg);
+        }
       } catch(e) { clearInterval(_poll); }
     }, 200);
   </script>
