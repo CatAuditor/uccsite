@@ -4,13 +4,10 @@
 <body>
 <script>
   var msg = decodeURIComponent(location.hash.slice(1));
-  if (msg) {
-    // BroadcastChannel works without window.opener (Safari-safe)
-    try { new BroadcastChannel('decap-auth').postMessage(msg); } catch(e) {}
-    // localStorage fallback for older Safari
-    localStorage.setItem('decap-auth', msg);
+  if (msg && window.opener) {
+    window.opener.postMessage(msg, window.location.origin);
   }
-  setTimeout(function() { window.close(); }, 200);
+  setTimeout(function() { window.close(); }, 1000);
 </script>
 </body>
 </html>

@@ -5,20 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager | Utah Civic Compact</title>
   <script>
-    // Decap checks event.origin === base_url on auth messages.
-    // Safari kills window.opener on cross-origin popups, so the worker can't
-    // postMessage directly. Instead: relay via localStorage/BroadcastChannel
-    // from the same-origin callback.html, then spoof the origin here so Decap
-    // accepts the message.
+    // callback.html (same origin) sends postMessage to window.opener here.
+    // Decap checks event.origin === base_url (workers.dev), but our message
+    // arrives from utahciviccompact.org (same origin). The monkey-patch below
+    // intercepts Decap's addEventListener calls and rewrites the origin check
+    // so it accepts our same-origin relay.
     var AUTH_ORIGIN = 'https://uccsite-auth.cothv.workers.dev';
-    var _origAddListener = window.addEventListener.bind(window);
+    var _origAEL = window.addEventListener.bind(window);
     window.addEventListener = function(type, handler, opts) {
-      if (type !== 'message') return _origAddListener(type, handler, opts);
-      return _origAddListener(type, function(e) {
+      if (type !== 'message') return _origAEL(type, handler, opts);
+      return _origAEL(type, function(e) {
         if (typeof e.data === 'string' &&
             e.data.startsWith('authorization:') &&
             e.origin === window.location.origin) {
-          // Re-dispatch with the auth worker origin so Decap accepts it
           handler.call(this, new MessageEvent('message', {
             data: e.data,
             origin: AUTH_ORIGIN,
@@ -28,22 +27,6 @@
         }
       }, opts);
     };
-
-    // Relay token from popup — guard ensures it fires exactly once
-    var _relayed = false;
-    function relayAuth(msg) {
-      if (_relayed || !msg || !msg.startsWith('authorization:')) return;
-      _relayed = true;
-      localStorage.removeItem('decap-auth');
-      window.postMessage(msg, window.location.origin);
-    }
-    try {
-      new BroadcastChannel('decap-auth').onmessage = function(e) { relayAuth(e.data); };
-    } catch(e) {}
-    var _poll = setInterval(function() {
-      var msg = localStorage.getItem('decap-auth');
-      if (msg) { clearInterval(_poll); relayAuth(msg); }
-    }, 300);
   </script>
 </head>
 <body>
