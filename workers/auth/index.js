@@ -1,4 +1,4 @@
-const ALLOWED_ORIGIN = 'https://utahciviccompact.org';
+const ADMIN_ORIGIN = 'https://utahciviccompact.org';
 
 export default {
   async fetch(request, env) {
@@ -30,30 +30,19 @@ export default {
 
       const { access_token, error } = await tokenRes.json();
 
+      // Redirect to same-origin callback page so postMessage works in Safari.
+      // Token is passed in the hash (never sent to server).
       if (!access_token || error) {
-        return htmlResponse(`window.opener.postMessage('authorization:github:error:${error || 'auth_failed'}','${ALLOWED_ORIGIN}');window.close();`);
+        const msg = encodeURIComponent(`authorization:github:error:${error || 'auth_failed'}`);
+        return Response.redirect(`${ADMIN_ORIGIN}/admin/callback.html#${msg}`);
       }
 
-      const payload = JSON.stringify({ token: access_token, provider: 'github' });
-      return htmlResponse(`
-        (function() {
-          function send() {
-            window.opener.postMessage(
-              'authorization:github:success:' + JSON.stringify(${payload}),
-              '${ALLOWED_ORIGIN}'
-            );
-          }
-          if (window.opener) { send(); setTimeout(function(){ window.close(); }, 1000); }
-        })();
-      `);
+      const msg = encodeURIComponent(
+        `authorization:github:success:${JSON.stringify({ token: access_token, provider: 'github' })}`
+      );
+      return Response.redirect(`${ADMIN_ORIGIN}/admin/callback.html#${msg}`);
     }
 
     return new Response('Not found', { status: 404 });
   },
 };
-
-function htmlResponse(script) {
-  return new Response(`<!DOCTYPE html><html><body><script>${script}</script></body></html>`, {
-    headers: { 'Content-Type': 'text/html' },
-  });
-}
