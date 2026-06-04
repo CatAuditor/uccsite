@@ -14,12 +14,14 @@ const COPY_FROM_ROOT = ['css', 'js', 'assets', '_headers', 'robots.txt', 'sitema
 
 // Templates → content file mapping
 const PAGES = [
-  { template: 'index.html',   content: ['settings', 'homepage'] },
-  { template: 'team.html',    content: ['settings', 'team'] },
-  { template: 'blog.html',    content: ['settings', 'blog'] },
-  { template: 'stratos.html', content: ['settings'] },
-  { template: 'theory.html',  content: ['settings'] },
-  { template: 'success.html', content: ['settings'] },
+  { template: 'index.html',    content: ['settings', 'homepage', 'projects'] },
+  { template: 'team.html',     content: ['settings', 'team'] },
+  { template: 'blog.html',     content: ['settings', 'blog'] },
+  { template: 'projects.html', content: ['settings', 'projects'] },
+  { template: 'stratos.html',      content: ['settings'] },
+  { template: 'weber-county.html', content: ['settings'] },
+  { template: 'theory.html',       content: ['settings'] },
+  { template: 'success.html',  content: ['settings'] },
 ];
 
 // ── Utilities ────────────────────────────────────────────────────────────────

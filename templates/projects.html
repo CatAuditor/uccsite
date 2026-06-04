@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Projects | Utah Civic Compact</title>
+  <meta name="description" content="Active fights and civic campaigns from Utah Civic Compact — including the Stratos Project challenge, opposing unlawful approvals, and defending community rights across Utah." />
+  <link rel="canonical" href="https://utahciviccompact.org/projects.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://utahciviccompact.org/projects.html" />
+  <meta property="og:title" content="Projects | Utah Civic Compact" />
+  <meta property="og:description" content="Active fights and civic campaigns from Utah Civic Compact — including the Stratos Project challenge, opposing unlawful approvals, and defending community rights across Utah." />
+  <meta property="og:image" content="https://utahciviccompact.org/UCC.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Projects | Utah Civic Compact" />
+  <meta name="twitter:description" content="Active fights and civic campaigns from Utah Civic Compact." />
+  <meta name="twitter:image" content="https://utahciviccompact.org/UCC.png" />
+  <link rel="icon" type="image/svg+xml" href="/torch.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .project-block {
+      padding: 72px 48px 80px;
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+    }
+    .project-block:last-child { border-bottom: none; }
+    .project-block-inner {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .project-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .project-status {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--white);
+      padding: 4px 10px;
+      border-radius: 4px;
+      line-height: 1;
+    }
+    .project-region {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+    }
+    .project-name {
+      font-size: clamp(26px, 4vw, 40px);
+      font-weight: 900;
+      color: var(--navy-dark);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 14px;
+    }
+    .project-tagline {
+      font-size: 17px;
+      color: var(--gray-600);
+      line-height: 1.65;
+      max-width: 620px;
+      margin-bottom: 32px;
+    }
+    .project-cta {
+      margin-bottom: 48px;
+    }
+    .project-media-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 24px;
+      margin-top: 40px;
+    }
+    .projects-empty {
+      padding: 64px 48px;
+      text-align: center;
+      color: var(--gray-400);
+      font-size: 16px;
+    }
+    @media (max-width: 640px) {
+      .project-block { padding: 48px 24px 56px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <header class="site-header scrolled" id="site-header">
+    <nav class="nav-inner">
+      <a href="/" class="logo">
+        <span class="logo-mark">UCC</span>
+        <span class="logo-text">Utah Civic Compact</span>
+      </a>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/#mission">Mission</a></li>
+        <li><a href="/team.html">About Us</a></li>
+        <li><a href="/theory.html">Theory of Change</a></li>
+        <li><a href="/blog.html">News &amp; Media</a></li>
+        <li><a href="/stratos.html">Stratos</a></li>
+        <li><a href="/projects.html" aria-current="page">Projects</a></li>
+        <li><a href="/tip.html">Submit a Tip</a></li>
+        <li><a href="/#donate" class="nav-donate">Donate</a></li>
+        <li><a href="/#join" class="nav-cta">Get Involved</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="subpage-hero">
+    <div class="section-label">Our Work</div>
+    <h1>Active Fights</h1>
+    <p>Every project is a fight for community voice and government accountability in Utah.</p>
+  </div>
+
+  <div style="background: var(--cream);">
+
+    {{#projects}}
+    <div class="project-block">
+      <div class="project-block-inner">
+
+        <div class="project-meta-row">
+          <span class="project-status" style="background: {{status_color}};">{{status}}</span>
+          <span class="project-region">{{region}}</span>
+          <span class="project-region">{{date}}</span>
+        </div>
+
+        <h2 class="project-name">{{name}}</h2>
+        <p class="project-tagline">{{tagline}}</p>
+
+        <div class="project-cta">
+          <a href="{{cta_url}}" class="btn btn-primary">{{cta_text}}</a>
+        </div>
+
+        <div class="project-media-label">In the Press</div>
+        {{#articles}}
+        <a class="news-card" href="{{{url}}}" target="_blank" rel="noopener">
+          <div class="news-outlet">
+            <span class="outlet-badge" style="background: {{badge_color}};">{{outlet}}</span>
+          </div>
+          <div class="news-content">
+            <div class="news-meta">{{date}} &nbsp;·&nbsp; {{region}}</div>
+            <div class="news-headline">{{headline}}</div>
+            <div class="news-excerpt">{{excerpt}}</div>
+            <div class="news-read-more">{{read_more}}</div>
+          </div>
+        </a>
+        {{/articles}}
+
+        <div class="project-media-label" style="margin-top: 40px;">On Television</div>
+        {{#videos}}
+        <div class="video-card">
+          <div class="video-card-header">
+            <span class="outlet-badge" style="background: {{badge_color}};">{{outlet}}</span>
+            <div>
+              <div class="video-meta">{{date}} &nbsp;·&nbsp; {{region}}</div>
+              <div class="video-headline">{{headline}}</div>
+            </div>
+          </div>
+          <div class="video-embed">
+            <iframe src="https://www.youtube.com/embed/{{youtube_id}}" title="{{youtube_title}}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+        {{/videos}}
+
+      </div>
+    </div>
+    {{/projects}}
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="logo logo-light">
+            <span class="logo-mark">UCC</span>
+            <span class="logo-text">Utah Civic Compact</span>
+          </a>
+          <p>Defending the compact between Utah communities and their government.</p>
+          <p class="footer-legal">Utah Civic Compact is a 501(c)(4) social welfare organization. Contributions are not tax-deductible as charitable donations.</p>
+          <div class="footer-social">
+            <a href="https://www.instagram.com/utahciviccompact/" aria-label="Instagram" target="_blank" rel="noopener">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h5>Organization</h5>
+          <ul>
+            <li><a href="/#mission">Mission</a></li>
+            <li><a href="/#issues">Issues</a></li>
+            <li><a href="/team.html">Team &amp; Bios</a></li>
+            <li><a href="/theory.html">Theory of Change</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Get Involved</h5>
+          <ul>
+            <li><a href="/#join">Join the Compact</a></li>
+            <li><a href="/blog.html">News &amp; Blog</a></li>
+            <li><a href="/#donate">Donate</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Contact</h5>
+          <ul>
+            <li><a href="mailto:info@utahciviccompact.org">info@utahciviccompact.org</a></li>
+            <li><a href="mailto:info@utahciviccompact.org">Press Inquiries</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Utah Civic Compact. All rights reserved.</p>
+        <div class="footer-links">
+          <a href="/privacy.html">Privacy Policy</a>
+          <a href="#">Terms of Use</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

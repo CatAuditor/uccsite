@@ -1,8 +1,22 @@
 {
   "projects": [
     {
+      "name": "Weber County Election Law Complaint",
+      "slug": "weber-county",
+      "date": "June 4, 2026",
+      "status": "Active",
+      "status_color": "#c0392b",
+      "region": "Weber County",
+      "tagline": "Did three commission candidates violate Utah campaign finance law by hiding legal fees for a bad-faith ballot disqualification lawsuit?",
+      "cta_url": "/weber-county.html",
+      "cta_text": "Read the Complaint",
+      "articles": [],
+      "videos": []
+    },
+    {
       "name": "Stratos Project",
       "slug": "stratos",
+      "date": "May 26, 2026",
       "status": "Active",
       "status_color": "#c0392b",
       "region": "Box Elder County",
