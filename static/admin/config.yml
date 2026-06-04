@@ -229,3 +229,105 @@ collections:
               - label: YouTube Title (for accessibility)
                 name: youtube_title
                 widget: string
+
+  # ── Projects ──────────────────────────────────────────────────────────────
+  - name: projects
+    label: Projects
+    files:
+      - name: projects_content
+        label: Active Projects & Fights
+        file: content/projects.json
+        format: json
+        fields:
+          - label: Projects
+            name: projects
+            widget: list
+            fields:
+              - label: Project Name
+                name: name
+                widget: string
+              - label: Slug (URL-safe identifier)
+                name: slug
+                widget: string
+                hint: "e.g. stratos — lowercase, no spaces"
+              - label: Status
+                name: status
+                widget: string
+                hint: "e.g. Active, Resolved, Ongoing"
+              - label: Status Badge Color
+                name: status_color
+                widget: string
+                hint: "e.g. #c0392b for red"
+              - label: Region / Geography
+                name: region
+                widget: string
+                hint: "e.g. Box Elder County, Statewide"
+              - label: Tagline
+                name: tagline
+                widget: text
+                hint: "One-sentence summary shown on the home page and projects list"
+              - label: Detail Page URL
+                name: cta_url
+                widget: string
+                hint: "e.g. /stratos.html — link to the full briefing or detail page"
+              - label: CTA Button Text
+                name: cta_text
+                widget: string
+                hint: "e.g. Read the Briefing"
+              - label: Press Articles
+                name: articles
+                widget: list
+                required: false
+                fields:
+                  - label: Outlet Name
+                    name: outlet
+                    widget: string
+                  - label: Badge Color
+                    name: badge_color
+                    widget: string
+                    hint: "e.g. #e8272a for Fox 13, #0057a8 for KSL"
+                  - label: Date
+                    name: date
+                    widget: string
+                  - label: Region/Tag
+                    name: region
+                    widget: string
+                  - label: Headline
+                    name: headline
+                    widget: text
+                  - label: Excerpt
+                    name: excerpt
+                    widget: text
+                  - label: Article URL
+                    name: url
+                    widget: string
+                  - label: Read More Text
+                    name: read_more
+                    widget: string
+              - label: Video Coverage
+                name: videos
+                widget: list
+                required: false
+                fields:
+                  - label: Outlet Name
+                    name: outlet
+                    widget: string
+                  - label: Badge Color
+                    name: badge_color
+                    widget: string
+                  - label: Date
+                    name: date
+                    widget: string
+                  - label: Region/Tag
+                    name: region
+                    widget: string
+                  - label: Headline
+                    name: headline
+                    widget: text
+                  - label: YouTube Video ID
+                    name: youtube_id
+                    widget: string
+                    hint: "The ID at the end of a YouTube URL, e.g. SoMlZxDFHHw"
+                  - label: YouTube Title (for accessibility)
+                    name: youtube_title
+                    widget: string

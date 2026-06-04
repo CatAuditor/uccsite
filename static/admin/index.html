@@ -4,6 +4,26 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager | Utah Civic Compact</title>
+  <script>
+    // Relay auth token from popup to Decap via BroadcastChannel / localStorage
+    // (window.opener is unreliable in Safari after cross-origin redirects)
+    function relayAuth(msg) {
+      if (!msg || !msg.startsWith('authorization:')) return;
+      window.dispatchEvent(new MessageEvent('message', {
+        data: msg,
+        origin: window.location.origin,
+      }));
+    }
+
+    try {
+      new BroadcastChannel('decap-auth').onmessage = function(e) { relayAuth(e.data); };
+    } catch(e) {}
+
+    var _poll = setInterval(function() {
+      var msg = localStorage.getItem('decap-auth');
+      if (msg) { localStorage.removeItem('decap-auth'); relayAuth(msg); clearInterval(_poll); }
+    }, 300);
+  </script>
 </head>
 <body>
   <script src="/admin/decap-cms.js"></script>
