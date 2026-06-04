@@ -2,7 +2,8 @@ backend:
   name: github
   repo: CatAuditor/uccsite
   branch: main
-  base_url: https://uccsite-auth.cothv.workers.dev
+  auth_type: pkce
+  app_id: Iv23lifWTq1jKRvmzuLX
 
 media_folder: assets/uploads
 public_folder: /assets/uploads
