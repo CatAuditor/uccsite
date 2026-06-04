@@ -9,10 +9,7 @@
     // (window.opener is unreliable in Safari after cross-origin redirects)
     function relayAuth(msg) {
       if (!msg || !msg.startsWith('authorization:')) return;
-      window.dispatchEvent(new MessageEvent('message', {
-        data: msg,
-        origin: window.location.origin,
-      }));
+      window.postMessage(msg, window.location.origin);
     }
 
     try {
