@@ -349,6 +349,75 @@
     }
     .section-body > *:first-child { margin-top: 0; }
 
+    /* PARTS NAV */
+    .parts-nav {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: var(--navy-dark);
+      border-bottom: 3px solid var(--red);
+    }
+    .part-card {
+      display: block;
+      padding: 28px 32px;
+      border-right: 1px solid rgba(255,255,255,0.1);
+      transition: background 0.15s;
+      text-decoration: none;
+    }
+    .part-card:last-child { border-right: none; }
+    .part-card:hover { background: rgba(255,255,255,0.06); }
+    .part-card-num {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 6px;
+    }
+    .part-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+    .part-card-desc {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.5;
+    }
+
+    /* PART SECTION HEADERS */
+    .part-header {
+      margin-bottom: 40px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .part-header-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 10px;
+    }
+    .part-header h2 {
+      font-size: clamp(22px, 3.5vw, 30px);
+      font-weight: 900;
+      color: var(--navy-dark);
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+      margin: 0 0 8px;
+      border-top: none;
+      padding-top: 0;
+    }
+    .part-header p {
+      font-size: 17px;
+      color: var(--gray-600);
+      font-weight: 500;
+      line-height: 1.5;
+      margin: 0;
+    }
+
     @media (max-width: 768px) {
       .subpage-hero { padding: 140px 24px 64px; }
       .briefing-body { padding: 56px 24px; }
@@ -357,6 +426,9 @@
       .sources-grid { grid-template-columns: 1fr; }
       .timeline-table td:first-child { white-space: normal; width: auto; }
       .download-cta { padding: 28px 20px; }
+      .parts-nav { grid-template-columns: 1fr; }
+      .part-card { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+      .part-card:last-child { border-bottom: none; }
     }
   </style>
 </head>
@@ -385,17 +457,41 @@
   </header>
 
   <div class="subpage-hero">
-    <div class="section-label">Document Release — May 26, 2026</div>
-    <h1>The Stratos Project: How Utah's Military Installation Development Authority Fast-Tracked a 9-Gigawatt Natural Gas Data Center — and Broke State Law to Do It</h1>
-    <p>Released by Utah Civic Compact</p>
+    <div class="section-label">Stratos Project — Ongoing Investigation</div>
+    <h1>The Stratos Project</h1>
+    <p>Utah Civic Compact's ongoing investigation into how a 9-gigawatt natural gas data center was approved in Box Elder County — and what the public record reveals.</p>
     <a href="/assets/Stratos_Briefing_5_26-2_fixed.pdf" download class="hero-download">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Download Full Briefing (PDF)
+      Download Part 1 Briefing (PDF)
     </a>
   </div>
 
-  <div class="briefing-body">
+  <div class="parts-nav">
+    <a href="#part1" class="part-card">
+      <div class="part-card-num">Part 1 · May 26, 2026</div>
+      <div class="part-card-title">MIDA Violated State Law</div>
+      <div class="part-card-desc">Three statutory violations in the fast-tracked approval — fabricated consent dates, a pre-plan development agreement, and a baseless welfare finding.</div>
+    </a>
+    <a href="#part2" class="part-card">
+      <div class="part-card-num">Part 2 · May 27, 2026</div>
+      <div class="part-card-title">MIDA Responds</div>
+      <div class="part-card-desc">Their statements. Our documents. You decide.</div>
+    </a>
+    <a href="#part3" class="part-card">
+      <div class="part-card-num">Part 3 · June 9, 2026</div>
+      <div class="part-card-title">Boyd Bingham's Undisclosed Conflict of Interest</div>
+      <div class="part-card-desc">A commissioner voted on land secured by his employer's lien — and didn't disclose it.</div>
+    </a>
+  </div>
+
+  <div id="part1" class="briefing-body">
     <div class="briefing-inner">
+
+      <div class="part-header">
+        <div class="part-header-eyebrow">Part 1 — May 26, 2026</div>
+        <h2>MIDA Violated State Law</h2>
+        <p>How Utah's Military Installation Development Authority broke three provisions of state law fast-tracking a 9-gigawatt natural gas data center in Box Elder County.</p>
+      </div>
 
       <div class="release-meta">
         <span class="release-badge">Utah Civic Compact</span>
@@ -670,16 +766,15 @@
   </div>
 
   <!-- PART 2 -->
-  <div class="briefing-body" style="background: var(--gray-50); border-top: 4px solid var(--red);">
+  <div id="part2" class="briefing-body" style="background: var(--gray-50); border-top: 4px solid var(--red);">
     <div class="briefing-inner">
 
-      <div class="release-meta">
-        <span class="release-badge">Part 2 — MIDA Responds</span>
-        <span class="release-date">May 27, 2026</span>
+      <div class="part-header">
+        <div class="part-header-eyebrow">Part 2 — May 27, 2026</div>
+        <h2>MIDA Responds</h2>
+        <p>Their statements. Our documents. You decide.</p>
       </div>
 
-      <p style="font-size: 22px; font-weight: 800; color: var(--navy-dark); letter-spacing: -0.02em; margin-bottom: 6px;">MIDA Responds</p>
-      <p style="font-size: 18px; color: var(--navy-dark); font-weight: 500; line-height: 1.7;">Their Statements. Our Documents. You Decide.</p>
       <p>Following media coverage of the Stratos Project approval process, MIDA spokesperson Kristin Kelley Williams issued a prepared statement to Fox 13. Below are her statements — quoted verbatim — alongside the public documents that contradict them.</p>
 
       <details>
@@ -783,6 +878,54 @@
               <a href="https://www.le.utah.gov/xcode/Title63H/Chapter1/63H-1-S401.html" target="_blank" rel="noopener">www.le.utah.gov/xcode/Title63H/Chapter1/63H-1-S401.html</a>
             </div>
           </div>
+        </div>
+      </details>
+
+      <p style="margin-top: 40px; font-size: 14px; color: var(--gray-400); border-top: 1px solid var(--gray-200); padding-top: 24px;">Utah Civic Compact is a 501(c)(4) civic accountability organization. Our mission is to promote community voice and consent in major development and policy decisions affecting Utah communities.</p>
+
+    </div>
+  </div>
+
+  <!-- PART 3 -->
+  <div id="part3" class="briefing-body" style="background: var(--white); border-top: 4px solid var(--red);">
+    <div class="briefing-inner">
+
+      <div class="part-header">
+        <div class="part-header-eyebrow">Part 3 — June 9, 2026</div>
+        <h2>Boyd Bingham's Undisclosed Conflict of Interest</h2>
+        <p>A commissioner voted on land secured by his employer's lien — without disclosing it.</p>
+      </div>
+
+      <details open>
+        <summary>The Conflict</summary>
+        <div class="section-body">
+          <p>On May 4, 2026, Box Elder County Commissioner Boyd Bingham made the motion to approve Resolution 26-11, the resolution authorizing county consent to include Bar H Ranch land in the MIDA Stratos Project Area. Before voting, Bingham did not disclose that Western AgCredit — where he serves as a board director, Compensation Committee Chairman, and Risk Committee Vice Chairman — holds an active lien against the land subject to that vote.</p>
+          <p>Box Elder County Recorder records show that Western AgCredit filed a deed of trust against Bar H Ranch parcels in Hansel Valley in October 2011, securing a $650,000 loan. Those parcels are among the private land included in the MIDA Stratos Project Area Plan. As of June 9, 2026, no reconveyance of that lien has been recorded. The Box Elder County Recorder confirmed this by phone.</p>
+          <p>At the same meeting, Commissioner Perry stated on the record: "There is no one on this commission or any other county elected official that is going to benefit from this project financially or otherwise."</p>
+          <p>Bingham's January 2026 annual conflict of interest disclosure lists Western AgCredit as an employer and income source. It does not identify the active lien on the Bar H parcels as a potential conflict of interest. Utah law requires verbal disclosure before a vote on any matter affecting a financial interest — an annual form does not satisfy that requirement.</p>
+          <p>Utah Civic Compact filed a formal complaint with Utah Attorney General Derek Brown on June 9, 2026 alleging violations of Utah Code § 67-16-9 and § 17-53-228.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>How to Check Our Work</summary>
+        <div class="section-body">
+          <p>Every claim on this page is drawn from public records. Here is what we found and where to find it.</p>
+
+          <h3>The Lien</h3>
+          <p>Search the Box Elder County Recorder at <a href="https://erecord.boxeldercountyut.gov" target="_blank" rel="noopener" style="color:var(--red);">erecord.boxeldercountyut.gov</a>. Under Document Search, search Grantor: <strong>BAR H RANCH</strong>, Grantee: <strong>WESTERN AGCREDIT</strong>. Document No. 306206, Book 1164, Page 361, recorded October 5, 2011. To confirm no reconveyance exists, search Grantor: <strong>WESTERN AGCREDIT</strong> and look for any reconveyance referencing Document No. 306206. None exists on record.</p>
+
+          <h3>The Parcels</h3>
+          <p>The ten parcels pledged as collateral in the deed of trust are: 06-005-0009, 06-005-0010, 06-005-0011, 06-006-0001, 06-006-0004, 06-006-0006, 06-006-0011, 06-006-0013, 06-006-0015, 06-006-0018. Cross-reference these against Exhibit A of the MIDA Stratos Project Area Plan (Utah Public Notice website, PMN filing 1423607, April 24, 2026). All ten appear on the MIDA parcel list.</p>
+
+          <h3>Bingham's Board Roles</h3>
+          <p>Western AgCredit's board of directors page at <a href="https://www.westernagcredit.com/board-of-directors" target="_blank" rel="noopener" style="color:var(--red);">westernagcredit.com/board-of-directors</a> lists Boyd Bingham as a Member Director, Region 1 (Box Elder County), director since 2023, term expiring 2027. His titles of Compensation Committee Chairman and Risk Committee Vice Chairman are drawn from Western AgCredit's 2025 Annual Report.</p>
+
+          <h3>The Conflict of Interest Disclosure</h3>
+          <p>Bingham's January 5, 2026 disclosure is a public record filed with the Box Elder County Clerk, 1 South Main Street, Brigham City. It lists Western AgCredit as an employer and income source. The section asking for real property interests that may constitute a conflict of interest is blank.</p>
+
+          <h3>The Vote</h3>
+          <p>The May 4, 2026 special commission meeting agenda, audio recording, and resolution text are available at <a href="https://boxeldercountyut.gov" target="_blank" rel="noopener" style="color:var(--red);">boxeldercountyut.gov</a> under the Agenda Center. Bingham's motion to approve Resolution 26-11 occurs at approximately 43:17 of the audio recording.</p>
         </div>
       </details>
 
