@@ -1,6 +1,16 @@
 {
   "articles": [
     {
+      "outlet": "Semafor",
+      "badge_color": "#1a1a1a",
+      "date": "June 23, 2026",
+      "region": "Utah",
+      "headline": "How a data center backlash is twisting Utah's primary",
+      "excerpt": "Utah Representative Blake Moore faces a primary challenge from state legislator Karianne Lisonbee, who is capitalizing on voter opposition to the massive Stratos data center project. The race exemplifies growing Republican tensions between pro-business interests and populist concerns about AI-driven infrastructure.",
+      "url": "https://www.semafor.com/article/06/23/2026/how-a-data-center-backlash-is-twisting-utahs-primary",
+      "read_more": "Read on Semafor →"
+    },
+    {
       "outlet": "KSL TV",
       "badge_color": "#0057a8",
       "date": "June 9, 2026",

@@ -36,6 +36,14 @@
   },
   "press": [
     {
+      "outlet": "Semafor",
+      "badge_color": "#1a1a1a",
+      "date": "June 23, 2026",
+      "headline": "How a data center backlash is twisting Utah's primary",
+      "url": "https://www.semafor.com/article/06/23/2026/how-a-data-center-backlash-is-twisting-utahs-primary",
+      "read_more": "Read on Semafor →"
+    },
+    {
       "outlet": "KSL News Utah",
       "badge_color": "#0057a8",
       "date": "June 2026",
