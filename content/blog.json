@@ -11,6 +11,16 @@
       "read_more": "Read on Semafor →"
     },
     {
+      "outlet": "Forbes",
+      "badge_color": "#cc0000",
+      "date": "June 9, 2026",
+      "region": "Box Elder County",
+      "headline": "One Utah County's Fight Over a $100 Billion Data Center — And What It Means for All of Us",
+      "excerpt": "Forbes examines Box Elder County's battle over the proposed Stratos data center and the broader national questions it raises about community consent, AI infrastructure, and who bears the costs when massive development projects are fast-tracked without public input.",
+      "url": "https://www.forbes.com/sites/michaelposner/2026/06/09/one-utah-countys-fight-over-a-100-billion-data-center---and-what-it-means-for-all-of-us/",
+      "read_more": "Read on Forbes →"
+    },
+    {
       "outlet": "KSL TV",
       "badge_color": "#0057a8",
       "date": "June 9, 2026",
@@ -45,7 +55,7 @@
     {
       "outlet": "KSL News Utah",
       "badge_color": "#0057a8",
-      "date": "June 2026",
+      "date": "June 9, 2026",
       "region": "Box Elder County",
       "headline": "Commissioner responds to Stratos Project conflict of interest claims",
       "youtube_id": "WFcau2uLn_E",

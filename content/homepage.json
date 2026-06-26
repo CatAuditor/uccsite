@@ -44,9 +44,17 @@
       "read_more": "Read on Semafor →"
     },
     {
+      "outlet": "Forbes",
+      "badge_color": "#cc0000",
+      "date": "June 9, 2026",
+      "headline": "One Utah County's Fight Over a $100 Billion Data Center — And What It Means for All of Us",
+      "url": "https://www.forbes.com/sites/michaelposner/2026/06/09/one-utah-countys-fight-over-a-100-billion-data-center---and-what-it-means-for-all-of-us/",
+      "read_more": "Read on Forbes →"
+    },
+    {
       "outlet": "KSL News Utah",
       "badge_color": "#0057a8",
-      "date": "June 2026",
+      "date": "June 9, 2026",
       "headline": "Commissioner responds to Stratos Project conflict of interest claims",
       "url": "https://www.youtube.com/watch?v=WFcau2uLn_E",
       "read_more": "Watch on KSL News Utah →"
@@ -74,6 +82,14 @@
       "headline": "MIDA violated state law in approval process of Box Elder County data center, group claims",
       "url": "https://www.fox13now.com/news/local-news/box-elder-county/mida-violated-state-law-in-approval-process-of-box-elder-county-data-center-group-claims",
       "read_more": "Read on Fox 13 →"
+    },
+    {
+      "outlet": "KUTV 2",
+      "badge_color": "#1a6bbd",
+      "date": "May 2026",
+      "headline": "Group claims Stratos data center approval process in Box Elder County violated state law",
+      "url": "https://www.youtube.com/watch?v=12Tm7xid80s",
+      "read_more": "Watch on KUTV 2 →"
     }
   ]
 }
