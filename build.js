@@ -18,6 +18,7 @@ const PAGES = [
   { template: 'team.html',     content: ['settings', 'team'] },
   { template: 'blog.html',     content: ['settings', 'blog'] },
   { template: 'statements.html', content: ['settings', 'statements'] },
+  { template: 'issues.html',   content: ['settings', 'issues'] },
   { template: 'projects.html', content: ['settings', 'projects'] },
   { template: 'stratos.html',      content: ['settings'] },
   { template: 'weber-county.html', content: ['settings'] },
@@ -130,6 +131,11 @@ for (const { template, content: contentFiles } of PAGES) {
   // Convert markdown statement bodies to HTML before rendering
   if (Array.isArray(data.statements)) {
     data.statements = data.statements.map(s => ({ ...s, body: mdToHtml(s.body) }));
+  }
+
+  // Convert markdown issue bodies to HTML before rendering
+  if (Array.isArray(data.issues)) {
+    data.issues = data.issues.map(i => ({ ...i, body: mdToHtml(i.body) }));
   }
 
   const html = render(fs.readFileSync(templatePath, 'utf8'), data);

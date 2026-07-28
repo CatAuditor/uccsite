@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Policy Positions | Utah Civic Compact</title>
+  <meta name="description" content="Where Utah Civic Compact stands on redistricting, ballot access, government transparency, local governance, ethics, civic education, and data centers." />
+  <link rel="canonical" href="https://utahciviccompact.org/issues.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://utahciviccompact.org/issues.html" />
+  <meta property="og:title" content="Policy Positions | Utah Civic Compact" />
+  <meta property="og:description" content="Where Utah Civic Compact stands on redistricting, ballot access, government transparency, local governance, ethics, civic education, and data centers." />
+  <meta property="og:image" content="https://utahciviccompact.org/UCC.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Policy Positions | Utah Civic Compact" />
+  <meta name="twitter:description" content="Where Utah Civic Compact stands on the issues that determine whether Utahns govern themselves or are governed at." />
+  <meta name="twitter:image" content="https://utahciviccompact.org/UCC.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon-512.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .issues-page-section {
+      padding: 80px 48px 100px;
+      background: var(--cream);
+    }
+    .issues-page-inner {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+    .issue-article {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 56px 64px;
+      margin-bottom: 32px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .issue-article-head {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .issue-num {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--red);
+      border: 1px solid var(--gray-200);
+      border-radius: 4px;
+      padding: 3px 8px;
+      flex-shrink: 0;
+    }
+    .issue-title {
+      font-family: var(--font-serif);
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 800;
+      color: var(--navy-dark);
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      margin: 0;
+    }
+    .issue-epigraph {
+      font-style: italic;
+      font-size: 18px;
+      color: var(--navy);
+      border-left: 3px solid var(--red);
+      padding-left: 18px;
+      margin: 0 0 22px;
+    }
+    .issue-body p {
+      font-size: 16.5px;
+      color: var(--gray-900);
+      line-height: 1.8;
+      margin-bottom: 20px;
+    }
+    .issue-body p:last-child { margin-bottom: 0; }
+    @media (max-width: 768px) {
+      .issues-page-section { padding: 56px 24px 72px; }
+      .issue-article { padding: 36px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <header class="site-header scrolled" id="site-header">
+    <nav class="nav-inner">
+
+      <button class="nav-toggle" id="nav-toggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/#mission">Mission</a></li>
+        <li><a href="/team.html">About Us</a></li>
+        <li><a href="/theory.html">Theory of Change</a></li>
+        <li><a href="/blog.html">News &amp; Media</a></li>
+        <li><a href="/stratos.html">Stratos</a></li>
+        <li><a href="/projects.html">Projects</a></li>
+        <li><a href="/tip.html">Submit a Tip</a></li>
+        <li><a href="/#donate" class="nav-donate">Donate</a></li>
+        <li><a href="/#join" class="nav-cta">Get Involved</a></li>
+      </ul>
+      <a href="/" class="nav-logo-icon" aria-label="Utah Civic Compact home">
+        <img src="/assets/logo-icon-dark.png" alt="" class="nav-icon-img nav-icon-img-dark" width="44" height="44" />
+        <img src="/assets/logo-icon-light.png" alt="" class="nav-icon-img nav-icon-img-light" width="44" height="44" />
+      </a>
+    </nav>
+  </header>
+
+  <div class="subpage-hero">
+    <div class="section-label">Where We Stand</div>
+    <h1>Policy Positions</h1>
+    <p>Where we stand, and why — on the issues that determine whether Utahns govern themselves or are governed at.</p>
+  </div>
+
+  <div class="issues-page-section">
+    <div class="issues-page-inner">
+
+      {{#issues}}
+      <article class="issue-article" id="{{slug}}">
+        <div class="issue-article-head">
+          <span class="issue-num">{{num}}</span>
+          <h2 class="issue-title">{{title}}</h2>
+        </div>
+        <p class="issue-epigraph">{{epigraph}}</p>
+        <div class="issue-body">{{{body}}}</div>
+      </article>
+      {{/issues}}
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="logo logo-light">
+            <img src="/assets/logo-icon-dark.png" alt="" class="logo-mark-img" />
+            <span class="logo-text">Utah Civic Compact</span>
+          </a>
+          <p>Defending the compact between Utah communities and their government.</p>
+          <p class="footer-legal">Utah Civic Compact is a 501(c)(4) social welfare organization. Contributions are not tax-deductible as charitable donations.</p>
+          <div class="footer-social">
+            <a href="https://www.instagram.com/utahciviccompact/" aria-label="Instagram" target="_blank" rel="noopener">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h5>Organization</h5>
+          <ul>
+            <li><a href="/#mission">Mission</a></li>
+            <li><a href="/#issues">Issues</a></li>
+            <li><a href="/team.html">Team &amp; Bios</a></li>
+            <li><a href="/theory.html">Theory of Change</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Get Involved</h5>
+          <ul>
+            <li><a href="/#join">Join the Compact</a></li>
+            <li><a href="/blog.html">News &amp; Blog</a></li>
+            <li><a href="/#donate">Donate</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Contact</h5>
+          <ul>
+            <li><a href="mailto:info@utahciviccompact.org">info@utahciviccompact.org</a></li>
+            <li><a href="mailto:info@utahciviccompact.org">Press Inquiries</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Utah Civic Compact. All rights reserved.</p>
+        <div class="footer-links">
+          <a href="/privacy.html">Privacy Policy</a>
+          <a href="#">Terms of Use</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
