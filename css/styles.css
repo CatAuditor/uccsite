@@ -211,6 +211,13 @@ input, textarea, select { font: inherit; }
   border-radius: 4px;
   flex-shrink: 0;
 }
+.logo-mark-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
 .logo-text {
   font-weight: 700;
   font-size: 17px;
@@ -248,14 +255,14 @@ input, textarea, select { font: inherit; }
 .nav-cta:hover,
 .nav-donate:hover { background: var(--red-light) !important; }
 
-.nav-logo-torch {
+.nav-logo-icon {
   flex-shrink: 0;
   margin-left: 20px;
   display: flex;
   align-items: center;
   text-decoration: none;
 }
-.nav-torch-img {
+.nav-icon-img {
   height: 44px;
   width: auto;
   display: block;
@@ -385,7 +392,8 @@ input, textarea, select { font: inherit; }
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(135deg, var(--navy-dark) 0%, #1B3A5C 50%, #243B55 100%);
+    url("/assets/hero-mountains.png") bottom center / auto 280px no-repeat,
+    linear-gradient(180deg, #081a35 0%, #0e223f 45%, #1a3154 78%, #1a3154 100%);
   z-index: 0;
 }
 .hero-bg::after {
@@ -393,8 +401,7 @@ input, textarea, select { font: inherit; }
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 60% at 70% 50%, rgba(192,57,43,0.12) 0%, transparent 60%),
-    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    radial-gradient(ellipse 80% 60% at 70% 50%, rgba(192,57,43,0.12) 0%, transparent 60%);
 }
 
 .hero-content {
@@ -1041,10 +1048,10 @@ input, textarea, select { font: inherit; }
     padding-top: 8px;
     border-top: 1px solid var(--gray-200);
   }
-  .nav-logo-torch {
+  .nav-logo-icon {
     display: flex;
   }
-  .nav-torch-img { height: 36px; }
+  .nav-icon-img { height: 36px; }
 
   /* Mobile dropdowns — expand inline */
   .nav-dropdown { width: 100%; }

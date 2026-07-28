@@ -11,6 +11,6 @@ Removed all dropdown menus from navigation. Replaced "About" dropdown (Team & Bi
 
 **Donate button** added as a prominent red CTA in the nav linking to `/#donate`. Styled identically to "Get Involved" (`.nav-donate` shares rules with `.nav-cta`).
 
-**Torch logo** added to top-right of nav bar (`/torch.svg`, 44px desktop / 36px mobile). Doubles as home link. Also replaced `favicon.svg` with `torch.svg` sitewide.
+**Torch logo** — a torch icon (`/torch.svg`) was planned for the top-right of the nav bar, doubling as a home link, with `favicon.svg` also replaced by `torch.svg` sitewide. The CSS (`.nav-logo-torch`/`.nav-torch-img`) was written but the torch artwork and markup were never shipped. Superseded — see [utah-compact-logo-swap.md](utah-compact-logo-swap.md).
 
 **Alternative considered:** Keep dropdowns, just reorganize items. Rejected — the nav already had too few items to justify two levels.

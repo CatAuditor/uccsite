@@ -10,7 +10,7 @@ const CONTENT = path.join(ROOT, 'content');
 const STATIC = path.join(ROOT, 'static');
 
 // Static files and directories to copy from root into dist/
-const COPY_FROM_ROOT = ['css', 'js', 'assets', '_headers', 'robots.txt', 'sitemap.xml', 'llms.txt', 'favicon.svg', 'torch.svg', 'UCC.png', 'tip.html', 'privacy.html'];
+const COPY_FROM_ROOT = ['css', 'js', 'assets', '_headers', 'robots.txt', 'sitemap.xml', 'llms.txt', 'favicon.svg', 'UCC.png', 'tip.html', 'privacy.html'];
 
 // Templates → content file mapping
 const PAGES = [
