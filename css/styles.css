@@ -627,6 +627,9 @@ input, textarea, select { font: inherit; }
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
   padding: 32px;
+  display: block;
+  text-decoration: none;
+  color: inherit;
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s var(--ease);
 }
 .issue-card:hover {
