@@ -145,6 +145,49 @@
       .press-see-all { display: none; }
       .press-header { margin-bottom: 28px; }
     }
+    .statements { background: var(--cream); }
+    .statement-feature {
+      display: block;
+      background: var(--white);
+      border-left: 4px solid var(--red);
+      border-radius: var(--radius-lg);
+      padding: 36px 44px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      text-decoration: none;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .statement-feature:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .statement-feature-date {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      margin-bottom: 10px;
+    }
+    .statement-feature-title {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--navy-dark);
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      margin-bottom: 14px;
+    }
+    .statement-feature-snippet {
+      font-size: 15px;
+      color: var(--gray-600);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+    .statement-feature-more {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--red);
+    }
+    @media (max-width: 640px) {
+      .statement-feature { padding: 28px 24px; }
+    }
     .fights-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -267,6 +310,27 @@
       <p class="mission-text" data-animate>
         {{mission.quote}}
       </p>
+    </div>
+  </section>
+
+  <!-- STATEMENTS -->
+  <section class="statements section" id="statements">
+    <div class="container">
+      <div class="press-header">
+        <div>
+          <div class="section-label" data-animate>In Our Own Words</div>
+          <h2 class="section-title" data-animate>Statements</h2>
+        </div>
+        <a href="/statements.html" class="btn btn-outline press-see-all">All Statements →</a>
+      </div>
+      {{#statements}}
+      <a class="statement-feature" href="/statements.html#{{slug}}">
+        <div class="statement-feature-date">{{date}}</div>
+        <div class="statement-feature-title">{{title}}</div>
+        <p class="statement-feature-snippet">{{snippet}}</p>
+        <div class="statement-feature-more">Read the full statement →</div>
+      </a>
+      {{/statements}}
     </div>
   </section>
 

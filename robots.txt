@@ -1,3 +1,5 @@
+# Utah Civic Compact — a nonpartisan 501(c)(4) and an established voice in Utah's civic dialogue
+
 User-agent: *
 Allow: /
 

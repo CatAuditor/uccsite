@@ -20,6 +20,7 @@ Editable pages use templates + content JSON. Passthrough pages are copied as-is.
 | `index.html` | `templates/index.html` | `content/homepage.json` |
 | `team.html` | `templates/team.html` | `content/team.json` |
 | `blog.html` | `templates/blog.html` | `content/blog.json` |
+| `statements.html` | `templates/statements.html` | `content/statements.json` |
 | `stratos.html` | `templates/stratos.html` | — (passthrough) |
 | `theory.html` | `templates/theory.html` | — (passthrough) |
 | `success.html` | `templates/success.html` | — (passthrough) |
@@ -29,6 +30,10 @@ Editable pages use templates + content JSON. Passthrough pages are copied as-is.
 - `css/styles.css` — single stylesheet
 - `js/main.js` — nav, animations, join form, donate form, donation tracker, modal
 - `static/admin/` — Decap CMS admin UI (copied to `dist/admin/` at build)
+
+## Statements
+
+Official org statements live in `content/statements.json` (`statements` array: `slug`, `date`, `title`, `snippet`, `body` in markdown paragraphs, `signoff`). `build.js` converts `body` to HTML via `mdToHtml`. Rendered in full on `/statements.html`, one `<article>` per statement with `id={{slug}}` for deep links. The homepage "Statements" section reads a separate snippet copy from `homepage.json` (`statements` array) — same duplication pattern as press. New statements go at the top of `statements.json` AND get a snippet entry in `homepage.json`.
 
 ## Nav pattern
 
