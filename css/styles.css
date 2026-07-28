@@ -267,6 +267,9 @@ input, textarea, select { font: inherit; }
   width: auto;
   display: block;
 }
+.nav-icon-img-light { display: none; }
+.site-header.scrolled .nav-icon-img-dark { display: none; }
+.site-header.scrolled .nav-icon-img-light { display: block; }
 
 .nav-toggle {
   display: none;
