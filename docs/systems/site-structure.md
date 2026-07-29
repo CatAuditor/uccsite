@@ -37,9 +37,11 @@ Official org statements live in `content/statements.json` (`statements` array: `
 
 ## Nav pattern
 
-All templates share identical nav HTML. To add/change a nav link, update all 5 templates manually (index, team, blog, stratos, theory). No dropdowns — all links are flat.
+All templates share identical nav HTML, plus the two passthrough pages `privacy.html` and `tip.html` at repo root (copied as-is, not templated). To add/change a nav link, update every one of those files manually — there's no shared partial/include.
 
-Nav links: Mission, About Us, Theory of Change, News & Media, Stratos, **Donate** (red → `/#donate`), **Get Involved** (red → `/#join`).
+Nav links: Mission, **About Us** (dropdown: Team & Bios, Theory of Change, Policies), News & Media, Projects, Submit a Tip, **Donate** (red → `/#donate`), **Get Involved** (red → `/#join`).
+
+The About Us dropdown uses `.nav-dropdown` / `.nav-dropdown-toggle` / `.nav-dropdown-menu` (CSS in `css/styles.css`, behavior in `js/main.js`) — hover-opens on desktop, click/tap-toggles on mobile and via keyboard. See [nav-about-us-dropdown.md](../decisions/nav-about-us-dropdown.md).
 
 ## Branches
 
