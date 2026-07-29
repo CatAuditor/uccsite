@@ -19,6 +19,7 @@ const PAGES = [
   { template: 'blog.html',     content: ['settings', 'blog'] },
   { template: 'statements.html', content: ['settings', 'statements'] },
   { template: 'issues.html',   content: ['settings', 'issues'] },
+  { template: 'privacy-report.html', content: ['settings'] },
   { template: 'projects.html', content: ['settings', 'projects'] },
   { template: 'stratos.html',      content: ['settings'] },
   { template: 'weber-county.html', content: ['settings'] },

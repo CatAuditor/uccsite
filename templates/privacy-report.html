@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Denigration of Modern Private Space | Utah Civic Compact</title>
+  <meta name="description" content="How convenience, default settings, and a quiet rhetorical inversion have downgraded private space from a presumed right to a suspicious exception — with named Utah examples." />
+  <link rel="canonical" href="https://utahciviccompact.org/privacy-report.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://utahciviccompact.org/privacy-report.html" />
+  <meta property="og:title" content="The Denigration of Modern Private Space | Utah Civic Compact" />
+  <meta property="og:description" content="How convenience, default settings, and a quiet rhetorical inversion have downgraded private space from a presumed right to a suspicious exception — with named Utah examples." />
+  <meta property="og:image" content="https://utahciviccompact.org/UCC.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="The Denigration of Modern Private Space | Utah Civic Compact" />
+  <meta name="twitter:description" content="How convenience, default settings, and a quiet rhetorical inversion have downgraded private space from a presumed right to a suspicious exception." />
+  <meta name="twitter:image" content="https://utahciviccompact.org/UCC.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon-512.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .subpage-hero {
+      background: linear-gradient(135deg, var(--navy-dark) 0%, #1B3A5C 100%);
+      padding: 160px 48px 80px;
+      text-align: center;
+    }
+    .subpage-hero .section-label { color: rgba(255,255,255,0.5); }
+    .subpage-hero h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 900;
+      color: var(--white);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .subpage-hero p {
+      font-size: 18px;
+      color: rgba(255,255,255,0.65);
+      max-width: 620px;
+      margin: 0 auto;
+      line-height: 1.65;
+    }
+    .report-body {
+      padding: 80px 48px 120px;
+      background: var(--cream);
+    }
+    .report-body .container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .report-section {
+      margin-bottom: 56px;
+    }
+    .report-section h2 {
+      font-family: var(--font-serif);
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--navy-dark);
+      letter-spacing: -0.01em;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid rgba(0,0,0,0.08);
+    }
+    .report-section h3 {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--red);
+      letter-spacing: -0.01em;
+      margin: 32px 0 12px;
+    }
+    .report-section h3:first-of-type { margin-top: 0; }
+    .report-section p {
+      font-size: 16.5px;
+      line-height: 1.8;
+      color: #2c2c2c;
+      margin-bottom: 18px;
+    }
+    .report-section p:last-child { margin-bottom: 0; }
+    .report-section ul {
+      margin: 0 0 18px 20px;
+      padding: 0;
+    }
+    .report-section ul li {
+      font-size: 16.5px;
+      line-height: 1.75;
+      color: #2c2c2c;
+      margin-bottom: 10px;
+    }
+    .report-callout {
+      background: var(--white);
+      border-left: 4px solid var(--red);
+      border-radius: 6px;
+      padding: 20px 24px;
+      margin: 20px 0;
+    }
+    .report-callout p {
+      font-size: 15.5px;
+      line-height: 1.7;
+      color: #2c2c2c;
+      margin: 0;
+    }
+    .report-callout .callout-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 8px;
+    }
+    .report-callout-dark {
+      background: var(--navy-dark);
+      border-left: 4px solid var(--gold, #C9A24B);
+      border-radius: 6px;
+      padding: 20px 24px;
+      margin: 20px 0;
+    }
+    .report-callout-dark p {
+      font-size: 15.5px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.9);
+      margin: 0;
+    }
+    .report-callout-dark .callout-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 8px;
+    }
+    .report-table-wrap {
+      overflow-x: auto;
+      margin: 20px 0;
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+    }
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      font-size: 14px;
+    }
+    .report-table th {
+      background: var(--navy-dark);
+      color: var(--white);
+      text-align: left;
+      padding: 12px 14px;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .report-table td {
+      padding: 12px 14px;
+      border-top: 1px solid var(--gray-200);
+      color: #2c2c2c;
+      line-height: 1.55;
+      vertical-align: top;
+    }
+    .report-table td:first-child { font-weight: 700; color: var(--navy-dark); white-space: nowrap; }
+    @media (max-width: 600px) {
+      .subpage-hero { padding: 140px 24px 64px; }
+      .report-body { padding: 56px 24px 80px; }
+      .report-section h2 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <header class="site-header scrolled" id="site-header">
+    <nav class="nav-inner">
+
+      <button class="nav-toggle" id="nav-toggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/#mission">Mission</a></li>
+        <li><a href="/team.html">About Us</a></li>
+        <li><a href="/theory.html">Theory of Change</a></li>
+        <li><a href="/blog.html">News &amp; Media</a></li>
+        <li><a href="/stratos.html">Stratos</a></li>
+        <li><a href="/projects.html">Projects</a></li>
+        <li><a href="/tip.html">Submit a Tip</a></li>
+        <li><a href="/#donate" class="nav-donate">Donate</a></li>
+        <li><a href="/#join" class="nav-cta">Get Involved</a></li>
+      </ul>
+      <a href="/" class="nav-logo-icon" aria-label="Utah Civic Compact home">
+        <img src="/assets/logo-icon-dark.png" alt="" class="nav-icon-img nav-icon-img-dark" width="44" height="44" />
+        <img src="/assets/logo-icon-light.png" alt="" class="nav-icon-img nav-icon-img-light" width="44" height="44" />
+      </a>
+    </nav>
+  </header>
+
+  <div class="subpage-hero">
+    <div class="section-label">Privacy</div>
+    <h1>The Denigration of Modern Private Space</h1>
+    <p>How convenience, default settings, and a quiet rhetorical inversion have downgraded private space from a presumed right to a suspicious exception.</p>
+  </div>
+
+  <div class="report-body">
+    <div class="container">
+
+      <div class="report-section">
+        <h2>1. The Premise</h2>
+        <p>Privacy used to have a geography. A home, a car, a closed office door, a sealed letter — these were physical boundaries that signaled, unambiguously, where the public's claim on a person ended. Today those boundaries have been quietly dismantled, not by a single law or policy, but by a slow accumulation of convenience, infrastructure, and default settings that nobody explicitly voted for.</p>
+        <p>This piece argues that what we are witnessing is not merely a loss of privacy, but an active denigration of the idea of private space — a cultural and legal downgrading of its value, until "I'd rather not say" starts to sound suspicious rather than reasonable. The distinction matters: a society can lose privacy through neglect and still recover it through policy. A society that has been persuaded privacy isn't worth wanting has to win an argument first.</p>
+        <div class="report-callout">
+          <span class="callout-label">Working definition</span>
+          <p>For this piece, "private space" means any domain — physical, digital, or relational — in which a person can reasonably expect their words, movements, body, or data will not be observed, collected, or acted upon without their informed involvement.</p>
+        </div>
+      </div>
+
+      <div class="report-section">
+        <h2>2. From Boundary to Backdrop</h2>
+        <p>A generation ago, private space was assumed to be the default; disclosure was the exception, requested and justified. That order has reversed. Smart devices listen from the kitchen counter. Location data is harvested by default and opted out of, if at all, through settings menus designed to discourage the effort. Employers monitor keystrokes on company laptops that go home with employees. Doorbell cameras, sold as personal security, have become a networked surveillance layer covering entire neighborhoods, often shared with local law enforcement without a warrant.</p>
+        <p>None of this happened through a single dramatic seizure of private space. It happened because each individual erosion was framed as a convenience, a safety feature, or a "you agreed to this" checkbox — and the cumulative effect was normalized before most people noticed the shift.</p>
+        <p><strong>Mechanisms worth naming directly:</strong></p>
+        <ul>
+          <li><strong>Data brokers</strong> — an entire industry built on aggregating, packaging, and reselling personal data that individuals never knowingly handed over in that form.</li>
+          <li><strong>Default-on collection</strong> — location, microphone, and usage data collected unless a user finds and disables it, rather than collected only once affirmatively enabled.</li>
+          <li><strong>Workplace monitoring</strong> — keystroke logging, screen recording, and productivity-scoring software, increasingly extended to remote and hybrid employees' home environments.</li>
+          <li><strong>Smart home and doorbell devices</strong> — consumer security products that double as a private surveillance network, with footage sometimes shared to police via informal partnerships.</li>
+          <li><strong>Biometric collection</strong> — facial recognition, fingerprint, and voiceprint data gathered by retailers, apartment complexes, and schools, often without a clear consent or deletion process.</li>
+        </ul>
+      </div>
+
+      <div class="report-section">
+        <h2>3. Three Mechanisms in Depth</h2>
+        <p>Section 2 named five mechanisms of erosion in brief. Three of them warrant a fuller treatment, because each is currently active, underregulated in Utah specifically, and touches a different part of a person's life: their body, their data trail, and their job.</p>
+
+        <h3>Biometric collection</h3>
+        <p>Biometric data — facial geometry, fingerprints, voiceprints, iris scans — is unlike a password or an address: it cannot be changed if it is compromised, which is why states that regulate it treat it as categorically more sensitive than ordinary personal data. Utah's approach is split. On the government side, the state has actually moved to restrict misuse: Utah law requires that local law enforcement agencies route facial recognition searches through the Department of Public Safety, which logs every request and limits use, rather than allowing individual departments to run searches independently. State law was further updated to spell out when government entities may obtain biometric surveillance information — generally requiring a warrant or an active public safety threat — and restricts use to defined "authorized properties" such as law enforcement facilities, correctional facilities, schools, courthouses, and airports.</p>
+        <p>That guardrail is narrower than it sounds, and it is currently being tested. Reporting has flagged that U.S. Customs and Border Protection has been distributing a facial-scanning app called Mobile Identify to local police departments nationally; any Utah department that used it directly would be violating the state's own routing requirement, since the app lets officers bypass the Department of Public Safety checkpoint entirely.</p>
+        <p>On the private-sector and employment side, the picture is essentially unregulated. Utah has no equivalent to Illinois's Biometric Information Privacy Act, which has required informed written consent before a private company collects fingerprints, faceprints, or similar data since 2008. A retailer, apartment complex, gym, or employer operating in Utah can collect and store biometric identifiers from customers or workers with essentially no statutory floor on consent, retention limits, or breach notification specific to that category of data.</p>
+        <div class="report-callout">
+          <span class="callout-label">The gap in one sentence</span>
+          <p>Utah restrains its own government's use of facial recognition more than it restrains private companies' use of the same technology on customers and employees.</p>
+        </div>
+
+        <h3>Data brokers</h3>
+        <p>Data brokers are businesses that collect and sell personal information about people with whom they have no direct relationship — the profile assembled from public records, app usage, purchase history, and other brokers' data, then resold to advertisers, background-check firms, or anyone else willing to pay. A growing number of states now require these companies to register publicly and disclose what they collect: California's expanded registry (effective August 2026) requires brokers to disclose whether data is sold to foreign actors, government agencies, or AI developers, and to honor deletion requests through a centralized mechanism. Oregon, Texas, and Vermont have comparable registries.</p>
+        <p>Utah has none of this. The Utah Consumer Privacy Act gives residents the right to opt out of the sale of their personal data from a covered business, but there is no state requirement that data brokers register, disclose their existence, or make themselves findable in the first place — which means the opt-out right is only useful against brokers a resident already knows about. Combined with the UCPA's revenue and scale thresholds (it applies only to businesses with $25 million or more in annual revenue that process data at a defined scale), a meaningful share of the data-broker ecosystem touching Utah residents may fall outside the law's reach entirely, and the ones inside it are not required to identify themselves.</p>
+
+        <h3>Workplace monitoring</h3>
+        <p>This is the least regulated of the three in Utah, and arguably the most universally experienced. State law does not address employer surveillance, tracking, or monitoring of workplaces at all — not computer activity tracking, not keystroke logging, not video monitoring of work areas, and not an employer's use of biometric information on its own employees. Utah employers are legally free to review essentially all activity on a company network and company-owned devices, and courts have treated employees' expectation of privacy in that context as minimal to nonexistent, even when correspondence is marked private. Utah law does place some limits on monitoring of communications specifically, but general workplace surveillance, tracking, and biometric use by employers sit outside any dedicated statute.</p>
+        <p>Best-practice guidance recommends employers disclose their monitoring policies to staff, but this is advisable, not required — an employer who monitors keystrokes, screen activity, or location on a company laptop that goes home with a remote employee is not obligated by Utah law to say so. As hybrid and remote work make the boundary between "workplace" and "home" increasingly blurry, this is one of the clearest cases in the entire piece of private space narrowing through simple legislative silence rather than any deliberate policy choice.</p>
+      </div>
+
+      <div class="report-section">
+        <h2>4. The Consent Illusion</h2>
+        <p>Consent is the legal and moral hinge that is supposed to make all of this acceptable — you agreed, so it isn't a violation. But "agreement" delivered through a terms-of-service scroll, a pre-checked box, or a take-it-or-leave-it app permission is not the kind of consent the concept was built to describe. Meaningful consent requires a real alternative, a comprehensible choice, and the ability to revoke it without losing access to something essential. Modern digital consent routinely fails all three tests.</p>
+        <p>Design compounds the problem. Interfaces are frequently built using "dark patterns" — deliberately confusing toggles, buried opt-outs, and asymmetric friction where accepting takes one tap and declining takes eleven. Calling the resulting data collection "consensual" stretches the word past its useful meaning.</p>
+
+        <h3>The information asymmetry</h3>
+        <p>Underneath the design problem is a starker one: even a person who genuinely tries to read a terms of service or privacy policy before agreeing is not on equal footing with the company that wrote it. These documents are drafted by teams of lawyers, over weeks or months, to define what the company may do with a user's data and to limit the company's liability — while the user is expected to evaluate and accept that document in the seconds before an app becomes usable, with no legal training and no ability to negotiate a single clause.</p>
+        <p>The scale of the mismatch has been measured directly. A frequently cited Carnegie Mellon study found that the median privacy policy among the 75 most popular U.S. websites ran about 2,500 words — roughly ten minutes to read — and calculated that if an average internet user actually read every privacy policy they encountered in a year, it would take about 76 eight-hour workdays. A more recent analysis found the average U.S. privacy policy has grown to nearly 6,900 words, about 29 minutes of reading time, meaning the policies for just the 20 most-visited American websites would take over nine hours to get through. Several major platforms' combined terms now run well past an hour's read on their own. No one reads these in practice, and the length is not accidental — longer, denser documents lower the odds that any given clause will actually be read or challenged before the "I agree" button is pressed.</p>
+        <div class="report-callout">
+          <span class="callout-label">The asymmetry in one sentence</span>
+          <p>One side of the agreement had a legal team and months to write it; the other side gets a scroll bar and a few seconds before the product stops working — and only one side can afford to actually read what was written.</p>
+        </div>
+      </div>
+
+      <div class="report-section">
+        <h2>5. The Suspicion Inversion</h2>
+        <p>Part of the denigration is rhetorical rather than technical. Wanting privacy is increasingly cast as having "something to hide," a framing that inverts centuries of legal and philosophical tradition treating privacy as a precondition for liberty, not a cover for wrongdoing. When public officials, platforms, or commentators describe encryption, anonymity, or simply declining to answer as inherently suspect, they are doing cultural work — reclassifying a right as a red flag.</p>
+        <div class="report-callout">
+          <span class="callout-label">Why the inversion matters</span>
+          <p>Historically, privacy was treated as the default and disclosure as the thing requiring justification. Under the suspicion inversion, that burden flips: privacy itself now requires justification. Once a right has to be defended every time it's exercised, it functions less like a right and more like a privilege granted to those with nothing to lose by giving it up.</p>
+        </div>
+      </div>
+
+      <div class="report-section">
+        <h2>6. Why It's a Civic Issue, Not Just a Personal One</h2>
+        <p>Private space is not only about individual comfort. It is where dissent is formed, where unpopular opinions can be worked out before they are tested publicly, where family life, religious practice, and personal identity develop without an audience. A society that denigrates private space doesn't just make individuals uncomfortable — it narrows the range of thought and behavior people are willing to risk, because everything is potentially seen, logged, or reported. This is a chilling effect with civic consequences: fewer people willing to associate, speak, or worship in ways that might draw attention.</p>
+        <p>Children and teenagers are a particularly exposed case: raised inside always-on monitoring — school-issued devices with tracking software, parental-control apps, classroom cameras — an entire generation may reach adulthood having never experienced an unmonitored private thought in digital form. What that does to the development of independent judgment is an open and urgent question, not a settled one.</p>
+      </div>
+
+      <div class="report-section">
+        <h2>7. "Fox in the Henhouse": The Purdue and Tobacco Comparison</h2>
+        <p>A comparison increasingly made by journalists, litigators, and now juries deserves direct treatment: that technology companies pitching their products as progress and protection for young users, while possessing internal research suggesting otherwise, resemble Purdue Pharma's marketing of opioids or the tobacco industry's decades of resisting its own internal medical findings. This is no longer a purely rhetorical comparison — it is now the explicit theory of active, ongoing litigation, and it holds up better than most corporate-accountability analogies, though it is not a perfect match.</p>
+
+        <h3>Where the comparison holds up</h3>
+        <p>The strongest version of the claim rests on documentary evidence, not inference from outcomes. Meta's own internal research — first surfaced publicly in the 2021 "Facebook Files" and expanded through a 2020 internal project reportedly code-named "Project Mercury" — is alleged to have shown the company's own scientists identifying links between Instagram use and teen anxiety, depression, eating disorders, and self-harm, and testing what happened when users switched the platforms off entirely. Litigation now treats this the same way courts eventually treated Purdue and the tobacco industry: as evidence a company knew more than it disclosed. Four states are currently seeking as much as $1.4 trillion in penalties against Meta over claims it designed Facebook and Instagram to be addictive to young users — an amount close to the company's entire market value. A New Mexico jury already awarded $375 million in March 2026 after finding Meta misrepresented platform safety for young users and that its platforms had become sites of sexual exploitation. As this document is being drafted, a Tennessee trial is underway in which state attorneys allege Meta's leadership disregarded internal research on teen harm while pursuing engagement and revenue from young users.</p>
+        <p>Court filings unsealed in the litigation allege a specific, tobacco-industry-style decision: that Meta calculated making teen accounts private by default would prevent millions of unwanted contact attempts each day, and concluded the resulting cost to growth was not worth it. That is structurally the same pattern as the internal tobacco-industry memos showing companies understood addiction risk and chose not to act — a company running the analysis, getting an answer it didn't like, and shipping the product anyway. The pattern is not limited to one company; comparable claims and settlements have touched Google, YouTube, and TikTok as well, which weakens the "one bad actor" defense and moves the comparison closer to an industry-wide pattern, the way Big Tobacco was never really about one company.</p>
+
+        <h3>Where the comparison is weaker</h3>
+        <p>The analogy is strongest as a critique of corporate conduct and weakest as a claim that the underlying science is as settled as it was for cigarettes. Nicotine's addictive mechanism and cancer-causing effects were eventually undeniable, chemically direct, and left tobacco companies with no credible scientific defenders. The link between social media and adolescent mental health remains a live, legitimate scientific debate among independent, non-industry-funded researchers — not merely a talking point manufactured by the companies being sued. Critics of the "social media hypothesis" point to randomized controlled trials showing that encouraging heavy users to quit produces only small short-term effects on mental health, and note that cross-sectional associations between use and mental health outcomes tend to be modest. Some researchers have specifically cautioned that the field has largely set out to confirm a predetermined "social media as toxin" framing rather than testing it rigorously — a fair methodological critique that exists independent of anything the companies themselves argue.</p>
+        <p>This matters for how the piece frames the claim: "addictive design" (variable-reward notifications, infinite scroll, algorithmic engagement optimization) is real and documented as a deliberate design choice, but it is a behavioral and psychological mechanism rather than nicotine's direct chemical dependency pathway, which makes causation harder to prove in court and easier to contest on scientific grounds than it ever was for tobacco or opioids.</p>
+        <div class="report-callout">
+          <span class="callout-label">The fair framing</span>
+          <p>The evidence supports "this company appears to have known more than it said and acted against its own findings" with a strength comparable to the early tobacco and Purdue cases. It does not yet support "the science of harm is as settled as it was for cigarettes" — that piece of the comparison is still being actively contested by credentialed researchers on both sides, not just by company-funded skeptics.</p>
+        </div>
+      </div>
+
+      <div class="report-section">
+        <h2>8. Where Utah Stands: Named Examples</h2>
+        <p>The dynamics described above are not abstractions elsewhere. Utah has its own concrete, named examples of private space being narrowed — some longstanding, some unfolding right now.</p>
+
+        <h3>The Bluffdale data center</h3>
+        <p>The single most literal example of the denigration of private space sits about 25 miles south of Salt Lake City. The NSA's Utah Data Center in Bluffdale, built at a cost of roughly $1.5–1.7 billion and operational since 2014, was constructed specifically to store and process signals intelligence at a scale previous facilities could not handle. It remains the physical, literal embodiment of the argument this piece makes in the abstract: that private communications — calls, emails, searches — can be captured and stored indefinitely by infrastructure most residents will never see and did not consent to in any meaningful sense. Its location in Utah, rather than Washington or Virginia, makes it a distinctly local example rather than a distant federal abstraction.</p>
+
+        <h3>Automatic license plate readers</h3>
+        <p>A more current and rapidly evolving example: roughly 30 Utah cities, counties, and police departments were using Flock Safety automatic license plate reader cameras as of 2025. Ogden alone operates 41 of the cameras, making it the state's largest municipal spender on the technology. The cameras photograph and log every passing vehicle's plate, make, model, and color, building a searchable movement history of any car that passes a camera, regardless of whether its occupants are suspected of anything.</p>
+        <p>This has become a live controversy rather than a settled one, though the strength of the evidence varies by agency and by vendor. Ogden's police department has said it does not use Flock's national lookup tool, but the ACLU's Chad Marlow has pointed out that this is a policy choice the department could reverse at any time, not a technical limitation. Provo police have likewise had to publicly address resident concerns about the cameras. No Danville-style audit log has surfaced showing an Ogden or Provo search logged with "ICE" or "immigration" as the stated reason — the kind of documentary evidence that exists for agencies in Illinois, Wisconsin, Oregon, and Virginia. Nationally, cities including Flagstaff, Cambridge, and Eugene have cancelled their Flock contracts over the same concerns now being raised in Utah.</p>
+        <p>A separate, better-documented case involves a competing vendor, not Flock. Park City Police Department and the Summit County Sheriff's Office use Motorola Solutions' VehicleManager (Vigilant) automated license plate reader platform. A Motorola VehicleManager Agency Data Sharing Report for Park City PD, dated May 27, 2026 and obtained by the local outlet TownLift, lists ICE Enforcement and Removal Operations, Homeland Security Investigations, U.S. Customs and Border Protection, and U.S. Border Patrol among the agencies with data-sharing enabled; Summit County's separate but compatible system lists the same federal agencies. That finding directly contradicted a public statement the two agencies had made three weeks earlier, on May 5, 2026, saying they were not providing camera data to ICE or any federal immigration authority.</p>
+        <p>The evidence stops short of proving an actual search occurred, however. When TownLift requested records showing which outside agencies had searched local data, neither Park City PD nor the Sheriff's Office produced a log of outside-agency searches — meaning what's documented is that federal immigration agencies were configured to have sharing access, not that any of them used it in a specific case. TownLift also noted a timing correlation it explicitly declined to treat as proof: eight days after the data-sharing contract was signed, ICE detained four people in Park City's Prospector neighborhood in the area's first publicly reported ICE operation, with two more operations following in December 2025 and April 2026. County officials have not connected the contract to those operations, and the records "do not establish whether ICE used Summit County or Park City license plate data in any specific case."</p>
+        <div class="report-callout">
+          <span class="callout-label">Configured access is not the same as a documented search</span>
+          <p>For Utah, the clearest documented fact is that a platform (Motorola's VehicleManager, used by Park City and Summit County) was set up to allow ICE and CBP access, contradicting a public denial. What has not surfaced for any Utah agency, on Flock or Motorola, is a completed search log naming ICE or immigration as the reason — the type of hard evidence found in Illinois, Wisconsin, Oregon, and Virginia. That is a real, meaningful gap we should not paper over.</p>
+        </div>
+
+        <h3>State privacy law</h3>
+        <p>On the legislative side, Utah has moved earlier than many states on some fronts and lagged on others. The Utah Consumer Privacy Act (passed 2022, effective December 2023) gave residents rights to access, delete, and opt out of the sale of personal data, but it is narrower than comparable laws in California or Colorado — notably lacking a private right of action, meaning enforcement runs almost entirely through the Attorney General's office rather than through individual lawsuits. Utah has also passed specific legislation on social media use by minors and on age verification, both directly touching private space for young residents.</p>
+        <p>Left comparatively undefined in state law: employee monitoring disclosure requirements, rules governing doorbell-camera and license-plate-reader data sharing with outside agencies, and biometric-specific privacy protections of the kind Illinois has had since 2008. Each is a plausible policy lane for Utah Civic Compact, and each now has a concrete Utah example attached to it rather than a hypothetical one.</p>
+      </div>
+
+      <div class="report-section">
+        <h2>9. Two Companies, Two Different Privacy Problems</h2>
+        <p>Not every example belongs in the same bucket. Palantir and Qualtrics illustrate two distinct failure modes worth keeping separate: one is about data collected for one purpose being repurposed for surveillance without the person's knowledge; the other is about accountability disappearing into a vendor relationship the affected person never sees.</p>
+
+        <h3>Palantir: repurposed data at federal scale</h3>
+        <p>Palantir builds software — principally Gotham and Foundry — that ingests and cross-references data from many separate sources so a government or corporate client can search and analyze it as a single integrated system. It has become the central flashpoint in the current federal surveillance debate. Since an executive order directing agencies to share data more freely, officials have expanded Palantir's Foundry platform into at least four federal agencies, including the Department of Homeland Security and Health and Human Services, with more than $113 million in new federal spending on the company since early 2025.</p>
+        <p>The clearest illustration of repurposed consent: the Electronic Frontier Foundation reported in 2026 that ICE is using a Palantir tool that draws on Medicaid and other government data to locate people for arrest — data originally submitted for healthcare access, now flowing into immigration enforcement. In April 2026, thirty members of Congress led by Rep. Dan Goldman and Sen. Ron Wyden formally demanded answers from ICE and DHS about their use of Palantir-developed technologies to compile and analyze Americans' personal data. The pattern is not unique to the U.S.: Palantir was awarded a £240 million UK Ministry of Defence contract in December 2025 without competitive tender, and separate reporting found the company had accumulated at least £670 million across UK government contracts, including work for the UK's nuclear weapons agency.</p>
+        <div class="report-callout">
+          <span class="callout-label">Why Palantir fits the "consent illusion" argument</span>
+          <p>Almost none of the underlying data Palantir systems draw on was submitted for surveillance purposes. Medicaid applicants, benefits recipients, and license holders handed over information for an unrelated administrative reason, with no practical way to know it might later be cross-referenced by a system built for a different purpose entirely.</p>
+        </div>
+
+        <h3>Qualtrics: a Utah company, a quieter question</h3>
+        <p>Qualtrics is a very different kind of company, and a genuinely local example rather than a federal one — it is headquartered at 333 W River Park Drive in Provo (with a co-headquarters in Seattle), founded in Provo in 2002, and Provo City itself is a Qualtrics customer, using the platform to collect resident feedback instead of relying on mailed surveys and city council attendance. Qualtrics's core business is survey and "experience management" software — customer feedback, employee engagement surveys, market research — collected directly from the people who fill it out, not aggregated from government records the way Palantir's is.</p>
+        <p>That distinction is exactly what makes it a useful counterpoint rather than a repeat example. Qualtrics describes itself as a data processor: its customers — employers, cities, universities — decide what data to collect and for what purpose, and Qualtrics processes it on their behalf. There is no comparable breach or surveillance scandal attached to the company. The privacy question it raises is accountability, not exposure: when an employer runs an "anonymous" engagement survey through Qualtrics, respondents are trusting both their employer and a third-party platform with candid opinions, and the actual privacy protections in place depend entirely on how the customer configured the survey — something the respondent typically cannot see or verify.</p>
+        <div class="report-callout">
+          <span class="callout-label">Why Qualtrics fits the section differently</span>
+          <p>Qualtrics is not a surveillance story. It is a delegated-trust story: private space here erodes not because data is seized, but because a person's honest answers pass through a vendor relationship, configured by someone else, that the respondent has no visibility into and no direct recourse against. It is the quieter, more everyday version of the same underlying problem — showing that the pattern shows up in ordinary workplace tools, not just federal surveillance contracts.</p>
+        </div>
+      </div>
+
+      <div class="report-section">
+        <h2>10. Additional Named Utah-Connected Companies</h2>
+        <p>Beyond Palantir and Qualtrics, several other Utah-headquartered or Utah-connected companies illustrate the same patterns from different angles — smart home surveillance, a cautionary tale about vetting vendors, workplace call monitoring, financial data aggregation, and police body-worn cameras.</p>
+
+        <h3>Vivint: smart home data and an FTC settlement</h3>
+        <p>Vivint Smart Home, headquartered in Provo, sells home security systems, cameras, sensors, and smart-home monitoring to more than 1.5 million customers. In 2021 it paid $20 million to settle FTC allegations that it violated the Fair Credit Reporting Act — the largest FCRA settlement the agency had obtained at the time. The FTC found that Vivint's commission-based door-to-door sales representatives had improperly pulled consumers' credit reports to qualify unqualified customers for financing, in some cases using a tactic called "white paging": finding a different person with a similar name and using that stranger's credit history to approve the sale. When the unqualified customer defaulted, the debt was reported against the credit file of the person whose identity had been borrowed without their knowledge.</p>
+        <p>The case is a useful example precisely because it is not about Vivint's cameras or sensors collecting too much data — it is about a company built on constant in-home monitoring having, at the same time, a sales practice that misused an entirely different category of sensitive personal data (credit reports) without the knowledge of the people it belonged to. It shows that the privacy risk a company poses is not always the one implied by its product.</p>
+
+        <h3>Banjo: a cautionary tale about vetting AI surveillance vendors</h3>
+        <p>Banjo is arguably the sharpest cautionary example in this piece. In 2019 the Utah Attorney General's office signed a five-year, $20.7 million contract giving the Utah-based company real-time access to state traffic cameras, CCTV and public safety camera feeds, 911 emergency systems, and location data from state-owned vehicles, which Banjo said it would combine with social media and satellite data to detect crimes as they happened. In April 2020, reporting revealed that Banjo's founder and CEO had a teenage history with a Ku Klux Klan group and had participated in a drive-by shooting at a synagogue; the Attorney General's office, the University of Utah, and other agencies suspended their contracts within days.</p>
+        <p>The story did not end with the founder's past. A subsequent state audit found that Banjo's "Live Time" platform — sold to Utah as being powered by artificial intelligence — did not actually use techniques that met the industry definition of AI, despite Utah having already paid the company over $3 million by the time the contract was suspended. The audit also found the system's access to sensitive public safety databases had not been built to existing privacy best practices. The state's own Commission on Protecting Privacy and Preventing Discrimination was created directly in response, producing guidance for how government entities should vet AI and surveillance vendors going forward.</p>
+        <div class="report-callout">
+          <span class="callout-label">Why Banjo belongs in this piece</span>
+          <p>Banjo shows that the risk isn't only what a surveillance system can technically do — it's what a government agency is willing to grant access to before verifying who runs the company, what the technology actually does, and whether the access it's been given matches any real operational need.</p>
+        </div>
+
+        <h3>NICE, MX, and Motorola Solutions</h3>
+        <p>Three further companies round out the picture, each with a substantial Utah presence. NICE operates its CXone contact-center platform out of Utah (formerly inContact, a Salt Lake–area company NICE acquired in 2016), providing call recording, screen monitoring, and AI-driven "supervisor assist" tools that let managers watch live sentiment scores and keyword adherence across an entire workforce in real time — a direct, product-level example of the workplace-monitoring gap discussed in Section 3. MX, headquartered in Lehi, is a financial data aggregator with tens of thousands of bank and credit union connections that pulls, cleans, and categorizes users' transaction histories on behalf of banking apps; its business model depends on consumers granting broad access to their financial lives through a connection most never directly manage themselves. Motorola Solutions is a major supplier of police body-worn cameras, evidence-management software, and — through its VehicleManager (Vigilant) platform — automated license plate readers; unlike its main body-cam competitor Axon, which has publicly committed not to build facial recognition into its products, Motorola offers facial recognition capabilities through its Avigilon video analytics line, raising the recurring retention and identification concerns already discussed under Biometric Collection in Section 3. Motorola's ALPR platform is also the one documented in Park City and Summit County to be configured with data-sharing access for ICE, CBP, and Border Patrol, discussed in Section 8.</p>
+
+        <div class="report-table-wrap">
+          <table class="report-table">
+            <thead>
+              <tr><th>Company</th><th>Data used</th><th>Benefit</th><th>Concerns</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Vivint</td><td>Smart-home video, sensors, location</td><td>Home security, analytics</td><td>$20M FTC settlement over misused credit reports; routine in-home surveillance</td></tr>
+              <tr><td>Banjo</td><td>CCTV, 911, location (statewide)</td><td>Public-safety AI</td><td>Utah contract suspended after founder's KKK history surfaced; audit found no real AI</td></tr>
+              <tr><td>Palantir</td><td>Integrated government datasets</td><td>Intelligence analytics</td><td>Congressional inquiry into ICE use of Medicaid and other repurposed data</td></tr>
+              <tr><td>NICE</td><td>Calls, chats, screen activity, metadata</td><td>Customer-service AI</td><td>Real-time supervisor monitoring of individual employee performance and sentiment</td></tr>
+              <tr><td>MX</td><td>Financial transaction data</td><td>Banking/finance insights</td><td>Broad financial-account aggregation most consumers don't directly manage</td></tr>
+              <tr><td>Flock Safety</td><td>License plates, vehicle location</td><td>Police investigations</td><td>National pattern of searches run "for" ICE via other agencies; no confirmed Utah search log</td></tr>
+              <tr><td>Motorola Solutions</td><td>Body-cam footage, dispatch data, ALPR (VehicleManager)</td><td>Evidence management</td><td>Facial recognition offered (unlike Axon); Park City/Summit Co. ALPR configured for ICE/CBP access</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="report-section">
+        <h2>What This Means for Utah</h2>
+        <p>Private space didn't disappear through a single law or a single company's decision. It eroded through defaults nobody chose, consent nobody meaningfully gave, and a slow cultural shift that made asking for privacy sound like an admission of guilt. Reversing that requires treating private space as the default again — in state law on data brokers and biometric data, in disclosure requirements for workplace and government surveillance, and in how we talk about the people who simply decline to answer.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="logo logo-light">
+            <img src="/assets/logo-icon-dark.png" alt="" class="logo-mark-img" />
+            <span class="logo-text">Utah Civic Compact</span>
+          </a>
+          <p>Defending the compact between Utah communities and their government.</p>
+          <p class="footer-legal">Utah Civic Compact is a 501(c)(4) social welfare organization. Contributions are not tax-deductible as charitable donations.</p>
+          <div class="footer-social">
+            <a href="https://www.instagram.com/utahciviccompact/" aria-label="Instagram" target="_blank" rel="noopener">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h5>Organization</h5>
+          <ul>
+            <li><a href="/#mission">Mission</a></li>
+            <li><a href="/#issues">Issues</a></li>
+            <li><a href="/team.html">Team &amp; Bios</a></li>
+            <li><a href="/theory.html">Theory of Change</a></li>
+            <li><a href="/privacy-report.html">Private Space</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Get Involved</h5>
+          <ul>
+            <li><a href="/#join">Join the Compact</a></li>
+            <li><a href="/blog.html">News &amp; Blog</a></li>
+            <li><a href="/#donate">Donate</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Contact</h5>
+          <ul>
+            <li><a href="mailto:info@utahciviccompact.org">info@utahciviccompact.org</a></li>
+            <li><a href="mailto:info@utahciviccompact.org">Press Inquiries</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Utah Civic Compact. All rights reserved.</p>
+        <div class="footer-links">
+          <a href="/privacy.html">Privacy Policy</a>
+          <a href="#">Terms of Use</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
