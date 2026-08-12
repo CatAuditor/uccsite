@@ -1,6 +1,19 @@
 {
   "projects": [
     {
+      "name": "License Plate Reader Investigation",
+      "slug": "alpr",
+      "date": "August 2026",
+      "status": "Active",
+      "status_color": "#c0392b",
+      "region": "Weber County",
+      "tagline": "Ten cameras in one Utah county were searched 5.2 million times by police in 45 states. Records show 41.4% of searches carry a stated reason that matches no purpose Utah law permits.",
+      "cta_url": "/alpr.html",
+      "cta_text": "View Full Investigation",
+      "articles": [],
+      "videos": []
+    },
+    {
       "name": "Weber County Election Law Complaint",
       "slug": "weber-county",
       "date": "June 4, 2026",

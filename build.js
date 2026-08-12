@@ -23,6 +23,7 @@ const PAGES = [
   { template: 'projects.html', content: ['settings', 'projects'] },
   { template: 'stratos.html',      content: ['settings'] },
   { template: 'weber-county.html', content: ['settings'] },
+  { template: 'alpr.html',         content: ['settings'] },
   { template: 'theory.html',       content: ['settings'] },
   { template: 'success.html',  content: ['settings'] },
 ];
