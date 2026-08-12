@@ -22,6 +22,7 @@ Editable pages use templates + content JSON. Passthrough pages are copied as-is.
 | `blog.html` | `templates/blog.html` | `content/blog.json` |
 | `statements.html` | `templates/statements.html` | `content/statements.json` |
 | `stratos.html` | `templates/stratos.html` | — (passthrough) |
+| `alpr.html` | `templates/alpr.html` | — (passthrough; Weber County ALPR investigation, data hosted at archive.org/details/weber-county-alpr-records) |
 | `theory.html` | `templates/theory.html` | — (passthrough) |
 | `success.html` | `templates/success.html` | — (passthrough) |
 
