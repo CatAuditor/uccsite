@@ -372,6 +372,76 @@
     }
     .data-row a:hover { text-decoration: underline; }
 
+    /* TOP 50 TABLE */
+    .table-scroll {
+      max-height: 620px;
+      overflow-y: auto;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      margin: 24px 0;
+    }
+    .rank-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .rank-table th {
+      position: sticky;
+      top: 0;
+      background: var(--navy-dark);
+      color: var(--white);
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 10px 14px;
+    }
+    .rank-table td {
+      padding: 8px 14px;
+      color: var(--gray-600);
+      line-height: 1.5;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .rank-table td:first-child {
+      font-weight: 600;
+      color: var(--gray-400);
+      width: 60px;
+    }
+    .rank-table td:nth-child(3),
+    .rank-table td:nth-child(4),
+    .rank-table th:nth-child(3),
+    .rank-table th:nth-child(4) {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .rank-table tr.subtotal td {
+      font-weight: 700;
+      color: var(--navy-dark);
+      background: var(--gray-50);
+      border-top: 2px solid var(--gray-200);
+    }
+    .table-downloads {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 20px 0 8px;
+    }
+    .btn-file {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--red);
+      color: var(--white);
+      padding: 12px 24px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 700;
+      transition: background 0.2s;
+    }
+    .btn-file:hover { background: var(--red-light); }
+
     /* ASKS */
     .ask-item { margin-bottom: 28px; }
     .ask-item h3 { margin: 0 0 8px; }
@@ -672,6 +742,74 @@
           <p>The vendor contract and terms, the county's ALPR policy, the state highway permit application, and the county's written records responses.</p>
           <a href="https://archive.org/details/weber-county-alpr-records" target="_blank" rel="noopener">View →</a>
         </div>
+      </div>
+
+      <h3>Top 50 requesting agencies, 2026</h3>
+      <p>1,608,828 searches across 245 agencies, January through July. A partial year — the production ends with the July 2026 file — so these figures cover seven months rather than twelve. Even so, 2026 is already the largest year in the production. The top 50 agencies account for 85.6% of all searches. The Weber County Sheriff's Office does not appear on this list; it ranks 159th of 245 on its own network.</p>
+      <div class="table-scroll">
+        <table class="rank-table">
+          <thead>
+            <tr><th>Rank</th><th>Agency</th><th>Searches</th><th>% of year</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>#1</td><td>Houston TX PD</td><td>423,031</td><td>26.294%</td></tr>
+            <tr><td>#2</td><td>Louisville Metro KY PD</td><td>89,375</td><td>5.555%</td></tr>
+            <tr><td>#3</td><td>Harris County TX SO</td><td>89,308</td><td>5.551%</td></tr>
+            <tr><td>#4</td><td>Hillsborough County FL SO</td><td>83,889</td><td>5.214%</td></tr>
+            <tr><td>#5</td><td>Palm Beach County FL SO</td><td>53,017</td><td>3.295%</td></tr>
+            <tr><td>#6</td><td>Missouri State Highway Patrol</td><td>43,449</td><td>2.701%</td></tr>
+            <tr><td>#7</td><td>Indiana State Police IN PD</td><td>40,166</td><td>2.497%</td></tr>
+            <tr><td>#8</td><td>Pennsylvania State PD</td><td>31,432</td><td>1.954%</td></tr>
+            <tr><td>#9</td><td>Richland County SC SO</td><td>25,112</td><td>1.561%</td></tr>
+            <tr><td>#10</td><td>[Federal] US Postal Inspection Service</td><td>23,551</td><td>1.464%</td></tr>
+            <tr><td>#11</td><td>Texas Department of Public Safety</td><td>23,416</td><td>1.455%</td></tr>
+            <tr><td>#12</td><td>Fairfax County VA PD</td><td>22,137</td><td>1.376%</td></tr>
+            <tr><td>#13</td><td>Lubbock TX PD</td><td>22,051</td><td>1.371%</td></tr>
+            <tr><td>#14</td><td>Tulsa County OK SO</td><td>21,188</td><td>1.317%</td></tr>
+            <tr><td>#15</td><td>Colorado State Patrol</td><td>21,156</td><td>1.315%</td></tr>
+            <tr><td>#16</td><td>Bloomington IL PD</td><td>19,643</td><td>1.221%</td></tr>
+            <tr><td>#17</td><td>Mississippi Department of Public Safety</td><td>16,856</td><td>1.048%</td></tr>
+            <tr><td>#18</td><td>Salinas CA PD</td><td>16,586</td><td>1.031%</td></tr>
+            <tr><td>#19</td><td>Sarasota FL PD</td><td>16,542</td><td>1.028%</td></tr>
+            <tr><td>#20</td><td>Murfreesboro TN PD</td><td>16,083</td><td>1.000%</td></tr>
+            <tr><td>#21</td><td>Raleigh NC PD</td><td>16,063</td><td>0.998%</td></tr>
+            <tr><td>#22</td><td>O&#x27;Fallon MO PD</td><td>15,858</td><td>0.986%</td></tr>
+            <tr><td>#23</td><td>Shelby County TN SO</td><td>15,207</td><td>0.945%</td></tr>
+            <tr><td>#24</td><td>Amarillo TX PD</td><td>14,142</td><td>0.879%</td></tr>
+            <tr><td>#25</td><td>St. Charles City MO PD</td><td>13,579</td><td>0.844%</td></tr>
+            <tr><td>#26</td><td>Fishers IN PD</td><td>13,366</td><td>0.831%</td></tr>
+            <tr><td>#27</td><td>Larimer County CO SO</td><td>13,002</td><td>0.808%</td></tr>
+            <tr><td>#28</td><td>Richmond VA PD</td><td>12,527</td><td>0.779%</td></tr>
+            <tr><td>#29</td><td>Peoria IL PD</td><td>10,635</td><td>0.661%</td></tr>
+            <tr><td>#30</td><td>Springfield MO PD</td><td>10,134</td><td>0.630%</td></tr>
+            <tr><td>#31</td><td>Jefferson County MO SO</td><td>9,560</td><td>0.594%</td></tr>
+            <tr><td>#32</td><td>Alabama Department of Corrections</td><td>8,691</td><td>0.540%</td></tr>
+            <tr><td>#33</td><td>Thornton CO PD</td><td>8,594</td><td>0.534%</td></tr>
+            <tr><td>#34</td><td>Panama City FL PD</td><td>8,486</td><td>0.527%</td></tr>
+            <tr><td>#35</td><td>Aurora CO PD</td><td>8,414</td><td>0.523%</td></tr>
+            <tr><td>#36</td><td>Wichita Falls TX PD</td><td>8,164</td><td>0.507%</td></tr>
+            <tr><td>#37</td><td>Sparks Police Department - NV</td><td>8,069</td><td>0.502%</td></tr>
+            <tr><td>#38</td><td>Washington County WI SO</td><td>7,617</td><td>0.473%</td></tr>
+            <tr><td>#39</td><td>Riverside County CA District Attorney</td><td>7,437</td><td>0.462%</td></tr>
+            <tr><td>#40</td><td>Little Rock AR PD</td><td>7,209</td><td>0.448%</td></tr>
+            <tr><td>#41</td><td>Jefferson County CO SO</td><td>7,090</td><td>0.441%</td></tr>
+            <tr><td>#42</td><td>Dearborn MI PD</td><td>6,931</td><td>0.431%</td></tr>
+            <tr><td>#43</td><td>Washoe County NV SO</td><td>6,828</td><td>0.424%</td></tr>
+            <tr><td>#44</td><td>Iredell County NC SO</td><td>6,804</td><td>0.423%</td></tr>
+            <tr><td>#45</td><td>Sterling Heights MI PD</td><td>6,585</td><td>0.409%</td></tr>
+            <tr><td>#46</td><td>Germantown TN PD</td><td>6,322</td><td>0.393%</td></tr>
+            <tr><td>#47</td><td>El Cajon CA PD</td><td>5,923</td><td>0.368%</td></tr>
+            <tr><td>#48</td><td>Vestavia Hills AL PD</td><td>5,548</td><td>0.345%</td></tr>
+            <tr><td>#49</td><td>Brighton CO PD</td><td>5,517</td><td>0.343%</td></tr>
+            <tr><td>#50</td><td>Hempstead Village NY PD</td><td>5,512</td><td>0.343%</td></tr>
+            <tr class="subtotal"><td></td><td>Top 50 subtotal</td><td>1,377,802</td><td>85.640%</td></tr>
+            <tr class="subtotal"><td></td><td>Total, all 245 agencies</td><td>1,608,828</td><td>100.000%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-downloads">
+        <a href="/assets/top-50-requesting-agencies-by-year.docx" download class="btn-file">Download: Top 50 Requesting Agencies by Year (DOCX)</a>
+        <a href="/assets/agency-search-counts-by-year.md" download class="btn-file">Download: Agency Search Counts by Year (Markdown)</a>
       </div>
 
       <h3>Verify it yourself</h3>
