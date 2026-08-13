@@ -376,40 +376,6 @@
       line-height: 1.5;
     }
 
-    /* DATA DOWNLOAD LIST */
-    .data-list {
-      margin: 28px 0;
-      border-top: 2px solid var(--gray-200);
-    }
-    .data-row {
-      display: flex;
-      align-items: baseline;
-      gap: 20px;
-      padding: 16px 0;
-      border-bottom: 1px solid var(--gray-100);
-    }
-    .data-row strong {
-      flex-shrink: 0;
-      width: 170px;
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--navy-dark);
-    }
-    .data-row p {
-      flex: 1;
-      font-size: 14px !important;
-      line-height: 1.6 !important;
-      margin-bottom: 0 !important;
-    }
-    .data-row a {
-      flex-shrink: 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--red);
-      white-space: nowrap;
-    }
-    .data-row a:hover { text-decoration: underline; }
-
     /* TOP 50 TABLE */
     .table-scroll {
       max-height: 620px;
@@ -522,6 +488,19 @@
       text-align: center;
       margin-top: 40px;
     }
+    .contact-cta h3 {
+      color: var(--white);
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      margin: 0 0 10px;
+    }
+    .contact-cta p {
+      color: rgba(255,255,255,0.65) !important;
+      font-size: 15px !important;
+      max-width: 460px;
+      margin: 0 auto 24px !important;
+    }
     .contact-cta .btn-contact {
       display: inline-flex;
       align-items: center;
@@ -541,8 +520,6 @@
       .briefing-body { padding: 56px 24px; }
       .release-meta { flex-direction: column; align-items: flex-start; }
       .stats-grid, .join-grid { grid-template-columns: 1fr; }
-      .data-row { flex-direction: column; gap: 6px; }
-      .data-row strong { width: auto; }
       .own-table td:first-child { width: auto; }
     }
   </style>
@@ -772,22 +749,17 @@
       <h2>The Data</h2>
       <p>Everything is public. Nothing here is characterization; it is the records.</p>
 
-      <div class="data-list">
-        <div class="data-row">
-          <strong>Full dataset</strong>
-          <p>110 files, 5,171,087 search records, February 2022 – July 2026, with data dictionary and redaction notes. 209 MB.</p>
-          <a href="https://archive.org/details/weber-county-alpr-records" target="_blank" rel="noopener">Download →</a>
-        </div>
-        <div class="data-row">
-          <strong>Journalist package</strong>
-          <p>The source documents, the agency-by-year spreadsheet, and the full report. Small download.</p>
-          <a href="https://archive.org/details/weber-county-alpr-records" target="_blank" rel="noopener">Download →</a>
-        </div>
-        <div class="data-row">
-          <strong>Source documents</strong>
-          <p>The vendor contract and terms, the county's ALPR policy, the state highway permit application, and the county's written records responses.</p>
-          <a href="https://archive.org/details/weber-county-alpr-records" target="_blank" rel="noopener">View →</a>
-        </div>
+      <p>All of it lives in one archive at the Internet Archive — 209 MB, free, no account required. It contains:</p>
+      <ul>
+        <li>Every search record released by the county — 5,171,087 rows, February 2022 through July 2026, packaged by year</li>
+        <li>The organization search export and the administrative event log</li>
+        <li>The vendor order form and its terms and conditions</li>
+        <li>The Sheriff's Office ALPR policy and the state highway permit application</li>
+        <li>The records requests, the county's written responses, and the two denials</li>
+        <li>A README with the data dictionary, parsing notes, and a statement of what was redacted and why</li>
+      </ul>
+      <div class="table-downloads">
+        <a href="https://archive.org/details/weber-county-alpr-records" target="_blank" rel="noopener" class="btn-file">Open the full archive →</a>
       </div>
 
       <h3>Top 50 requesting agencies, 2026</h3>
@@ -859,8 +831,7 @@
       </div>
 
       <h3>Verify it yourself</h3>
-      <p>The records requests that produced this are reproducible. We publish the request language, the file numbers, and the responses so any resident or reporter can run the same request at any Utah agency.</p>
-      <p><a href="https://archive.org/details/weber-county-alpr-records" target="_blank" rel="noopener" style="color: var(--red); font-weight: 600;">Get the records requests and responses →</a></p>
+      <p>The records requests that produced this are reproducible. The request language, the file numbers, and the county's responses are all in the archive above, so any resident or reporter can run the same request at any Utah agency.</p>
 
       <!-- WHAT WE ARE ASKING FOR -->
       <h2>What We Are Asking For</h2>
@@ -903,7 +874,9 @@
       </div>
 
       <div class="contact-cta">
-        <a href="mailto:info@utahciviccompact.org" class="btn-contact">Contact: info@utahciviccompact.org</a>
+        <h3>Get in touch</h3>
+        <p>Questions about the records, the methodology, or your own agency's configuration. We answer all of them.</p>
+        <a href="mailto:info@utahciviccompact.org?subject=License%20Plate%20Reader%20Investigation" class="btn-contact">Email info@utahciviccompact.org</a>
       </div>
 
       <p style="margin-top: 40px; font-size: 14px; color: var(--gray-400); border-top: 1px solid var(--gray-200); padding-top: 24px;">Utah Civic Compact is a nonpartisan 501(c)(4) civic organization working on government transparency and accountability in Utah.</p>
