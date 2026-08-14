@@ -44,6 +44,22 @@
   ],
   "press": [
     {
+      "outlet": "Utah News Dispatch",
+      "badge_color": "#1c3f60",
+      "date": "August 14, 2026",
+      "headline": "Most of this Utah county's license plate camera data is searched by out-of-state law enforcement",
+      "url": "https://utahnewsdispatch.com/2026/08/14/weber-county-license-plate-camera-data-searched-by-out-of-state-law-enforcement/",
+      "read_more": "Read on Utah News Dispatch →"
+    },
+    {
+      "outlet": "KSL",
+      "badge_color": "#0057a8",
+      "date": "August 13, 2026",
+      "headline": "Group cites 'striking' Weber County data on Flock cameras as reason for lawmakers to act",
+      "url": "https://www.ksl.com/article/51609507/group-cites-striking-weber-county-data-on-flock-cameras-as-reason-for-lawmakers-to-act",
+      "read_more": "Read on KSL →"
+    },
+    {
       "outlet": "Semafor",
       "badge_color": "#1a1a1a",
       "date": "June 23, 2026",

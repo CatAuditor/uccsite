@@ -10,7 +10,28 @@
       "tagline": "Ten cameras in one Utah county were searched 5.1 million times by police in 45 states. Records show 41.4% of searches carry a stated reason that matches no purpose Utah law permits.",
       "cta_url": "/alpr.html",
       "cta_text": "View Full Investigation",
-      "articles": [],
+      "articles": [
+        {
+          "outlet": "Utah News Dispatch",
+          "badge_color": "#1c3f60",
+          "date": "August 14, 2026",
+          "region": "Weber County",
+          "headline": "Most of this Utah county's license plate camera data is searched by out-of-state law enforcement",
+          "excerpt": "Records obtained by Utah Civic Compact show ten Flock Safety cameras in Weber County were searched 5.1 million times between February 2022 and July 2026, with almost 97% of those searches coming from agencies outside Utah. The Houston Police Department alone accounted for more than a third of all activity.",
+          "url": "https://utahnewsdispatch.com/2026/08/14/weber-county-license-plate-camera-data-searched-by-out-of-state-law-enforcement/",
+          "read_more": "Read on Utah News Dispatch →"
+        },
+        {
+          "outlet": "KSL",
+          "badge_color": "#0057a8",
+          "date": "August 13, 2026",
+          "region": "Weber County",
+          "headline": "Group cites 'striking' Weber County data on Flock cameras as reason for lawmakers to act",
+          "excerpt": "Utah Civic Compact released public records at the Capitol showing Weber County's license plate reader cameras were searched more than 5 million times since early 2022, overwhelmingly by out-of-state agencies. The group is calling on state lawmakers to tighten the rules governing how outside agencies access Utah data.",
+          "url": "https://www.ksl.com/article/51609507/group-cites-striking-weber-county-data-on-flock-cameras-as-reason-for-lawmakers-to-act",
+          "read_more": "Read on KSL →"
+        }
+      ],
       "videos": []
     },
     {
