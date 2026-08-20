@@ -250,6 +250,10 @@ collections:
                 name: slug
                 widget: string
                 hint: "e.g. stratos — lowercase, no spaces"
+              - label: Author
+                name: author
+                widget: string
+                hint: "Who wrote this project's work — e.g. Conner Radcliffe"
               - label: Status
                 name: status
                 widget: string

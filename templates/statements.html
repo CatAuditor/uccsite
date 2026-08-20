@@ -53,6 +53,12 @@
       color: var(--navy-dark);
       line-height: 1.25;
       letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
+    .statement-byline {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-400);
       margin-bottom: 28px;
     }
     .statement-body p {
@@ -122,6 +128,7 @@
       <article class="statement-article" id="{{slug}}">
         <div class="statement-meta">{{date}} &nbsp;·&nbsp; {{topic}}</div>
         <h2 class="statement-title">{{title}}</h2>
+        <div class="statement-byline">By {{author}}</div>
         <div class="statement-body">{{{body}}}</div>
         <div class="statement-signoff">{{signoff}}</div>
       </article>

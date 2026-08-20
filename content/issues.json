@@ -4,6 +4,7 @@
       "slug": "redistricting",
       "num": "01",
       "title": "Redistricting & Fair Maps",
+      "author": "Clark Dice",
       "epigraph": "Districts should represent voters — not protect the officials elected under them.",
       "body": "Utah's district lines are currently drawn by the same elected officials who benefit from how those lines are drawn. That's a structural conflict of interest built into the process itself, not a matter of any one official's intent.\n\nUtah Civic Compact believes redistricting should be as nonpartisan as is practically achievable. We support establishing an independent redistricting commission with a firewall between partisan interest and map-drawing authority. We're encouraged that the Utah Attorney General's office has been willing to work with reform advocates on this issue, and that the Attorney General has voiced support for repealing the legislative changes that weakened the citizen-passed independent commission. That kind of cross-institutional cooperation is how durable reform actually gets built.\n\nWhen the people who draw the maps are also the people who benefit from them, accountability suffers. An independent commission restores what should already be true: that districts represent voters, not the officials elected under them."
     },
@@ -11,6 +12,7 @@
       "slug": "ballot-access",
       "num": "02",
       "title": "Ballot Access & Voting Rights",
+      "author": "Clark Dice",
       "epigraph": "The right to vote should not be encumbered by process designed to make it harder to use.",
       "body": "The right to vote is a constitutional right. It should not be encumbered by intrusive processes designed to make it harder for certain people to exercise it.\n\nThe SAVE Act bill is a solution without a problem — or rather, it's a solution to a different problem than what its sponsors claim. It forces excessive documentation and removes mail ballot access. The real problem it's trying to solve isn't election security. It's that certain political parties know that certain individuals will never vote for them, so the easiest path to victory is to make sure those individuals can't vote at all. We will not accept that. Utah Civic Compact believes citizens have the constitutional right to vote, and that right must not be weaponized by partisan process engineering."
     },
@@ -18,6 +20,7 @@
       "slug": "transparency",
       "num": "03",
       "title": "Government Transparency",
+      "author": "Clark Dice",
       "epigraph": "Informed voting is impossible without transparency.",
       "body": "You cannot make an informed decision if the information is being suppressed for individual or selfish reasons.\n\nState, federal, and local governments should be as transparent as possible with respect to financial disclosures and financial incentives for each individual voting member pulling the levers of power on behalf of the people. The people have the right to documents, to data, to meeting notes. They have the right to know what financial interests their representatives have before those representatives vote on issues that affect those financial interests. Informed voting is impossible without transparency. We will not accept suppression of public information for private advantage."
     },
@@ -25,6 +28,7 @@
       "slug": "local-governance",
       "num": "04",
       "title": "Local & Community Governance",
+      "author": "Clark Dice",
       "epigraph": "The closest government should be the most responsive.",
       "body": "If a project or policy is going to directly affect the individuals who populate a community, those individuals should have direct mechanisms by which they can weigh in on it — line item, detail by detail.\n\nElected representatives of the closest approximation of authority — county commissioners, city councils, local boards — should have real authority to participate in decisions that affect their communities. Local government is the most responsive because it is the most accountable to the voters in the community. When state authorities like MIDA bypass local consent and local oversight to ram through projects, they break that accountability chain. Utah Civic Compact believes the closest government should be the most responsive — and that means county and local authority over land-use decisions that directly affect the people who live there."
     },
@@ -32,6 +36,7 @@
       "slug": "ethics",
       "num": "05",
       "title": "Ethics & Anti-Corruption",
+      "author": "Clark Dice",
       "epigraph": "Rules on the books mean nothing if the mechanisms for enforcing them are broken.",
       "body": "Government is constrained by the nature of humanity. That's not an excuse — it's why we need strong structures.\n\nWe believe that the structures of accountability regarding financial incentives must aggressively curtail public officials from having compromised or biased points of view and incentives. Recusal rules, cooling-off periods, and gift limits matter. But rules on the books mean nothing if the mechanisms for enforcing them are broken. The MIDA project is a case study: it completely bypassed county accountability because the enforcement mechanisms that were supposed to catch that were either absent or circumvented. We need well-defined rules AND enforceable mechanisms. Otherwise, the rulebook is just performance theater."
     },
@@ -39,6 +44,7 @@
       "slug": "civic-education",
       "num": "06",
       "title": "Civic Education & Engagement",
+      "author": "Clark Dice",
       "epigraph": "Voting is a constitutional right. It should not be rationed by the work schedule.",
       "body": "Every working-class voter deserves the time and freedom to think about how they want to vote.\n\nUtah Civic Compact believes every election should be a federal holiday. Not as a day to celebrate in the abstract, but as a concrete protection: so that no voter has to choose between their paycheck and the ballot box. So that every working person has the freedom and time to really think about what they want to do before they pull the lever. Voting is a constitutional right. It should not be rationed by the work schedule."
     },
@@ -46,6 +52,7 @@
       "slug": "data-centers",
       "num": "07",
       "title": "Data Centers & Community Consent",
+      "author": "Clark Dice",
       "epigraph": "People affected by a project deserve to know what they're consenting to.",
       "body": "Utah Civic Compact is not opposed to data centers or AI technology. We work with it. We believe in it. But we also believe in procedure.\n\nBefore a single brick is put on the ground, new data center projects should be assessed by an independent commission that evaluates limited resources like water and electricity, potential effects on individual voter utility rates, and produces an economic impact report. Voters in the affected community should have access to that full assessment before the project is approved. Then they can make an informed decision about whether they are okay with having these data centers in their communities.\n\nThe Hansel Valley project shows what happens when this doesn't occur: a 9-gigawatt data center approved without county consent, without proper environmental assessment, without community input. We're not saying no to data centers. We're saying the people affected by them deserve to know what they're consenting to — and they deserve actual mechanisms to say no. This is about ensuring development happens with the consent of the communities it affects, not without it."
     }
