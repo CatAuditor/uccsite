@@ -11,6 +11,8 @@ templates/*.html + content/*.json → build.js → dist/
 Cloudflare Pages build command: `node build.js`, output dir: `dist`.  
 Local: `node build.js` (zero npm dependencies).
 
+Do not add page HTML at repo root. Only `templates/` is served (via `dist/`); the only root HTML that ships is the passthrough list in `COPY_FROM_ROOT` in `build.js`. Stale root copies of templated pages were removed 2026-08-23.
+
 ## Pages
 
 Editable pages use templates + content JSON. Passthrough pages are copied as-is.
