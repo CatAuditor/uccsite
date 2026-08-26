@@ -46,6 +46,22 @@
     {
       "outlet": "Utah News Dispatch",
       "badge_color": "#1c3f60",
+      "date": "August 20, 2026",
+      "headline": "Utah governor says he’s ‘deeply troubled’ by Flock cameras, calls for review to protect privacy",
+      "url": "https://utahnewsdispatch.com/2026/08/20/utah-governor-deeply-troubled-by-flock-cameras-calls-for-review/",
+      "read_more": "Read on Utah News Dispatch →"
+    },
+    {
+      "outlet": "KSL News Utah",
+      "badge_color": "#0057a8",
+      "date": "August 20, 2026",
+      "headline": "Gov. Spencer Cox answers questions on Flock cameras, data centers and his new grandson",
+      "url": "https://www.youtube.com/live/8y01KiiE838?t=1094",
+      "read_more": "Watch on KSL News Utah →"
+    },
+    {
+      "outlet": "Utah News Dispatch",
+      "badge_color": "#1c3f60",
       "date": "August 14, 2026",
       "headline": "Most of this Utah county's license plate camera data is searched by out-of-state law enforcement",
       "url": "https://utahnewsdispatch.com/2026/08/14/weber-county-license-plate-camera-data-searched-by-out-of-state-law-enforcement/",

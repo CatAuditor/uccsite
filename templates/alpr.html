@@ -541,6 +541,64 @@
     }
     .contact-cta .btn-contact:hover { background: var(--red-light); }
 
+    /* Read About This in the Media */
+    .coverage-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 28px 0 40px;
+    }
+    .coverage-card {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 20px;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      text-decoration: none;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .coverage-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.09); transform: translateY(-2px); }
+    .coverage-top { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .coverage-badge {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--white);
+      padding: 4px 8px;
+      border-radius: 4px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .coverage-date {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      white-space: nowrap;
+    }
+    .coverage-headline {
+      flex: 1;
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--navy-dark);
+      line-height: 1.45;
+      letter-spacing: -0.01em;
+    }
+    .coverage-more {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--red);
+      flex-shrink: 0;
+    }
+    @media (max-width: 768px) {
+      .coverage-card { flex-direction: column; align-items: flex-start; gap: 10px; }
+    }
+
     @media (max-width: 768px) {
       .subpage-hero { padding: 140px 24px 64px; }
       .briefing-body { padding: 56px 24px; }
@@ -907,6 +965,22 @@
           <strong>Reporters</strong>
           <p>The complete dataset, every source document, and the methodology are yours. We will walk you through any of it.</p>
         </div>
+      </div>
+
+      <!-- READ ABOUT THIS IN THE MEDIA -->
+      <h2>Read About This in the Media</h2>
+      <p>Utah newsrooms have reported on these records independently. Each link goes to the outlet’s own coverage.</p>
+      <div class="coverage-list">
+        {{#alpr_coverage}}
+        <a class="coverage-card" href="{{{url}}}" target="_blank" rel="noopener">
+          <div class="coverage-top">
+            <span class="coverage-badge" style="background: {{badge_color}};">{{outlet}}</span>
+            <span class="coverage-date">{{date}}</span>
+          </div>
+          <div class="coverage-headline">{{headline}}</div>
+          <div class="coverage-more">{{read_more}}</div>
+        </a>
+        {{/alpr_coverage}}
       </div>
 
       <div class="contact-cta">

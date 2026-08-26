@@ -1,0 +1,78 @@
+{
+  "alpr_coverage": [
+    {
+      "outlet": "Utah News Dispatch",
+      "badge_color": "#1c3f60",
+      "date": "August 20, 2026",
+      "headline": "Utah governor says he’s ‘deeply troubled’ by Flock cameras, calls for review to protect privacy",
+      "url": "https://utahnewsdispatch.com/2026/08/20/utah-governor-deeply-troubled-by-flock-cameras-calls-for-review/",
+      "read_more": "Read on Utah News Dispatch →"
+    },
+    {
+      "outlet": "KSL News Utah",
+      "badge_color": "#0057a8",
+      "date": "August 20, 2026",
+      "headline": "Gov. Spencer Cox answers questions on Flock cameras, data centers and his new grandson",
+      "url": "https://www.youtube.com/live/8y01KiiE838?t=1094",
+      "read_more": "Watch on KSL News Utah →"
+    },
+    {
+      "outlet": "Utah News Dispatch",
+      "badge_color": "#1c3f60",
+      "date": "August 14, 2026",
+      "headline": "Most of this Utah county’s license plate camera data is searched by out-of-state law enforcement",
+      "url": "https://utahnewsdispatch.com/2026/08/14/weber-county-license-plate-camera-data-searched-by-out-of-state-law-enforcement/",
+      "read_more": "Read on Utah News Dispatch →"
+    },
+    {
+      "outlet": "KSL",
+      "badge_color": "#0057a8",
+      "date": "August 13, 2026",
+      "headline": "Group cites ‘striking’ Weber County data on Flock cameras as reason for lawmakers to act",
+      "url": "https://www.ksl.com/article/51609507/group-cites-striking-weber-county-data-on-flock-cameras-as-reason-for-lawmakers-to-act",
+      "read_more": "Read on KSL →"
+    }
+  ],
+  "stratos_coverage": [
+    {
+      "outlet": "Semafor",
+      "badge_color": "#1a1a1a",
+      "date": "June 23, 2026",
+      "headline": "How a data center backlash is twisting Utah’s primary",
+      "url": "https://www.semafor.com/article/06/23/2026/how-a-data-center-backlash-is-twisting-utahs-primary",
+      "read_more": "Read on Semafor →"
+    },
+    {
+      "outlet": "Forbes",
+      "badge_color": "#cc0000",
+      "date": "June 9, 2026",
+      "headline": "One Utah County’s Fight Over a $100 Billion Data Center — And What It Means for All of Us",
+      "url": "https://www.forbes.com/sites/michaelposner/2026/06/09/one-utah-countys-fight-over-a-100-billion-data-center---and-what-it-means-for-all-of-us/",
+      "read_more": "Read on Forbes →"
+    },
+    {
+      "outlet": "KSL TV",
+      "badge_color": "#0057a8",
+      "date": "June 9, 2026",
+      "headline": "Utah Civic Compact files conflict of interest complaint regarding Stratos data center",
+      "url": "https://ksltv.com/youtube_videos/video-utah-civic-compact-files-conflict-of-interest-complaint-regarding-stratos-data-center/",
+      "read_more": "Watch on KSL TV →"
+    },
+    {
+      "outlet": "KSL",
+      "badge_color": "#0057a8",
+      "date": "May 27, 2026",
+      "headline": "Data center official counters worries about project footprint; foes raise new concerns",
+      "url": "https://www.ksl.com/article/51502781/data-center-official-counters-worries-about-project-footprint-foes-raise-new-concerns",
+      "read_more": "Read on KSL →"
+    },
+    {
+      "outlet": "FOX 13",
+      "badge_color": "#e8272a",
+      "date": "May 26, 2026",
+      "headline": "MIDA violated state law in approval process of Box Elder County data center, group claims",
+      "url": "https://www.fox13now.com/news/local-news/box-elder-county/mida-violated-state-law-in-approval-process-of-box-elder-county-data-center-group-claims",
+      "read_more": "Read on Fox 13 →"
+    }
+  ]
+}

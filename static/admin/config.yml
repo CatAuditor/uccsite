@@ -226,6 +226,11 @@ collections:
                 name: youtube_id
                 widget: string
                 hint: "The ID at the end of a YouTube URL, e.g. SoMlZxDFHHw"
+              - label: Embed Parameters (optional)
+                name: embed_params
+                widget: string
+                required: false
+                hint: "Optional. Start the embed at a timestamp, e.g. ?start=1094 for 18:14"
               - label: YouTube Title (for accessibility)
                 name: youtube_title
                 widget: string
@@ -278,3 +283,64 @@ collections:
                 name: cta_text
                 widget: string
                 hint: "e.g. Read the Briefing"
+
+  # ── Report Media Coverage ─────────────────────────────────────────────────
+  - name: coverage
+    label: Report Media Coverage
+    files:
+      - name: coverage_content
+        label: "Read About This in the Media"
+        file: content/coverage.json
+        format: json
+        fields:
+          - label: ALPR Report Coverage (alpr.html)
+            name: alpr_coverage
+            widget: list
+            fields:
+              - label: Outlet Name
+                name: outlet
+                widget: string
+              - label: Badge Color
+                name: badge_color
+                widget: string
+                hint: "e.g. #1c3f60 for Utah News Dispatch, #0057a8 for KSL"
+              - label: Date
+                name: date
+                widget: string
+                hint: "e.g. August 20, 2026"
+              - label: Headline
+                name: headline
+                widget: text
+              - label: Article URL
+                name: url
+                widget: string
+              - label: Read More Text
+                name: read_more
+                widget: string
+                hint: "e.g. Read on KSL → or Watch on KSL News Utah →"
+
+          - label: Stratos Report Coverage (stratos.html)
+            name: stratos_coverage
+            widget: list
+            fields:
+              - label: Outlet Name
+                name: outlet
+                widget: string
+              - label: Badge Color
+                name: badge_color
+                widget: string
+                hint: "e.g. #1c3f60 for Utah News Dispatch, #0057a8 for KSL"
+              - label: Date
+                name: date
+                widget: string
+                hint: "e.g. August 20, 2026"
+              - label: Headline
+                name: headline
+                widget: text
+              - label: Article URL
+                name: url
+                widget: string
+              - label: Read More Text
+                name: read_more
+                widget: string
+                hint: "e.g. Read on KSL → or Watch on KSL News Utah →"

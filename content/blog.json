@@ -3,6 +3,16 @@
     {
       "outlet": "Utah News Dispatch",
       "badge_color": "#1c3f60",
+      "date": "August 20, 2026",
+      "region": "Utah",
+      "headline": "Utah governor says he’s ‘deeply troubled’ by Flock cameras, calls for review to protect privacy",
+      "excerpt": "Responding to Utah Civic Compact’s Weber County records, Gov. Spencer Cox said he is “deeply troubled” by how the county’s ten Flock cameras have been searched and asked the Utah Privacy Governing Board and the Utah Privacy Commission to review the state’s rules and enforcement. “We have legislation that puts those guardrails in place,” Cox said. “The question is: is the legislation being followed?”",
+      "url": "https://utahnewsdispatch.com/2026/08/20/utah-governor-deeply-troubled-by-flock-cameras-calls-for-review/",
+      "read_more": "Read on Utah News Dispatch →"
+    },
+    {
+      "outlet": "Utah News Dispatch",
+      "badge_color": "#1c3f60",
       "date": "August 14, 2026",
       "region": "Weber County",
       "headline": "Most of this Utah county's license plate camera data is searched by out-of-state law enforcement",
@@ -72,6 +82,16 @@
     }
   ],
   "videos": [
+    {
+      "outlet": "KSL News Utah",
+      "badge_color": "#0057a8",
+      "date": "August 20, 2026",
+      "region": "Utah",
+      "headline": "Gov. Spencer Cox answers questions on Flock cameras, data centers and his new grandson",
+      "youtube_id": "8y01KiiE838",
+      "embed_params": "?start=1094",
+      "youtube_title": "Utah governor answers questions on flock cameras, data centers and his new grandson — KSL News Utah"
+    },
     {
       "outlet": "KSL News Utah",
       "badge_color": "#0057a8",

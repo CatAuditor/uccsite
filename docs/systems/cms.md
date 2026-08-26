@@ -20,6 +20,7 @@ dist/               ← Cloudflare Pages serves this (.gitignored)
 | Homepage | `content/homepage.json` | Hero, mission quote, about section, join section, donate section, modal, featured press cards |
 | Team & Bios | `content/team.json` | All team members (name, title, bio — markdown) |
 | News & Press | `content/blog.json` | Press articles and video cards |
+| Report coverage | `content/coverage.json` | "Read About This in the Media" cards on `alpr.html` and `stratos.html`, keyed per report |
 
 Pillars, issues grid, stats, and nav/footer are hardcoded in templates (change rarely).
 
