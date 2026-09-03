@@ -75,3 +75,6 @@ A reusable `<donation-tracker>` section (works on `index.html` and `stratos.html
 - Which strings need to be editable first? (Prioritizes what goes in content JSON)
 - Acceptable to introduce a build step, or prefer GitHub web editor for raw JSON? (Simpler but less polished)
 - Donation goal amount — where should it live? Env var (requires redeploy to change) or a row in D1 (editable via a future admin UI)?
+cd "/Users/dicehome/Desktop/UCC site"
+git push origin main
+

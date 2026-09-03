@@ -1,0 +1,33 @@
+# We've been busy.
+
+Since we launched Utah Civic Compact a few weeks ago, we've been moving fast. Here's where things stand.
+
+**We accused MIDA of breaking the law.**
+
+The Utah Military Installation Development Authority approved a 9-gigawatt natural gas data center campus in Box Elder County called the Stratos Project. We reviewed the public record and found three statutory violations of Utah Code § 63H-1: private land was included before the county gave consent, a development agreement was executed before the plan was legally effective, and a mandatory health, safety, and welfare finding was made without any evidentiary basis.
+
+We filed formal complaints with the Utah Attorney General and requested a legislative audit through the Office of the Legislative Auditor General. Major Utah TV outlets covered it.
+
+**Then we found a conflict of interest connected to the same project.**
+
+Box Elder County Commissioner Boyd Bingham voted to approve county consent for the Stratos Project. What he didn't disclose: he serves as a Member Director and Compensation Committee Chairman at Western AgCredit, which holds an active lien against ranch parcels inside the project area. His conflict of interest disclosure listed Western AgCredit as an income source but didn't mention the lien, and he made no verbal disclosure before the vote. We filed complaints with the Utah AG and the Utah Political Subdivisions Ethics Review Commission. KSL, ABC4, KUTV, and Fox13 all showed up.
+
+**We also caught Weber County commissioner candidates hiding legal fees.**
+
+Three candidates filed a coordinated lawsuit to knock a competitor off the primary ballot and didn't disclose their attorney fees in their campaign finance filings, as required by Utah Code 20A-11-104. We filed a complaint with the Lieutenant Governor's Elections Division.
+
+That's three investigations, three sets of complaints, and press coverage across the state. In a few weeks.
+
+**We launched our tipline.**
+
+If you know something the public deserves to know, we want to hear it. Everything goes through secure intake, and we verify before we publish.
+
+**More coming.**
+
+We're drafting legislation for the upcoming session. We've got more investigations in the pipeline we're not ready to talk about yet. And we'll be announcing Spin Class soon, our biweekly civic skills training series for Utahns who want to get serious about how this state actually works.
+
+**Want in?**
+
+We're looking for people who want to help with investigations, social media, and organizing. Find everything at utahciviccompact.org.
+
+The UCC Team
