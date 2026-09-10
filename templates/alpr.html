@@ -98,6 +98,20 @@
       transition: background 0.2s;
     }
     .hero-download:hover { background: var(--red-light); }
+    .hero-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(255,255,255,0.35);
+      color: var(--white);
+      padding: 14px 28px;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .hero-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.6); }
     .hero-provenance {
       font-size: 13px !important;
       color: rgba(255,255,255,0.45) !important;
@@ -651,6 +665,7 @@
     <p><strong>Weber County's own deputies ran 13,100 of them.</strong></p>
     <div class="hero-ctas">
       <a href="https://archive.org/details/weber-county-alpr-records" target="_blank" rel="noopener" class="hero-download">Download the complete dataset</a>
+      <a href="/how-did-this-happen.html" class="hero-secondary">If they followed the law, how did this happen? →</a>
     </div>
     <p class="hero-provenance">Every figure on this page comes from records Weber County released under Utah's Government Records Access and Management Act, or from documents the county published itself.</p>
   </div>
@@ -816,6 +831,12 @@
 
       <h3>Surveillance as a Service</h3>
       <p>Local agencies are not building surveillance systems. They are subscribing to them. The capability is rented, the hardware is rented, and what a county buys for its annual fee is a seat in a national network it does not control.</p>
+
+      <div class="update-note">
+        <div class="update-note-label">Companion policy paper — September 2026</div>
+        <p>Our Director of Policy read the signed agreement against the Utah Code clause by clause, and reached a definitional conclusion: the statute describes a plate reader run by a governmental entity holding its own data, while what was sold is a right of access to a web interface and ten more cameras on a private network. Utah has no statutory term for the system, or for the data it produces, that applies without regard to who holds it.</p>
+        <p><a href="/how-did-this-happen.html" style="color: var(--navy); font-weight: 700; text-decoration: underline;">If Weber County followed the law, how did this happen? →</a></p>
+      </div>
 
       <!-- THIS IS NOT A WEBER COUNTY STORY -->
       <h2>This Is Not a Weber County Story</h2>
