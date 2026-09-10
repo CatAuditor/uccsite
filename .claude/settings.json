@@ -8,7 +8,10 @@
       "Bash(head *)",
       "Bash(tail *)",
       "Bash(wc *)",
-      "Bash(diff *)"
+      "Bash(diff *)",
+      "WebFetch(domain:www.semafor.com)",
+      "Bash(pkill -f \"http.server 8765\")",
+      "WebFetch(domain:www.forbes.com)"
     ]
   }
 }

@@ -60,44 +60,13 @@
       "read_more": "Watch on KSL News Utah →"
     },
     {
-      "outlet": "Utah News Dispatch",
-      "badge_color": "#1c3f60",
-      "date": "August 14, 2026",
-      "headline": "Most of this Utah county's license plate camera data is searched by out-of-state law enforcement",
-      "url": "https://utahnewsdispatch.com/2026/08/14/weber-county-license-plate-camera-data-searched-by-out-of-state-law-enforcement/",
-      "read_more": "Read on Utah News Dispatch →"
-    },
-    {
-      "outlet": "KSL",
-      "badge_color": "#0057a8",
-      "date": "August 13, 2026",
-      "headline": "Group cites 'striking' Weber County data on Flock cameras as reason for lawmakers to act",
-      "url": "https://www.ksl.com/article/51609507/group-cites-striking-weber-county-data-on-flock-cameras-as-reason-for-lawmakers-to-act",
-      "read_more": "Read on KSL →"
-    },
-    {
-      "outlet": "Semafor",
-      "badge_color": "#1a1a1a",
-      "date": "June 23, 2026",
-      "headline": "How a data center backlash is twisting Utah's primary",
-      "url": "https://www.semafor.com/article/06/23/2026/how-a-data-center-backlash-is-twisting-utahs-primary",
-      "read_more": "Read on Semafor →"
-    },
-    {
-      "outlet": "Forbes",
-      "badge_color": "#cc0000",
-      "date": "June 9, 2026",
-      "headline": "One Utah County's Fight Over a $100 Billion Data Center — And What It Means for All of Us",
-      "url": "https://www.forbes.com/sites/michaelposner/2026/06/09/one-utah-countys-fight-over-a-100-billion-data-center---and-what-it-means-for-all-of-us/",
-      "read_more": "Read on Forbes →"
-    },
-    {
-      "outlet": "KSL News Utah",
-      "badge_color": "#0057a8",
-      "date": "June 9, 2026",
-      "headline": "Commissioner responds to Stratos Project conflict of interest claims",
-      "url": "https://www.youtube.com/watch?v=WFcau2uLn_E",
-      "read_more": "Watch on KSL News Utah →"
+      "outlet": "Telemundo Utah",
+      "lang_attr": "lang=\"es\"",
+      "badge_color": "#1a2a8f",
+      "date": "August 20, 2026",
+      "headline": "Crece la preocupación sobre la instalación de cámaras “Flock” en Utah",
+      "url": "https://www.telemundoutah.com/noticias/local/crece-preocupacion-instalacion-camaras-flock-utah/2412405/",
+      "read_more": "Leer en Telemundo Utah →"
     }
   ]
 }

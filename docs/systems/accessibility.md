@@ -9,6 +9,7 @@ Conventions for keeping the accessibility tree well-formed and CLS low. Apply th
 - **Decorative SVGs get `aria-hidden="true"`.** All inline icon SVGs (issue icons, checkmarks, social icons) are decorative — text follows them. Hiding them keeps unnamed graphic nodes out of the tree.
 - **Toggle buttons expose state.** `.nav-toggle` carries `aria-label`, `aria-expanded`, `aria-controls`; `js/main.js` flips `aria-expanded` on open/close.
 - **Form inputs need a `<label for>`** (already true site-wide).
+- **Mark non-English text with `lang`.** Every page declares `<html lang="en">`, so foreign-language copy inside it (a Spanish press headline, for example) is read aloud with English pronunciation rules unless the element carries its own `lang`. Press and coverage entries take an optional `lang_attr` field for this — leave it blank for English, set it to `lang="es"` for Spanish. The templates render it as `<div class="..." {{{lang_attr}}}>`.
 
 ### Known remaining gaps
 - Footer column headings are `<h5>` after `<h3>` (level skip). Fixing requires changing both the tag and the `.footer-col h5` CSS selector.

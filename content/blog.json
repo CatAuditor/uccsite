@@ -1,6 +1,17 @@
 {
   "articles": [
     {
+      "outlet": "Telemundo Utah",
+      "lang_attr": "lang=\"es\"",
+      "badge_color": "#1a2a8f",
+      "date": "August 20, 2026",
+      "region": "Utah",
+      "headline": "Crece la preocupación sobre la instalación de cámaras “Flock” en Utah",
+      "excerpt": "El gobernador Spencer Cox se mostró profundamente preocupado por el uso de las cámaras de vigilancia ALPR y solicitó una revisión de la normativa de Utah. Telemundo Utah cita los registros publicados por Utah Civic Compact: las diez cámaras Flock del condado Weber fueron consultadas 5.1 millones de veces entre 2022 y 2026, principalmente por agencias de fuera del estado.",
+      "url": "https://www.telemundoutah.com/noticias/local/crece-preocupacion-instalacion-camaras-flock-utah/2412405/",
+      "read_more": "Leer en Telemundo Utah →"
+    },
+    {
       "outlet": "Utah News Dispatch",
       "badge_color": "#1c3f60",
       "date": "August 20, 2026",
