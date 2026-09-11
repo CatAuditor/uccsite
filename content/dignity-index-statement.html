@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Twenty-Five Years Later, the Compact Still Holds — Utah Civic Compact</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1A2740;
+    --paper:#FAF9F6;
+    --paper-dim:#F1EEE6;
+    --brick:#8B2635;
+    --gold:#B5902A;
+    --rule:#D8D3C4;
+    --body-text:#3A3A34;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html{ scroll-behavior:smooth; }
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--body-text);
+    font-family:'Newsreader', Georgia, serif;
+    font-size:19px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .meta-face{
+    font-family:'IBM Plex Sans', sans-serif;
+  }
+
+  .page{
+    max-width:680px;
+    margin:0 auto;
+    padding:0 24px 96px;
+  }
+
+  /* Masthead */
+  header.masthead{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    padding:40px 0 18px;
+  }
+
+  .wordmark{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:15px;
+    color:var(--ink);
+    letter-spacing:0.01em;
+  }
+
+  .doc-type{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:500;
+    font-size:13px;
+    color:var(--brick);
+  }
+
+  hr.rule{
+    border:none;
+    border-top:1.5px solid var(--ink);
+    margin:0 0 28px;
+  }
+
+  hr.rule-thin{
+    border:none;
+    border-top:1px solid var(--rule);
+    margin:44px 0;
+  }
+
+  .date-line{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14px;
+    color:#6B6B62;
+    margin-bottom:10px;
+  }
+
+  h1{
+    font-family:'Newsreader', Georgia, serif;
+    font-weight:500;
+    font-size:2.6rem;
+    line-height:1.12;
+    color:var(--ink);
+    margin:0 0 18px;
+    letter-spacing:-0.01em;
+    opacity:0;
+    animation:rise 0.7s ease-out forwards;
+  }
+
+  @keyframes rise{
+    from{ opacity:0; transform:translateY(10px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    h1{ animation:none; opacity:1; }
+  }
+
+  .dek{
+    font-size:1.15rem;
+    font-style:italic;
+    color:#5A5A50;
+    margin:0 0 8px;
+    max-width:60ch;
+  }
+
+  article p{
+    margin:0 0 22px;
+    max-width:64ch;
+  }
+
+  article a{
+    color:var(--brick);
+    text-decoration-thickness:1px;
+    text-underline-offset:3px;
+  }
+
+  article a:hover{ color:var(--ink); }
+
+  article a:focus-visible,
+  button:focus-visible{
+    outline:2px solid var(--gold);
+    outline-offset:3px;
+  }
+
+  strong{ color:var(--ink); font-weight:600; }
+
+  /* The Ask block */
+  .the-ask{
+    margin:36px 0 40px;
+    padding-left:22px;
+    border-left:3px solid var(--gold);
+  }
+
+  .the-ask h2{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:0.03em;
+    color:var(--brick);
+    margin:0 0 18px;
+    text-transform:none;
+  }
+
+  .ask-item{
+    margin:0 0 20px;
+    max-width:58ch;
+  }
+
+  .ask-item:last-child{ margin-bottom:0; }
+
+  .ask-item .who{
+    display:block;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:15px;
+    color:var(--ink);
+    margin-bottom:3px;
+  }
+
+  /* Footer */
+  footer{
+    margin-top:48px;
+  }
+
+  .disclaimer{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13px;
+    line-height:1.6;
+    color:#7A7A70;
+    font-style:normal;
+    max-width:60ch;
+  }
+
+  .org-line{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    color:var(--ink);
+    margin-top:36px;
+  }
+
+  .org-line span{
+    display:block;
+    font-weight:400;
+    color:#6B6B62;
+    font-size:13px;
+    margin-top:2px;
+  }
+
+  @media (max-width: 520px){
+    body{ font-size:17px; }
+    h1{ font-size:2rem; }
+    .page{ padding:0 18px 72px; }
+    header.masthead{ flex-direction:column; align-items:flex-start; gap:6px; padding-top:28px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <span class="wordmark">Utah Civic Compact</span>
+    <span class="doc-type meta-face">Statement</span>
+  </header>
+  <hr class="rule">
+
+  <div class="date-line meta-face">September 11, 2026</div>
+
+  <h1>Twenty-Five Years Later, the Compact Still Holds</h1>
+  <p class="dek">A call to adopt the Dignity Index as a standard of Utah public life — not a gesture, a practice.</p>
+
+  <article>
+    <p>Today marks twenty-five years since September 11, 2001. Most of us who were old enough remember exactly where we were. What a lot of us also remember, in the weeks after, is something harder to name now: a stretch of time when disagreement didn't automatically mean contempt. Neighbors who voted differently still spoke to each other. That didn't last as long as we wish it had — but it happened, and it's proof it can happen.</p>
+
+    <p>We don't bring up that anniversary to be sentimental about it. We bring it up because Utah Civic Compact exists on the premise that government only works when it operates on genuine consent — and consent is impossible in a political culture where the other side isn't treated as worth persuading, only defeating. That premise doesn't hold if our own public discourse is corroding out from under it.</p>
+
+    <p>This is why we're calling on Utah's elected officials, candidates, and civic organizations to adopt the <strong>Dignity Index</strong> — the eight-point scale developed by <a href="https://dignityindex.us" target="_blank" rel="noopener">UNITE</a> to measure whether political speech is building toward dignity or sliding toward contempt — as a standard practice, not a gesture. Utah already has a head start here: the Kem C. Gardner Policy Institute, the Hinckley Institute of Politics, and the David Eccles School of Business ran one of the Index's first real-world pilots on Utah campaign rhetoric back in 2022. We know the tool works here. We know it's been tested here. What's missing is the will to actually use it as a condition of public life, not a one-time academic exercise.</p>
+
+    <p>We're not alone in thinking this. In conversations this week with partners like <strong>Mormon Women for Ethical Government</strong> — a cross-partisan, faith-rooted organization that has spent years building exactly this kind of civic infrastructure in Utah, including its recent work on congressional redistricting — the same point kept surfacing: the tools to measure and rebuild civic dignity already exist. What's been missing is institutions willing to hold themselves to them in public, not just praise them in private.</p>
+
+    <div class="the-ask">
+      <h2 class="meta-face">Our ask, concretely</h2>
+      <div class="ask-item">
+        <span class="who">Candidates and elected officials</span>
+        Commit publicly to having your campaign communications scored against the Dignity Index, and publish the results.
+      </div>
+      <div class="ask-item">
+        <span class="who">Civic and advocacy organizations, including our own</span>
+        Hold our own statements, complaints, and public communications to the same standard we're asking of elected officials. We intend to.
+      </div>
+      <div class="ask-item">
+        <span class="who">Utah voters</span>
+        Use the Index yourselves. It takes minutes to learn, and it changes how you read a mailer or a debate clip.
+      </div>
+    </div>
+
+    <p>None of this requires new legislation. It requires people willing to be measured. Twenty-five years on from a day that briefly reminded us what shared purpose looks like, that's not too much to ask of the people who represent us — or of ourselves.</p>
+  </article>
+
+  <hr class="rule-thin">
+
+  <footer>
+    <p class="disclaimer">Utah Civic Compact is a 501(c)(4) organization. This statement reflects our own position and is not made on behalf of, or in coordination with, any organization named above.</p>
+    <div class="org-line meta-face">
+      Utah Civic Compact
+      <span>utahciviccompact.org</span>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
