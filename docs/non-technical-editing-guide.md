@@ -74,4 +74,3 @@ Small content edits (the kind described above) are safe to make directly. But **
 - Anything touching code files directly (outside the admin panel)
 
 **Why:** the `main` branch of this site deploys to the live site automatically and instantly. There's no "preview" or approval step before the public sees it, and no simple undo button — reverting a bad change means another deploy. For anything beyond a straightforward content tweak, ask Claude to make the change and flag it for review rather than approving/pushing it yourself.
-push

@@ -69,7 +69,13 @@
       color: var(--navy);
       border-left: 3px solid var(--red);
       padding-left: 18px;
-      margin: 0 0 22px;
+      margin: 0 0 14px;
+    }
+    .issue-byline {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-400);
+      margin-bottom: 22px;
     }
     .issue-body p {
       font-size: 16.5px;
@@ -136,6 +142,7 @@
           <h2 class="issue-title">{{title}}</h2>
         </div>
         <p class="issue-epigraph">{{epigraph}}</p>
+        <div class="issue-byline">By {{author}}</div>
         <div class="issue-body">{{{body}}}</div>
       </article>
       {{/issues}}

@@ -36,36 +36,47 @@
   },
   "statements": [
     {
+      "slug": "how-did-this-happen",
+      "date": "September 9, 2026",
+      "title": "If Weber County Followed the Law, How Did This Happen?",
+      "snippet": "Utah has some of the strongest ALPR laws in the country. Our Director of Policy read them against the contract Weber County actually signed — and found that the statute describes a plate reader an agency runs and holds, while what was sold is a seat on a private network the agency does not own.",
+      "url": "/how-did-this-happen.html",
+      "more": "Read the policy paper →"
+    },
+    {
       "slug": "the-page-we-were-never-given-time-to-read",
       "date": "July 24, 2026",
       "title": "The Page We Were Never Given Time to Read",
-      "snippet": "A signature obtained by not giving you time to read the page isn't consent. Utahns are being asked to sign a page they were never shown — and we are asking Utah's delegation to separate what does not belong together."
+      "snippet": "A signature obtained by not giving you time to read the page isn't consent. Utahns are being asked to sign a page they were never shown — and we are asking Utah's delegation to separate what does not belong together.",
+      "url": "/statements.html#the-page-we-were-never-given-time-to-read",
+      "more": "Read the full statement →"
     }
   ],
   "press": [
     {
-      "outlet": "Semafor",
-      "badge_color": "#1a1a1a",
-      "date": "June 23, 2026",
-      "headline": "How a data center backlash is twisting Utah's primary",
-      "url": "https://www.semafor.com/article/06/23/2026/how-a-data-center-backlash-is-twisting-utahs-primary",
-      "read_more": "Read on Semafor →"
-    },
-    {
-      "outlet": "Forbes",
-      "badge_color": "#cc0000",
-      "date": "June 9, 2026",
-      "headline": "One Utah County's Fight Over a $100 Billion Data Center — And What It Means for All of Us",
-      "url": "https://www.forbes.com/sites/michaelposner/2026/06/09/one-utah-countys-fight-over-a-100-billion-data-center---and-what-it-means-for-all-of-us/",
-      "read_more": "Read on Forbes →"
+      "outlet": "Utah News Dispatch",
+      "badge_color": "#1c3f60",
+      "date": "August 20, 2026",
+      "headline": "Utah governor says he’s ‘deeply troubled’ by Flock cameras, calls for review to protect privacy",
+      "url": "https://utahnewsdispatch.com/2026/08/20/utah-governor-deeply-troubled-by-flock-cameras-calls-for-review/",
+      "read_more": "Read on Utah News Dispatch →"
     },
     {
       "outlet": "KSL News Utah",
       "badge_color": "#0057a8",
-      "date": "June 9, 2026",
-      "headline": "Commissioner responds to Stratos Project conflict of interest claims",
-      "url": "https://www.youtube.com/watch?v=WFcau2uLn_E",
+      "date": "August 20, 2026",
+      "headline": "Gov. Spencer Cox answers questions on Flock cameras, data centers and his new grandson",
+      "url": "https://www.youtube.com/live/8y01KiiE838?t=1094",
       "read_more": "Watch on KSL News Utah →"
+    },
+    {
+      "outlet": "Telemundo Utah",
+      "lang_attr": "lang=\"es\"",
+      "badge_color": "#1a2a8f",
+      "date": "August 20, 2026",
+      "headline": "Crece la preocupación sobre la instalación de cámaras “Flock” en Utah",
+      "url": "https://www.telemundoutah.com/noticias/local/crece-preocupacion-instalacion-camaras-flock-utah/2412405/",
+      "read_more": "Leer en Telemundo Utah →"
     }
   ]
 }

@@ -78,8 +78,8 @@
         </div>
         <div class="news-content">
           <div class="news-meta">{{date}} &nbsp;·&nbsp; {{region}}</div>
-          <div class="news-headline">{{headline}}</div>
-          <div class="news-excerpt">{{excerpt}}</div>
+          <div class="news-headline" {{{lang_attr}}}>{{headline}}</div>
+          <div class="news-excerpt" {{{lang_attr}}}>{{excerpt}}</div>
           <div class="news-read-more">{{read_more}}</div>
         </div>
       </a>
@@ -97,7 +97,7 @@
           </div>
         </div>
         <div class="video-embed">
-          <iframe src="https://www.youtube.com/embed/{{youtube_id}}" title="{{youtube_title}}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <iframe src="https://www.youtube.com/embed/{{youtube_id}}{{embed_params}}" title="{{youtube_title}}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
       </div>
       {{/videos}}

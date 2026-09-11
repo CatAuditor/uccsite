@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>If Weber County Followed the Law, How Did This Happen? | Utah Civic Compact</title>
+  <meta name="description" content="Utah has some of the strongest ALPR laws in the country. This policy paper asks whether those laws describe the system Utah agencies actually purchased — reading the Utah Code against the Weber County–Flock Safety contract, clause by clause." />
+  <meta name="keywords" content="Utah ALPR law, persistent identifying system, Flock Safety contract, Utah Code 41-6a-2002, Weber County Flock agreement, Utah Privacy Commission, license plate reader policy, Utah Civic Compact" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://utahciviccompact.org/how-did-this-happen.html" />
+  <meta property="og:title" content="If Weber County Followed the Law, How Did This Happen?" />
+  <meta property="og:description" content="Utah's ALPR statute governs a plate reader, run by a governmental entity, holding its own data. What was sold was a right of access to a web interface and ten more cameras on a private network. A policy paper by Jarom Gillins, Director of Policy." />
+  <meta property="og:site_name" content="Utah Civic Compact" />
+  <meta property="og:image" content="https://utahciviccompact.org/UCC.png" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="If Weber County Followed the Law, How Did This Happen?" />
+  <meta name="twitter:description" content="Two terms are missing from Utah law: the system, and the data. Without both, future legislation reaches only the layer a government agency happens to touch." />
+  <meta name="twitter:image" content="https://utahciviccompact.org/UCC.png" />
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "If Weber County Followed the Law, How Did This Happen?",
+    "description": "A policy paper reading Utah's Automatic License Plate Reader System Act against the Weber County Sheriff's Office agreement with Flock Safety, arguing that Utah lacks statutory terms for a persistent identifying system and the data it produces.",
+    "datePublished": "2026-09-09",
+    "author": {
+      "@type": "Person",
+      "name": "Jarom Gillins",
+      "jobTitle": "Director of Policy",
+      "affiliation": { "@type": "Organization", "name": "Utah Civic Compact" }
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Utah Civic Compact",
+      "url": "https://utahciviccompact.org"
+    },
+    "url": "https://utahciviccompact.org/how-did-this-happen.html",
+    "isBasedOn": "https://utahciviccompact.org/alpr.html",
+    "about": [
+      { "@type": "Thing", "name": "Automatic License Plate Readers" },
+      { "@type": "Thing", "name": "Utah Automatic License Plate Reader System Act" },
+      { "@type": "Place", "name": "Weber County, Utah" }
+    ]
+  }
+  </script>
+
+  <link rel="canonical" href="https://utahciviccompact.org/how-did-this-happen.html" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon-512.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .subpage-hero {
+      background: linear-gradient(135deg, var(--navy-dark) 0%, #1B3A5C 100%);
+      padding: 160px 48px 80px;
+      text-align: center;
+    }
+    .subpage-hero .section-label { color: rgba(255,255,255,0.5); }
+    .subpage-hero h1 {
+      font-size: clamp(30px, 5vw, 50px);
+      font-weight: 900;
+      color: var(--white);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      max-width: 880px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .subpage-hero p {
+      font-size: 17px;
+      color: rgba(255,255,255,0.65);
+      max-width: 640px;
+      margin: 0 auto 16px;
+      line-height: 1.65;
+    }
+    .subpage-hero p strong { color: var(--white); font-weight: 700; }
+    .hero-ctas {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 32px auto 8px;
+    }
+    .hero-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--red);
+      color: var(--white);
+      padding: 14px 28px;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      transition: background 0.2s;
+    }
+    .hero-download:hover { background: var(--red-light); }
+    .hero-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(255,255,255,0.35);
+      color: var(--white);
+      padding: 14px 28px;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .hero-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.6); }
+
+    .paper-body {
+      background: var(--white);
+      padding: 72px 48px 104px;
+    }
+    .paper-inner {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .release-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .release-badge {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: var(--navy-dark);
+      color: var(--white);
+      padding: 5px 12px;
+      border-radius: 4px;
+    }
+    .release-date { font-size: 14px; color: var(--gray-400); }
+    .release-author { font-size: 14px; font-weight: 700; color: var(--navy); }
+
+    .paper-provenance {
+      font-size: 14.5px;
+      font-style: italic;
+      color: var(--gray-400);
+      line-height: 1.75;
+      margin-bottom: 40px;
+      padding-left: 18px;
+      border-left: 3px solid var(--gray-200);
+    }
+    .paper-provenance a { color: var(--gray-400); text-decoration: underline; }
+    .paper-provenance a:hover { color: var(--red); }
+
+    .paper-toc {
+      background: var(--cream);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      margin-bottom: 8px;
+    }
+    .paper-toc-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--navy);
+      margin-bottom: 14px;
+    }
+    .paper-toc ol {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      columns: 2;
+      column-gap: 32px;
+    }
+    .paper-toc li {
+      font-size: 14.5px;
+      line-height: 1.6;
+      margin-bottom: 8px;
+      break-inside: avoid;
+    }
+    .paper-toc a { color: var(--navy-dark); }
+    .paper-toc a:hover { color: var(--red); text-decoration: underline; }
+
+    .paper-inner h2 {
+      font-size: clamp(20px, 3vw, 26px);
+      font-weight: 800;
+      color: var(--navy-dark);
+      letter-spacing: -0.02em;
+      margin: 56px 0 20px;
+      padding-top: 10px;
+      border-top: 3px solid var(--red);
+      scroll-margin-top: 100px;
+    }
+    .paper-inner h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--navy-dark);
+      margin: 32px 0 12px;
+    }
+    .paper-inner p {
+      font-size: 16px;
+      color: var(--gray-600);
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+    .paper-inner p a { color: var(--navy); text-decoration: underline; }
+    .paper-inner p a:hover { color: var(--red); }
+    .paper-inner ul {
+      list-style: none;
+      margin: 0 0 20px;
+      padding: 0;
+    }
+    .paper-inner ul li {
+      font-size: 16px;
+      color: var(--gray-600);
+      line-height: 1.75;
+      padding: 6px 0 6px 24px;
+      position: relative;
+    }
+    .paper-inner ul li::before {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 15px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+    }
+
+    blockquote {
+      margin: 24px 0 32px;
+      padding: 24px 32px;
+      background: var(--cream);
+      border-radius: var(--radius-lg);
+      border-left: 4px solid var(--navy);
+    }
+    blockquote p {
+      font-size: 16.5px;
+      font-style: italic;
+      color: var(--navy-dark);
+      line-height: 1.7;
+      margin-bottom: 8px !important;
+    }
+    blockquote p:last-of-type { margin-bottom: 8px !important; }
+    blockquote cite {
+      font-size: 13px;
+      font-style: normal;
+      font-weight: 600;
+      color: var(--gray-400);
+    }
+    blockquote cite a { color: var(--gray-400); text-decoration: underline; }
+    blockquote cite a:hover { color: var(--red); }
+    blockquote .quote-source {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--red);
+      font-style: normal;
+      margin-bottom: 10px;
+    }
+
+    .scope-box {
+      background: var(--cream);
+      border: 2px solid var(--navy);
+      border-radius: var(--radius-lg);
+      padding: 32px 36px;
+      margin: 32px 0;
+      box-shadow: 0 4px 20px rgba(27,47,78,0.08);
+    }
+    .scope-box-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--navy);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .scope-box-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(27,47,78,0.2);
+    }
+    .scope-box p {
+      margin-bottom: 14px !important;
+      font-size: 16px !important;
+      color: var(--navy-dark) !important;
+      line-height: 1.75 !important;
+    }
+    .scope-box p:last-child { margin-bottom: 0 !important; }
+
+    .finding-box {
+      background: var(--navy-dark);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      margin: 32px 0;
+    }
+    .finding-box h3 {
+      font-size: 12px !important;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55) !important;
+      margin: 0 0 12px !important;
+    }
+    .finding-box p {
+      font-size: 18px !important;
+      font-weight: 600;
+      color: var(--white) !important;
+      line-height: 1.6 !important;
+      margin: 0 !important;
+    }
+
+    .defs-table-wrap {
+      overflow-x: auto;
+      margin: 24px 0 32px;
+      border-radius: var(--radius);
+      border: 1px solid var(--gray-200);
+    }
+    .defs-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      font-size: 14.5px;
+    }
+    .defs-table th {
+      background: var(--navy-dark);
+      color: var(--white);
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .defs-table td {
+      padding: 14px 16px;
+      border-top: 1px solid var(--gray-200);
+      color: var(--gray-600);
+      line-height: 1.6;
+      vertical-align: top;
+    }
+    .defs-table td:first-child { font-weight: 700; color: var(--navy-dark); white-space: nowrap; }
+
+    .draft-def {
+      background: var(--cream);
+      border-left: 4px solid var(--navy);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin: 20px 0;
+    }
+    .draft-def p { font-size: 15.5px !important; color: var(--navy-dark) !important; line-height: 1.75 !important; }
+    .draft-def p:last-child { margin-bottom: 0 !important; }
+    .draft-def .def-term { font-weight: 800; }
+
+    .sources-list p {
+      font-size: 15px !important;
+      line-height: 1.75 !important;
+    }
+    .sources-list strong { color: var(--navy-dark); }
+
+    .related-cta {
+      background: var(--cream);
+      border-radius: var(--radius-lg);
+      padding: 32px 36px;
+      margin-top: 56px;
+      text-align: center;
+    }
+    .related-cta h3 { margin-top: 0 !important; }
+    .related-cta p { margin-bottom: 20px; }
+    .related-cta .btn-file {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--navy-dark);
+      color: var(--white);
+      padding: 12px 24px;
+      border-radius: var(--radius);
+      font-size: 14.5px;
+      font-weight: 700;
+      margin: 4px;
+      transition: background 0.2s;
+    }
+    .related-cta .btn-file:hover { background: var(--red); }
+
+    @media (max-width: 600px) {
+      .subpage-hero { padding: 140px 24px 64px; }
+      .paper-body { padding: 56px 24px 80px; }
+      .paper-toc ol { columns: 1; }
+      .scope-box { padding: 24px 22px; }
+      blockquote { padding: 20px 22px; }
+      .release-meta { flex-direction: column; align-items: flex-start; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <header class="site-header scrolled" id="site-header">
+    <nav class="nav-inner">
+
+      <button class="nav-toggle" id="nav-toggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/#mission">Mission</a></li>
+        <li class="nav-dropdown">
+          <button class="nav-dropdown-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            About Us
+            <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/team.html">Team &amp; Bios</a></li>
+            <li><a href="/theory.html">Theory of Change</a></li>
+            <li><a href="/issues.html">Policies</a></li>
+            <li><a href="/privacy-report.html">Privacy</a></li>
+          </ul>
+        </li>
+        <li><a href="/blog.html">News &amp; Media</a></li>
+        <li><a href="/projects.html">Projects</a></li>
+        <li><a href="/tip.html">Submit a Tip</a></li>
+        <li><a href="/#donate" class="nav-donate">Donate</a></li>
+        <li><a href="/#join" class="nav-cta">Get Involved</a></li>
+      </ul>
+      <a href="/" class="nav-logo-icon" aria-label="Utah Civic Compact home">
+        <img src="/assets/logo-icon-dark.png" alt="" class="nav-icon-img nav-icon-img-dark" width="44" height="44" />
+        <img src="/assets/logo-icon-light.png" alt="" class="nav-icon-img nav-icon-img-light" width="44" height="44" />
+      </a>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <div class="subpage-hero">
+    <div class="section-label">Policy Paper</div>
+    <h1>If Weber County Followed the Law, How Did This Happen?</h1>
+    <p>Utah has some of the strongest laws in the country governing government use of automatic license plate readers. This paper asks a narrower question: <strong>whether those laws describe the system Utah agencies actually purchased.</strong></p>
+    <div class="hero-ctas">
+      <a href="/alpr.html" class="hero-download">See the underlying records</a>
+      <a href="#appendix-a" class="hero-secondary">Read the draft definitions</a>
+    </div>
+  </div>
+
+  <div class="paper-body">
+    <div class="paper-inner">
+
+      <div class="release-meta">
+        <span class="release-badge">Utah Civic Compact</span>
+        <span class="release-date">September 9, 2026</span>
+        <span class="release-author">By Jarom Gillins, Director of Policy</span>
+      </div>
+
+      <p class="paper-provenance">Adapted from testimony delivered to the Utah Privacy Commission on automatic license plate reader technology, September 8, 2026. Statutory citations are to the Utah Code as currently in force. Contract citations are to the agreement between the Weber County Sheriff's Office and Flock Safety executed December 19, 2025, obtained through a records request under the Government Records Access and Management Act and published in full in <a href="https://archive.org/details/weber-county-alpr-records" target="_blank" rel="noopener">the public archive</a>.</p>
+
+      <div class="paper-toc">
+        <div class="paper-toc-label">Contents</div>
+        <ol>
+          <li><a href="#summary">I. Summary</a></li>
+          <li><a href="#not-claimed">II. What this paper does not claim</a></li>
+          <li><a href="#purchased">III. What was actually purchased?</a></li>
+          <li><a href="#vendor-words">IV. In the words of the vendor</a></li>
+          <li><a href="#custodial">V. The custodial predicate in the statute</a></li>
+          <li><a href="#ownership">VI. Ownership of the equipment</a></li>
+          <li><a href="#sale-use">VII. Sale, use, and survival</a></li>
+          <li><a href="#network-access">VIII. Access to the network</a></li>
+          <li><a href="#agnostic">IX. A single agency-agnostic definition</a></li>
+          <li><a href="#permitted-purpose">X. Permitted purpose</a></li>
+          <li><a href="#competitors">XI. Even competitors say it can be better</a></li>
+          <li><a href="#what-comes-first">XII. What should come first</a></li>
+          <li><a href="#personal">XIII. A personal statement</a></li>
+          <li><a href="#appendix-a">Appendix A. Draft definitions</a></li>
+          <li><a href="#appendix-b">Appendix B. Sources</a></li>
+        </ol>
+      </div>
+
+      <h2 id="summary">I. Summary</h2>
+      <p>Ten cameras in Weber County produced data for the Flock system that was part of <a href="/alpr.html">5.1 million network queries</a> over four years, with roughly 97 percent of them originating outside Utah.</p>
+      <p>Before anything else we believe it is important to clarify: these were not five million searches aimed at Weber County, rather they were searches of a national network that these ten cameras feed.</p>
+      <p>Utah has some of the strongest laws in the country governing government use of automatic license plate readers. With that in mind, this paper asks a narrower question: whether those laws describe the system Utah agencies actually purchased.</p>
+      <p>The conclusion this paper reaches is definitional rather than prohibitive. Utah does not yet have statutory terms that describe a persistent identifying system, or the data such a system produces, without regard to who holds it. Without those two definitions, future legislation drafted in this area will reach only the layer that a government agency happens to touch.</p>
+
+      <h2 id="not-claimed">II. What this paper does not claim</h2>
+      <div class="scope-box">
+        <div class="scope-box-label">The boundaries of this analysis</div>
+        <p>Utah Civic Compact does not claim that any search of these ten cameras was unlawful, that any Utahn has been identifiably harmed, that the vendor acted in bad faith, and it does not claim that the Weber County Sheriff's Office acted improperly.</p>
+        <p>WCSO has been a pleasure to work with throughout this review. Their comprehensive documentation and culture of transparency are the reason this analysis exists at all, and their compliance with Utah law is not part of our question. Any fully compliant agency in this state still ends up in the position this paper describes.</p>
+      </div>
+      <p>WCSO also stated in response to our GRAMA request that it does not participate in the national lookup feature, and UCC's reading of that feature is that it is self-limiting. That statement and the query figures discussed below are compatible. The opt-out seemingly governs what the agency's own users may search. It is important to note that this is an inference.</p>
+      <p>Where this paper offers an interpretation of statutory or contractual language, it is identified as an interpretation, and the Commission, agencies, news outlets, and individuals reading this are encouraged to conduct their own review.</p>
+
+      <h2 id="purchased">III. What was actually purchased?</h2>
+      <p>Utah's ALPR System Act defines the device it governs at § 41-6a-2002(2), as</p>
+      <blockquote>
+        <span class="quote-source">Utah Code</span>
+        <p>"cameras used in combination with computer algorithms to convert an image of a license plate into computer-readable data."</p>
+        <cite>— <a href="https://le.utah.gov/xcode/Title41/Chapter6A/41-6a-S2002.html" target="_blank" rel="noopener">§ 41-6a-2002(2)</a></cite>
+      </blockquote>
+      <p>The Weber County order form describes the product that was delivered as a</p>
+      <blockquote>
+        <span class="quote-source">Weber County order form</span>
+        <p>"license plate recognition camera with Vehicle Fingerprint™ technology (proprietary machine learning software) and real-time alerts for unlimited users."</p>
+        <cite>— Weber County Sheriff's Office / Flock Safety order form, December 19, 2025</cite>
+      </blockquote>
+      <p>What Flock customers in this state have bought is more than just a plate reader. Vehicle Fingerprint is sold alongside the plate recognition function and is described by the vendor as proprietary machine learning software. Flock publishes documentation on what its systems are capable of. UCC recommends that readers review that documentation and form their own conclusions rather than take ours.</p>
+      <p>The gap between these two descriptions is the first place the statute and the purchase diverge, and it is worth noting that this divergence is visible on the face of the order form.</p>
+
+      <h2 id="vendor-words">IV. In the words of the vendor</h2>
+      <p>Nearly everything that follows turns on how the signed agreement defines data. It establishes a few categories, and the boundaries between them do a lot of heavy lifting.</p>
+      <p><strong>Customer Data</strong>, at § 1.3, means</p>
+      <blockquote>
+        <span class="quote-source">Contract § 1.3</span>
+        <p>"the images, audio and/or video segments made available to Customer through the Web Interface … For clarity, Customer Data does not include the underlying raw Footage captured by the Flock Hardware or any Flock IP (as defined in Section 1.9)."</p>
+      </blockquote>
+      <p><strong>Footage</strong>, at § 1.11, means</p>
+      <blockquote>
+        <span class="quote-source">Contract § 1.11</span>
+        <p>"still images, video, audio, and other raw data captured by the Flock Hardware or Customer Hardware via the Flock Services."</p>
+      </blockquote>
+      <p><strong>Flock IP</strong>, at § 1.9, means</p>
+      <blockquote>
+        <span class="quote-source">Contract § 1.9</span>
+        <p>"Flock's technology, patents, trade secrets, trademarks, algorithms, data models, machine learning methods … For clarity, Flock IP also includes any derivative works, intermediate or final outputs, analyses, reports, models, or other results generated by or through the Flock Services. Except for the limited ability to access and download Customer Data within the applicable Retention Period, no rights are granted to download, extract, export, or otherwise create or retain copies of such derivative works, outputs, or other elements of the Flock IP."</p>
+      </blockquote>
+      <p>Customer Data is the only layer the county can see and touch. As defined by the vendor, this is only what is made available in the dashboard. The raw capture sits outside that layer, and so does everything else produced from the raw capture.</p>
+
+      <div class="defs-table-wrap">
+        <table class="defs-table">
+          <thead>
+            <tr><th>Layer</th><th>What it is</th><th>Who holds it</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Customer Data<br />§ 1.3</td>
+              <td>What appears in the web interface, plus metadata such as plate number, timestamp, and coordinates.</td>
+              <td>The county. This is the only layer Utah's statute reaches.</td>
+            </tr>
+            <tr>
+              <td>Footage<br />§ 1.11</td>
+              <td>The raw still images, video, audio, and other raw data captured by the hardware.</td>
+              <td>Expressly excluded from Customer Data.</td>
+            </tr>
+            <tr>
+              <td>Flock IP<br />§ 1.9</td>
+              <td>Algorithms and models, plus every derivative work, intermediate or final output, analysis, report, and result generated through the services.</td>
+              <td>The vendor, which retains the right to use it for any purpose at its sole discretion (§ 5.2).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="custodial">V. The custodial predicate in the statute</h2>
+      <p>Most of the ALPR System Act is addressed to governmental entities, which is a recurring phrase throughout the provisions that create the Act's protections. Readers who wish to follow along will find the ALPR Systems Act at Title 41, Chapter 6a, Part 20.</p>
+
+      <h3>What counts as a protected record</h3>
+      <p>Section 41-6a-2004(1)(a) provides that captured plate data</p>
+      <blockquote>
+        <span class="quote-source">Utah Code</span>
+        <p>"is a protected record … if the captured plate data is maintained by a governmental entity."</p>
+        <cite>— <a href="https://le.utah.gov/xcode/Title41/Chapter6A/41-6a-S2004.html" target="_blank" rel="noopener">§ 41-6a-2004(1)(a)</a></cite>
+      </blockquote>
+      <p>The protection attaches to data a governmental entity maintains. Measured against the contract's own definitions, this is only Customer Data.</p>
+
+      <h3>How long data may be kept</h3>
+      <p>Section 41-6a-2004(1)(c) provides that captured plate data</p>
+      <blockquote>
+        <span class="quote-source">Utah Code</span>
+        <p>"may not be preserved for more than nine months by a governmental entity."</p>
+        <cite>— <a href="https://le.utah.gov/xcode/Title41/Chapter6A/41-6a-S2004.html" target="_blank" rel="noopener">§ 41-6a-2004(1)(c)</a></cite>
+      </blockquote>
+      <p>The contract uses the word retention in a narrower sense. Section 1.15 defines the Retention Period as</p>
+      <blockquote>
+        <span class="quote-source">Contract § 1.15</span>
+        <p>"the time period that the Customer Data is stored within the cloud storage, as specified in the applicable Order Form."</p>
+      </blockquote>
+      <p>The Weber County order form states a 30-day retention period. Retention, in the contract's usage, is a property of Customer Data, set by a combination of state and local law and agency policy, and is shown on the order form.</p>
+      <p>Many of the public concerns raised about retention are aimed at a category narrower than the word suggests, and we believe that any agency or organization requesting a more strict retention policy is aiming at the wrong thing.</p>
+
+      <h3>What must be destroyed</h3>
+      <p>Section 41-6a-2004(4)(a) requires that</p>
+      <blockquote>
+        <span class="quote-source">Utah Code</span>
+        <p>"a governmental entity shall destroy as soon as reasonably possible, in an unrecoverable manner, plate data obtained pursuant to this chapter that is not specifically necessary"</p>
+        <cite>— <a href="https://le.utah.gov/xcode/Title41/Chapter6A/41-6a-S2004.html" target="_blank" rel="noopener">§ 41-6a-2004(4)(a)</a></cite>
+      </blockquote>
+      <p>and subsection (4)(b) specifies the reach of that obligation:</p>
+      <blockquote>
+        <span class="quote-source">Utah Code</span>
+        <p>"Subsection (4)(a) applies to data a governmental entity obtains: (i) from a nongovernmental entity pursuant to a warrant; or (ii) from an automatic license plate reader system owned or operated by a governmental entity."</p>
+        <cite>— <a href="https://le.utah.gov/xcode/Title41/Chapter6A/41-6a-S2004.html" target="_blank" rel="noopener">§ 41-6a-2004(4)(b)</a></cite>
+      </blockquote>
+      <p>The destruction duty follows the same custodial pattern as the rest. It again only reaches Customer Data. Section 1.9 is explicit that beyond downloading Customer Data within the retention period, no rights are granted to export or retain copies of the derivative works and outputs, and § 10.2 provides that the hardware is owned by and remains the exclusive property of Flock.</p>
+      <div class="finding-box">
+        <h3>The custodial pattern</h3>
+        <p>Each of these provisions turns on a governmental custodian, and where there is no governmental custodian, the provisions have nothing to attach to.</p>
+      </div>
+
+      <h2 id="ownership">VI. Ownership of the equipment</h2>
+      <p>Utah's roadside permitting statute assigns responsibility for cameras placed in the right-of-way to the agency that obtains the permit. Section 72-1-212(8) provides that</p>
+      <blockquote>
+        <span class="quote-source">Utah Code</span>
+        <p>"the installation, maintenance, data collection, and removal are the responsibility of the law enforcement agency that obtains the special use permit."</p>
+        <cite>— <a href="https://le.utah.gov/xcode/Title72/Chapter1/72-1-S212.html" target="_blank" rel="noopener">§ 72-1-212(8)</a></cite>
+      </blockquote>
+      <p>The agreement allocates ownership and control on different terms. The hardware is Flock's property (§ 10.2). Flock holds final discretion to veto a proposed camera location (§ 10.3). And the Footage is defined as material captured by the Flock Hardware (§ 1.11).</p>
+      <p>Flock owns the cameras, the models, the intermediate and final outputs, the analyses, and the reports. The contract grants no rights to the county regarding the raw Footage and does not state anything about what is done with it.</p>
+
+      <h2 id="sale-use">VII. Sale, use, and survival</h2>
+      <p>The agreement also contains a no-sale commitment, and it deserves to be read closely, because it is scoped to one of the three categories. Section 4.1 provides:</p>
+      <blockquote>
+        <span class="quote-source">Contract § 4.1</span>
+        <p>"As between Flock and Customer, all right, title and interest in the Customer Data, belong to and are retained solely by Customer … Flock does not own and shall not sell Customer Data."</p>
+      </blockquote>
+      <p>Section 5.2 addresses the other category:</p>
+      <blockquote>
+        <span class="quote-source">Contract § 5.2</span>
+        <p>"Flock and its licensors retain all right, title and interest in and to the Flock IP … Customer further acknowledges that Flock retains the right to use the foregoing for any purpose in Flock's sole discretion."</p>
+      </blockquote>
+      <p>The commitment not to sell covers Customer Data. Everything that falls under Flock IP the vendor retains the right to use for any purpose at its own discretion. Under § 7.3, Section 5 survives termination of the agreement. Section 4 does not.</p>
+      <p>One further consequence from the same definitions is worth noting for any agency considering integration. If any customer-owned camera is added to this system, that customer forfeits control of the raw outputs and derivatives generated from it.</p>
+
+      <h2 id="network-access">VIII. Access to the network</h2>
+      <p>The agreement is specific about several forms of access. It identifies who may hold an account (§ 3.1), distribution to a third party on a Customer-requested integration (§ 4.4), and Flock's own disclosure of Customer Data on its good-faith belief that disclosure is required (§ 5.3).</p>
+      <p>UCC could not locate any term describing a network search by another agency, any term naming who else may query data captured by these cameras, or any term limiting how many agencies may do so within the Terms and Conditions, Memorandum of Understanding, or other associated documents.</p>
+      <p>UCC does not read this as a deliberate omission and makes no claim about why the terms are written as they are. This observation is merely stating that the agreements governing these ten cameras do not describe the activity that produced <a href="/alpr.html">the search outcomes we have all seen</a>.</p>
+
+      <h2 id="agnostic">IX. A single agency-agnostic definition in statute</h2>
+      <p>Very few provisions in the existing statute are agnostic as to who holds the data. One of them is the definition of captured plate data at § 41-6a-2002(3):</p>
+      <blockquote>
+        <span class="quote-source">Utah Code</span>
+        <p>"'Captured plate data' means the global positioning system coordinates, date and time, photograph, license plate number, and any other data captured by or derived from an automatic license plate reader system."</p>
+        <cite>— <a href="https://le.utah.gov/xcode/Title41/Chapter6A/41-6a-S2002.html" target="_blank" rel="noopener">§ 41-6a-2002(3)</a></cite>
+      </blockquote>
+      <p>This definition very closely resembles the contract's definition of Customer Data at § 1.3</p>
+      <blockquote>
+        <span class="quote-source">Contract § 1.3</span>
+        <p>"together with the metadata … (e.g., license plate number, timestamp of capture, and geospatial coordinates)."</p>
+      </blockquote>
+      <p>UCC's interpretation is that Flock IP and the raw Footage fall outside both definitions. We hold that interpretation as our own, and we invite the media, agencies, organizations, and readers to conduct their own review and reach their own conclusion.</p>
+      <div class="finding-box">
+        <h3>The summary of what we see in current statute</h3>
+        <p>The law describes a plate reader, run by a governmental entity, whose data that agency holds. What was sold is a right of access to a web interface, and the addition of ten more cameras to a private network.</p>
+      </div>
+
+      <h2 id="permitted-purpose">X. Permitted purpose</h2>
+      <p>Statute gives a law enforcement agency four uses for captured plate data. Section 41-6a-2003(2)(a) permits access</p>
+      <blockquote>
+        <span class="quote-source">Utah Code</span>
+        <p>"by a law enforcement agency to access captured license plate data: (i) as part of an active criminal investigation; (ii) to apprehend an individual with an outstanding warrant; (iii) to locate a missing or endangered person; or (iv) to locate a stolen vehicle."</p>
+        <cite>— <a href="https://le.utah.gov/xcode/Title41/Chapter6A/41-6a-S2003.html" target="_blank" rel="noopener">§ 41-6a-2003(2)(a)</a></cite>
+      </blockquote>
+      <p>The contract defines its own Permitted Purpose at § 1.14 as</p>
+      <blockquote>
+        <span class="quote-source">Contract § 1.14</span>
+        <p>"legitimate public safety and/or business purpose, including but not limited to the awareness, prevention, and prosecution of crime; investigations; and prevention of commercial harm, to the extent permitted by law."</p>
+      </blockquote>
+      <p>The four statutory uses apply to captured plate data, which corresponds to the contract's Customer Data. The contractual Permitted Purpose reaches further, expressly including business purposes and the prevention of commercial harm, and then limits itself to the extent permitted by law.</p>
+      <p>The law governing the use of intellectual property and raw footage differs from state to state, and UCC does not wish to infer what is being done with that material. This document is a starting point for the reader to see potential capabilities.</p>
+      <p><strong>We do not believe that any agency has broken this existing law.</strong></p>
+
+      <h2 id="competitors">XI. Even competitors say it can be better</h2>
+      <p>Steve Lindsey of LiveView Technologies has stated that network sharing "should not be the default behavior" and should instead be enabled by something closer to a subpoena.</p>
+      <p>Lindsey also described what he calls the network effect: a customer pays for a handful of cameras and gains access to the entire network's data, while every other participant on the network gains access to theirs.</p>
+      <p>In UCC's reading, a business built on that structure has an incentive to own the data and hold it as long as possible, because the data is a product and service in itself rather than an unfortunate byproduct of the network. We believe that this may be a reason that these vendor-hosted services are more affordable than other options.</p>
+      <p>That structure is what <a href="/alpr.html">the query figures</a> describe. It is also evidence that the default settings described in this paper are a choice available to vendors rather than a technical necessity of the category.</p>
+
+      <h2 id="what-comes-first">XII. What should come first</h2>
+      <p>UCC's position is that the first step in addressing this is to define the problem, and that the definitions must come before the operative provisions, similar to how the vendor used definitions to do heavy lifting of their own.</p>
+      <p>Two terms are missing from Utah law.</p>
+      <p><strong>The first is the system.</strong> A persistent identifying system should be defined as any system that captures data capable of identifying Utahns or their property on a later, separate occasion. Defining the system rather than the device is what allows a statute to be sensor agnostic and durable throughout the tests of time.</p>
+      <p><strong>The second is the data.</strong> This definition must include everything the system takes in and everything the system produces, and it must apply without regard to the form the data takes, who holds it, or how it is characterized as property.</p>
+      <p>Without both, future legislation will have gaps that leave identifiable data about Utahns exposed regardless of how carefully the operative provisions are drafted. Any future legislation must apply to the system first, and the data second.</p>
+      <p>Potential drafting language for both terms appears in <a href="#appendix-a">the appendix</a>. This is offered as a starting point for the Commission and its legislative partners.</p>
+
+      <h2 id="personal">XIII. A personal statement from UCC's Director of Policy</h2>
+      <p>The only difference between systems like these and the ones used in Communist China is who owns the cameras and the data. I would ask the reader to sit with the possibility that this version may be worse. A government doing this at least answers to voters and carries some obligation to protect the people it is watching. That obligation is why we are here. A private company carries no such obligation, and can navigate existing law to produce persistent identifying data about any citizen and sell it to nearly any willing buyer.</p>
+      <p>A network or IoT system of this kind should not have its data owned and managed by a private party when any governmental entity is paying for it. As a condition of public expenditure, a governmental entity should not acquire a persistent identifying system unless the agreement provides that the captured data, the derivatives, the intermediate outputs, the reports, and any form of the raw footage are owned and managed by the agency.</p>
+      <p>If the data and the derivatives are the agency's, then Part 20's duties attach and they attach to the data itself. An out-of-state agency querying it is receiving a Utah government record subject to Utah's disclosure rules.</p>
+      <p>This is the lowest hanging fruit that can be solved via procurement and renewal terms.</p>
+      <p>Our duty as citizens and as public officials is to protect the right to privacy from our own government, and from entities profiting off our private lives and habits.</p>
+
+      <h2 id="appendix-a">Appendix A. Draft definitions</h2>
+      <div class="draft-def">
+        <p><span class="def-term">"Persistent identifying system"</span> means a system that:</p>
+        <p>(a) captures, generates, or resolves an identifier — meaning any data that distinguishes an individual, a vehicle or other property of an individual, or a device from others of its kind, including a license plate number, a device or network address, facial geometry, gait, voice, and the combination of visible features by which a vehicle or object is distinguished;</p>
+        <p>(b) does so without the individual knowingly presenting the identifier for that purpose; and</p>
+        <p>(c) records the identifier in a form that allows the same identifier to be recognized on later, separate occasions.</p>
+      </div>
+      <div class="draft-def">
+        <p><span class="def-term">"Persistent identifying data"</span> means, without regard to the form in which it is held, the party that holds it, or its characterization as proprietary information, a trade secret, or the property of a person other than the individual identified:</p>
+        <p>(a) an identifier captured, generated, or resolved by a persistent identifying system;</p>
+        <p>(b) any image, video, audio, or other data captured by the system in connection with that identifier, and any record of the time or location of capture; and</p>
+        <p>(c) any data derived from anything in (a) or (b), including any output, analysis, profile, alert, score, report, or model.</p>
+      </div>
+
+      <h2 id="appendix-b">Appendix B. Sources</h2>
+      <div class="sources-list">
+        <p><strong>Utah Code.</strong> §§ <a href="https://le.utah.gov/xcode/Title41/Chapter6A/41-6a-S2002.html" target="_blank" rel="noopener">41-6a-2002</a>, <a href="https://le.utah.gov/xcode/Title41/Chapter6A/41-6a-S2003.html" target="_blank" rel="noopener">41-6a-2003</a>, and <a href="https://le.utah.gov/xcode/Title41/Chapter6A/41-6a-S2004.html" target="_blank" rel="noopener">41-6a-2004</a> (ALPR System Act, Title 41, Chapter 6a, Part 20); <a href="https://le.utah.gov/xcode/Title63G/Chapter2/63G-2-S103.html" target="_blank" rel="noopener">§ 63G-2-103</a> (Government Records Access and Management Act, definitions); <a href="https://le.utah.gov/xcode/Title72/Chapter1/72-1-S212.html" target="_blank" rel="noopener">§ 72-1-212</a> (special use permits in the right-of-way).</p>
+        <p><strong>Contract.</strong> Agreement between the Weber County Sheriff's Office and Flock Safety, executed December 19, 2025, together with the associated order form, obtained through a GRAMA request. Sections cited: 1.3, 1.9, 1.10, 1.11, 1.14, 1.15, 1.18, 2.1, 3.1, 4.1, 4.4, 5.2, 5.3, 7.3, 10.2, 10.3.</p>
+        <p><strong>Query data.</strong> Weber County Sheriff's Office network audit records produced under GRAMA.</p>
+        <p><strong>Other.</strong> Military.com, "Flock cameras are taking over, but many Americans are pushing back," reporting remarks by Steve Lindsey of LiveView Technologies.</p>
+        <p>Readers are encouraged to review the primary documents and reach their own conclusions.</p>
+      </div>
+
+      <div class="related-cta">
+        <h3>The records behind this paper</h3>
+        <p>Every contract clause and query figure cited here comes from records Weber County released under GRAMA. All of it is public.</p>
+        <a href="/alpr.html" class="btn-file">Read the full investigation →</a>
+        <a href="https://archive.org/details/weber-county-alpr-records" target="_blank" rel="noopener" class="btn-file">Open the complete archive →</a>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="logo logo-light">
+            <img src="/assets/logo-icon-dark.png" alt="" class="logo-mark-img" />
+            <span class="logo-text">Utah Civic Compact</span>
+          </a>
+          <p>Defending the compact between Utah communities and their government.</p>
+          <p class="footer-legal">Utah Civic Compact is a 501(c)(4) social welfare organization. Contributions are not tax-deductible as charitable donations.</p>
+          <div class="footer-social">
+            <a href="https://www.instagram.com/utahciviccompact/" aria-label="Instagram" target="_blank" rel="noopener">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h5>Organization</h5>
+          <ul>
+            <li><a href="/#mission">Mission</a></li>
+            <li><a href="/#issues">Issues</a></li>
+            <li><a href="/team.html">Team &amp; Bios</a></li>
+            <li><a href="/theory.html">Theory of Change</a></li>
+            <li><a href="/privacy-report.html">Private Space</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Get Involved</h5>
+          <ul>
+            <li><a href="/#join">Join the Compact</a></li>
+            <li><a href="/blog.html">News &amp; Blog</a></li>
+            <li><a href="/#donate">Donate</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Contact</h5>
+          <ul>
+            <li><a href="mailto:info@utahciviccompact.org">info@utahciviccompact.org</a></li>
+            <li><a href="mailto:info@utahciviccompact.org">Press Inquiries</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Utah Civic Compact. All rights reserved.</p>
+        <div class="footer-links">
+          <a href="/privacy.html">Privacy Policy</a>
+          <a href="#">Terms of Use</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

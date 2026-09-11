@@ -22,6 +22,8 @@ Editable pages use templates + content JSON. Passthrough pages are copied as-is.
 | `blog.html` | `templates/blog.html` | `content/blog.json` |
 | `statements.html` | `templates/statements.html` | `content/statements.json` |
 | `stratos.html` | `templates/stratos.html` | — (passthrough) |
+| `alpr.html` | `templates/alpr.html` | — (passthrough; Weber County ALPR investigation, data hosted at archive.org/details/weber-county-alpr-records) |
+| `how-did-this-happen.html` | `templates/how-did-this-happen.html` | — (passthrough; policy paper reading the Utah Code against the Weber County–Flock contract) |
 | `theory.html` | `templates/theory.html` | — (passthrough) |
 | `success.html` | `templates/success.html` | — (passthrough) |
 
@@ -34,6 +36,12 @@ Editable pages use templates + content JSON. Passthrough pages are copied as-is.
 ## Statements
 
 Official org statements live in `content/statements.json` (`statements` array: `slug`, `date`, `title`, `snippet`, `body` in markdown paragraphs, `signoff`). `build.js` converts `body` to HTML via `mdToHtml`. Rendered in full on `/statements.html`, one `<article>` per statement with `id={{slug}}` for deep links. The homepage "Statements" section reads a separate snippet copy from `homepage.json` (`statements` array) — same duplication pattern as press. New statements go at the top of `statements.json` AND get a snippet entry in `homepage.json`.
+
+## Homepage statement cards
+
+The homepage `statements` array in `homepage.json` drives the cards in the Statements section. Each entry needs `url` and `more` in addition to `slug`, `date`, `title`, and `snippet` — the template renders both fields directly, so a card can point either at an anchor on `/statements.html` (`/statements.html#{slug}`, "Read the full statement →") or at a standalone page such as `/how-did-this-happen.html`. Both fields are required; the template engine has no conditionals or defaults, so a missing one renders empty. See [homepage-statement-card-links.md](../decisions/homepage-statement-card-links.md).
+
+Note: `statements` is not declared in `static/admin/config.yml`, so it is edited in the JSON directly and is not safe to round-trip through Decap CMS.
 
 ## Nav pattern
 
