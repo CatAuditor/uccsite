@@ -24,6 +24,7 @@ Editable pages use templates + content JSON. Passthrough pages are copied as-is.
 | `stratos.html` | `templates/stratos.html` | — (passthrough) |
 | `alpr.html` | `templates/alpr.html` | — (passthrough; Weber County ALPR investigation, data hosted at archive.org/details/weber-county-alpr-records) |
 | `how-did-this-happen.html` | `templates/how-did-this-happen.html` | — (passthrough; policy paper reading the Utah Code against the Weber County–Flock contract) |
+| `dignity-index-statement.html` | `templates/dignity-index-statement.html` | — (passthrough; 9/11 anniversary statement calling for Dignity Index adoption, own bespoke design distinct from `statements.html`) |
 | `theory.html` | `templates/theory.html` | — (passthrough) |
 | `success.html` | `templates/success.html` | — (passthrough) |
 

@@ -25,6 +25,7 @@ const PAGES = [
   { template: 'weber-county.html', content: ['settings'] },
   { template: 'alpr.html',         content: ['settings', 'coverage'] },
   { template: 'how-did-this-happen.html', content: ['settings'] },
+  { template: 'dignity-index-statement.html', content: ['settings'] },
   { template: 'theory.html',       content: ['settings'] },
   { template: 'success.html',  content: ['settings'] },
 ];
