@@ -15,6 +15,15 @@ as they're done. Context: `docs/build-spec-aws.md`.
   clients. Needed before Phase 5 (API port). If it is truly unrecoverable,
   tell the dev BEFORE Phase 5 — that changes the cutover plan.
 
+## Quick dashboard tweaks (whenever convenient)
+
+- [ ] Cloudflare Pages → uccsite project → Settings → Build: change the build
+  command from `node build.js` to `npm run build`. That makes every deploy run
+  the renderer's golden-file test suite first — a bad change fails the build
+  instead of shipping.
+- [ ] Cloudflare Pages env vars: `DONATION_GOAL_CENTS` can be deleted (the
+  stats endpoint no longer shows a total or goal, org decision 2026-09-12).
+
 ## Needed at Phase 3/5 (AWS Secrets Manager, us-west-2, account 017110365763)
 
 Each of these gets entered into AWS Secrets Manager when asked. Sources:

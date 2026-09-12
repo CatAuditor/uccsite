@@ -1,6 +1,17 @@
 {
-  "how-did-this-happen.html": "Migrated hardcoded header/footer to {{> header}}/{{> footer}} partials; absolute /css /js paths; gains skip link, main#main, aria attrs, correct nav labels (build-spec §1.5)",
-  "dignity-index-statement.html": "Migrated hardcoded header/footer to partials; absolute /css /js paths; same gains as above (build-spec §1.5)",
-  "index.html": "Featured statement card now receives url/more from deriveHomepage (dead-link fix, build-spec §1.5); donate section drops progress bar/goal — recent-donor ticker only (planning addendum 2)",
-  "404.html": "New page: real 404 replaces Cloudflare Pages SPA fallback (planning addendum 9)"
+  "how-did-this-happen.html": "Partials migration ({{> header}}/{{> footer}}, absolute /css /js, skip link, main#main, aria) + canonical/og:url/JSON-LD URLs to clean form (build-spec §1.5, addendum 10)",
+  "dignity-index-statement.html": "Partials migration, same as how-did-this-happen + clean canonical/og:url (build-spec §1.5, addendum 10)",
+  "index.html": "Featured statement card receives url/more from deriveHomepage (dead-link fix, §1.5); donate section drops progress bar/goal — ticker only (addendum 2)",
+  "404.html": "New page: real 404 replaces Cloudflare Pages SPA fallback (addendum 9)",
+  "alpr.html": "canonical/og:url/JSON-LD page URLs .html → clean (addendum 10)",
+  "blog.html": "canonical/og:url .html → clean (addendum 10)",
+  "statements.html": "canonical/og:url .html → clean (addendum 10)",
+  "issues.html": "canonical/og:url .html → clean (addendum 10)",
+  "projects.html": "canonical/og:url .html → clean (addendum 10)",
+  "team.html": "canonical/og:url .html → clean (addendum 10)",
+  "theory.html": "canonical/og:url .html → clean (addendum 10)",
+  "privacy.html": "canonical .html → clean (addendum 10)",
+  "privacy-report.html": "canonical/og:url .html → clean (addendum 10)",
+  "stratos.html": "canonical/og:url/JSON-LD page URLs .html → clean (addendum 10)",
+  "weber-county.html": "canonical/og:url/JSON-LD page URLs .html → clean (addendum 10)"
 }

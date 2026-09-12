@@ -56,7 +56,7 @@ Requires `STRIPE_SECRET_KEY`, `RESEND_API_KEY`, `TOKEN_SECRET`.
 - `X-Frame-Options: DENY` matches `frame-ancestors 'none'`; `object-src 'none'`.
 
 ## Secrets / vars (Cloudflare Pages)
-See the comment block in `wrangler.toml` for the full inventory: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `AIRTABLE_TOKEN`, `RESEND_API_KEY`, `TOKEN_SECRET` (secrets) and `DONATION_GOAL_CENTS` (var). Missing `TOKEN_SECRET` → portal returns 503, unsubscribe links fall back to the homepage.
+See the comment block in `wrangler.toml` for the full inventory: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `AIRTABLE_TOKEN`, `RESEND_API_KEY`, `TOKEN_SECRET` (secrets). Missing `TOKEN_SECRET` → portal returns 503, unsubscribe links fall back to the homepage. (`DONATION_GOAL_CENTS` removed 2026-09-12 — no total/goal in the stats endpoint.)
 
 ## Schema
 `schema.sql` is the source of truth. Apply new tables to the live DB with `wrangler d1 execute ucc-members --remote --file schema.sql` (all statements are `IF NOT EXISTS`). Added 2026-08-23: `processed_events`.

@@ -1124,28 +1124,10 @@ input, textarea, select { font: inherit; }
   opacity: 0;
   transition: opacity 0.4s ease;
 }
+/* Hidden entirely (no reserved space) until JS confirms there are donors to show */
+.donation-tracker[aria-hidden="true"] { display: none; }
 .donation-tracker.tracker-loaded { opacity: 1; }
 
-.tracker-bar-wrap {
-  height: 8px;
-  background: var(--gray-200);
-  border-radius: 99px;
-  overflow: hidden;
-  margin-bottom: 10px;
-}
-.tracker-bar-fill {
-  height: 100%;
-  background: var(--navy);
-  border-radius: 99px;
-  width: 0%;
-  transition: width 1s var(--ease);
-}
-.tracker-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--navy);
-  margin-bottom: 12px;
-}
 .tracker-recent-heading {
   font-size: 0.72rem;
   font-weight: 700;

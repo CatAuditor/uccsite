@@ -9,7 +9,7 @@ database_id = "c4987505-948e-4fd2-a819-262a3f8172e1"
 
 [vars]
 # Non-secret runtime config. Override in the Pages dashboard per environment.
-DONATION_GOAL_CENTS = "100000"
+# (DONATION_GOAL_CENTS removed 2026-09-12 — stats endpoint no longer exposes a total/goal.)
 
 # Secrets — set with `wrangler pages secret put <NAME>` (never commit values):
 #   STRIPE_SECRET_KEY      Stripe API key (checkout + billing portal)

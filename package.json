@@ -12,8 +12,10 @@
     "infra/*"
   ],
   "scripts": {
-    "build": "node build.js",
-    "dev": "node build.js && npx wrangler pages dev dist"
+    "build": "npm test && node build.js",
+    "build:only": "node build.js",
+    "dev": "node build.js && npx wrangler pages dev dist",
+    "test": "npm test --workspaces --if-present"
   },
   "devDependencies": {
     "wrangler": "^4"

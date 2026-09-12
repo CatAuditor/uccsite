@@ -9,17 +9,17 @@ Utah Civic Compact was founded in 2024. We operate statewide across all 29 Utah 
 ## Key Pages
 
 - Home: https://utahciviccompact.org/
-- Projects (active investigations): https://utahciviccompact.org/projects.html
-- License Plate Reader (Flock / ALPR) Investigation: https://utahciviccompact.org/alpr.html
-- Weber County Election Law Complaint: https://utahciviccompact.org/weber-county.html
-- Stratos Project / Box Elder data center briefing: https://utahciviccompact.org/stratos.html
-- Statements: https://utahciviccompact.org/statements.html
-- Policy Positions: https://utahciviccompact.org/issues.html
-- Privacy Report (surveillance and private space): https://utahciviccompact.org/privacy-report.html
-- Theory of Change: https://utahciviccompact.org/theory.html
-- Team & Bios: https://utahciviccompact.org/team.html
-- News & Press Coverage: https://utahciviccompact.org/blog.html
-- Submit a confidential tip: https://utahciviccompact.org/tip.html
+- Projects (active investigations): https://utahciviccompact.org/projects
+- License Plate Reader (Flock / ALPR) Investigation: https://utahciviccompact.org/alpr
+- Weber County Election Law Complaint: https://utahciviccompact.org/weber-county
+- Stratos Project / Box Elder data center briefing: https://utahciviccompact.org/stratos
+- Statements: https://utahciviccompact.org/statements
+- Policy Positions: https://utahciviccompact.org/issues
+- Privacy Report (surveillance and private space): https://utahciviccompact.org/privacy-report
+- Theory of Change: https://utahciviccompact.org/theory
+- Team & Bios: https://utahciviccompact.org/team
+- News & Press Coverage: https://utahciviccompact.org/blog
+- Submit a confidential tip: https://utahciviccompact.org/tip
 
 ## Active Investigations
 

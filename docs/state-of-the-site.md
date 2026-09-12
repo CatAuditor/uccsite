@@ -111,7 +111,7 @@ Routes:
 | `/api/create-portal-session` | POST | 5/hr | Magic-link flow: always returns 202, lookup + Resend email deferred to `waitUntil` (anti-enumeration, timing-safe). 15-min portal token. |
 | `/api/create-portal-session?token=` | GET | none | Verifies token, mints Stripe Billing Portal session, 302 redirect. |
 | `/api/webhook` | POST | none | Stripe webhook. Hand-rolled signature verify (constant-time, 300 s skew window, multi-`v1` rotation support). Idempotent via `processed_events` (`INSERT OR IGNORE`; row deleted + 500 returned on handler error so Stripe retries). Handles checkout.session.completed, invoice.paid, invoice.payment_failed, customer.subscription.deleted/updated. Compatibility shims for both old and new Stripe invoice shapes. |
-| `/api/donations/stats` | GET | none | Public: total raised (SUM over **all** donations, public and private) + 3 most recent `public=1` donors; `Cache-Control: public, max-age=60`; goal from `DONATION_GOAL_CENTS`. |
+| `/api/donations/stats` | GET | none | Public: 3 most recent `public=1` donors only; `Cache-Control: public, max-age=60`. (Total/goal removed 2026-09-12 by org policy — see docs/systems/donation-tracker.md.) |
 
 Deleted this cycle: `functions/auth.js` — `/auth` now 302s via `static/_redirects` to the standalone Worker.
 
@@ -140,7 +140,7 @@ All DDL is `IF NOT EXISTS`. Indexes on members email/stripe, subscription status
 
 ## 10. Config, secrets, email
 
-- **`wrangler.toml`:** Pages project `uccsite`, D1 binding `DB`, `DONATION_GOAL_CENTS = "100000"`. Secrets (set via `wrangler pages secret put`, inventoried in comments): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `AIRTABLE_TOKEN`, `RESEND_API_KEY`, `TOKEN_SECRET`. No KV/R2/queues/cron.
+- **`wrangler.toml`:** Pages project `uccsite`, D1 binding `DB`. Secrets (set via `wrangler pages secret put`, inventoried in comments): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `AIRTABLE_TOKEN`, `RESEND_API_KEY`, `TOKEN_SECRET`. No KV/R2/queues/cron. (`DONATION_GOAL_CENTS` removed 2026-09-12.)
 - **Transactional email:** Resend, from `hello@utahciviccompact.org` (welcome + portal magic link + receipts implicit in flows above).
 - **Bulk periodical:** `scripts/send-periodical.js` — manually run Node script using **Mailgun** (not Resend), reads recipients from D1 via `wrangler d1 execute`, requires a literal `{{unsubscribe_url}}` placeholder in the HTML, sends one-at-a-time with resume logging. Needs `MAILGUN_API_KEY` + `TOKEN_SECRET` in `.env` (gitignored). It re-implements `_lib.js`'s token signing in Node crypto (deliberate mirror).
 - **`robots.txt`:** allows all incl. AI crawlers explicitly; disallows `/admin/` and `/api/`. **`llms.txt`:** org summary with key-pages list and active-investigation figures.
