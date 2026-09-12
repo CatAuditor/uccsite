@@ -66,7 +66,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="/css/styles.css" />
   <style>
     .press { background: var(--white); }
     .press-header {
@@ -78,19 +78,6 @@
       flex-wrap: wrap;
     }
     .press-header .section-title { margin-bottom: 0; }
-    .btn-outline {
-      display: inline-block;
-      padding: 10px 22px;
-      border: 2px solid var(--navy-dark);
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--navy-dark);
-      text-decoration: none;
-      white-space: nowrap;
-      transition: background 0.15s, color 0.15s;
-    }
-    .btn-outline:hover { background: var(--navy-dark); color: var(--white); }
     .press-grid {
       display: flex;
       flex-direction: column;
@@ -125,7 +112,7 @@
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--gray-400);
+      color: var(--gray-600);
     }
     .press-headline {
       font-size: 16px;
@@ -221,7 +208,7 @@
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--gray-400);
+      color: var(--gray-600);
     }
     .fight-name {
       font-size: 20px;
@@ -258,40 +245,8 @@
 <body>
 
   <!-- NAVIGATION -->
-  <header class="site-header" id="site-header">
-    <nav class="nav-inner">
+{{> header}}
 
-      <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">
-        <span></span><span></span><span></span>
-      </button>
-      <ul class="nav-links" id="nav-links">
-        <li><a href="/#mission">Mission</a></li>
-        <li class="nav-dropdown">
-          <button class="nav-dropdown-toggle" type="button" aria-expanded="false" aria-haspopup="true">
-            About Us
-            <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <ul class="nav-dropdown-menu">
-            <li><a href="/team.html">Team &amp; Bios</a></li>
-            <li><a href="/theory.html">Theory of Change</a></li>
-            <li><a href="/issues.html">Policies</a></li>
-            <li><a href="/privacy-report.html">Privacy</a></li>
-          </ul>
-        </li>
-        <li><a href="/blog.html">News &amp; Media</a></li>
-        <li><a href="/projects.html">Projects</a></li>
-        <li><a href="/tip.html">Submit a Tip</a></li>
-        <li><a href="/#donate" class="nav-donate">Donate</a></li>
-        <li><a href="/#join" class="nav-cta">Get Involved</a></li>
-      </ul>
-      <a href="/" class="nav-logo-icon" aria-label="Utah Civic Compact home">
-        <img src="/assets/logo-icon-dark.png" alt="" class="nav-icon-img nav-icon-img-dark" width="44" height="44" />
-        <img src="/assets/logo-icon-light.png" alt="" class="nav-icon-img nav-icon-img-light" width="44" height="44" />
-      </a>
-    </nav>
-  </header>
-
-  <main id="main">
 
   <!-- HERO -->
   <section class="hero" id="home">
@@ -332,7 +287,7 @@
           <div class="section-label" data-animate>In Our Own Words</div>
           <h2 class="section-title" data-animate>Statements</h2>
         </div>
-        <a href="/statements.html" class="btn btn-outline press-see-all">All Statements →</a>
+        <a href="/statements.html" class="btn btn-outline btn-sm press-see-all">All Statements →</a>
       </div>
       {{#statements}}
       <a class="statement-feature" href="{{url}}">
@@ -353,11 +308,11 @@
           <div class="section-label" data-animate>In the Press</div>
           <h2 class="section-title" data-animate>Recent Coverage</h2>
         </div>
-        <a href="/blog.html" class="btn btn-outline press-see-all">All News &amp; Coverage →</a>
+        <a href="/blog.html" class="btn btn-outline btn-sm press-see-all">All News &amp; Coverage →</a>
       </div>
       <div class="press-grid">
         {{#press}}
-        <a class="press-card" href="{{{url}}}" target="_blank" rel="noopener">
+        <a class="press-card" href="{{url}}" target="_blank" rel="noopener">
           <div class="press-card-top">
             <span class="press-badge" style="background:{{badge_color}};">{{outlet}}</span>
             <span class="press-date">{{date}}</span>
@@ -388,7 +343,7 @@
         {{/projects}}
       </div>
       <div class="fights-all-link">
-        <a href="/projects.html" class="btn btn-outline">All Projects →</a>
+        <a href="/projects.html" class="btn btn-outline btn-sm">All Projects →</a>
       </div>
     </div>
   </section>
@@ -432,7 +387,7 @@
         </div>
         <div>
           <p class="issues-intro" data-animate>From redistricting and ballot access to transparency and local governance, we engage across the full spectrum of issues where the compact between Utahns and their government is at stake.</p>
-          <a href="/issues.html" class="btn btn-outline" style="white-space:nowrap;">Full Policy Positions →</a>
+          <a href="/issues.html" class="btn btn-outline btn-sm" style="white-space:nowrap;">Full Policy Positions →</a>
         </div>
       </div>
       <div class="issues-grid">
@@ -645,11 +600,11 @@
           </div>
 
           <div class="donate-tiers" id="donate-tiers">
-            <button class="tier-btn" data-price-id="price_1TUYkERpmK1SjHcTTLQtmoma" data-amount="500">$5<span>/mo</span></button>
-            <button class="tier-btn" data-price-id="price_1TUYkERpmK1SjHcTVIVSLS2f" data-amount="1000">$10<span>/mo</span></button>
-            <button class="tier-btn active" data-price-id="price_1TUYkERpmK1SjHcT1coNdzwN" data-amount="2500">$25<span>/mo</span></button>
-            <button class="tier-btn" data-price-id="price_1TUYkFRpmK1SjHcTh7g0nWcf" data-amount="5000">$50<span>/mo</span></button>
-            <button class="tier-btn tier-custom" data-price-id="custom">Other</button>
+            <button class="tier-btn" data-amount="500">$5<span>/mo</span></button>
+            <button class="tier-btn" data-amount="1000">$10<span>/mo</span></button>
+            <button class="tier-btn active" data-amount="2500">$25<span>/mo</span></button>
+            <button class="tier-btn" data-amount="5000">$50<span>/mo</span></button>
+            <button class="tier-btn tier-custom" data-amount="custom">Other</button>
           </div>
 
           <div class="donate-custom-wrap" id="donate-custom-wrap" style="display:none;">
@@ -697,60 +652,9 @@
     </div>
   </section>
 
-  </main>
 
   <!-- FOOTER -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <a href="/" class="logo logo-light">
-            <img src="/assets/logo-icon-dark.png" alt="" class="logo-mark-img" />
-            <span class="logo-text">Utah Civic Compact</span>
-          </a>
-          <p>Defending the compact between Utah communities and their government.</p>
-          <p class="footer-legal">Utah Civic Compact is a 501(c)(4) social welfare organization. Contributions are not tax-deductible as charitable donations.</p>
-          <div class="footer-social">
-            <a href="https://www.instagram.com/utahciviccompact/" aria-label="Instagram" target="_blank" rel="noopener">
-              <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-            </a>
-          </div>
-        </div>
-        <div class="footer-col">
-          <h5>Organization</h5>
-          <ul>
-            <li><a href="/#mission">Mission</a></li>
-            <li><a href="/#issues">Issues</a></li>
-            <li><a href="/team.html">Team &amp; Bios</a></li>
-            <li><a href="/theory.html">Theory of Change</a></li>
-            <li><a href="/privacy-report.html">Private Space</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h5>Get Involved</h5>
-          <ul>
-            <li><a href="/#join">Join the Compact</a></li>
-            <li><a href="/blog.html">News &amp; Blog</a></li>
-            <li><a href="/#donate">Donate</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h5>Contact</h5>
-          <ul>
-            <li><a href="mailto:info@utahciviccompact.org">info@utahciviccompact.org</a></li>
-            <li><a href="mailto:info@utahciviccompact.org">Press Inquiries</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>© 2026 Utah Civic Compact. All rights reserved.</p>
-        <div class="footer-links">
-          <a href="/privacy.html">Privacy Policy</a>
-          <a href="#">Terms of Use</a>
-        </div>
-      </div>
-    </div>
-  </footer>
+{{> footer}}
 
   <!-- DONATION MODAL -->
   <div class="modal-overlay" id="donate-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -766,6 +670,6 @@
     </div>
   </div>
 
-  <script src="js/main.js"></script>
+  <script src="/js/main.js"></script>
 </body>
 </html>

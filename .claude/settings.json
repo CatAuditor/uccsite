@@ -1,16 +1,32 @@
 {
+  "askUserQuestionTimeout": "10m",
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/notify-toast.ps1\"",
+            "async": true,
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  },
+  "skipDangerousModePermissionPrompt": true,
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
-      "Bash(grep *)",
-      "Bash(find *)",
-      "Bash(ls *)",
-      "Bash(cat *)",
-      "Bash(head *)",
-      "Bash(tail *)",
-      "Bash(wc *)",
-      "Bash(diff *)",
+      "Bash",
+      "Glob",
+      "PowerShell",
+      "ScheduleWakeup",
+      "Skill(loop)",
+      "CronCreate",
+      "CronList",
+      "CronDelete",
       "WebFetch(domain:www.semafor.com)",
-      "Bash(pkill -f \"http.server 8765\")",
       "WebFetch(domain:www.forbes.com)"
     ]
   }

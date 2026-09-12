@@ -1,3 +1,5 @@
+import { json } from '../_lib.js';
+
 const DEFAULT_GOAL_CENTS = 100000; // $1,000 — override with DONATION_GOAL_CENTS env var
 const RECENT_LIMIT = 3;
 
@@ -26,23 +28,13 @@ export async function onRequestGet({ env }) {
       amountCents: row.amount_cents,
     }));
 
-    return json({
-      totalCents: totalsRow.total_cents,
-      goalCents,
-      recent,
-    });
+    return json(
+      { totalCents: totalsRow.total_cents, goalCents, recent },
+      200,
+      { 'Cache-Control': 'public, max-age=60' }
+    );
   } catch (err) {
     console.error('donations/stats error:', err);
     return json({ error: 'Internal error' }, 500);
   }
-}
-
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=60',
-    },
-  });
 }

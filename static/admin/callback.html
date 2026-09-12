@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8" /></head>
+<head><meta charset="utf-8" /><meta name="robots" content="noindex, nofollow" /></head>
 <body>
 <script>
-  var msg = decodeURIComponent(location.hash.slice(1));
+  // Relays the OAuth result (in the URL fragment) to the Decap tab.
+  // Primary: BroadcastChannel / postMessage. Fallback: localStorage (popup sessionStorage
+  // is not shared with the opener), cleared by this page before it closes.
+  var msg = '';
+  try { msg = decodeURIComponent(location.hash.slice(1)); } catch (e) {}
   if (msg) {
     try { new BroadcastChannel('decap-auth').postMessage(msg); } catch(e) {}
     try { localStorage.setItem('decap-auth', msg); } catch(e) {}
@@ -11,7 +15,10 @@
       try { window.opener.postMessage(msg, window.location.origin); } catch(e) {}
     }
   }
-  setTimeout(function() { window.close(); }, 800);
+  setTimeout(function() {
+    try { localStorage.removeItem('decap-auth'); } catch(e) {}
+    window.close();
+  }, 800);
 </script>
 </body>
 </html>

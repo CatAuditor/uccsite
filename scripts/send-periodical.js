@@ -1,15 +1,23 @@
 // Sends a periodical email to all subscribers + opted-in members via Mailgun.
 //
 // Usage:
-//   node --env-file=.env scripts/send-periodical.js --subject "Subject line" --html path/to/email.html [--text path/to/email.txt] [--dry-run] [--test you@example.com]
+//   node --env-file=.env scripts/send-periodical.js --subject "Subject line" --html path/to/email.html [--text path/to/email.txt] [--dry-run] [--test you@example.com] [--resume sent.log]
 //
-// Requires MAILGUN_API_KEY in .env (gitignored).
+// Requires in .env (gitignored):
+//   MAILGUN_API_KEY  — Mailgun private API key
+//   TOKEN_SECRET     — same secret the Pages Functions use; signs per-recipient unsubscribe links
+//
+// Every send is appended to sent-<timestamp>.log. If a run aborts, re-run with
+// --resume <that log> to skip addresses already sent.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, appendFileSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { createHmac } from 'node:crypto';
 
 const MAILGUN_DOMAIN = 'utahciviccompact.org';
 const FROM_ADDRESS = 'Utah Civic Compact <hello@utahciviccompact.org>';
+const SITE_URL = 'https://utahciviccompact.org';
+const UNSUB_TTL_SECONDS = 60 * 60 * 24 * 365;
 
 function parseArgs(argv) {
   const args = { dryRun: false };
@@ -20,6 +28,7 @@ function parseArgs(argv) {
     else if (arg === '--text') args.textFile = argv[++i];
     else if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--test') args.test = argv[++i];
+    else if (arg === '--resume') args.resume = argv[++i];
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return args;
@@ -33,22 +42,33 @@ function getRecipients() {
   ) ORDER BY email`;
 
   const output = execFileSync(
-    'npx',
+    process.platform === 'win32' ? 'npx.cmd' : 'npx',
     ['wrangler', 'd1', 'execute', 'ucc-members', '--remote', '--json', '--command', sql],
-    { encoding: 'utf-8' }
+    { encoding: 'utf-8', shell: process.platform === 'win32' }
   );
 
   const [{ results }] = JSON.parse(output);
   return results.map((row) => row.email);
 }
 
-async function sendOne(apiKey, to, subject, html, text) {
+// Mirrors signToken() in functions/api/_lib.js (purpose 'unsubscribe').
+function unsubscribeUrl(secret, email) {
+  const b64url = (buf) => Buffer.from(buf).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({ p: 'unsubscribe', e: email, x: Math.floor(Date.now() / 1000) + UNSUB_TTL_SECONDS }));
+  const sig = createHmac('sha256', secret).update(payload).digest();
+  return `${SITE_URL}/api/unsubscribe?token=${encodeURIComponent(`${b64url(payload)}.${b64url(sig)}`)}`;
+}
+
+async function sendOne(apiKey, secret, to, subject, html, text) {
+  const unsub = unsubscribeUrl(secret, to);
   const form = new FormData();
   form.set('from', FROM_ADDRESS);
   form.set('to', to);
   form.set('subject', subject);
-  if (html) form.set('html', html);
-  if (text) form.set('text', text);
+  if (html) form.set('html', html.replaceAll('{{unsubscribe_url}}', unsub));
+  if (text) form.set('text', text.replaceAll('{{unsubscribe_url}}', unsub));
+  form.set('h:List-Unsubscribe', `<${unsub}>`);
+  form.set('h:List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
 
   const auth = Buffer.from(`api:${apiKey}`).toString('base64');
   const res = await fetch(`https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`, {
@@ -58,8 +78,7 @@ async function sendOne(apiKey, to, subject, html, text) {
   });
 
   if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Mailgun error for ${to}: ${res.status} ${errText}`);
+    throw new Error(`Mailgun ${res.status}: ${(await res.text()).slice(0, 200)}`);
   }
 }
 
@@ -70,17 +89,25 @@ async function main() {
   if (!args.htmlFile && !args.textFile) throw new Error('--html <file> or --text <file> is required');
 
   const apiKey = process.env.MAILGUN_API_KEY;
-  if (!apiKey && !args.dryRun) {
-    throw new Error('MAILGUN_API_KEY is not set. Run with: node --env-file=.env scripts/send-periodical.js ...');
+  const secret = process.env.TOKEN_SECRET;
+  if (!args.dryRun) {
+    if (!apiKey) throw new Error('MAILGUN_API_KEY is not set. Run with: node --env-file=.env scripts/send-periodical.js ...');
+    if (!secret) throw new Error('TOKEN_SECRET is not set (needed to sign unsubscribe links).');
   }
 
   const html = args.htmlFile ? readFileSync(args.htmlFile, 'utf-8') : undefined;
   const text = args.textFile ? readFileSync(args.textFile, 'utf-8') : undefined;
+  if (html && !html.includes('{{unsubscribe_url}}')) {
+    throw new Error('HTML body must include an unsubscribe link: use {{unsubscribe_url}} as the href.');
+  }
 
-  const recipients = args.test ? [args.test] : getRecipients();
+  const alreadySent = new Set(
+    args.resume && existsSync(args.resume) ? readFileSync(args.resume, 'utf-8').split('\n').filter(Boolean) : []
+  );
+  const recipients = (args.test ? [args.test] : getRecipients()).filter((e) => !alreadySent.has(e));
 
   console.log(`Subject: ${args.subject}`);
-  console.log(`Recipients: ${recipients.length}`);
+  console.log(`Recipients: ${recipients.length}${alreadySent.size ? ` (skipping ${alreadySent.size} already sent)` : ''}`);
   recipients.forEach((email) => console.log(`  - ${email}`));
 
   if (args.dryRun) {
@@ -88,13 +115,25 @@ async function main() {
     return;
   }
 
+  const log = args.resume || `sent-${new Date().toISOString().replace(/[:.]/g, '-')}.log`;
+  const failures = [];
   for (const email of recipients) {
-    await sendOne(apiKey, email, args.subject, html, text);
-    console.log(`Sent to ${email}`);
+    try {
+      await sendOne(apiKey, secret, email, args.subject, html, text);
+      appendFileSync(log, email + '\n');
+      console.log(`Sent to ${email}`);
+    } catch (err) {
+      failures.push(email);
+      console.error(`FAILED ${email}: ${err.message}`);
+    }
     await new Promise((r) => setTimeout(r, 250));
   }
 
-  console.log(`\nDone. Sent ${recipients.length} emails.`);
+  console.log(`\nDone. Sent ${recipients.length - failures.length}/${recipients.length}. Log: ${log}`);
+  if (failures.length) {
+    console.error(`Failed (${failures.length}):\n  ${failures.join('\n  ')}\nRe-run with --resume ${log} to retry.`);
+    process.exit(1);
+  }
 }
 
 main().catch((err) => {

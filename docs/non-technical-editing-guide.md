@@ -12,7 +12,7 @@ You don't need to build any of this — it's live and working. Good to know it e
 |---|---|---|
 | **Email signup** | Visitors join the mailing list; they get an automatic welcome email (via Resend) | Homepage "Join" section |
 | **Donations** | Visitors donate via credit card (Stripe Checkout); a live progress bar and recent-donor list update automatically | Homepage "Donate" section |
-| **Donor billing portal** | Recurring donors can manage/cancel their own subscription | Linked from donation receipt emails |
+| **Donor billing portal** | Recurring donors enter their email and receive a 15-minute sign-in link to manage/cancel their subscription | Linked from donation receipt emails |
 | **Confidential tipline** | A form for anonymous or named tips, stored privately (Airtable) — not public | `/tip` |
 | **News & Press** | List of press articles and embedded video coverage | `/blog.html` ("News & Media") |
 | **Official Statements** | Formal org statements, e.g. the NDAA/SAVE Act statement | `/statements.html` |
@@ -30,16 +30,21 @@ For simple content updates, you can log in and edit the site directly — no cod
 **Login:** with a GitHub account that has access to the site's repository.
 
 **You can edit there:**
-- Homepage text (headline, mission quote, "About," "Join," "Donate" sections, donation popup)
+- Site Settings (contact email, Instagram link, footer tagline, copyright line)
+- Homepage text (headline, mission quote, "About," "Join," "Donate" sections, donation popup, featured press)
 - Team members (add/remove/edit name, title, bio)
+- Statements (the newest one is automatically featured on the homepage)
+- Policy Positions
 - News & Press (add articles and YouTube videos)
-- Active Projects (add/edit project cards)
+- Active Projects (project cards plus their press and video coverage)
+
+Text fields support **bold**, *italic*, and links written as `[link text](https://example.com)`. A blank line starts a new paragraph.
 
 Changes you save in the admin panel go live automatically within a few minutes — there's no separate "publish" step, so double-check text before saving.
 
 **Not yet editable in the admin panel** (needs Claude or a developer):
-- The Statements page
 - Navigation menu, page layout, colors, fonts
+- The long-form investigation pages (ALPR, Stratos, Weber County, Privacy Report, Theory of Change)
 - Donation goal amount, payment/tipline configuration
 - Anything involving new pages or site structure
 

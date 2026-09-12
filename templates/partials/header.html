@@ -1,0 +1,35 @@
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header{{^is_home}} scrolled{{/is_home}}" id="site-header">
+    <nav class="nav-inner" aria-label="Main">
+
+      <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/#mission">Mission</a></li>
+        <li class="nav-dropdown">
+          <button class="nav-dropdown-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            About Us
+            <svg class="chevron" aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/team.html"{{#current.team}} aria-current="page"{{/current.team}}>Team &amp; Bios</a></li>
+            <li><a href="/theory.html"{{#current.theory}} aria-current="page"{{/current.theory}}>Theory of Change</a></li>
+            <li><a href="/issues.html"{{#current.issues}} aria-current="page"{{/current.issues}}>Policies</a></li>
+            <li><a href="/privacy-report.html"{{#current.privacy-report}} aria-current="page"{{/current.privacy-report}}>Privacy Report</a></li>
+          </ul>
+        </li>
+        <li><a href="/blog.html"{{#current.blog}} aria-current="page"{{/current.blog}}>News &amp; Media</a></li>
+        <li><a href="/projects.html"{{#current.projects}} aria-current="page"{{/current.projects}}>Projects</a></li>
+        <li><a href="/tip.html"{{#current.tip}} aria-current="page"{{/current.tip}}>Submit a Tip</a></li>
+        <li><a href="/#donate" class="nav-donate">Donate</a></li>
+        <li><a href="/#join" class="nav-cta">Get Involved</a></li>
+      </ul>
+      <a href="/" class="nav-logo-icon" aria-label="Utah Civic Compact home">
+        <img src="/assets/logo-icon-dark.png" alt="" class="nav-icon-img nav-icon-img-dark" width="44" height="44" />
+        <img src="/assets/logo-icon-light.png" alt="" class="nav-icon-img nav-icon-img-light" width="44" height="44" />
+      </a>
+    </nav>
+  </header>
+
+  <main id="main">

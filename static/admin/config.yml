@@ -4,10 +4,32 @@ backend:
   branch: main
   base_url: https://utahciviccompact.org
 
+site_url: https://utahciviccompact.org
+display_url: https://utahciviccompact.org
+
 media_folder: assets/uploads
 public_folder: /assets/uploads
 
+# IMPORTANT: Decap rewrites each JSON file with ONLY the fields declared below.
+# Every key present in content/*.json must be declared here or it is deleted on save.
+
 collections:
+
+  # ── Site Settings ─────────────────────────────────────────────────────────
+  - name: settings
+    label: Site Settings
+    files:
+      - name: site_settings
+        label: Site Settings
+        file: content/settings.json
+        format: json
+        fields:
+          - { label: Organization Name, name: orgName, widget: string }
+          - { label: Short Name, name: orgNameShort, widget: string }
+          - { label: Contact Email, name: email, widget: string, pattern: ['^[^\s@]+@[^\s@]+\.[^\s@]+$', 'Must be a valid email'] }
+          - { label: Instagram URL, name: instagram, widget: string, pattern: ['^https://', 'Must start with https://'] }
+          - { label: Footer Tagline, name: footerTagline, widget: string }
+          - { label: Copyright Line, name: copyright, widget: string }
 
   # ── Homepage ──────────────────────────────────────────────────────────────
   - name: homepage
@@ -25,126 +47,68 @@ collections:
               - label: Headline (HTML allowed — use &lt;em&gt; for italic, &lt;br /&gt; for line break)
                 name: headline
                 widget: text
-              - label: Subtitle
-                name: subtitle
-                widget: text
-              - label: Primary Button Text
-                name: cta_primary
-                widget: string
-              - label: Secondary Button Text
-                name: cta_secondary
-                widget: string
+              - { label: Subtitle, name: subtitle, widget: text }
+              - { label: Primary Button Text, name: cta_primary, widget: string }
+              - { label: Secondary Button Text, name: cta_secondary, widget: string }
 
           - label: Mission Statement
             name: mission
             widget: object
             fields:
-              - label: Quote
-                name: quote
-                widget: text
+              - { label: Quote, name: quote, widget: text }
 
           - label: About Section
             name: about
             widget: object
             fields:
-              - label: Title
-                name: title
-                widget: string
-              - label: Paragraph 1
-                name: body1
-                widget: text
-              - label: Paragraph 2
-                name: body2
-                widget: text
-              - label: Paragraph 3
-                name: body3
-                widget: text
-              - label: Pull Quote
-                name: quote
-                widget: text
+              - { label: Title, name: title, widget: string }
+              - { label: Paragraph 1, name: body1, widget: text }
+              - { label: Paragraph 2, name: body2, widget: text }
+              - { label: Paragraph 3, name: body3, widget: text }
+              - { label: Pull Quote, name: quote, widget: text }
 
           - label: Join Section
             name: join
             widget: object
             fields:
-              - label: Title
-                name: title
-                widget: string
-              - label: Body
-                name: body
-                widget: text
-              - label: List Item 1
-                name: item1
-                widget: string
-              - label: List Item 2
-                name: item2
-                widget: string
-              - label: List Item 3
-                name: item3
-                widget: string
-              - label: List Item 4
-                name: item4
-                widget: string
+              - { label: Title, name: title, widget: string }
+              - { label: Body, name: body, widget: text }
+              - { label: List Item 1, name: item1, widget: string }
+              - { label: List Item 2, name: item2, widget: string }
+              - { label: List Item 3, name: item3, widget: string }
+              - { label: List Item 4, name: item4, widget: string }
 
           - label: Donate Section
             name: donate
             widget: object
             fields:
-              - label: Label (small uppercase tag)
-                name: label
-                widget: string
-              - label: Title
-                name: title
-                widget: string
-              - label: Body
-                name: body
-                widget: text
+              - { label: Label (small uppercase tag), name: label, widget: string }
+              - { label: Title, name: title, widget: string }
+              - { label: Body, name: body, widget: text }
 
           - label: Donation Modal
             name: modal
             widget: object
             fields:
-              - label: Badge Text
-                name: badge
-                widget: string
-              - label: Title
-                name: title
-                widget: string
-              - label: Body
-                name: body
-                widget: text
-              - label: CTA Button Text
-                name: cta
-                widget: string
+              - { label: Badge Text, name: badge, widget: string }
+              - { label: Title, name: title, widget: string }
+              - { label: Body, name: body, widget: text }
+              - { label: CTA Button Text, name: cta, widget: string }
 
-          - label: Featured Press
+          # The featured statement card is generated automatically from the newest
+          # entry in Statements — there is nothing to edit for it here.
+
+          - label: Featured Press (hand-picked; can mix articles and videos)
             name: press
             widget: list
             fields:
-              - label: Outlet Name
-                name: outlet
-                widget: string
-              - label: Badge Color (CSS color)
-                name: badge_color
-                widget: string
-                hint: "e.g. #e8272a"
-              - label: Date
-                name: date
-                widget: string
-              - label: Headline
-                name: headline
-                widget: text
-              - label: Article URL
-                name: url
-                widget: string
-              - label: Read More Text
-                name: read_more
-                widget: string
-              - label: Language Attribute (optional)
-                name: lang_attr
-                widget: string
-                required: false
-                hint: 'Leave blank for English coverage. For Spanish-language coverage type exactly: lang="es"'
+              - { label: Outlet Name, name: outlet, widget: string }
+              - { label: Badge Color, name: badge_color, widget: string, hint: "e.g. #e8272a", pattern: ['^#[0-9a-fA-F]{6}$', 'Must be a hex color like #e8272a'] }
+              - { label: Date, name: date, widget: string }
+              - { label: Headline, name: headline, widget: text }
+              - { label: Link URL, name: url, widget: string, pattern: ['^https?://', 'Must start with http:// or https://'] }
+              - { label: Read More Text, name: read_more, widget: string, required: false }
+              - { label: Language Attribute (optional), name: lang_attr, widget: string, required: false, hint: 'Leave blank for English coverage. For Spanish-language coverage type exactly: lang="es"' }
 
   # ── Team ──────────────────────────────────────────────────────────────────
   - name: team
@@ -159,15 +123,60 @@ collections:
             name: members
             widget: list
             fields:
-              - label: Full Name
-                name: name
-                widget: string
-              - label: Title / Role
-                name: title
-                widget: string
-              - label: Bio (supports **bold**, *italic*, blank line = new paragraph)
+              - { label: Full Name, name: name, widget: string }
+              - { label: Title / Role, name: title, widget: string }
+              - label: Bio
                 name: bio
-                widget: markdown
+                widget: text
+                hint: "Supports **bold**, *italic*, [link text](https://url). Blank line = new paragraph. Headings and lists are not supported."
+
+  # ── Statements ────────────────────────────────────────────────────────────
+  - name: statements
+    label: Statements
+    files:
+      - name: statements_content
+        label: Statements
+        file: content/statements.json
+        format: json
+        fields:
+          - label: Statements (newest first — the top one is featured on the homepage)
+            name: statements
+            widget: list
+            fields:
+              - { label: Slug (URL anchor), name: slug, widget: string, hint: "lowercase-with-dashes", pattern: ['^[a-z0-9-]+$', 'Lowercase letters, numbers, and dashes only'] }
+              - { label: Date, name: date, widget: string, hint: "e.g. July 24, 2026" }
+              - { label: Topic, name: topic, widget: string }
+              - { label: Author, name: author, widget: string }
+              - { label: Title, name: title, widget: string }
+              - { label: Snippet (shown on homepage card), name: snippet, widget: text }
+              - label: Body
+                name: body
+                widget: text
+                hint: "Supports **bold**, *italic*, [link text](https://url). Blank line = new paragraph."
+              - { label: Sign-off, name: signoff, widget: string, required: false, hint: "e.g. — Utah Civic Compact" }
+
+  # ── Policy Positions ──────────────────────────────────────────────────────
+  - name: issues
+    label: Policy Positions
+    files:
+      - name: issues_content
+        label: Policy Positions
+        file: content/issues.json
+        format: json
+        fields:
+          - label: Positions
+            name: issues
+            widget: list
+            fields:
+              - { label: Slug (URL anchor), name: slug, widget: string, pattern: ['^[a-z0-9-]+$', 'Lowercase letters, numbers, and dashes only'] }
+              - { label: Number, name: num, widget: string, hint: "e.g. 01" }
+              - { label: Title, name: title, widget: string }
+              - { label: Author, name: author, widget: string }
+              - { label: Epigraph, name: epigraph, widget: text }
+              - label: Body
+                name: body
+                widget: text
+                hint: "Supports **bold**, *italic*, [link text](https://url). Blank line = new paragraph."
 
   # ── News & Press ──────────────────────────────────────────────────────────
   - name: blog
@@ -182,68 +191,28 @@ collections:
             name: articles
             widget: list
             fields:
-              - label: Outlet Name
-                name: outlet
-                widget: string
-              - label: Badge Color
-                name: badge_color
-                widget: string
-                hint: "e.g. #e8272a for Fox 13, #0057a8 for KSL"
-              - label: Date
-                name: date
-                widget: string
-              - label: Region/Tag
-                name: region
-                widget: string
-              - label: Headline
-                name: headline
-                widget: text
-              - label: Excerpt
-                name: excerpt
-                widget: text
-              - label: Article URL
-                name: url
-                widget: string
-              - label: Read More Text
-                name: read_more
-                widget: string
-              - label: Language Attribute (optional)
-                name: lang_attr
-                widget: string
-                required: false
-                hint: 'Leave blank for English coverage. For Spanish-language coverage type exactly: lang="es"'
+              - { label: Outlet Name, name: outlet, widget: string }
+              - { label: Badge Color, name: badge_color, widget: string, hint: "e.g. #e8272a for Fox 13, #0057a8 for KSL", pattern: ['^#[0-9a-fA-F]{6}$', 'Must be a hex color like #e8272a'] }
+              - { label: Date, name: date, widget: string }
+              - { label: Region/Tag, name: region, widget: string }
+              - { label: Headline, name: headline, widget: text }
+              - { label: Excerpt, name: excerpt, widget: text }
+              - { label: Article URL, name: url, widget: string, pattern: ['^https?://', 'Must start with http:// or https://'] }
+              - { label: Read More Text, name: read_more, widget: string, required: false }
+              - { label: Language Attribute (optional), name: lang_attr, widget: string, required: false, hint: 'Leave blank for English coverage. For Spanish-language coverage type exactly: lang="es"' }
 
           - label: Video Coverage
             name: videos
             widget: list
             fields:
-              - label: Outlet Name
-                name: outlet
-                widget: string
-              - label: Badge Color
-                name: badge_color
-                widget: string
-              - label: Date
-                name: date
-                widget: string
-              - label: Region/Tag
-                name: region
-                widget: string
-              - label: Headline
-                name: headline
-                widget: text
-              - label: YouTube Video ID
-                name: youtube_id
-                widget: string
-                hint: "The ID at the end of a YouTube URL, e.g. SoMlZxDFHHw"
-              - label: Embed Parameters (optional)
-                name: embed_params
-                widget: string
-                required: false
-                hint: "Optional. Start the embed at a timestamp, e.g. ?start=1094 for 18:14"
-              - label: YouTube Title (for accessibility)
-                name: youtube_title
-                widget: string
+              - { label: Outlet Name, name: outlet, widget: string }
+              - { label: Badge Color, name: badge_color, widget: string, pattern: ['^#[0-9a-fA-F]{6}$', 'Must be a hex color like #e8272a'] }
+              - { label: Date, name: date, widget: string }
+              - { label: Region/Tag, name: region, widget: string }
+              - { label: Headline, name: headline, widget: text }
+              - { label: YouTube Video ID, name: youtube_id, widget: string, hint: "The ID at the end of a YouTube URL, e.g. SoMlZxDFHHw", pattern: ['^[A-Za-z0-9_-]{11}$', 'Must be an 11-character YouTube ID'] }
+              - { label: Embed Parameters (optional), name: embed_params, widget: string, required: false, hint: "Optional. Start the embed at a timestamp, e.g. ?start=1094 for 18:14" }
+              - { label: YouTube Title (for accessibility), name: youtube_title, widget: string }
 
   # ── Projects ──────────────────────────────────────────────────────────────
   - name: projects
@@ -258,41 +227,44 @@ collections:
             name: projects
             widget: list
             fields:
-              - label: Project Name
-                name: name
-                widget: string
-              - label: Slug (URL-safe identifier)
-                name: slug
-                widget: string
-                hint: "e.g. stratos — lowercase, no spaces"
-              - label: Author
-                name: author
-                widget: string
-                hint: "Who wrote this project's work — e.g. Conner Radcliffe"
-              - label: Status
-                name: status
-                widget: string
-                hint: "e.g. Active, Resolved, Ongoing"
-              - label: Status Badge Color
-                name: status_color
-                widget: string
-                hint: "e.g. #c0392b for red"
-              - label: Region / Geography
-                name: region
-                widget: string
-                hint: "e.g. Box Elder County, Statewide"
-              - label: Tagline
-                name: tagline
-                widget: text
-                hint: "One-sentence summary shown on the home page and projects list"
-              - label: Detail Page URL
-                name: cta_url
-                widget: string
-                hint: "e.g. /stratos.html — link to the full briefing or detail page"
-              - label: CTA Button Text
-                name: cta_text
-                widget: string
-                hint: "e.g. Read the Briefing"
+              - { label: Project Name, name: name, widget: string }
+              - { label: Slug (URL-safe identifier), name: slug, widget: string, hint: "e.g. stratos — lowercase, no spaces", pattern: ['^[a-z0-9-]+$', 'Lowercase letters, numbers, and dashes only'] }
+              - { label: Date, name: date, widget: string, hint: "e.g. May 2026" }
+              - { label: Author, name: author, widget: string, hint: "Who wrote this project's work — e.g. Conner Radcliffe" }
+              - { label: Status, name: status, widget: string, hint: "e.g. Active, Resolved, Ongoing" }
+              - { label: Status Badge Color, name: status_color, widget: string, hint: "e.g. #c0392b for red", pattern: ['^#[0-9a-fA-F]{6}$', 'Must be a hex color like #c0392b'] }
+              - { label: Region / Geography, name: region, widget: string, hint: "e.g. Box Elder County, Statewide" }
+              - { label: Tagline, name: tagline, widget: text, hint: "One-sentence summary shown on the home page and projects list" }
+              - { label: Detail Page URL, name: cta_url, widget: string, hint: "e.g. /stratos.html — link to the full briefing or detail page", pattern: ['^(/|https?://)', 'Must start with / or https://'] }
+              - { label: CTA Button Text, name: cta_text, widget: string, hint: "e.g. Read the Briefing" }
+
+              - label: Press Coverage
+                name: articles
+                widget: list
+                required: false
+                fields:
+                  - { label: Outlet Name, name: outlet, widget: string }
+                  - { label: Badge Color, name: badge_color, widget: string, pattern: ['^#[0-9a-fA-F]{6}$', 'Must be a hex color like #e8272a'] }
+                  - { label: Date, name: date, widget: string }
+                  - { label: Region/Tag, name: region, widget: string }
+                  - { label: Headline, name: headline, widget: text }
+                  - { label: Excerpt, name: excerpt, widget: text }
+                  - { label: Article URL, name: url, widget: string, pattern: ['^https?://', 'Must start with http:// or https://'] }
+                  - { label: Read More Text, name: read_more, widget: string, required: false }
+
+              - label: Video Coverage
+                name: videos
+                widget: list
+                required: false
+                fields:
+                  - { label: Outlet Name, name: outlet, widget: string }
+                  - { label: Badge Color, name: badge_color, widget: string, pattern: ['^#[0-9a-fA-F]{6}$', 'Must be a hex color like #e8272a'] }
+                  - { label: Date, name: date, widget: string }
+                  - { label: Region/Tag, name: region, widget: string }
+                  - { label: Headline, name: headline, widget: text }
+                  - { label: YouTube Video ID, name: youtube_id, widget: string, pattern: ['^[A-Za-z0-9_-]{11}$', 'Must be an 11-character YouTube ID'] }
+                  - { label: YouTube Title (for accessibility), name: youtube_title, widget: string }
+
 
   # ── Report Media Coverage ─────────────────────────────────────────────────
   - name: coverage

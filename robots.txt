@@ -2,6 +2,8 @@
 
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /api/
 
 # AI crawlers
 User-agent: GPTBot

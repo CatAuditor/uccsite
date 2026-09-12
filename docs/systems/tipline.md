@@ -5,9 +5,10 @@ Confidential tip submission form at `/tip` backed by Airtable.
 ## Architecture
 
 ```
-tip.html          ← form UI (branded, no secrets)
+templates/tip.html     ← form UI (built to /tip.html; noindex, not in sitemap)
+js/tip.js              ← form controller (external file — site CSP blocks inline scripts)
   POST /api/tip
-    functions/api/tip.js   ← validates, calls Airtable REST API
+    functions/api/tip.js   ← validates (via _lib.js), calls Airtable REST API
       Airtable base: appgd3KnYil6zQgHp / table: tblRLdlEgvV1KqqiL (Tips)
 ```
 
@@ -37,7 +38,25 @@ Token scope: `data.records:write`, scoped to the Tip Intake base only.
 
 ## Rate Limiting
 
-Reuses the D1-backed `rate_limits` pattern from `api-security.md` — 5 requests / IP / hour on the `tip` action. Failure is non-fatal (submission proceeds if D1 is unavailable).
+Uses the shared `rateLimitOr429()` from `functions/api/_lib.js` — 5 requests / IP / hour, endpoint key `tip`. Fails open if D1 is unavailable (logged).
+
+## Logging policy
+
+This is a confidential tipline. `tip.js` never logs request bodies or Airtable response bodies (Airtable 422s echo field values). Only HTTP status codes are logged. Keep it that way.
+
+## Responses
+
+| Status | When |
+|---|---|
+| 200 `{ok:true}` | Saved |
+| 400 | Bad JSON, invalid email, or empty tip |
+| 429 | Rate limited |
+| 502 | Airtable unreachable or non-2xx |
+| 503 | `AIRTABLE_TOKEN` not set |
+
+## "Anonymous"
+
+The checkbox only blanks the `name` field. Email is still required and stored in Airtable so we can follow up — the form copy should not promise more than that.
 
 ## Attachments
 

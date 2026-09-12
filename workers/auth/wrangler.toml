@@ -1,3 +1,9 @@
 name = "uccsite-auth"
 main = "index.js"
-compatibility_date = "2024-01-01"
+compatibility_date = "2025-08-01"
+
+[vars]
+# GitHub OAuth App client ID (public). Set CLIENT_SECRET via: wrangler secret put CLIENT_SECRET
+CLIENT_ID = "Iv23lifWTq1jKRvmzuLX"
+# OAuth scope. `public_repo` is enough if CatAuditor/uccsite is public; use `repo` if private.
+GITHUB_SCOPE = "public_repo"

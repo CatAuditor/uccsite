@@ -121,17 +121,6 @@ input, textarea, select { font: inherit; }
   background: rgba(255,255,255,0.1);
   border-color: rgba(255,255,255,0.8);
 }
-.btn-accent {
-  background: var(--white);
-  color: var(--navy-dark);
-  border: 2px solid var(--white);
-  font-weight: 700;
-}
-.btn-accent:hover {
-  background: var(--cream);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-}
 .btn-outline {
   background: transparent;
   color: var(--navy);
@@ -141,6 +130,7 @@ input, textarea, select { font: inherit; }
   background: var(--navy);
   color: var(--white);
 }
+.btn-sm { padding: 10px 22px; border-radius: 6px; font-size: 14px; font-weight: 700; }
 .btn-full { width: 100%; justify-content: center; }
 .btn-donate {
   background: var(--navy);
@@ -160,6 +150,19 @@ input, textarea, select { font: inherit; }
 /* ============================================
    NAVIGATION
    ============================================ */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 200;
+  padding: 10px 16px;
+  background: var(--navy-dark);
+  color: var(--white);
+  font-weight: 600;
+  border-radius: var(--radius);
+}
+.skip-link:focus { top: 16px; }
+
 .site-header {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -419,26 +422,6 @@ input, textarea, select { font: inherit; }
   display: block;
 }
 
-.hero-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.6);
-  margin-bottom: 28px;
-  padding: 6px 14px;
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 100px;
-}
-.hero-tag::before {
-  content: '';
-  width: 6px; height: 6px;
-  background: var(--red);
-  border-radius: 50%;
-}
 
 .hero-headline {
   font-family: var(--font-sans);
@@ -926,7 +909,7 @@ input, textarea, select { font: inherit; }
   max-width: 300px !important;
 }
 
-.footer-col h5 {
+.footer-col h2 {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -967,7 +950,6 @@ input, textarea, select { font: inherit; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.hero-tag     { animation: heroFadeUp 0.8s var(--ease) 0.1s  both; }
 .hero-headline { animation: heroFadeUp 0.9s var(--ease) 0.28s both; }
 .hero-sub     { animation: heroFadeUp 0.8s var(--ease) 0.48s both; }
 .hero-actions { animation: heroFadeUp 0.8s var(--ease) 0.64s both; }
@@ -1108,51 +1090,6 @@ input, textarea, select { font: inherit; }
 }
 
 /* ============================================
-   SUBPAGE HERO
-   ============================================ */
-.subpage-hero {
-  position: relative;
-  overflow: hidden;
-  padding: 160px 48px 80px;
-  text-align: center;
-}
-
-/* The background layer — target this for video, canvas, animations, etc. */
-.subpage-hero .hero-bg {
-  background: linear-gradient(135deg, var(--navy-dark) 0%, #1B3A5C 100%);
-}
-
-/* Content sits above the background */
-.subpage-hero-content {
-  position: relative;
-  z-index: 1;
-}
-
-.subpage-hero .section-label {
-  color: rgba(255,255,255,0.5);
-  margin-bottom: 16px;
-}
-.subpage-hero h1 {
-  font-size: clamp(36px, 6vw, 64px);
-  font-weight: 900;
-  color: var(--white);
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-  margin-bottom: 16px;
-}
-.subpage-hero p {
-  font-size: 18px;
-  color: rgba(255,255,255,0.65);
-  max-width: 520px;
-  margin: 0 auto;
-  line-height: 1.65;
-}
-
-@media (max-width: 600px) {
-  .subpage-hero { padding: 140px 24px 64px; }
-}
-
-/* ============================================
    ABOUT LOGO
    ============================================ */
 .about-logo-wrap {
@@ -1165,47 +1102,6 @@ input, textarea, select { font: inherit; }
   width: 100%;
   height: auto;
   border-radius: var(--radius-lg);
-}
-
-/* ============================================
-   CONSTRUCTION / COMING SOON
-   ============================================ */
-.construction-section {
-  padding: 100px 48px;
-  background: var(--cream);
-  min-height: 50vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.construction-inner {
-  max-width: 560px;
-  text-align: center;
-}
-.construction-icon {
-  width: 72px; height: 72px;
-  background: var(--navy-dark);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 32px;
-}
-.construction-inner h2 {
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--navy-dark);
-  letter-spacing: -0.02em;
-  margin-bottom: 16px;
-}
-.construction-inner p {
-  font-size: 17px;
-  color: var(--gray-600);
-  line-height: 1.7;
-  margin-bottom: 36px;
-}
-@media (max-width: 600px) {
-  .construction-section { padding: 64px 24px; }
 }
 
 /* ============================================
@@ -1415,12 +1311,15 @@ input, textarea, select { font: inherit; }
   justify-content: center;
   padding: 24px;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.35s var(--ease);
+  transition: opacity 0.35s var(--ease), visibility 0s linear 0.35s;
 }
 .modal-overlay.modal-visible {
   opacity: 1;
+  visibility: visible;
   pointer-events: all;
+  transition: opacity 0.35s var(--ease);
 }
 .modal-card {
   background: var(--white);

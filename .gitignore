@@ -4,6 +4,5 @@
 testing/
 dist/
 *.pem
-assets/*.PNG
-assets/*.png
 assets/Screenshot*
+node_modules/

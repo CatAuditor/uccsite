@@ -1,14 +1,12 @@
+import { json, escapeHtml, isValidEmail, str, rateLimitOr429, signToken } from './_lib.js';
+
+const UNSUBSCRIBE_TTL = 60 * 60 * 24 * 365; // 1 year
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
-  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  try {
-    if (env.DB && !await checkRateLimit(env.DB, ip, 'subscribe', 5, 3600)) {
-      return json({ error: 'Too many requests. Please try again later.' }, 429);
-    }
-  } catch (err) {
-    console.error('Rate limit check failed:', err);
-  }
+  const limited = await rateLimitOr429(env, request, 'subscribe', 5);
+  if (limited) return limited;
 
   let body;
   try {
@@ -17,13 +15,13 @@ export async function onRequestPost(context) {
     return json({ error: 'Invalid request body' }, 400);
   }
 
-  const email = (body.email || '').trim().toLowerCase();
-  const firstName = (body.firstName || '').trim().slice(0, 100);
-  const lastName = (body.lastName || '').trim().slice(0, 100);
-  const address = (body.address || '').trim().slice(0, 200);
-  const zip = (body.zip || '').trim().slice(0, 10);
+  const email = str(body.email, 254).toLowerCase();
+  const firstName = str(body.firstName, 100);
+  const lastName = str(body.lastName, 100);
+  const address = str(body.address, 200);
+  const zip = str(body.zip, 10);
 
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!isValidEmail(email)) {
     return json({ error: 'A valid email address is required' }, 400);
   }
 
@@ -45,34 +43,49 @@ export async function onRequestPost(context) {
     return json({ error: 'Could not save subscription' }, 500);
   }
 
-  // Send welcome email via Resend
+  // Send welcome email via Resend — off the response path; signup is already saved.
   if (env.RESEND_API_KEY) {
-    const greeting = firstName ? `Hi ${escapeHtml(firstName)},` : 'Welcome,';
-    const emailRes = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Utah Civic Compact <hello@utahciviccompact.org>',
-        to: [email],
-        subject: "You're in. Here's what that means.",
-        html: buildWelcomeEmail(greeting),
-      }),
-    });
-
-    if (!emailRes.ok) {
-      const errText = await emailRes.text();
-      console.error('Resend error:', errText);
-      // Don't fail the signup if email fails — subscriber is saved
-    }
+    context.waitUntil(sendWelcomeEmail(env, request, email, firstName).catch(err => {
+      console.error('Welcome email failed:', err?.message);
+    }));
   }
 
   return json({ ok: true });
 }
 
-function buildWelcomeEmail(greeting) {
+async function sendWelcomeEmail(env, request, email, firstName) {
+  const greeting = firstName ? `Hi ${escapeHtml(firstName)},` : 'Welcome,';
+  const origin = new URL(request.url).origin;
+  let unsubscribeUrl = `${origin}/#join`;
+  if (env.TOKEN_SECRET) {
+    const token = await signToken(env.TOKEN_SECRET, 'unsubscribe', email, UNSUBSCRIBE_TTL);
+    unsubscribeUrl = `${origin}/api/unsubscribe?token=${encodeURIComponent(token)}`;
+  }
+
+  const emailRes = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'Utah Civic Compact <hello@utahciviccompact.org>',
+      to: [email],
+      subject: "You're in. Here's what that means.",
+      html: buildWelcomeEmail(greeting, unsubscribeUrl),
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    }),
+  });
+
+  if (!emailRes.ok) {
+    console.error('Resend error:', emailRes.status);
+  }
+}
+
+function buildWelcomeEmail(greeting, unsubscribeUrl) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -132,7 +145,7 @@ function buildWelcomeEmail(greeting) {
         <p style="margin:0;color:#888;font-family:sans-serif;font-size:12px;line-height:1.6;">
           Utah Civic Compact &middot; Salt Lake City, UT<br />
           You're getting this because you signed up at utahciviccompact.org.<br />
-          <a href="https://utahciviccompact.org" style="color:#1a3a2a;">Unsubscribe</a>
+          <a href="${escapeHtml(unsubscribeUrl)}" style="color:#1a3a2a;">Unsubscribe</a>
         </p>
       </td></tr>
 
@@ -143,25 +156,3 @@ function buildWelcomeEmail(greeting) {
 </html>`;
 }
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-
-async function checkRateLimit(db, ip, endpoint, limit, windowSeconds) {
-  const now = Math.floor(Date.now() / 1000);
-  const windowStart = now - windowSeconds;
-  await db.prepare('DELETE FROM rate_limits WHERE timestamp < ?').bind(windowStart).run();
-  const row = await db.prepare(
-    'SELECT COUNT(*) as count FROM rate_limits WHERE ip = ? AND endpoint = ? AND timestamp > ?'
-  ).bind(ip, endpoint, windowStart).first();
-  if ((row?.count ?? 0) >= limit) return false;
-  await db.prepare('INSERT INTO rate_limits (ip, endpoint, timestamp) VALUES (?, ?, ?)').bind(ip, endpoint, now).run();
-  return true;
-}

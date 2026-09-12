@@ -1,0 +1,17 @@
+# Strict site-wide CSP, relaxed only under /admin/*
+
+**Date:** 2026-08-23
+
+## Decision
+`static/_headers` serves `script-src 'self' https://static.cloudflareinsights.com` for the whole site (no `unsafe-inline`, no `unsafe-eval`) and a separate relaxed policy for `/admin/*` where Decap CMS requires both.
+
+## Why
+Two stored-XSS sinks were found in review (donor first name via `innerHTML`; CMS-controlled `href="{{{url}}}"`). Both are fixed at the source, but the old site-wide `unsafe-inline` meant any future slip was exploitable on the production origin — the same origin where the Decap GitHub token briefly lives. The only first-party inline script (`tip.html`) was moved to `js/tip.js`.
+
+## Consequences
+- Any new `<script>` with inline code is blocked by the browser. Put it in `js/`.
+- `<script type="application/ld+json">` is fine (not executed).
+- Inline `style` attributes and `<style>` blocks still work (`style-src 'unsafe-inline'` retained).
+
+## What breaks if reversed
+Adding `unsafe-inline` back to the `/*` policy re-enables the XSS class. Removing the `/admin/*` block breaks CMS login (Decap needs eval).
