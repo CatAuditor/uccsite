@@ -1,0 +1,19 @@
+{
+  "name": "@uccsite/html-ingest",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Document ingest pipeline: sanitize pasted HTML (allowlist), assign deterministic node ids, partition classes, a11y gate, report everything removed (build-spec-aws.md §5). Pure.",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  },
+  "dependencies": {
+    "dom-serializer": "^2.0.0",
+    "domhandler": "^5.0.3",
+    "domutils": "^3.1.0",
+    "parse5": "^7.1.2",
+    "parse5-htmlparser2-tree-adapter": "^7.0.0",
+    "sanitize-html": "^2.13.0"
+  }
+}

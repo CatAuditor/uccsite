@@ -1,0 +1,11 @@
+{
+  "name": "@uccsite/style-kit",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Parses css/styles.css (with @class annotations) into the editor's class catalog (build-spec-aws.md §6.1). Pure, zero-dependency.",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  }
+}

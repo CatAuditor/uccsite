@@ -1,0 +1,18 @@
+{
+  "name": "@uccsite/style-apply",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Applies StyleRules + StyleOverrides to normalized Document HTML at compose time (build-spec-aws.md §6.2-6.4). Pure; never touches body_html_raw.",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  },
+  "dependencies": {
+    "css-select": "^5.1.0",
+    "dom-serializer": "^2.0.0",
+    "domutils": "^3.1.0",
+    "parse5": "^7.1.2",
+    "parse5-htmlparser2-tree-adapter": "^7.0.0"
+  }
+}
