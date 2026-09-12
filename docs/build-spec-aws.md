@@ -701,3 +701,19 @@ session plan; key items:
    invite Lambda.
 9. **A `404.html` is added** with a CloudFront custom error response (Cloudflare
    Pages provided a 404 implicitly; the spec's §8 404 route assumed clean URLs).
+10. **Production URL structure is CLEAN URLS, not flat `.html`** (discovered
+    2026-09-12 via `scripts/url-inventory.mjs`; supersedes addendum 5's "no
+    clean-URL rewrites"). Cloudflare Pages 308-redirects every `*.html` to the
+    extensionless form and serves the page there; live canonicals are the clean
+    URLs in practice. The CloudFront viewer-request Function must therefore:
+    (a) rewrite extensionless page paths to the `.html` S3 key, (b) 308
+    `*.html` requests to the clean form, and (c) still apply the redirect map.
+    The §12 parity gate covers both forms — the committed baseline
+    (`docs/migration/url-inventory.prod.json`, 41 entries) records the 308s
+    and the clean-URL 200s.
+11. **Prod serves 200 + homepage bytes for unknown paths** (Pages SPA fallback,
+    no 404.html exists). Not preserved — the real 404 (addendum 9) is a
+    deliberate improvement.
+12. **The live sitemap.xml is stale**: lists `.html` URLs and omits
+    `/projects`, `/privacy`, `/weber-county`. The regenerated sitemap uses
+    clean URLs and includes all pages; this is an allowed parity exception.
