@@ -1,8 +1,14 @@
-# uccsite — Utah Civic Compact (Cloudflare Pages)
+# uccsite — Utah Civic Compact
 
-## AWS (Amplify migration)
+Currently live on Cloudflare Pages; an AWS rebuild is in progress. The governing
+document for that migration is `docs/build-spec-aws.md` — read it before doing any
+migration work. The rules below describe the CURRENT (Cloudflare) system and stay
+accurate until a migration phase explicitly changes them; update this file in the
+same commit as any such change.
 
-- AWS work uses profile `uccsite` (account 017110365763, us-west-2) — NEVER the default profile (personal account). Every `aws` command gets `--profile uccsite`.
+## AWS
+
+- AWS work uses profile `uccsite` (account 017110365763, us-west-2) — NEVER the default profile (personal account). Every `aws` command gets `--profile uccsite`. A PreToolUse hook enforces this.
 - @.claude/aws-agent-rules.md
 
 ## Architecture & hard rules (read `docs/systems/site-structure.md`)
@@ -59,6 +65,7 @@ docs/
   legal/          — Terms & Conditions, Privacy Policy (do not modify without explicit instruction)
   error-handling/ — Debugging logs, build failures, client-side errors (write here whenever relevant)
   changelog.md    — One entry per push (see checklist above)
+  build-spec-aws.md — The AWS migration build spec (governing document for the rebuild)
 ```
 
 ---
@@ -110,6 +117,9 @@ No speculative features, no unnecessary abstractions. If code could be half as l
 
 ## Goal-Driven Execution
 Convert vague tasks into verifiable success criteria before starting. Define what done looks like, then execute.
+
+## Commit Early, Commit Often
+Each logical step gets its own commit. Do not batch a day of work into one commit.
 
 ## Unanswered Questions (hands-off sessions)
 If an AskUserQuestion times out with no answer selected: append the question, its options, and the choice you made to `docs/pending-questions.md` (create if missing), pick the most reversible option, and continue — never treat silence as agreement with any specific option. When the user later answers an entry in that file, apply their answer and delete the entry.
@@ -169,47 +179,3 @@ Debug logs persist until explicitly instructed to remove them.
 - All API endpoints return correct status codes and response shapes
 - No broken imports or type errors
 - Docs updated to reflect current state
-
-## Amplify Environment Variables — Verify Every Push
-
-**Every push must confirm all vars below are set in Amplify Console → App → Environment variables.**
-Missing vars cause silent 401s, broken auth, and failed payments — they do NOT cause build failures.
-`.env.local` is never deployed. The Amplify console is the only source of truth for prod.
-
-If you add a new `process.env.FOO` reference anywhere in the codebase, you MUST:
-1. Add it to `.env.local.example`
-2. Add it to the list below
-3. Set it in Amplify Console before merging
-
-Note: this is a Vite SPA — client-visible env vars use `import.meta.env.VITE_*`
-(the `VITE_` prefix is what exposes them to the bundle). The rule above applies to
-those identically.
-
-**Single source of truth (2026-07-12):** Amplify Console env vars drive both the
-client bundle AND the CSP. `src/config.ts` reads `import.meta.env.VITE_*`; the
-`prebuild` step (`scripts/gen-csp.ts`) resolves the same vars via Vite's
-`loadEnv` (so `.env.local` overrides reach the CSP too) and regenerates
-`customHttp.yml`'s `connect-src`, failing the build on any value that isn't a
-bare https origin. So **never hand-edit a Function URL into `customHttp.yml`**
-— set the env var, redeploy, both update. Fallback defaults live in
-`src/endpoints.ts` (client/CSP) and `amplify/functions/shared/client-id.ts`
-(backend); a missing **or empty** var degrades to the last-known-good default
-(`||`, not `??`, everywhere). `customHttp.yml` is a generated artifact — edit
-the generator, not the file. Decision:
-`docs/decisions/2026-07-12-env-vars-single-source.md`.
-
-### Current environment variables
-
-| Var | Purpose | Behavior when missing |
-|---|---|---|
-| `VITE_SHARE_URL` / `VITE_CHECKOUT_URL` / `VITE_ENTITLEMENT_URL` / `VITE_UNSUB_PROXY_URL` / `VITE_DELETE_URL` / `VITE_WORK_SUMMARY_URL` | Lambda Function URLs. Read by `src/config.ts` (client) and `scripts/gen-csp.ts` (CSP) at build time. Set/change in Amplify Console after a function (re)deploys. `VITE_DELETE_URL` set in console 2026-07-12. `VITE_WORK_SUMMARY_URL` (cleanup-summary email, added 2026-07-25): committed default is EMPTY — must be set in console after the work-summary function's first deploy. | Falls back to the last-known-good URL in `src/endpoints.ts` (first five have real defaults; `WORK_SUMMARY_URL` default is empty → "Email me this summary" button hidden); an endpoint is excluded from CSP only if both var and default are empty. |
-| `VITE_GOOGLE_CLIENT_ID` | Google OAuth client ID (public). The ONE canonical override for the client bundle **and** every Lambda (`amplify/functions/shared/client-id.ts` reads the same var at synth) — a single console var can never bind the two sides to different OAuth audiences. Set in console 2026-07-25 (`294920447419-...`); committed default is the older `84279819282-...` ID. | Falls back to the committed default client ID. |
-| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key baked into the bundle at build time (`src/config.ts`). Pre-launch this is a TEST-mode key on purpose — `docs/decisions/2026-07-08-test-stripe-keys-in-prod.md`. | Falls back to `pk_PLACEHOLDER`; embedded checkout fails closed. |
-| `STRIPE_PRICE_ANNUAL` / `STRIPE_PRICE_PASS` | Price IDs read at `ampx pipeline-deploy` synth time (`amplify/functions/checkout/resource.ts`). Currently Vail0 LLC sandbox test prices (account migrated 2026-07-17). | Checkout Lambda gets placeholder IDs → 500 fail-closed on checkout. |
-| `STRIPE_SECRET_KEY` | Amplify **secret** (`npx ampx secret set`). Held by BOTH checkout (create sessions) and stripe-webhook (retrieve the PaymentIntent behind a `charge.refunded`/`charge.dispute.created` event to resolve the buyer's `sub` for revocation). | **Deploy fails while unset** (unresolvable `secret()`). Checkout 500s. Webhook can't resolve `sub` on refund/dispute → access is NOT revoked (logged); grants unaffected. |
-| `LICENSE_TOKEN_SECRET` | Amplify **secret** (`npx ampx secret set`), held by the entitlement Lambda (mints/verifies returning-user license tokens — `docs/decisions/2026-07-09-license-token-returning-users.md`), by the unsub-proxy, data-deletion, and work-summary Lambdas (all verify those tokens as their identity gate), and by lifecycle-mailer (signs/verifies promo-unsubscribe tokens — distinct JWT audience, `shared/promo-unsub-token.ts`). | **Deploy fails while unset** (unresolvable `secret()`). If empty at runtime: Google-idToken checks work, no license tokens minted; license-token requests 500 (the four gate Lambdas fail closed); lifecycle-mailer skips promo sends and its unsub endpoint 500s. |
-| `STRIPE_WEBHOOK_SECRET` | Amplify **secret** (`npx ampx secret set`), held by stripe-webhook: HMAC key for verifying the `stripe-signature` header — the webhook's ONLY auth. | **Deploy fails while unset** (unresolvable `secret()`). If empty at runtime: signature verification fails → all webhook events 400 → no grants, no revocations. |
-| `RESEND_API_KEY` | Amplify **secret** (`npx ampx secret set`), held by stripe-webhook (purchase receipts), work-summary (cleanup-summary emails), and lifecycle-mailer (annual expiry notices + opt-in pass promos, 2026-07-28), all via Resend. | **Deploy fails while unset** (unresolvable `secret()`). Placeholder/empty at runtime: receipts skipped with a log (grants unaffected); summary requests return `{ok:false}` (client shows copy fallback); lifecycle runs send nothing (logged). |
-| `RESEND_FROM` | From address, hardcoded on the stripe-webhook, work-summary, and lifecycle-mailer Lambdas (`resource.ts`: `Vail0 <receipts@vail0.com>`) — not a console var. Change it in all three `resource.ts` files. | If it were emptied: Resend rejects the send, email skipped (logged), grants unaffected. |
-| `PROMO_UNSUB_URL` / `POSTAL_ADDRESS` | Both Amplify Console env vars read at **synth** in `lifecycle-mailer/resource.ts`. `PROMO_UNSUB_URL` = the mailer's OWN Function URL (promo unsubscribe endpoint; CDK can't wire a function's own URL into its env — cycle), set in the console after the mailer's first deploy. `POSTAL_ADDRESS` = the CAN-SPAM physical postal address printed in the promo footer. NOT `VITE_` vars — the browser never calls them, so no endpoints.ts/config.ts/CSP wiring. | Either empty (current state for both) ⇒ **promotional sends are skipped entirely** (fail closed — a promo without a working unsubscribe/postal address is a CAN-SPAM violation); transactional annual expiry notices are unaffected. |
-| `VITE_TEST_MODE` | Dev-only switch arming the fake Google/Gmail/Stripe shims (`src/lib/testMode.ts`). Set to `1` ONLY by the committed `.env.test` via `npm run dev:test`. | Unset = real integrations (normal). Never set it in `.env.local` or Amplify Console — in `.env.local` it arms the fakes for every plain `npm run dev`; prod builds are immune (`import.meta.env.DEV` gate). |
