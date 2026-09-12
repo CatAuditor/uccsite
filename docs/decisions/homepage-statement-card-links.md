@@ -1,5 +1,10 @@
 # Homepage statement cards link anywhere
 
+> **SUPERSEDED 2026-09-12** by [homepage-statement-links.md](homepage-statement-links.md).
+> The `homepage.json` statements array this relies on was removed by the
+> derived-statement refactor; the two decisions together produced a dead-link
+> defect. Kept as history.
+
 **Date:** September 9, 2026
 
 ## Decision

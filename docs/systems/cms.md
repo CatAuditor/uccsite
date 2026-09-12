@@ -24,7 +24,7 @@ dist/                    ← Cloudflare Pages serves this (.gitignored)
 | Site Settings | `content/settings.json` | org name, contact email, Instagram, footer tagline, copyright (rendered by the footer partial) |
 | Homepage | `content/homepage.json` | hero, mission, about, join, donate, modal, featured press (hand-curated) |
 | Team & Bios | `content/team.json` | members (name, title, photo, bio) |
-| Statements | `content/statements.json` | statements (newest first — the top one is auto-featured on the homepage) |
+| Statements | `content/statements.json` | statements (newest first — the top one is auto-featured on the homepage; optional `url`/`more` override the featured card's link and read-more text) |
 | Policy Positions | `content/issues.json` | issues |
 | News & Press | `content/blog.json` | articles, videos |
 | Projects | `content/projects.json` | projects incl. nested press `articles` and `videos` |

@@ -1,5 +1,10 @@
 # Homepage featured statement derived from statements.json
 
+> **Partially superseded 2026-09-12** by
+> [homepage-statement-links.md](homepage-statement-links.md): derivation stays,
+> but the mapping now also supplies `url`/`more` (with optional per-entry
+> overrides in `statements.json`).
+
 **Date:** 2026-08-23
 
 ## Decision

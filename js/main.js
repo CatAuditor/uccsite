@@ -384,7 +384,8 @@ sections.forEach(s => sectionObserver.observe(s));
   });
 }());
 
-// Donation tracker
+// Donation tracker — recent public donors only. The site shows no running
+// total or goal by org policy (docs/build-spec-aws.md, planning addendum 2).
 (async function initDonationTracker() {
   const tracker = document.getElementById('donation-tracker');
   if (!tracker) return;
@@ -392,33 +393,26 @@ sections.forEach(s => sectionObserver.observe(s));
   try {
     const res = await fetch('/api/donations/stats');
     if (!res.ok) return;
-    const { totalCents, goalCents, recent } = await res.json();
+    const { recent } = await res.json();
+    if (!recent || !recent.length) return; // nothing to show — stay hidden
 
-    const pct = goalCents > 0 ? Math.min((totalCents / goalCents) * 100, 100) : 0;
     const fmt = cents => '$' + (cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 });
-
-    document.getElementById('tracker-bar-fill').style.width = pct + '%';
-    document.getElementById('tracker-label').textContent =
-      `${fmt(totalCents)} raised of ${fmt(goalCents)} goal`;
-
-    if (recent && recent.length) {
-      const list = document.getElementById('tracker-recent');
-      const heading = document.createElement('p');
-      heading.className = 'tracker-recent-heading';
-      heading.textContent = 'Recent donors';
-      list.parentElement.insertBefore(heading, list);
-      recent.forEach(({ firstName, amountCents }) => {
-        const li = document.createElement('li');
-        const name = document.createElement('span');
-        name.className = 'tracker-donor-name';
-        name.textContent = firstName; // user-supplied — never innerHTML
-        const amount = document.createElement('span');
-        amount.className = 'tracker-donor-amount';
-        amount.textContent = fmt(amountCents);
-        li.append(name, amount);
-        list.appendChild(li);
-      });
-    }
+    const list = document.getElementById('tracker-recent');
+    const heading = document.createElement('p');
+    heading.className = 'tracker-recent-heading';
+    heading.textContent = 'Recent donors';
+    list.parentElement.insertBefore(heading, list);
+    recent.forEach(({ firstName, amountCents }) => {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      name.className = 'tracker-donor-name';
+      name.textContent = firstName; // user-supplied — never innerHTML
+      const amount = document.createElement('span');
+      amount.className = 'tracker-donor-amount';
+      amount.textContent = fmt(amountCents);
+      li.append(name, amount);
+      list.appendChild(li);
+    });
 
     tracker.removeAttribute('aria-hidden');
     tracker.classList.add('tracker-loaded');

@@ -81,9 +81,12 @@ test('sitemap: structure, exclusions, priorities, injected lastmod', () => {
   assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
   // tip + success excluded
-  assert.ok(!locs.some(l => /tip|success/.test(l)), 'tip/success must not be in the sitemap');
+  assert.ok(!locs.some(l => /tip|success|404/.test(l)), 'tip/success/404 must not be in the sitemap');
   assert.equal(locs.length, PAGES.filter(p => p.sitemap !== false).length);
   assert.ok(locs.includes('https://utahciviccompact.org/'));
+  // Clean URLs (spec addenda 10/12): no .html extensions in the sitemap
+  assert.ok(!locs.some(l => l.endsWith('.html')), 'sitemap locs must be extensionless');
+  assert.ok(locs.includes('https://utahciviccompact.org/alpr'));
   // injected lastmod used verbatim
   assert.ok(xml.includes('<lastmod>2026-09-12</lastmod>'));
   // priorities preserved

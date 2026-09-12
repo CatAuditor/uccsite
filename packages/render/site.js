@@ -26,6 +26,7 @@ const PAGES = [
   { template: 'tip.html',          content: ['settings'], sitemap: false },
   { template: 'privacy.html',      content: ['settings'], priority: '0.3' },
   { template: 'success.html',  content: ['settings'], sitemap: false },
+  { template: '404.html',      content: ['settings'], sitemap: false },
 ];
 
 // Array → field containing markdown that must be converted to HTML before render
@@ -33,10 +34,17 @@ const MARKDOWN_FIELDS = { members: 'bio', statements: 'body', issues: 'body' };
 
 // The homepage's featured statement is always the newest in statements.json
 // (not stored twice). Returns a NEW homepage object — inputs are not mutated.
+// `url`/`more` feed the card's link and read-more line (templates/index.html);
+// optional per-statement overrides let a card point at a standalone page
+// (e.g. the Dignity Index statement) — see docs/decisions/homepage-statement-links.md.
 function deriveHomepage(content) {
   if (!content.homepage) return content;
   const statements = (content.statements?.statements || []).slice(0, 1)
-    .map(({ slug, date, title, snippet }) => ({ slug, date, title, snippet }));
+    .map(({ slug, date, title, snippet, url, more }) => ({
+      slug, date, title, snippet,
+      url: url || `/statements.html#${slug}`,
+      more: more || 'Read the full statement →',
+    }));
   return { ...content, homepage: { ...content.homepage, statements } };
 }
 
@@ -87,7 +95,10 @@ function makeSitemap(pages, lastmod, siteUrl) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schema/sitemap/0.9">
 ${pages.filter(p => p.sitemap !== false).map(p => {
-  const loc = p.template === 'index.html' ? `${siteUrl}/` : `${siteUrl}/${p.template}`;
+  // Clean URLs: the live site serves pages extensionless (Cloudflare Pages
+  // 308s *.html → clean; CloudFront reproduces that). Sitemap lists the
+  // canonical clean form (spec addenda 10/12).
+  const loc = p.template === 'index.html' ? `${siteUrl}/` : `${siteUrl}/${p.template.replace(/\.html$/, '')}`;
   return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod(p)}</lastmod>\n    <priority>${p.priority || '0.7'}</priority>\n  </url>`;
 }).join('\n')}
 </urlset>

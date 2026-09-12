@@ -1,6 +1,8 @@
 import { json } from '../_lib.js';
 
-const DEFAULT_GOAL_CENTS = 100000; // $1,000 — override with DONATION_GOAL_CENTS env var
+// Org policy (2026-09-12): no public running total or goal — this endpoint
+// exposes only the opt-in recent-donor list. See docs/build-spec-aws.md,
+// planning addendum 2.
 const RECENT_LIMIT = 3;
 
 export async function onRequestGet({ env }) {
@@ -9,30 +11,21 @@ export async function onRequestGet({ env }) {
   }
 
   try {
-    const goalCents = parseInt(env.DONATION_GOAL_CENTS, 10) || DEFAULT_GOAL_CENTS;
-
-    const [totalsRow, recentRows] = await Promise.all([
-      env.DB.prepare(`SELECT COALESCE(SUM(amount_cents), 0) AS total_cents FROM donations`).first(),
-      env.DB.prepare(
-        `SELECT m.first_name, d.amount_cents
-         FROM donations d
-         LEFT JOIN members m ON d.member_id = m.id
-         WHERE d.public = 1
-         ORDER BY d.created_at DESC
-         LIMIT ?`
-      ).bind(RECENT_LIMIT).all(),
-    ]);
+    const recentRows = await env.DB.prepare(
+      `SELECT m.first_name, d.amount_cents
+       FROM donations d
+       LEFT JOIN members m ON d.member_id = m.id
+       WHERE d.public = 1
+       ORDER BY d.created_at DESC
+       LIMIT ?`
+    ).bind(RECENT_LIMIT).all();
 
     const recent = (recentRows.results || []).map(row => ({
       firstName: row.first_name || 'Anonymous',
       amountCents: row.amount_cents,
     }));
 
-    return json(
-      { totalCents: totalsRow.total_cents, goalCents, recent },
-      200,
-      { 'Cache-Control': 'public, max-age=60' }
-    );
+    return json({ recent }, 200, { 'Cache-Control': 'public, max-age=60' });
   } catch (err) {
     console.error('donations/stats error:', err);
     return json({ error: 'Internal error' }, 500);

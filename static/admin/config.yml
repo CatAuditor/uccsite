@@ -125,6 +125,7 @@ collections:
             fields:
               - { label: Full Name, name: name, widget: string }
               - { label: Title / Role, name: title, widget: string }
+              - { label: Headshot, name: photo, widget: image, required: false, hint: "Team photo shown on the Team page and homepage" }
               - label: Bio
                 name: bio
                 widget: text
@@ -154,6 +155,8 @@ collections:
                 widget: text
                 hint: "Supports **bold**, *italic*, [link text](https://url). Blank line = new paragraph."
               - { label: Sign-off, name: signoff, widget: string, required: false, hint: "e.g. — Utah Civic Compact" }
+              - { label: Homepage card link (optional), name: url, widget: string, required: false, hint: "Where the featured homepage card points. Blank = the statement's spot on /statements.html" }
+              - { label: Homepage read-more text (optional), name: more, widget: string, required: false, hint: "Blank = 'Read the full statement →'" }
 
   # ── Policy Positions ──────────────────────────────────────────────────────
   - name: issues

@@ -1,0 +1,6 @@
+{
+  "how-did-this-happen.html": "Migrated hardcoded header/footer to {{> header}}/{{> footer}} partials; absolute /css /js paths; gains skip link, main#main, aria attrs, correct nav labels (build-spec §1.5)",
+  "dignity-index-statement.html": "Migrated hardcoded header/footer to partials; absolute /css /js paths; same gains as above (build-spec §1.5)",
+  "index.html": "Featured statement card now receives url/more from deriveHomepage (dead-link fix, build-spec §1.5); donate section drops progress bar/goal — recent-donor ticker only (planning addendum 2)",
+  "404.html": "New page: real 404 replaces Cloudflare Pages SPA fallback (planning addendum 9)"
+}
