@@ -6,3 +6,4 @@ dist/
 *.pem
 assets/Screenshot*
 node_modules/
+infra/cdk/cdk.out/

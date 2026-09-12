@@ -1,8 +1,0 @@
-{
-  "data": [
-    {
-      "key": "/auth",
-      "value": "{\"to\":\"https://uccsite-auth.cothv.workers.dev/auth\",\"status\":302}"
-    }
-  ]
-}
