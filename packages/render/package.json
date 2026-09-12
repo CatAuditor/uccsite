@@ -1,0 +1,11 @@
+{
+  "name": "@uccsite/render",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Pure static-site renderer ported from build.js (build-spec-aws.md §4). Strings and objects in, strings out — no fs, no AWS.",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  }
+}
