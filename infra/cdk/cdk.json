@@ -1,0 +1,10 @@
+{
+  "app": "node bin/app.js",
+  "context": {
+    "account": "017110365763",
+    "region": "us-west-2",
+    "stagingBasicAuth": "preview:wasatch-front-2026",
+    "@aws-cdk/aws-s3:createDefaultLoggingPolicy": true,
+    "@aws-cdk/core:checkSecretUsage": true
+  }
+}

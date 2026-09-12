@@ -1,0 +1,21 @@
+{
+  "name": "@uccsite/infra",
+  "private": true,
+  "version": "0.0.0",
+  "description": "CDK app: CloudFront + S3 site, CloudFront Function + KVS redirects, Aurora DSQL, API Lambda origin (build-spec-aws.md §2, §8)",
+  "type": "commonjs",
+  "scripts": {
+    "synth": "cdk synth",
+    "diff": "cdk diff",
+    "deploy:staging": "cdk deploy UccStaging --profile uccsite",
+    "deploy:prod": "cdk deploy UccProd --profile uccsite"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.220.0",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.1100.0",
+    "esbuild": "^0.25.0"
+  }
+}
