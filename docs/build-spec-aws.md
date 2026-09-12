@@ -1,9 +1,9 @@
 # Build Spec — utahciviccompact.org Rebuild on AWS
 
 > Provenance: delivered by the org 2026-09-12. Transcribed from the working session;
-> the original message was TRUNCATED mid-§20 ("Do not ship the …") — the tail of the
-> Do-Not list and anything after it is missing and will be appended when supplied.
-> Planning addenda (decisions made after spec delivery) are at the bottom of this file.
+> the original message was truncated mid-§20 — org decided the missing tail stays
+> lost (see the note at §20). Planning addenda (decisions made after spec delivery)
+> are at the bottom of this file and override the spec text where they conflict.
 
 You are implementing this project. This document is the complete specification. Read all of it before writing any code.
 
@@ -661,8 +661,17 @@ Project records with nested articles and videos, sorting and filtering, generate
 - Do not support arbitrary CSS selectors in style rules.
 - Do not let `data-nid` reach a published page.
 
-<!-- TRUNCATED: the original spec message cut off here, mid-item ("Do not ship the …").
-     Append the remainder verbatim when supplied. -->
+<!-- The original spec message cut off here, mid-item ("Do not ship the …").
+     Org decision 2026-09-12: the missing tail is NOT being supplied — the spec
+     was drafted by another model and the org defers to the implementing
+     session's judgment (with codebase knowledge) over the lost text. The
+     Do-Not list above is complete as far as it goes; treat further constraints
+     as governed by the planning addenda below. -->
+
+**Process addendum (org, 2026-09-12):** every build phase ends with a code-review
+pass and a bug-fix loop on that phase's changes BEFORE the phase is reported
+done. Operator actions (secrets, DNS, dashboards) accumulate in
+`docs/for-conner.md` as they're discovered.
 
 ---
 

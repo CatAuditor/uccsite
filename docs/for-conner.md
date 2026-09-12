@@ -1,0 +1,54 @@
+# For Conner — operator handoff notes (AWS rebuild)
+
+Running list of everything that needs a human with the keys. Updated every phase;
+each item says WHAT, WHERE it goes, and WHEN it's needed. Items get checked off
+as they're done. Context: `docs/build-spec-aws.md`.
+
+## Needed NOW (blocks later phases, start hunting early)
+
+- [ ] **`TOKEN_SECRET` plaintext** — the HMAC secret currently set on Cloudflare
+  Pages (`wrangler pages secret put TOKEN_SECRET`). Cloudflare cannot show it
+  back — it must come from wherever it was saved when first generated (password
+  manager, notes, terminal history). It MUST carry over to AWS unchanged:
+  every newsletter unsubscribe link in the wild is signed with it for 1 year,
+  and rotating it silently breaks one-click unsubscribe in people's mail
+  clients. Needed before Phase 5 (API port). If it is truly unrecoverable,
+  tell the dev BEFORE Phase 5 — that changes the cutover plan.
+
+## Needed at Phase 3/5 (AWS Secrets Manager, us-west-2, account 017110365763)
+
+Each of these gets entered into AWS Secrets Manager when asked. Sources:
+
+- [ ] `STRIPE_SECRET_KEY` — Stripe Dashboard → Developers → API keys (live key)
+- [ ] `STRIPE_WEBHOOK_SECRET` — carries over UNCHANGED (the webhook URL doesn't
+  change at cutover, so the existing signing secret keeps working). Recoverable
+  from Stripe Dashboard → Developers → Webhooks → the endpoint → signing secret
+- [ ] `AIRTABLE_TOKEN` — Airtable → Developer hub → personal access tokens.
+  Scope: `data.records:write` on the Tip Intake base only
+- [ ] `RESEND_API_KEY` — Resend dashboard → API keys
+- [ ] `TOKEN_SECRET` — see above, the ORIGINAL value
+- [ ] `MAILGUN_API_KEY` — Mailgun dashboard (used by the periodical send script)
+- [ ] `TURNSTILE_SECRET_KEY` — NEW: create a Cloudflare Turnstile widget for
+  utahciviccompact.org (Cloudflare dashboard → Turnstile), gives a site key
+  (public, goes in the repo) + secret key (goes in Secrets Manager)
+
+## Needed at Phase 6 (cutover) — details will be filled in when we get there
+
+- [ ] DNS changes at Cloudflare: set records to **DNS-only (grey cloud)** and
+  point at the CloudFront distribution (exact records TBD)
+- [ ] Lower DNS TTL to 300s 24 hours before cutover day
+- [ ] Keep the Cloudflare Pages project alive (but idle) for 30 days after
+  cutover as the rollback path
+
+## Needed at Phase 7 (admin + backups)
+
+- [ ] **GitHub App** for the nightly content export: create a GitHub App on the
+  `CatAuditor` org/account with contents:write on the `uccsite` repo, install
+  it, and hand over the App ID + private key (`GITHUB_APP_PRIVATE_KEY` →
+  Secrets Manager)
+- [ ] Admin accounts: list of who gets `owner` / `editor` / `viewer` in the new
+  admin (email addresses — no GitHub account needed anymore)
+
+## Done
+
+- [x] 2026-09-12 — nothing yet
