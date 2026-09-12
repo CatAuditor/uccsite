@@ -15,11 +15,14 @@ const kvs = cf.kvs();
 const BASIC_AUTH = '__BASIC_AUTH__';
 
 function qs(request) {
+  // Note: cloudfront-js-2.0 has no for...of — index loops only.
   const parts = [];
   for (const key in request.querystring) {
     const entry = request.querystring[key];
     if (entry.multiValue) {
-      for (const item of entry.multiValue) parts.push(key + '=' + item.value);
+      for (let i = 0; i < entry.multiValue.length; i++) {
+        parts.push(key + '=' + entry.multiValue[i].value);
+      }
     } else {
       parts.push(key + '=' + entry.value);
     }

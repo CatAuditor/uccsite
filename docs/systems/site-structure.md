@@ -19,6 +19,11 @@ static/                  copied verbatim into dist/: admin/, _headers, _redirect
 assets/, UCC.png, favicon.svg, robots.txt, llms.txt   copied verbatim (COPY_FROM_ROOT in build.js)
 functions/api/           Cloudflare Pages Functions (see api-security.md)
 workers/auth/            Decap OAuth worker (see cms.md)
+packages/html-ingest/    Document sanitize/nid/a11y pipeline (AWS rebuild §5; pure)
+packages/style-kit/      stylesheet → class catalog parser (§6.1; pure, zero-dep)
+packages/style-apply/    StyleRules/Overrides resolution (§6.2-6.4; pure)
+infra/cdk/               AWS CDK app: UccStaging/UccProd stacks (CloudFront, S3,
+                         DSQL, API Lambda origin, CF Function + KVS redirects)
 schema.sql               D1 schema (source of truth)
 scripts/send-periodical.js   bulk email via Mailgun (see api-security.md → Signed Tokens)
 dist/                    build output, gitignored — never edit

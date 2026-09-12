@@ -184,7 +184,10 @@ class UccStack extends Stack {
       comment: `uccsite ${isProd ? 'prod' : 'staging'}`,
       defaultBehavior: { ...siteBehaviorBase, responseHeadersPolicy: siteHeaders },
       additionalBehaviors: {
-        '/admin/*': { ...siteBehaviorBase, responseHeadersPolicy: adminHeaders },
+        // '/admin*' (not '/admin/*') so the extensionless /admin request —
+        // which the viewer function rewrites to /admin/index.html — also gets
+        // the Decap headers policy. Behavior matching uses the ORIGINAL URI.
+        '/admin*': { ...siteBehaviorBase, responseHeadersPolicy: adminHeaders },
         '/api/*': {
           origin: new origins.FunctionUrlOrigin(apiUrl, {
             customHeaders: { 'x-origin-verify': originVerifyValue },
