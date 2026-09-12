@@ -1,0 +1,190 @@
+{
+  "generatedAt": "2026-09-12T22:46:26.501Z",
+  "note": "sitemap.xml hash is machine-dependent (fs-mtime lastmod) - tests treat it as volatile",
+  "files": {
+    "UCC.png": {
+      "sha256": "f0a2e5a2891d710d3c3a218453a5016fb8d2551f0e46e9c59788547615737407",
+      "bytes": 162569
+    },
+    "_headers": {
+      "sha256": "5cf821af85fbf44768d8d8301b23b19f1becd2487abb0673d3d060ad8d3f1b42",
+      "bytes": 1322
+    },
+    "_redirects": {
+      "sha256": "92e93ea86381e484970135dac0515837da1a8788dfb2f9fe2794f9aeb5f74cd7",
+      "bytes": 55
+    },
+    "admin/callback.html": {
+      "sha256": "69c03096a7d4dc2db7ec1074251cd4b280923fb19b444bd51b2eaf1e1481dc6e",
+      "bytes": 894
+    },
+    "admin/config.yml": {
+      "sha256": "caf2eb9bb0452676d1a3d92c049f014c1427da233b44849bae0de2085b89bb3b",
+      "bytes": 17153
+    },
+    "admin/decap-cms.js": {
+      "sha256": "63f27e171e80f314f287c10ef2f2a418e600b6b94749f62021e18d2888475cf5",
+      "bytes": 5301469
+    },
+    "admin/index.html": {
+      "sha256": "9be088bc374185e4ca0e0eab190e19684400115f7417897c0230ecb6adedeb6c",
+      "bytes": 1290
+    },
+    "alpr.html": {
+      "sha256": "552f5d051cad16f2248eb5c6b6a06a8807aefb5fe4112b9fec0298a370067c26",
+      "bytes": 54392
+    },
+    "assets/Stratos_Briefing_5_26-2_fixed.pdf": {
+      "sha256": "6e32059616e0f0b5c5e886cb885fd5ae0dbda11b781228f10fa4eed89633bc1d",
+      "bytes": 549167
+    },
+    "assets/agency-search-counts-by-year.md": {
+      "sha256": "308e9212a89c065144bbb4c4ba22b00cbef63c2acd251ef8d80c2575f9406804",
+      "bytes": 213584
+    },
+    "assets/favicon-180.png": {
+      "sha256": "01ec277ae78528f69a38e501562fe2fb80323bf611f4c94511f9ca150f4aab56",
+      "bytes": 18458
+    },
+    "assets/favicon-32.png": {
+      "sha256": "ebf851d470b76309e60e0ab6f0f500c915a794f72938d3f266466b365ed99f0c",
+      "bytes": 1870
+    },
+    "assets/favicon-512.png": {
+      "sha256": "41b7c3918ea995048062a57f0a44178adbb48968d73237adffffc1f5c70402c0",
+      "bytes": 97672
+    },
+    "assets/flock-sharing-settings.jpeg": {
+      "sha256": "bfa41604eac9d7e10471726280825ed19bb0c817f2a68d454ab2bf64d2173b11",
+      "bytes": 214210
+    },
+    "assets/hero-mountains.png": {
+      "sha256": "66ebe0f60f8560d7bf1fb98840f4a4a5d80f8ecce5088891bbeb6d3e79d6d4f8",
+      "bytes": 309358
+    },
+    "assets/logo-icon-dark.png": {
+      "sha256": "04c1092f5d888075fdbb0535d5619e7f3f77919fbbce8d1cef4f02ff1ffe93a1",
+      "bytes": 127987
+    },
+    "assets/logo-icon-light.png": {
+      "sha256": "ef8b94c8fa96905435e0ae5be5083840f6e51778c3f48ed9f5e70a6f117e10bd",
+      "bytes": 118218
+    },
+    "assets/logo-lockup-transparent.png": {
+      "sha256": "d915ec5d5bd421c4a68236747ee9408e9b06f67509c78248091e4674249943cc",
+      "bytes": 201076
+    },
+    "assets/team/clark.jpg": {
+      "sha256": "f85cbf4b3593997642473fcba3f972b26da93f64b13a8fd4137d3a3a0fc1ea43",
+      "bytes": 433333
+    },
+    "assets/team/conner.jpg": {
+      "sha256": "d39cf292895438f21d9a3281d14b44e3701d9808bf2b6c99c699cbbd7138209e",
+      "bytes": 477904
+    },
+    "assets/team/jarom.jpg": {
+      "sha256": "a5f6ee4ca1d89346a345db308d8c7be5f91fb115e46ca58499fd03e7f90132f8",
+      "bytes": 377518
+    },
+    "assets/top-50-requesting-agencies-by-year.docx": {
+      "sha256": "1e48364e51fbfbf43c24488216a02b8c82c6dd33276db846100a20ff64e9138b",
+      "bytes": 35133
+    },
+    "assets/uploads/.gitkeep": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "assets/weber_county_project_copy.md": {
+      "sha256": "bbe304b5c339326ffa0aedcd052355829dc3cf71a3658b06ee576445776d51d9",
+      "bytes": 6486
+    },
+    "blog.html": {
+      "sha256": "e0683f431b47ea06c9b998cbc91c084c5d0495e295838523b9d1b5ede61c931f",
+      "bytes": 20146
+    },
+    "css/styles.css": {
+      "sha256": "84fcbfc71d8354e69455e099601ccb2595139247ba7178a7fa71c5ae5d5648eb",
+      "bytes": 38149
+    },
+    "dignity-index-statement.html": {
+      "sha256": "c3347f8162b21ea843d8d8c96d7667353226abbea95247db94cca10f82a533fe",
+      "bytes": 14023
+    },
+    "favicon.svg": {
+      "sha256": "80ba0ddb655042ffd9191cdeff5e352af976f6b4b5a5810b76742484b1e6aa20",
+      "bytes": 193386
+    },
+    "how-did-this-happen.html": {
+      "sha256": "71fbfd1350e188561920d8d5abdacb66b611c1fa9667add80a934c0345dd2e57",
+      "bytes": 46905
+    },
+    "index.html": {
+      "sha256": "888d201fabc8be11aec6efbd862b40f612b7d877a4c13410dfa279cddbf4069a",
+      "bytes": 39451
+    },
+    "issues.html": {
+      "sha256": "819dbc92a8365b22ec79a9ccc2b41c5a34ea3f73bf28d3fe2c8f0d2c330e3d5e",
+      "bytes": 17914
+    },
+    "js/main.js": {
+      "sha256": "9afb4603816181ca9dc16e074c8c84c8ed45b4973e9557fe1bc51a111dfa5bc3",
+      "bytes": 15116
+    },
+    "js/tip.js": {
+      "sha256": "8341b69e2257a4b1de0174db8ac9985d7965b4b31ed055895312ca738006bd3b",
+      "bytes": 2947
+    },
+    "llms.txt": {
+      "sha256": "511e10b211add5b9f7b50d0e234ac1fd860c6df00d64fe546ec158563e48c9d5",
+      "bytes": 3832
+    },
+    "privacy-report.html": {
+      "sha256": "65e9ffe9c8d62940fd6b7f33dd664a38519785bfacfa3ce4c46b4b2eee64cae6",
+      "bytes": 49079
+    },
+    "privacy.html": {
+      "sha256": "501b2e11daa470024786eec961d1378a35be316a0ac626d54e99700731181b1b",
+      "bytes": 12909
+    },
+    "projects.html": {
+      "sha256": "f96e624de3927c071a8c4f01da52760fb74ced391eaea01147b678775f58086b",
+      "bytes": 17452
+    },
+    "robots.txt": {
+      "sha256": "eb3b070c5870823ad39ef1caa68bd647da246e445c15de77df4bd7b71112b7ca",
+      "bytes": 447
+    },
+    "sitemap.xml": {
+      "sha256": "524bc987852e25cf0e278d7dd0bed7e5d88106b80b2d3553896ff4090b3850fa",
+      "bytes": 2048
+    },
+    "statements.html": {
+      "sha256": "64e28ab6c3d0feeec6430a2e1c5008bd53e21dd609d3f5a9a8d7de50f349e422",
+      "bytes": 11507
+    },
+    "stratos.html": {
+      "sha256": "26206aa70b042af62376eb0e23e95670fa9b707d2ad65c49729b149ed33ae233",
+      "bytes": 66738
+    },
+    "success.html": {
+      "sha256": "f0100d0bec0bf17d180a92ade3c88efb5000072dce3475cdb93f1eb8d2913fbd",
+      "bytes": 3174
+    },
+    "team.html": {
+      "sha256": "811e68288e24a3de59568568aa31c5dab01ab1cb0b39fbecd22c02b285447b12",
+      "bytes": 13742
+    },
+    "theory.html": {
+      "sha256": "b4ab71db074c019287948f486783e5b8934056e7880cce0baf6dec1e469f3029",
+      "bytes": 13058
+    },
+    "tip.html": {
+      "sha256": "dfd4f6d18f4c10503db7a5faa6cc22161de7cdb574765d8a007099609ed40ce3",
+      "bytes": 21491
+    },
+    "weber-county.html": {
+      "sha256": "eb5540ad248f044c1dd3d5c32f533e3e8256eb5742ca7c67df836e863b50cdfe",
+      "bytes": 25748
+    }
+  }
+}
