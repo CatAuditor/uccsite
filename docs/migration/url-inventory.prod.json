@@ -1,0 +1,348 @@
+{
+  "base": "https://utahciviccompact.org",
+  "crawledAt": "2026-09-12T22:31:32.255Z",
+  "sitemapPathCount": 11,
+  "entries": [
+    {
+      "path": "/",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Utah Civic Compact | Civic Accountability &amp; Community Voice in Utah",
+      "metaDescription": "Utah Civic Compact is a nonpartisan 501(c)(4) civic organization fighting for community voice and government accountability across Utah — investigating license plate reader surveillance in Weber County, challenging MIDA's unlawful Stratos Project approval, opposing the Box Elder County data center, and defending redistricting, voting rights, and government transparency.",
+      "canonical": "https://utahciviccompact.org/",
+      "ogTitle": "Utah Civic Compact | Civic Accountability &amp; Community Voice in Utah",
+      "ogDescription": "Utah Civic Compact is a nonpartisan 501(c)(4) civic organization defending the agreement between Utah communities and their government — from challenging MIDA's unlawful Stratos Project approval to redistricting, voting rights, and government transparency.",
+      "h1": "The Compact Between Utahns and Their Government.",
+      "hasJsonLd": true,
+      "bytes": 40573
+    },
+    {
+      "path": "/alpr",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Ten Cameras, 5.1 Million Police Searches | Utah Civic Compact",
+      "metaDescription": "Weber County, Utah operates ten license plate reader cameras. Records released under GRAMA show 3,343 law enforcement agencies in 45 states ran 5,171,087 searches against them between February 2022 and July 2026 — 96.6% from outside Utah.",
+      "canonical": "https://utahciviccompact.org/alpr.html",
+      "ogTitle": "Ten cameras in one Utah county were searched 5.1 million times by police in 45 states",
+      "ogDescription": "Records Weber County released under GRAMA show 3,343 law enforcement agencies ran 5,171,087 searches against its license plate reader networks. Weber County's own deputies ran 13,100 of them.",
+      "h1": "Ten cameras in one Utah county were searched 5.1 million times by police in 45 states",
+      "hasJsonLd": true,
+      "bytes": 53129
+    },
+    {
+      "path": "/alpr.html",
+      "status": 308,
+      "location": "/alpr"
+    },
+    {
+      "path": "/auth",
+      "status": 302,
+      "location": "https://uccsite-auth.cothv.workers.dev/auth"
+    },
+    {
+      "path": "/blog",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "News &amp; Press | Utah Civic Compact",
+      "metaDescription": "Press coverage and updates from Utah Civic Compact — including Fox 13's reporting on MIDA violating state law in the Stratos Project approval, Box Elder County data center opposition, and civic accountability across Utah.",
+      "canonical": "https://utahciviccompact.org/blog.html",
+      "ogTitle": "News &amp; Press | Utah Civic Compact",
+      "ogDescription": "Press coverage and updates from Utah Civic Compact — including Fox 13 and KSL reporting on MIDA violating state law in the Stratos Project approval, Box Elder County data center opposition, and civic accountability across Utah.",
+      "h1": "News &amp; Coverage",
+      "hasJsonLd": false,
+      "bytes": 19674
+    },
+    {
+      "path": "/blog.html",
+      "status": 308,
+      "location": "/blog"
+    },
+    {
+      "path": "/css/styles.css",
+      "status": 200,
+      "contentType": "text/css; charset=utf-8",
+      "bytes": 38730
+    },
+    {
+      "path": "/dignity-index-statement",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Twenty-Five Years Later, the Compact Still Holds | Utah Civic Compact",
+      "metaDescription": "A call to make the Dignity Index a standard part of Utah public life.",
+      "canonical": "https://utahciviccompact.org/dignity-index-statement.html",
+      "ogTitle": "Twenty-Five Years Later, the Compact Still Holds",
+      "ogDescription": "A call to make the Dignity Index a standard part of Utah public life.",
+      "h1": "Twenty-Five Years Later, the Compact Still Holds",
+      "hasJsonLd": false,
+      "bytes": 13958
+    },
+    {
+      "path": "/dignity-index-statement.html",
+      "status": 308,
+      "location": "/dignity-index-statement"
+    },
+    {
+      "path": "/favicon.svg",
+      "status": 200,
+      "contentType": "image/svg+xml",
+      "bytes": 190071
+    },
+    {
+      "path": "/how-did-this-happen",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "If Weber County Followed the Law, How Did This Happen? | Utah Civic Compact",
+      "metaDescription": "Utah has some of the strongest ALPR laws in the country. This policy paper asks whether those laws describe the system Utah agencies actually purchased — reading the Utah Code against the Weber County–Flock Safety contract, clause by clause.",
+      "canonical": "https://utahciviccompact.org/how-did-this-happen.html",
+      "ogTitle": "If Weber County Followed the Law, How Did This Happen?",
+      "ogDescription": "Utah's ALPR statute governs a plate reader, run by a governmental entity, holding its own data. What was sold was a right of access to a web interface and ten more cameras on a private network. A policy paper by Jarom Gillins, Director of Policy.",
+      "h1": "If Weber County Followed the Law, How Did This Happen?",
+      "hasJsonLd": true,
+      "bytes": 46424
+    },
+    {
+      "path": "/how-did-this-happen.html",
+      "status": 308,
+      "location": "/how-did-this-happen"
+    },
+    {
+      "path": "/index.html",
+      "status": 308,
+      "location": "/"
+    },
+    {
+      "path": "/issues",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Policy Positions | Utah Civic Compact",
+      "metaDescription": "Where Utah Civic Compact stands on redistricting, ballot access, government transparency, local governance, ethics, civic education, and data centers.",
+      "canonical": "https://utahciviccompact.org/issues.html",
+      "ogTitle": "Policy Positions | Utah Civic Compact",
+      "ogDescription": "Where Utah Civic Compact stands on redistricting, ballot access, government transparency, local governance, ethics, civic education, and data centers.",
+      "h1": "Policy Positions",
+      "hasJsonLd": false,
+      "bytes": 17427
+    },
+    {
+      "path": "/issues.html",
+      "status": 308,
+      "location": "/issues"
+    },
+    {
+      "path": "/js/main.js",
+      "status": 200,
+      "contentType": "application/javascript",
+      "bytes": 12870
+    },
+    {
+      "path": "/js/tip.js",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Utah Civic Compact | Civic Accountability &amp; Community Voice in Utah",
+      "metaDescription": "Utah Civic Compact is a nonpartisan 501(c)(4) civic organization fighting for community voice and government accountability across Utah — investigating license plate reader surveillance in Weber County, challenging MIDA's unlawful Stratos Project approval, opposing the Box Elder County data center, and defending redistricting, voting rights, and government transparency.",
+      "canonical": "https://utahciviccompact.org/",
+      "ogTitle": "Utah Civic Compact | Civic Accountability &amp; Community Voice in Utah",
+      "ogDescription": "Utah Civic Compact is a nonpartisan 501(c)(4) civic organization defending the agreement between Utah communities and their government — from challenging MIDA's unlawful Stratos Project approval to redistricting, voting rights, and government transparency.",
+      "h1": "The Compact Between Utahns and Their Government.",
+      "hasJsonLd": true,
+      "bytes": 40573
+    },
+    {
+      "path": "/llms.txt",
+      "status": 200,
+      "contentType": "text/plain; charset=utf-8",
+      "bytes": 2692
+    },
+    {
+      "path": "/privacy",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Privacy Policy | Utah Civic Compact",
+      "metaDescription": "Utah Civic Compact's privacy policy — how we collect, use, and protect information submitted through our website and tipline.",
+      "canonical": "https://utahciviccompact.org/privacy.html",
+      "h1": "Privacy Policy",
+      "hasJsonLd": false,
+      "bytes": 13253
+    },
+    {
+      "path": "/privacy-report",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "The Denigration of Modern Private Space | Utah Civic Compact",
+      "metaDescription": "How convenience, default settings, and a quiet rhetorical inversion have downgraded private space from a presumed right to a suspicious exception — with named Utah examples.",
+      "canonical": "https://utahciviccompact.org/privacy-report.html",
+      "ogTitle": "The Denigration of Modern Private Space | Utah Civic Compact",
+      "ogDescription": "How convenience, default settings, and a quiet rhetorical inversion have downgraded private space from a presumed right to a suspicious exception — with named Utah examples.",
+      "h1": "The Denigration of Modern Private Space",
+      "hasJsonLd": false,
+      "bytes": 48475
+    },
+    {
+      "path": "/privacy-report.html",
+      "status": 308,
+      "location": "/privacy-report"
+    },
+    {
+      "path": "/privacy.html",
+      "status": 308,
+      "location": "/privacy"
+    },
+    {
+      "path": "/projects",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Projects | Utah Civic Compact",
+      "metaDescription": "Active fights and civic campaigns from Utah Civic Compact — including the Stratos Project challenge, opposing unlawful approvals, and defending community rights across Utah.",
+      "canonical": "https://utahciviccompact.org/projects.html",
+      "ogTitle": "Projects | Utah Civic Compact",
+      "ogDescription": "Active fights and civic campaigns from Utah Civic Compact — including the Stratos Project challenge, opposing unlawful approvals, and defending community rights across Utah.",
+      "h1": "Active Fights",
+      "hasJsonLd": false,
+      "bytes": 17002
+    },
+    {
+      "path": "/projects.html",
+      "status": 308,
+      "location": "/projects"
+    },
+    {
+      "path": "/robots.txt",
+      "status": 200,
+      "contentType": "text/plain; charset=utf-8",
+      "bytes": 2222
+    },
+    {
+      "path": "/sitemap.xml",
+      "status": 200,
+      "contentType": "application/xml",
+      "bytes": 2035
+    },
+    {
+      "path": "/statements",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Statements | Utah Civic Compact",
+      "metaDescription": "Official statements from Utah Civic Compact on government transparency, consent, and civic accountability in Utah.",
+      "canonical": "https://utahciviccompact.org/statements.html",
+      "ogTitle": "Statements | Utah Civic Compact",
+      "ogDescription": "Official statements from Utah Civic Compact on government transparency, consent, and civic accountability in Utah.",
+      "h1": "Statements",
+      "hasJsonLd": false,
+      "bytes": 11165
+    },
+    {
+      "path": "/statements.html",
+      "status": 308,
+      "location": "/statements"
+    },
+    {
+      "path": "/stratos",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "The Stratos Project: MIDA Violated State Law | Utah Civic Compact",
+      "metaDescription": "Utah Civic Compact documents how MIDA violated Utah Code § 63H-1 in approving Kevin O'Leary's 9-gigawatt natural gas data center in Box Elder County — including a fabricated county consent date and a welfare finding made before any impact studies began.",
+      "canonical": "https://utahciviccompact.org/stratos.html",
+      "ogTitle": "The Stratos Project: MIDA Violated State Law | Utah Civic Compact",
+      "ogDescription": "Utah Civic Compact documents how MIDA broke three provisions of Utah law fast-tracking a 9-gigawatt natural gas data center in Box Elder County — including a fabricated county consent date and a welfare finding made before any impact studies began.",
+      "h1": "The Stratos Project",
+      "hasJsonLd": true,
+      "bytes": 65424
+    },
+    {
+      "path": "/stratos.html",
+      "status": 308,
+      "location": "/stratos"
+    },
+    {
+      "path": "/success",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Thank You | Utah Civic Compact",
+      "metaRobots": "noindex, nofollow",
+      "h1": "You're in.",
+      "hasJsonLd": false,
+      "bytes": 3084
+    },
+    {
+      "path": "/success.html",
+      "status": 308,
+      "location": "/success"
+    },
+    {
+      "path": "/team",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Team &amp; Bios | Utah Civic Compact",
+      "metaDescription": "Meet the team behind Utah Civic Compact — the people working to defend the agreement between Utah communities and their government.",
+      "canonical": "https://utahciviccompact.org/team.html",
+      "ogTitle": "Team &amp; Bios | Utah Civic Compact",
+      "ogDescription": "Meet the team behind Utah Civic Compact — the people working to defend the agreement between Utah communities and their government.",
+      "h1": "Team &amp; Bios",
+      "hasJsonLd": false,
+      "bytes": 13947
+    },
+    {
+      "path": "/team.html",
+      "status": 308,
+      "location": "/team"
+    },
+    {
+      "path": "/theory",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Theory of Change | Utah Civic Compact",
+      "metaDescription": "Utah Civic Compact's theory of change — how we organize Utah communities at the neighborhood level to build lasting civic power.",
+      "canonical": "https://utahciviccompact.org/theory.html",
+      "ogTitle": "Theory of Change | Utah Civic Compact",
+      "ogDescription": "Utah Civic Compact's theory of change — how we organize Utah communities at the neighborhood level to build lasting civic power.",
+      "h1": "Theory of Change",
+      "hasJsonLd": false,
+      "bytes": 13339
+    },
+    {
+      "path": "/theory.html",
+      "status": 308,
+      "location": "/theory"
+    },
+    {
+      "path": "/tip",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Submit a Tip | Utah Civic Compact",
+      "metaDescription": "Have information about government misconduct, conflicts of interest, or violations of public trust in Utah? Submit a confidential tip to the Utah Civic Compact.",
+      "metaRobots": "noindex",
+      "h1": "Know something thepublic deservesto know?",
+      "hasJsonLd": false,
+      "bytes": 24505
+    },
+    {
+      "path": "/tip.html",
+      "status": 308,
+      "location": "/tip"
+    },
+    {
+      "path": "/UCC.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 162569
+    },
+    {
+      "path": "/weber-county",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "Weber County Election Law Complaint | Utah Civic Compact",
+      "metaDescription": "Utah Civic Compact filed a formal complaint alleging three Weber County Commission candidates violated Utah campaign finance law by failing to disclose legal fees for a bad-faith ballot disqualification lawsuit.",
+      "canonical": "https://utahciviccompact.org/weber-county.html",
+      "ogTitle": "Weber County Election Law Complaint | Utah Civic Compact",
+      "ogDescription": "Utah Civic Compact filed a formal complaint alleging three Weber County Commission candidates violated Utah campaign finance law by failing to disclose legal fees for a bad-faith ballot disqualification lawsuit.",
+      "h1": "Update — June 6, 2026: Ebert Takes the High Road",
+      "hasJsonLd": true,
+      "bytes": 24953
+    },
+    {
+      "path": "/weber-county.html",
+      "status": 308,
+      "location": "/weber-county"
+    }
+  ]
+}
