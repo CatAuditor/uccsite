@@ -1,7 +1,16 @@
 {
   "name": "uccsite",
   "private": true,
-  "description": "Utah Civic Compact — static site built by build.js, deployed on Cloudflare Pages",
+  "description": "Utah Civic Compact — static site built by build.js; AWS rebuild in progress (docs/build-spec-aws.md)",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "functions/*",
+    "apps/*",
+    "infra/*"
+  ],
   "scripts": {
     "build": "node build.js",
     "dev": "node build.js && npx wrangler pages dev dist"

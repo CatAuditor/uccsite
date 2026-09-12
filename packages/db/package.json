@@ -1,0 +1,12 @@
+{
+  "name": "@uccsite/db",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Schema + query layer for Aurora DSQL (build-spec-aws.md §9)",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/dsql-signer": "^3.700.0",
+    "pg": "^8.13.0"
+  }
+}
