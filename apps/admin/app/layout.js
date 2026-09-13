@@ -21,6 +21,7 @@ const NAV = [
   { group: 'Operations', items: [
     ['/', 'Publish & Status'],
     ['/donations', 'Donations'],
+    ['/revisions', 'Revisions'],
     ['/audit', 'Audit Log'],
   ]},
 ];
