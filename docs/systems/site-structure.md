@@ -32,8 +32,16 @@ aws/reconcile-drift/     hourly drift reconciler Lambda
 aws/api/                 API Lambda port of functions/api (see api-security.md)
 aws/export-operational/  nightly donor-data export to the restricted bucket (§14.3)
 packages/db/             DSQL connection helper (IAM auth, retry on 40001)
+packages/tokens/         THE HMAC token impl (unsubscribe/portal), byte-compatible
+                         with functions/api/_lib.js; used by aws/api + periodical
+packages/db/schema.js    DSQL DDL for the operational tables (successor to
+                         schema.sql's D1 dialect; applied via migrate-schema.mjs)
+scripts/lib/stack.mjs    env → deployed stack outputs, shared by every script
 scripts/publish.mjs      publish driver (repo → staging/prod)
 scripts/staging-check.mjs   25-check e2e distribution verification
+scripts/migrate-schema.mjs  apply DSQL schema to an environment
+scripts/migrate-d1.mjs      one-time D1 → DSQL data migration (+ verification)
+scripts/restore-operational.mjs  restore a dated §14.3 export into DSQL
 schema.sql               D1 schema (source of truth)
 scripts/send-periodical.js   bulk email via Mailgun (see api-security.md → Signed Tokens)
 dist/                    build output, gitignored — never edit

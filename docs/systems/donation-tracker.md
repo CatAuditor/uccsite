@@ -17,7 +17,9 @@ staff in the Phase 7 admin; see `docs/build-spec-aws.md` planning addendum 2.)
 
 ## API: GET /api/donations/stats
 
-`functions/api/donations/stats.js` — returns:
+`functions/api/donations/stats.js` (Cloudflare) and `aws/api/routes.js`
+`donationStats()` (AWS, serves staging now) — identical response; the DSQL
+side is backed by the new `donations(public, created_at)` index. Returns:
 ```json
 { "recent": [{ "firstName": "Alex", "amountCents": 5000 }] }
 ```

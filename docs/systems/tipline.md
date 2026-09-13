@@ -1,5 +1,13 @@
 # Tipline
 
+> **AWS port (Phase 5):** the route also exists as `aws/api/routes.js` `tip()`
+> (serves staging now, prod at cutover) with one addition — Cloudflare
+> Turnstile verification when `TURNSTILE_SECRET_KEY` is set: a missing/invalid
+> `turnstileToken` returns **403** `Verification failed. Please try again.`
+> The widget renders on `/tip` only when `settings.turnstileSiteKey` is set
+> (site key FIRST, then secret — see docs/for-conner.md). Everything below
+> (fields, logging policy, other responses) applies to both stacks.
+
 Confidential tip submission form at `/tip` backed by Airtable.
 
 ## Architecture
