@@ -23,7 +23,13 @@ packages/html-ingest/    Document sanitize/nid/a11y pipeline (AWS rebuild §5; p
 packages/style-kit/      stylesheet → class catalog parser (§6.1; pure, zero-dep)
 packages/style-apply/    StyleRules/Overrides resolution (§6.2-6.4; pure)
 infra/cdk/               AWS CDK app: UccStaging/UccProd stacks (CloudFront, S3,
-                         DSQL, API Lambda origin, CF Function + KVS redirects)
+                         DSQL, API Lambda origin, CF Function + KVS redirects,
+                         drift reconciler + hourly rule + SNS alerts)
+functions/publish/       publish pipeline core (see publish-pipeline.md)
+functions/reconcile-drift/  hourly drift reconciler Lambda
+packages/db/             DSQL connection helper (IAM auth, retry on 40001)
+scripts/publish.mjs      publish driver (repo → staging/prod)
+scripts/staging-check.mjs   25-check e2e distribution verification
 schema.sql               D1 schema (source of truth)
 scripts/send-periodical.js   bulk email via Mailgun (see api-security.md → Signed Tokens)
 dist/                    build output, gitignored — never edit

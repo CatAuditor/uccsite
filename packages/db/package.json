@@ -3,10 +3,14 @@
   "private": true,
   "version": "0.0.0",
   "description": "Schema + query layer for Aurora DSQL (build-spec-aws.md §9)",
-  "type": "module",
+  "type": "commonjs",
   "main": "index.js",
   "dependencies": {
+    "@aws-sdk/core": "^3.700.0",
+    "@aws-sdk/credential-provider-node": "^3.700.0",
     "@aws-sdk/dsql-signer": "^3.700.0",
+    "@smithy/core": "^3.0.0",
+    "@smithy/signature-v4": "^5.0.0",
     "pg": "^8.13.0"
   }
 }

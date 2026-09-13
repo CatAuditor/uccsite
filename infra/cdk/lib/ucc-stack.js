@@ -15,6 +15,9 @@ const {
   aws_iam: iam,
   aws_secretsmanager: secretsmanager,
   aws_dsql: dsql,
+  aws_sns: sns,
+  aws_events: events,
+  aws_events_targets: targets,
 } = require('aws-cdk-lib');
 const { Construct } = require('constructs');
 
@@ -220,6 +223,51 @@ class UccStack extends Stack {
       // Custom domain + ACM cert attach at cutover (Phase 6).
     });
 
+    // ── Drift reconciler (§7): hourly manifest-vs-live check, restores from
+    // version history, invalidates, alerts. Expected state comes from the
+    // publish_runs table the publish pipeline writes.
+    const alertTopic = new sns.Topic(this, 'OpsAlerts', {
+      displayName: `uccsite ${isProd ? 'prod' : 'staging'} ops alerts`,
+    });
+    const reconcileFn = new nodejs.NodejsFunction(this, 'ReconcileDriftFn', {
+      entry: path.join(__dirname, '..', '..', '..', 'functions', 'reconcile-drift', 'index.mjs'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      memorySize: 256,
+      timeout: Duration.minutes(5),
+      environment: {
+        SITE_BUCKET: siteBucket.bucketName,
+        DISTRIBUTION_ID: distribution.distributionId,
+        DSQL_ENDPOINT: dsqlEndpoint,
+        ALERT_TOPIC_ARN: alertTopic.topicArn,
+      },
+      bundling: { externalModules: ['pg-native'] },
+      depsLockFilePath: path.join(__dirname, '..', '..', '..', 'package-lock.json'),
+    });
+    siteBucket.grantReadWrite(reconcileFn);
+    reconcileFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['s3:ListBucketVersions'],
+      resources: [siteBucket.bucketArn],
+    }));
+    reconcileFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['s3:GetObjectVersion'],
+      resources: [siteBucket.arnForObjects('*')],
+    }));
+    reconcileFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['cloudfront:CreateInvalidation'],
+      resources: [`arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`],
+    }));
+    reconcileFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['dsql:DbConnectAdmin'],
+      resources: [cluster.attrResourceArn],
+    }));
+    alertTopic.grantPublish(reconcileFn);
+    new events.Rule(this, 'ReconcileHourly', {
+      schedule: events.Schedule.rate(Duration.hours(1)),
+      targets: [new targets.LambdaFunction(reconcileFn)],
+    });
+
+    new CfnOutput(this, 'OpsAlertTopicArn', { value: alertTopic.topicArn });
     new CfnOutput(this, 'DistributionDomain', { value: distribution.distributionDomainName });
     new CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
     new CfnOutput(this, 'SiteBucketName', { value: siteBucket.bucketName });
