@@ -17,8 +17,11 @@ apps/admin/
                            + latestPublishRuns
   lib/collections.js       field specs per collection (the config.yml successor —
                            but the DB is the schema; adding a field is a migration)
-  lib/collection-save.js   sanitize → alt-text gate → scoped wipe-and-load →
-                           revision + audit
+  lib/collection-save.js   sanitize → baseline (lost-update) check → alt-text
+                           gate → scoped wipe-and-load → revision + audit, ONE txn
+  lib/actions.js           runAction: { ok } | { error } result convention
+  app/action-form.js       client form wrapper rendering that result
+  app/error.js             backstop error boundary
   lib/media.js             media library server helpers (docs/systems/media.md)
   app/page.js              Publish button (async PublishFn invoke, audit-logged)
                            + publish_runs history (Publishing…/Live hh:mm/failed)
@@ -51,7 +54,32 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 Saves write the DATABASE only (with a `revisions` snapshot pruned to the
 last 20 per entity, and an `audit_log` row); the live site changes on the
 next Publish. Publish invokes the PublishFn Lambda asynchronously; the
-dashboard polls `publish_runs` for Draft/Publishing…/Live/Failed.
+dashboard polls `publish_runs` for Draft/Publishing…/Live/Failed/Refused
+(the Lambda holds the real mutex — docs/systems/publish-pipeline.md).
+
+Review fixes 2026-09-13 (the rules every editor page follows):
+
+- **One transaction per save** (`withWriteTx` in lib/data.js): the
+  wipe-and-load / upsert, the revision snapshot and the audit row commit
+  together, replayed whole on a DSQL 40001 abort. packages/db helpers take
+  `tx: false` inside it.
+- **Lost-update check**: the form carries a `baseline` stamp
+  (`collectionStamp` = count + MAX(updated_at); `singletonStamp` =
+  updated_at); the save re-reads it in the transaction and refuses with
+  "Someone else saved this since you opened it…" on mismatch.
+- **Actions return `{ ok } | { error }`** (lib/actions.js `runAction`)
+  and pages render them through `app/action-form.js` (useActionState).
+  Next 15 masks thrown action messages in production, so throwing would
+  turn "needs alt text" into a generic crash that also discards the
+  editor's unsaved list. `app/error.js` is the backstop for render-time
+  failures.
+- **Restore** runs in the same transaction shape, refuses unknown entity
+  types before touching anything, applies the alt-text gate to snapshots,
+  and reports "started a publish" (the Lambda may refuse it if one is
+  running — visible on the dashboard).
+- **Singleton drift guards** at boot: `SETTINGS_FIELDS` ≡
+  `FIELD_MAPS.site_settings`; `HOMEPAGE_GROUPS` keys ≡ homepage JSON
+  columns (field keys inside a group follow templates/index.html).
 
 ## Env vars (lib/config.js)
 

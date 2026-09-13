@@ -1,42 +1,54 @@
 // Homepage editor: six flat-string groups + the hand-curated press list.
 // The featured statement is NOT here — it derives from the newest Statement
-// (docs/decisions/homepage-statement-links.md).
+// (docs/decisions/homepage-statement-links.md). Save = one transaction
+// (groups upsert + press wipe-and-load + revision + audit) with a
+// lost-update check on the singleton's updated_at.
 import { revalidatePath } from 'next/cache';
 import { loadHomepage, saveHomepage } from '@uccsite/db/content';
 import { requireSession, requireRole } from '../../lib/auth';
-import { withDb, withWriteDb, recordChange } from '../../lib/data';
+import { withDb, withWriteTx, recordChange, singletonStamp } from '../../lib/data';
 import { HOMEPAGE_GROUPS, HOMEPAGE_PRESS_FIELDS } from '../../lib/collections';
-import { sanitizeItems } from '../../lib/collection-save';
+import { sanitizeItems, CONFLICT_MESSAGE } from '../../lib/collection-save';
+import { runAction } from '../../lib/actions';
 import ListEditor from '../list-editor';
+import ActionForm from '../action-form';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomepagePage() {
   const session = await requireSession();
   const readOnly = session.role === 'viewer';
-  const homepage = await withDb(loadHomepage);
+  const { homepage, baseline } = await withDb(async (client) => ({
+    homepage: await loadHomepage(client),
+    baseline: await singletonStamp(client, 'homepage'),
+  }));
 
-  async function save(formData) {
+  async function save(prevState, formData) {
     'use server';
-    const s = await requireRole('editor');
-    const next = {};
-    for (const group of HOMEPAGE_GROUPS) {
-      next[group.key] = {};
-      for (const [field] of group.fields) {
-        const v = String(formData.get(`${group.key}.${field}`) ?? '').trim();
-        if (v) next[group.key][field] = v;
+    return runAction(async () => {
+      const s = await requireRole('editor');
+      const next = {};
+      for (const group of HOMEPAGE_GROUPS) {
+        next[group.key] = {};
+        for (const [field] of group.fields) {
+          const v = String(formData.get(`${group.key}.${field}`) ?? '').trim();
+          if (v) next[group.key][field] = v;
+        }
       }
-    }
-    next.press = sanitizeItems(HOMEPAGE_PRESS_FIELDS, formData.get('press'));
-    await withWriteDb(async (client) => {
-      const before = await loadHomepage(client);
-      await saveHomepage(client, next);
-      await recordChange(client, {
-        actor: s.email, action: 'homepage.save', entityType: 'homepage', entityId: 'singleton',
-        snapshot: before,
+      next.press = sanitizeItems(HOMEPAGE_PRESS_FIELDS, formData.get('press'));
+      const expected = String(formData.get('baseline') ?? '');
+      await withWriteTx(async (client) => {
+        const current = await singletonStamp(client, 'homepage');
+        if (expected && current !== expected) throw new Error(CONFLICT_MESSAGE);
+        const before = await loadHomepage(client);
+        await saveHomepage(client, next, { tx: false });
+        await recordChange(client, {
+          actor: s.email, action: 'homepage.save', entityType: 'homepage', entityId: 'singleton',
+          snapshot: before,
+        });
       });
+      revalidatePath('/homepage');
     });
-    revalidatePath('/homepage');
   }
 
   return (
@@ -44,7 +56,8 @@ export default async function HomepagePage() {
       <h1>Homepage</h1>
       <p className="notice">The featured statement card comes from the newest entry in Statements — edit it there.</p>
       {readOnly && <p className="notice">Viewer role — read-only.</p>}
-      <form className="editor" action={save}>
+      <ActionForm className="editor" action={save} successMessage="Homepage saved. Publish to make it live.">
+        <input type="hidden" name="baseline" value={baseline} />
         {HOMEPAGE_GROUPS.map((group) => (
           <fieldset key={group.key} className="item">
             <legend>{group.title}</legend>
@@ -69,7 +82,7 @@ export default async function HomepagePage() {
         <ListEditor fields={HOMEPAGE_PRESS_FIELDS} items={homepage.press || []}
           itemLabelField="headline" readOnly={readOnly} name="press" />
         {!readOnly && <button type="submit">Save Homepage</button>}
-      </form>
+      </ActionForm>
     </div>
   );
 }

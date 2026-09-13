@@ -8,7 +8,7 @@
 // selects the variant). markdown flags fields that accept the
 // **bold**/*italic*/[link](url) subset (hint shown to editors).
 
-import { FIELD_MAPS } from '@uccsite/db/content';
+import { FIELD_MAPS, HOMEPAGE_GROUP_COLS } from '@uccsite/db/content';
 
 const MD_HINT = 'Supports **bold**, *italic*, [link text](https://url). Blank line = new paragraph.';
 
@@ -134,6 +134,25 @@ for (const [key, spec] of Object.entries(COLLECTIONS)) {
   }
 }
 
+// Site settings singleton fields (the settings editor). Guarded against
+// FIELD_MAPS.site_settings below like the list editors: a column not
+// declared here would be NULLed on the next save.
+export const SETTINGS_FIELDS = [
+  ['orgName', 'Organization Name'],
+  ['orgNameShort', 'Short Name'],
+  ['email', 'Contact Email'],
+  ['instagram', 'Instagram URL'],
+  ['footerTagline', 'Footer Tagline'],
+  ['copyright', 'Copyright Line'],
+  ['turnstileSiteKey', 'Turnstile Site Key (blank = no CAPTCHA widget)'],
+];
+{
+  const mapped = new Set(Object.values(FIELD_MAPS.site_settings));
+  const declared = new Set(SETTINGS_FIELDS.map(([k]) => k));
+  for (const k of declared) if (!mapped.has(k)) throw new Error(`SETTINGS_FIELDS: "${k}" not in FIELD_MAPS.site_settings`);
+  for (const k of mapped) if (!declared.has(k)) throw new Error(`SETTINGS_FIELDS: FIELD_MAPS.site_settings key "${k}" missing — saves would wipe it`);
+}
+
 // Homepage singleton groups (flat string fields inside each group) + press list.
 export const HOMEPAGE_GROUPS = [
   { key: 'hero', title: 'Hero', fields: [
@@ -161,3 +180,14 @@ export const HOMEPAGE_GROUPS = [
 ];
 
 export const HOMEPAGE_PRESS_FIELDS = PRESS_FIELDS;
+
+// Group-level drift guard: every JSON group column must have an editor group
+// and vice versa (a group missing here would be NULLed on save). Field-level
+// keys inside a group are template-defined (templates/index.html) — adding
+// one there means adding it to HOMEPAGE_GROUPS in the same commit.
+{
+  const cols = new Set(HOMEPAGE_GROUP_COLS.map(([, key]) => key));
+  const groups = new Set(HOMEPAGE_GROUPS.map(g => g.key));
+  for (const k of groups) if (!cols.has(k)) throw new Error(`HOMEPAGE_GROUPS: "${k}" is not a homepage column`);
+  for (const k of cols) if (!groups.has(k)) throw new Error(`HOMEPAGE_GROUPS: homepage column "${k}" has no editor group — saves would wipe it`);
+}

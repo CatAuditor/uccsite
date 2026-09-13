@@ -1,13 +1,17 @@
 // Shared server-side save path for list collections: role check, payload
-// sanitation (strings only, trimmed, unknown keys dropped), atomic
-// wipe-and-load via replaceCollectionRows (scoped by the spec's where key),
-// revision snapshot of the previous rows + audit row — one fresh connection.
+// sanitation (strings only, trimmed, unknown keys dropped), lost-update
+// check against the baseline stamp the form was rendered with, alt-text
+// gate, then ONE transaction holding the wipe-and-load AND the revision
+// snapshot + audit row (recordChange) — a 40001 retry replays all of it, so
+// a save can never land without its revision.
 import { list, replaceCollectionRows } from '@uccsite/db/content';
-import { requireRole } from './auth';
-import { withWriteDb, recordChange } from './data';
-import { COLLECTIONS } from './collections';
 import { assetIdFromPath } from '@uccsite/db/media';
+import { requireRole } from './auth';
+import { withWriteTx, recordChange, collectionStamp } from './data';
+import { COLLECTIONS } from './collections';
 import { assertAltText } from './media';
+
+export const CONFLICT_MESSAGE = 'Someone else saved this since you opened it. Copy your changes, reload, and re-apply them.';
 
 export function sanitizeItems(fields, payload) {
   let parsed;
@@ -29,19 +33,32 @@ export function loadCollectionItems(client, key) {
   return list(client, spec.table, where, params);
 }
 
+// loadCollectionBaseline(client, key) → the stamp the form carries back.
+export function loadCollectionBaseline(client, key) {
+  const spec = COLLECTIONS[key];
+  return collectionStamp(client, spec.table, spec.where);
+}
+
+// mediaAssetIds(spec, items) → asset ids referenced by media-widget fields.
+export function mediaAssetIds(spec, items) {
+  const mediaFields = spec.fields.filter(f => f.widget === 'media').map(f => f.name);
+  return [...new Set(items.flatMap(it => mediaFields.map(f => assetIdFromPath(it[f])).filter(Boolean)))];
+}
+
 export async function saveCollection(key, formData) {
   const spec = COLLECTIONS[key];
   const session = await requireRole('editor');
   const items = sanitizeItems(spec.fields, formData.get('payload'));
-  // Alt-text gate (spec §13): any media-widget value pointing at /media/<id>/
-  // must resolve to a ready asset with alt text — the picker only offers
-  // those, but a typed path or a later alt wipe must not slip through.
-  const mediaFields = spec.fields.filter(f => f.widget === 'media').map(f => f.name);
-  const mediaIds = [...new Set(items.flatMap(it => mediaFields.map(f => assetIdFromPath(it[f])).filter(Boolean)))];
-  await withWriteDb(async (client) => {
+  const baseline = String(formData.get('baseline') ?? '');
+  const mediaIds = mediaAssetIds(spec, items);
+  await withWriteTx(async (client) => {
+    const current = await collectionStamp(client, spec.table, spec.where);
+    if (baseline && current !== baseline) throw new Error(CONFLICT_MESSAGE);
+    // Alt-text gate (spec §13): the picker only offers alt'd assets, but a
+    // typed path or an alt wiped after picking must not slip through.
     await assertAltText(client, mediaIds);
     const before = await loadCollectionItems(client, key);
-    await replaceCollectionRows(client, spec.table, items, { where: spec.where });
+    await replaceCollectionRows(client, spec.table, items, { where: spec.where, tx: false });
     await recordChange(client, {
       actor: session.email,
       action: `${key}.save`,

@@ -6,7 +6,7 @@
 // retry, error-drop). Writes open a FRESH connection (withWriteDb): the
 // transactional wipe-and-load in replaceCollectionRows needs plain
 // BEGIN/COMMIT semantics, not per-statement retry.
-import { makeCachedClient, withConnection } from '@uccsite/db';
+import { makeCachedClient, withConnection, withRetry } from '@uccsite/db';
 import { config } from './config';
 
 let readClient = null;
@@ -21,6 +21,41 @@ export function withDb(fn) {
 
 export function withWriteDb(fn) {
   return withConnection({ endpoint: config.dsqlEndpoint, region: config.region }, fn);
+}
+
+// withWriteTx(fn) — fn(client) runs inside ONE transaction on a fresh
+// connection, replayed whole on a 40001 abort. Every admin save uses it so
+// the mutation, its revision snapshot and its audit row commit together (a
+// save can never land without its revision). Callees must pass tx: false to
+// the packages/db helpers that would otherwise open their own transaction.
+export function withWriteTx(fn) {
+  return withWriteDb((client) => withRetry(async () => {
+    await client.query('BEGIN');
+    try {
+      const result = await fn(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw err;
+    }
+  }));
+}
+
+// Lost-update stamps. A form carries the stamp it was rendered with; the
+// save re-reads it inside the transaction and refuses on mismatch. Every
+// save re-inserts list rows (fresh updated_at) or bumps the singleton's
+// updated_at, so any intervening save changes the stamp. count covers the
+// empty-list case where MAX is NULL both before and after.
+export async function collectionStamp(client, table, where) {
+  const sql = `SELECT count(*)::text AS n, MAX(updated_at)::text AS newest FROM ${table}`
+    + (where ? ` WHERE ${where[0]} = $1` : '');
+  const r = (await client.query(sql, where ? [where[1]] : [])).rows[0];
+  return `${r.n}:${r.newest || ''}`;
+}
+export async function singletonStamp(client, table) {
+  const r = (await client.query(`SELECT updated_at::text AS u FROM ${table} WHERE id = 'singleton'`)).rows[0];
+  return r?.u || '';
 }
 
 // recordChange(client, { actor, action, entityType, entityId, snapshot, diff })

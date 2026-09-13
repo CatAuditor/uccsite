@@ -6,7 +6,9 @@ import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { requireRole, requireSession } from '../lib/auth';
 import { withDb, withWriteDb, recordChange, latestPublishRuns, inFlightPublish, IN_FLIGHT_GRACE_MS } from '../lib/data';
 import { config } from '../lib/config';
+import { runAction } from '../lib/actions';
 import Refresher from './refresher';
+import ActionForm from './action-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,24 +26,27 @@ export default async function Dashboard() {
 
   async function publishNow() {
     'use server';
-    const s = await requireRole('editor');
-    // UX-level in-flight guard; the authoritative mutex is publish_lock,
-    // taken by the Lambda itself (a losing run shows as 'refused' below).
-    const inFlightRun = await withDb(inFlightPublish);
-    if (inFlightRun) {
-      console.warn(`[admin] ${s.email} publish not sent: run ${inFlightRun.id} in flight`);
-      return;
-    }
-    const lambda = new LambdaClient({ region: config.region });
-    await lambda.send(new InvokeCommand({
-      FunctionName: config.publishFunctionName,
-      InvocationType: 'Event',
-      Payload: Buffer.from(JSON.stringify({ trigger: `admin:${s.email}` })),
-    }));
-    await withWriteDb((client) => recordChange(client, {
-      actor: s.email, action: 'publish.trigger',
-    }));
-    revalidatePath('/');
+    return runAction(async () => {
+      const s = await requireRole('editor');
+      // UX-level in-flight guard; the authoritative mutex is publish_lock,
+      // taken by the Lambda itself (a losing run shows as 'refused' below).
+      const inFlightRun = await withDb(inFlightPublish);
+      if (inFlightRun) {
+        console.warn(`[admin] ${s.email} publish not sent: run ${inFlightRun.id} in flight`);
+        throw new Error('A publish is already running — wait for it to finish.');
+      }
+      const lambda = new LambdaClient({ region: config.region });
+      await lambda.send(new InvokeCommand({
+        FunctionName: config.publishFunctionName,
+        InvocationType: 'Event',
+        Payload: Buffer.from(JSON.stringify({ trigger: `admin:${s.email}` })),
+      }));
+      await withWriteDb((client) => recordChange(client, {
+        actor: s.email, action: 'publish.trigger',
+      }));
+      revalidatePath('/');
+      return { ok: true, message: 'Publish started.' };
+    });
   }
 
   return (
@@ -49,11 +54,11 @@ export default async function Dashboard() {
       <h1>Publish &amp; Status</h1>
       <Refresher active={inFlight} />
       {session.role !== 'viewer' ? (
-        <form action={publishNow}>
+        <ActionForm action={publishNow}>
           <button type="submit" disabled={inFlight}>
             {inFlight ? 'Publishing…' : 'Publish site'}
           </button>
-        </form>
+        </ActionForm>
       ) : (
         <p className="notice">Viewer role — read-only.</p>
       )}

@@ -35,6 +35,8 @@ fieldset.item legend { font-weight: 700; padding: 0 6px; }
 .hint { font-size: 12px; color: #667; margin-top: 2px; }
 .list-editor > button { background: #3c5a48; }
 .error { background: #fdecea; border: 1px solid #e6b3ae; padding: 10px 14px; margin: 12px 0; }
+.ok { background: #e9f5ec; border: 1px solid #b7dcc0; padding: 10px 14px; margin: 12px 0; }
+form[aria-busy="true"] button[type="submit"] { opacity: 0.6; }
 /* Media library */
 .uploader { background: #fff; border: 1px solid #e4e6e2; padding: 16px 20px; max-width: 640px; }
 .uploader input[type="file"] { display: block; margin: 6px 0; }

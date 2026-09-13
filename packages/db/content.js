@@ -221,24 +221,30 @@ async function insertRow(client, table, item, extra = {}) {
   return res.rows[0].id;
 }
 
-// replaceCollectionRows(client, table, items, { where, extraCols } = {})
+// replaceCollectionRows(client, table, items, { where, extraCols, tx } = {})
 // Wipe-and-load, ATOMIC: DELETE + inserts inside one transaction with a
 // 40001 retry of the whole transaction — an abort can no longer leave the
 // table empty/partial (which would silently publish blank pages).
 //   where: [col, val] scopes the delete AND stamps the column on each row.
 //   extraCols: { col: (item, i) => value } additional stamped columns.
-async function replaceCollectionRows(client, table, items, { where, extraCols = {} } = {}) {
+//   tx: false → the CALLER owns BEGIN/COMMIT/retry (the admin wraps the
+//   wipe-and-load, the revision snapshot and the audit row in one txn).
+async function replaceCollectionRows(client, table, items, { where, extraCols = {}, tx = true } = {}) {
+  const body = async () => {
+    if (where) await client.query(`DELETE FROM ${table} WHERE ${where[0]} = $1`, [where[1]]);
+    else await client.query(`DELETE FROM ${table}`);
+    for (let i = 0; i < items.length; i++) {
+      const extra = { sort_order: i };
+      if (where) extra[where[0]] = where[1];
+      for (const [col, fn] of Object.entries(extraCols)) extra[col] = fn(items[i], i);
+      await insertRow(client, table, items[i], extra);
+    }
+  };
+  if (!tx) return body();
   await withRetry(async () => {
     await client.query('BEGIN');
     try {
-      if (where) await client.query(`DELETE FROM ${table} WHERE ${where[0]} = $1`, [where[1]]);
-      else await client.query(`DELETE FROM ${table}`);
-      for (let i = 0; i < items.length; i++) {
-        const extra = { sort_order: i };
-        if (where) extra[where[0]] = where[1];
-        for (const [col, fn] of Object.entries(extraCols)) extra[col] = fn(items[i], i);
-        await insertRow(client, table, items[i], extra);
-      }
+      await body();
       await client.query('COMMIT');
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
@@ -258,14 +264,17 @@ async function saveSettings(client, settings) {
     params);
 }
 
-async function saveHomepage(client, homepage) {
+// saveHomepage(client, homepage, { tx }) — tx: false when the caller owns
+// the transaction (the groups upsert and the press wipe-and-load must
+// commit together; on their own they are two transactions).
+async function saveHomepage(client, homepage, { tx = true } = {}) {
   const params = [SINGLETON, ...HOMEPAGE_GROUP_COLS.map(([, key]) => homepage[key] != null ? JSON.stringify(homepage[key]) : null)];
   await client.query(
     `INSERT INTO homepage (id, ${HOMEPAGE_GROUP_COLS.map(([c]) => c).join(', ')})
      VALUES ($1, ${HOMEPAGE_GROUP_COLS.map((_, i) => `$${i + 2}`).join(', ')})
      ON CONFLICT (id) DO UPDATE SET ${HOMEPAGE_GROUP_COLS.map(([c], i) => `${c} = $${i + 2}`).join(', ')}, updated_at = now()`,
     params);
-  await replaceCollectionRows(client, 'homepage_press', homepage.press || []);
+  await replaceCollectionRows(client, 'homepage_press', homepage.press || [], { tx });
 }
 
 // saveContent(client, repo) — the inverse of loadContent: load the eight

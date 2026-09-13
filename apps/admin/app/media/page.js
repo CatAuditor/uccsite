@@ -7,6 +7,7 @@ import { listAssets } from '../../lib/media';
 import { ACCEPTED_MIMES, MAX_UPLOAD_BYTES } from '@uccsite/db/media';
 import Refresher from '../refresher';
 import Uploader from './uploader';
+import ActionForm from '../action-form';
 import { saveAlt, removeAsset } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -54,19 +55,19 @@ export default async function MediaPage() {
                   </ul>
                 </details>
               )}
-              <form action={saveAlt} className="media-alt">
+              <ActionForm action={saveAlt} className="media-alt">
                 <input type="hidden" name="id" value={a.id} />
                 <label htmlFor={`alt-${a.id}`}>Alt text</label>
                 <input type="text" id={`alt-${a.id}`} name="alt" defaultValue={a.alt}
                   placeholder="Describe the image for screen readers" disabled={readOnly} />
                 {!a.alt && <div className="hint media-warn">No alt text — not available to editors yet.</div>}
                 {!readOnly && <button type="submit">Save alt</button>}
-              </form>
+              </ActionForm>
               {!readOnly && (
-                <form action={removeAsset}>
+                <ActionForm action={removeAsset}>
                   <input type="hidden" name="id" value={a.id} />
                   <button type="submit" className="danger">Delete</button>
-                </form>
+                </ActionForm>
               )}
               <div className="hint">by {a.uploadedBy} · {a.createdAt?.slice(0, 16).replace('T', ' ')}</div>
             </div>

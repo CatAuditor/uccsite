@@ -22,10 +22,12 @@ export default function Uploader({ accept, maxBytes }) {
       try {
         if (file.size > maxBytes) throw new Error(`${file.name}: larger than ${Math.round(maxBytes / 1024 / 1024)} MB`);
         setMessage(`Uploading ${file.name}…`);
-        const { id, url } = await beginUpload({ filename: file.name, mime: file.type, bytes: file.size });
-        const res = await fetch(url, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+        const begun = await beginUpload({ filename: file.name, mime: file.type, bytes: file.size });
+        if (begun.error) throw new Error(`${file.name}: ${begun.error}`);
+        const res = await fetch(begun.url, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
         if (!res.ok) throw new Error(`${file.name}: S3 rejected the upload (${res.status})`);
-        await finishUpload(id);
+        const done = await finishUpload(begun.id);
+        if (done.error) throw new Error(`${file.name}: ${done.error}`);
       } catch (err) {
         console.error('[media] upload failed', err);
         errors.push(err.message || String(err));

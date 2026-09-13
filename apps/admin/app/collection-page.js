@@ -3,9 +3,11 @@ import { revalidatePath } from 'next/cache';
 import { requireSession } from '../lib/auth';
 import { withDb } from '../lib/data';
 import { COLLECTIONS } from '../lib/collections';
-import { loadCollectionItems, saveCollection } from '../lib/collection-save';
+import { loadCollectionItems, loadCollectionBaseline, saveCollection } from '../lib/collection-save';
 import { mediaOptionsFor } from '../lib/media';
+import { runAction } from '../lib/actions';
 import ListEditor from './list-editor';
+import ActionForm from './action-form';
 
 export function makeCollectionPage(...keys) {
   return async function CollectionPage() {
@@ -19,25 +21,32 @@ export function makeCollectionPage(...keys) {
         for (const f of spec.fields) {
           if (f.widget === 'media') mediaOptions[f.name] = await mediaOptionsFor(client, f.targetWidth || 800);
         }
-        out.push({ key, spec, items: await loadCollectionItems(client, key), mediaOptions });
+        out.push({
+          key, spec, mediaOptions,
+          items: await loadCollectionItems(client, key),
+          baseline: await loadCollectionBaseline(client, key),
+        });
       }
       return out;
     });
 
     return (
       <div>
-        {sections.map(({ key, spec, items, mediaOptions }) => {
-          async function save(formData) {
+        {sections.map(({ key, spec, items, mediaOptions, baseline }) => {
+          async function save(prevState, formData) {
             'use server';
-            await saveCollection(key, formData);
-            revalidatePath('/');
+            return runAction(async () => {
+              await saveCollection(key, formData);
+              revalidatePath('/');
+            });
           }
           return (
             <div key={key}>
               <h1>{spec.title}</h1>
               {spec.note && <p className="notice">{spec.note}</p>}
               {readOnly && <p className="notice">Viewer role — read-only.</p>}
-              <form className="editor" action={save}>
+              <ActionForm className="editor" action={save} successMessage={`${spec.title} saved. Publish to make it live.`}>
+                <input type="hidden" name="baseline" value={baseline} />
                 <ListEditor
                   fields={spec.fields}
                   items={items}
@@ -46,7 +55,7 @@ export function makeCollectionPage(...keys) {
                   mediaOptions={mediaOptions}
                 />
                 {!readOnly && <button type="submit">Save {spec.title}</button>}
-              </form>
+              </ActionForm>
             </div>
           );
         })}
