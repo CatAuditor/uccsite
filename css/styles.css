@@ -1641,6 +1641,7 @@ input, textarea, select { font: inherit; }
 }
 
 /* ── Utilities (replace the last inline style attributes; CSP style-src 'self') ── */
+[hidden] { display: none !important; } /* author display rules must not un-hide */
 /* @class bg-cream
    @label Cream background
    @applies div section

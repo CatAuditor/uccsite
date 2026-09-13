@@ -22,12 +22,15 @@
       if (order === 'date') return (Number(b.dataset.date) || 0) - (Number(a.dataset.date) || 0);
       return Number(a.dataset.index) - Number(b.dataset.index);
     });
+    var lastVisible = null;
     sorted.forEach(function (b) {
       var show = (!s || b.dataset.status === s) && (!r || b.dataset.region === r);
       b.hidden = !show;
-      if (show) visible++;
+      b.classList.remove('is-last');
+      if (show) { visible++; lastVisible = b; }
       list.appendChild(b); // re-append in sorted order
     });
+    if (lastVisible) lastVisible.classList.add('is-last');
     if (count) count.textContent = visible === blocks.length ? '' : visible + ' of ' + blocks.length + ' projects';
   }
   [status, region, sort].forEach(function (el) { el.addEventListener('change', apply); });

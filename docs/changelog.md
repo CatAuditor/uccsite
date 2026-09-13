@@ -15,6 +15,11 @@ Phase 9 — Projects and cleanup (`docs/systems/projects.md`).
   newest, A–Z) with no inline script/style; option lists derived from content.
 - ADR reconciliation: every pre-migration decision carries a status line;
   cms.md and state-of-the-site.md point at the AWS state.
+- Review fixes: `[hidden]` always wins (filter controls truly hidden without
+  JS), one deterministic free-text date parser shared by site and admin
+  (`packages/render/dates.mjs`), `PROJECT_CHILDREN` drives the nested
+  read/write and the drift guard, trimmed data attributes, blank nested
+  entries dropped, article `lang` rendered on /projects.
 
 ## v0.8.0 — 2026-09-13 (branch `refactor`, not yet pushed)
 

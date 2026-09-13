@@ -30,7 +30,9 @@ export function sanitizeItems(fields, payload) {
       const s = (typeof v === 'string' ? v : '').trim();
       return [f.name, s];
     }).filter(([, v]) => v !== ''),
-  ));
+  // An entry with no text at all (a forgotten "+ Add") would publish as an
+  // empty card — drop it instead of storing an all-NULL row.
+  )).filter(o => Object.values(o).some(v => !Array.isArray(v)));
 }
 
 export function loadCollectionItems(client, key) {

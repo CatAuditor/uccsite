@@ -6,6 +6,7 @@
 // is shown; order and hidden items are untouched) and A–Z / newest-first
 // sorting of the whole list. Deliberately dependency-free (spec §15).
 import { useState } from 'react';
+import { parseFreeDate } from '@uccsite/render/dates.mjs';
 
 function emptyItem(fields) {
   return Object.fromEntries(fields.map(f => [f.name, f.widget === 'list' ? [] : '']));
@@ -80,7 +81,7 @@ function Items({ fields, items, onChange, itemLabelField, readOnly, idPrefix, me
   );
 }
 
-const parseDate = (s) => { const t = Date.parse(String(s || '')); return Number.isNaN(t) ? -Infinity : t; };
+const parseDate = (s) => { const t = parseFreeDate(s); return Number.isNaN(t) ? -Infinity : t; };
 
 // mediaOptions: { [fieldName]: [{ value, label }] } for widget 'media' fields —
 // the server builds it from READY assets WITH alt text (see lib/media.js).

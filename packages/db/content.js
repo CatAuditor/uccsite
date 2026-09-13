@@ -128,6 +128,12 @@ async function loadHomepage(client) {
 
 // loadContent(client) → the renderer's full content map. Project children are
 // fetched in two grouped queries (not 2 per project).
+// The nested child lists of a project: field name → child table. Drives
+// loadProjects/replaceProjects AND is asserted against the admin's
+// collection spec (apps/admin/lib/collections.js) so a rename in one place
+// cannot silently wipe the other's rows.
+const PROJECT_CHILDREN = { articles: 'project_articles', videos: 'project_videos' };
+
 // loadProjects(client) → projects with nested articles/videos (the projects.json shape).
 async function loadProjects(client) {
 
@@ -140,14 +146,13 @@ async function loadProjects(client) {
     }
     return map;
   };
-  const articlesBy = groupByProject(
-    (await client.query(`SELECT * FROM project_articles ORDER BY project_id, sort_order`)).rows, 'project_articles');
-  const videosBy = groupByProject(
-    (await client.query(`SELECT * FROM project_videos ORDER BY project_id, sort_order`)).rows, 'project_videos');
+  const byField = {};
+  for (const [field, table] of Object.entries(PROJECT_CHILDREN)) {
+    byField[field] = groupByProject((await client.query(`SELECT * FROM ${table} ORDER BY project_id, sort_order`)).rows, table);
+  }
   return projectRows.map(row => ({
     ...rowToObject('projects', row),
-    articles: articlesBy.get(row.id) || [],
-    videos: videosBy.get(row.id) || [],
+    ...Object.fromEntries(Object.keys(PROJECT_CHILDREN).map(field => [field, byField[field].get(row.id) || []])),
   }));
 }
 
@@ -288,17 +293,16 @@ async function saveHomepage(client, homepage, { tx = true } = {}) {
 // owns the transaction (the admin's projects editor).
 async function replaceProjects(client, projects, { tx = true } = {}) {
   const body = async () => {
-    await client.query('DELETE FROM project_articles');
-    await client.query('DELETE FROM project_videos');
+    for (const table of Object.values(PROJECT_CHILDREN)) await client.query(`DELETE FROM ${table}`);
     await client.query('DELETE FROM projects');
     for (let i = 0; i < projects.length; i++) {
       const p = projects[i];
       const projectId = await insertRow(client, 'projects', p, { sort_order: i });
-      for (let j = 0; j < (p.articles || []).length; j++) {
-        await insertRow(client, 'project_articles', p.articles[j], { project_id: projectId, sort_order: j });
-      }
-      for (let j = 0; j < (p.videos || []).length; j++) {
-        await insertRow(client, 'project_videos', p.videos[j], { project_id: projectId, sort_order: j });
+      for (const [field, table] of Object.entries(PROJECT_CHILDREN)) {
+        const children = Array.isArray(p[field]) ? p[field] : [];
+        for (let j = 0; j < children.length; j++) {
+          await insertRow(client, table, children[j], { project_id: projectId, sort_order: j });
+        }
       }
     }
   };
@@ -330,7 +334,7 @@ async function saveContent(client, repo) {
 }
 
 module.exports = {
-  SINGLETON, FIELD_MAPS, HOMEPAGE_GROUP_COLS, COLLECTION_TABLES, CONTENT_TABLES,
+  SINGLETON, FIELD_MAPS, HOMEPAGE_GROUP_COLS, COLLECTION_TABLES, CONTENT_TABLES, PROJECT_CHILDREN,
   rowToObject, objectToParams, list, insertRow,
   loadSettings, loadHomepage, loadProjects, loadContent, contentMeta, makeDbLastmod,
   replaceCollectionRows, replaceProjects, saveSettings, saveHomepage, saveContent,

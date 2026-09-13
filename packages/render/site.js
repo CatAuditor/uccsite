@@ -81,6 +81,8 @@ function withColorClasses(content) {
   return { content: derived, colorsCss };
 }
 
+const { parseFreeDate } = require('./dates');
+
 // deriveProjectFilters(content) → content with project_statuses /
 // project_regions (distinct, in first-seen order) and per-project date_ts
 // (Date.parse of the free-text date, '' when unparseable) for the projects
@@ -94,8 +96,10 @@ function deriveProjectFilters(content) {
     projects: {
       ...content.projects,
       projects: projects.map(p => {
-        const ts = Date.parse(String(p.date || ''));
-        return { ...p, date_ts: Number.isNaN(ts) ? '' : String(ts) };
+        const ts = parseFreeDate(p.date);
+        // *_key: trimmed values the data attributes carry, so they match the
+        // option lists exactly even for content loaded verbatim from JSON.
+        return { ...p, date_ts: Number.isNaN(ts) ? '' : String(ts), status_key: (p.status || '').trim(), region_key: (p.region || '').trim() };
       }),
       project_statuses: uniq('status'),
       project_regions: uniq('region'),

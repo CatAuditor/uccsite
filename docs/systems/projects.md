@@ -43,15 +43,27 @@ collection rules (one transaction, baseline lost-update stamp on the
 `projects` table, revision snapshot of the whole nested tree, audit).
 
 Dates are free text ("August 2026", "June 4, 2026"); "newest first" on the
-site and in the admin uses `Date.parse`, so unparseable dates sort last.
+site (server-computed `date_ts`) and in the admin (client-side) both use
+`packages/render/dates.js` `parseFreeDate` — month-year, month-day-year,
+ISO, or a bare year; unparseable dates sort last. Blank nested entries are
+dropped on save. `PROJECT_CHILDREN` in packages/db/content.js is the single
+mapping of child list → table; the collections drift guard asserts the
+editor's list fields equal it and every child field matches `FIELD_MAPS`.
 
 ## Site behaviour
 
 Without JavaScript the page is the plain featured-order list (controls stay
-`hidden`). With it, `js/projects.js` reveals the controls, filters by exact
+`hidden` — `css/styles.css` has `[hidden] { display: none !important }` so an
+author `display` rule cannot un-hide them). With it, `js/projects.js` reveals the controls, filters by exact
 status/region values (the option lists come from the content), re-orders the
 blocks in the DOM, and announces "N of M projects". No inline styles or
 scripts (CSP `script-src 'self'`, `style-src 'self'`).
+
+## Debugging
+
+No runtime logging: the site script is pure DOM state, the editor is client
+state serialized into the `payload` hidden input, and saves log through
+`[admin] <actor> projects.save` (docs/error-handling/debug/admin.md).
 
 ## Status
 

@@ -3,7 +3,7 @@
   padding: 72px 48px 80px;
   border-bottom: 1px solid rgba(0,0,0,0.07);
 }
-.project-block:last-child { border-bottom: none; }
+.project-block:last-child, .project-block.is-last { border-bottom: none; }
 .project-block-inner {
   max-width: 860px;
   margin: 0 auto;

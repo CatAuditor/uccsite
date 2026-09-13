@@ -8,7 +8,7 @@
 // selects the variant). markdown flags fields that accept the
 // **bold**/*italic*/[link](url) subset (hint shown to editors).
 
-import { FIELD_MAPS, HOMEPAGE_GROUP_COLS } from '@uccsite/db/content';
+import { FIELD_MAPS, HOMEPAGE_GROUP_COLS, PROJECT_CHILDREN } from '@uccsite/db/content';
 
 const MD_HINT = 'Supports **bold**, *italic*, [link text](https://url). Blank line = new paragraph.';
 
@@ -105,7 +105,7 @@ export const COLLECTIONS = {
     title: 'Projects',
     table: 'projects',
     nested: true,
-    childTables: { articles: 'project_articles', videos: 'project_videos' },
+    childTables: PROJECT_CHILDREN, // the db layer's mapping — asserted below
     note: 'Order here is the order on /projects and the homepage cards. Use the filter box to find a project; drag order with the arrows.',
     itemLabel: (item) => item.name || 'project',
     fields: [
@@ -163,6 +163,7 @@ export const COLLECTIONS = {
 // (sanitizeItems drops unknown keys, then wipe-and-load) — Decap's exact
 // delete-on-save hazard. Drift is a loud startup error instead.
 function assertFieldsMatch(label, table, fields) {
+  if (!FIELD_MAPS[table]) throw new Error(`${label}: "${table}" is not a content table (FIELD_MAPS)`);
   const mapped = new Set(Object.values(FIELD_MAPS[table]));
   const declared = new Set(fields.filter(f => f.widget !== 'list').map(f => f.name));
   for (const f of declared) {
@@ -174,6 +175,14 @@ function assertFieldsMatch(label, table, fields) {
 }
 for (const [key, spec] of Object.entries(COLLECTIONS)) {
   assertFieldsMatch(`collections.${key}`, spec.table, spec.fields);
+  const listFields = spec.fields.filter(f => f.widget === 'list').map(f => f.name);
+  if (spec.nested) {
+    // The editor's child lists must be exactly what replaceProjects/loadProjects read.
+    const expected = Object.keys(PROJECT_CHILDREN).sort().join(',');
+    if (listFields.slice().sort().join(',') !== expected) {
+      throw new Error(`collections.${key}: list fields [${listFields}] must equal PROJECT_CHILDREN [${expected}] — a mismatch would wipe child rows on save`);
+    }
+  }
   for (const f of spec.fields.filter(f => f.widget === 'list')) {
     const child = spec.childTables?.[f.name];
     if (!child) throw new Error(`collections.${key}: list field "${f.name}" has no childTables entry`);

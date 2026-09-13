@@ -61,7 +61,7 @@
 
     <div id="project-list">
     {{#projects}}
-    <div class="project-block" data-name="{{name}}" data-status="{{status}}" data-region="{{region}}" data-date="{{date_ts}}">
+    <div class="project-block" data-name="{{name}}" data-status="{{status_key}}" data-region="{{region_key}}" data-date="{{date_ts}}">
       <div class="project-block-inner">
 
         <div class="project-meta-row">
@@ -86,7 +86,7 @@
           </div>
           <div class="news-content">
             <div class="news-meta">{{date}} &nbsp;·&nbsp; {{region}}</div>
-            <h3 class="news-headline">{{headline}}</h3>
+            <h3 class="news-headline" {{#lang}}lang="{{lang}}"{{/lang}}>{{headline}}</h3>
             <div class="news-excerpt">{{excerpt}}</div>
             <div class="news-read-more">{{read_more}}</div>
           </div>
