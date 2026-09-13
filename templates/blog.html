@@ -18,10 +18,9 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon-512.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/fonts.css" />
   <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/colors.css" />
 
 </head>
 <body>
@@ -43,7 +42,7 @@
       {{#articles}}
       <a class="news-card" href="{{url}}" target="_blank" rel="noopener">
         <div class="news-outlet">
-          <span class="outlet-badge" style="background: {{badge_color}};">{{outlet}}</span>
+          <span class="outlet-badge {{badge_class}}">{{outlet}}</span>
         </div>
         <div class="news-content">
           <div class="news-meta">{{date}} &nbsp;·&nbsp; {{region}}</div>
@@ -54,12 +53,12 @@
       </a>
       {{/articles}}
 
-      <div class="news-section-label" style="margin-top: 56px;">On Television</div>
+      <div class="news-section-label mt-56">On Television</div>
 
       {{#videos}}
       <div class="video-card">
         <div class="video-card-header">
-          <span class="outlet-badge" style="background: {{badge_color}};">{{outlet}}</span>
+          <span class="outlet-badge {{badge_class}}">{{outlet}}</span>
           <div>
             <div class="video-meta">{{date}} &nbsp;·&nbsp; {{region}}</div>
             <h2 class="video-headline">{{headline}}</h2>
@@ -73,7 +72,7 @@
 
       <div class="news-more-cta">
         <p>Read the full UCC briefing on the Stratos Project and the legal violations we documented.</p>
-        <a href="/stratos.html" class="btn btn-primary" style="white-space:nowrap;">Read the Briefing</a>
+        <a href="/stratos.html" class="btn btn-primary nowrap">Read the Briefing</a>
       </div>
 
     </div>

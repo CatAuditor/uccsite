@@ -83,12 +83,17 @@ Defined as CSS custom properties on `:root`. Copy this block verbatim into any e
 ## 2. Typography
 
 ### Fonts
-Loaded from Google Fonts in `<head>`:
+Self-hosted (2026-09-13): `css/fonts.css` declares `@font-face` for Inter
+400–900, Playfair Display 700/800, and (for the dignity page) IBM Plex Sans
+400–600 + Newsreader, latin + latin-ext subsets, files in `assets/fonts/`.
+Every template loads it before `styles.css`:
 ```html
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/css/fonts.css" />
+<link rel="stylesheet" href="/css/styles.css" />
+<link rel="stylesheet" href="/css/colors.css" />
 ```
+Add a family by editing `FAMILIES` in `scripts/fetch-fonts.mjs` and re-running
+it. Never link fonts.googleapis.com — the AWS CSP is `font-src 'self'`.
 - **Inter** (400/500/600/700/800/900) — all UI, headlines, body, buttons, labels.
 - **Playfair Display** (700/800) — *only* for emotional/editorial moments: mission quote, blockquotes, modal titles. Signals "this is a human voice / a promise."
 
@@ -232,9 +237,7 @@ If the external tool wants to feel native, honor `prefers-reduced-motion` yourse
 
 ```html
 <head>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/fonts.css" />
   <!-- paste the :root token block from §1, plus reset below -->
 </head>
 ```

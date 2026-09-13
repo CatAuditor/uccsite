@@ -43,7 +43,7 @@ const FIXED_LASTMOD = () => '2026-09-12';
 test('buildSite renders with no errors', () => {
   const { files, errors } = buildSite({ ...loadInputs(), lastmod: FIXED_LASTMOD });
   assert.deepEqual(errors, []);
-  assert.equal(Object.keys(files).length, PAGES.length + 1); // pages + sitemap.xml
+  assert.equal(Object.keys(files).length, PAGES.length + 2); // pages + sitemap.xml + css/colors.css
 });
 
 test('rendered pages match the golden baseline byte-for-byte (except named diffs)', () => {

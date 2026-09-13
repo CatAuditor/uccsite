@@ -1,0 +1,82 @@
+/* Page styles for templates/team.html (moved out of the template for style-src 'self'). */
+.team-section {
+  padding: 100px 48px;
+  background: var(--cream);
+}
+.team-section .inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.bio-card {
+  display: flex;
+  gap: 40px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.bio-photo {
+  flex-shrink: 0;
+  width: 160px;
+  height: 160px;
+  border-radius: var(--radius-lg);
+  background: var(--gray-100);
+  border: 2px dashed var(--gray-200);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--gray-400);
+  text-align: center;
+}
+.bio-photo svg { opacity: 0.5; }
+.bio-photo span {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  padding: 0 12px;
+}
+.bio-photo.has-photo {
+  border-style: solid;
+  border-color: transparent;
+  background: none;
+  overflow: hidden;
+}
+.bio-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+.bio-content { flex: 1; }
+.bio-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--navy-dark);
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.bio-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 16px;
+}
+.bio-text {
+  font-size: 16px;
+  color: var(--gray-600);
+  line-height: 1.75;
+}
+.bio-text p + p { margin-top: 12px; }
+@media (max-width: 640px) {
+  .team-section { padding: 64px 24px; }
+  .bio-card { flex-direction: column; align-items: center; gap: 28px; padding: 28px 24px; }
+  .bio-photo { width: 140px; height: 140px; }
+  .bio-content { text-align: center; }
+}

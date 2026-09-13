@@ -1,0 +1,66 @@
+/* Page styles for templates/issues.html (moved out of the template for style-src 'self'). */
+.issues-page-section {
+  padding: 80px 48px 100px;
+  background: var(--cream);
+}
+.issues-page-inner {
+  max-width: 780px;
+  margin: 0 auto;
+}
+.issue-article {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 56px 64px;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.issue-article-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.issue-num {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--red);
+  border: 1px solid var(--gray-200);
+  border-radius: 4px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+}
+.issue-title {
+  font-family: var(--font-serif);
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 800;
+  color: var(--navy-dark);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.issue-epigraph {
+  font-style: italic;
+  font-size: 18px;
+  color: var(--navy);
+  border-left: 3px solid var(--red);
+  padding-left: 18px;
+  margin: 0 0 14px;
+}
+.issue-byline {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-bottom: 22px;
+}
+.issue-body p {
+  font-size: 16.5px;
+  color: var(--gray-900);
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+.issue-body p:last-child { margin-bottom: 0; }
+@media (max-width: 768px) {
+  .issues-page-section { padding: 56px 24px 72px; }
+  .issue-article { padding: 36px 24px; }
+}

@@ -1,0 +1,34 @@
+/* Page styles for templates/success.html (moved out of the template for style-src 'self'). */
+.success-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cream);
+  padding: 40px 24px;
+}
+.success-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 60px 48px;
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+}
+.success-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--navy);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 28px;
+}
+.success-icon svg { color: white; }
+.success-card h1 { font-family: var(--font-serif); font-size: 2rem; color: var(--navy); margin-bottom: 16px; }
+.success-card p { color: var(--gray-600); line-height: 1.7; margin-bottom: 12px; }
+.success-legal { font-size: 0.82rem; color: var(--gray-400); margin-top: 24px; border-top: 1px solid var(--gray-200); padding-top: 20px; }
+.success-actions { display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 32px; flex-wrap: wrap; }
+@media (max-width: 480px) { .success-card { padding: 40px 24px; } }

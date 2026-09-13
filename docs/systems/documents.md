@@ -131,8 +131,8 @@ prune keeps them bounded.
 ## Status / not yet
 
 Built 2026-09-13: model, compose, migration (staging published from the DB
-with the 8 Documents, parity gate OK), editor, styles page, restore. Not yet:
-`style-src 'self'` + font self-hosting (§3.2 CSP tightening — fixed templates
-still carry inline styles), `<script src>` escape hatch in the sanitizer,
-content export of documents (§14.2 layout), Style Kit annotations in
-css/styles.css, pagination of the tree for very long pages.
+with the 8 Documents, parity gate OK), editor, styles page, restore, export
+(§14.2), **CSP tightened to `style-src 'self'` / `font-src 'self'`** with
+self-hosted fonts and `css/colors.css` (see docs/systems/api-security.md),
+25 Style Kit annotations. Not yet: `<script src>` escape hatch in the
+sanitizer, pagination of the tree for very long pages.

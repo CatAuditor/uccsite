@@ -43,11 +43,15 @@ const SECURITY_HEADERS = {
 // (the beacon was edge-injected by Cloudflare and never part of repo output),
 // plus challenges.cloudflare.com for the Turnstile widget on the join/tip
 // forms (spec §10's one net-new abuse control).
+// style-src 'self' (no unsafe-inline, no Google Fonts): every stylesheet is a
+// file (css/pages/*.css, css/colors.css for content badge colours, Document
+// page CSS) and the fonts are self-hosted (css/fonts.css, assets/fonts/).
+// JS may still set element.style.* — CSSOM writes are not covered by CSP.
 const SITE_CSP = [
   "default-src 'self'",
   "script-src 'self' https://challenges.cloudflare.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
+  "style-src 'self'",
+  "font-src 'self'",
   "img-src 'self' data: blob: https:",
   "connect-src 'self'",
   "frame-src https://www.youtube.com https://challenges.cloudflare.com",

@@ -48,6 +48,32 @@ function deriveHomepage(content) {
   return { ...content, homepage: { ...content.homepage, statements } };
 }
 
+// withColorClasses(content) → { content, colorsCss }
+// Content carries badge_color / status_color hex values; templates used to
+// paint them with inline style attributes, which CSP style-src 'self'
+// forbids. Every such value gets a sibling badge_class / status_class
+// ('c-<hex>') and one generated stylesheet (css/colors.css) declares them.
+const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+function withColorClasses(content) {
+  const colors = new Set();
+  const visit = (v) => {
+    if (Array.isArray(v)) return v.map(visit);
+    if (!v || typeof v !== 'object') return v;
+    const out = {};
+    for (const [k, val] of Object.entries(v)) out[k] = visit(val);
+    for (const key of ['badge_color', 'status_color']) {
+      const hex = typeof out[key] === 'string' && HEX.test(out[key].trim()) ? out[key].trim().toLowerCase() : null;
+      if (hex) { colors.add(hex); out[key.replace('_color', '_class')] = `c-${hex.slice(1)}`; }
+      else if (out[key]) out[key.replace('_color', '_class')] = '';
+    }
+    return out;
+  };
+  const derived = visit(content);
+  const colorsCss = '/* Generated from content badge_color / status_color values (packages/render/site.js). */\n'
+    + [...colors].sort().map(c => `.c-${c.slice(1)} { background: ${c}; }`).join('\n') + '\n';
+  return { content: derived, colorsCss };
+}
+
 // buildSite({ templates, partials, content, lastmod, pages?, siteUrl? })
 //   templates: { 'index.html' → template string } — must cover every PAGES entry
 //   partials:  { 'header' → string, ... }
@@ -69,9 +95,10 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
   }
   if (errors.length) return { files: {}, errors };
 
-  const derived = deriveHomepage(content);
+  const colored = withColorClasses(content);
+  const derived = deriveHomepage(colored.content);
 
-  const files = {};
+  const files = { 'css/colors.css': colored.colorsCss };
   for (const { template, content: names } of pages) {
     const page = template.replace(/\.html$/, '');
     const data = Object.assign(
@@ -107,4 +134,4 @@ ${pages.filter(p => p.sitemap !== false).map(p => {
 `;
 }
 
-module.exports = { PAGES, MARKDOWN_FIELDS, SITE_URL, deriveHomepage, buildSite, makeSitemap };
+module.exports = { PAGES, MARKDOWN_FIELDS, SITE_URL, deriveHomepage, withColorClasses, buildSite, makeSitemap };

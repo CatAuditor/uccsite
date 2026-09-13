@@ -11,7 +11,7 @@ Two stored-XSS sinks were found in review (donor first name via `innerHTML`; CMS
 ## Consequences
 - Any new `<script>` with inline code is blocked by the browser. Put it in `js/`.
 - `<script type="application/ld+json">` is fine (not executed).
-- Inline `style` attributes and `<style>` blocks still work (`style-src 'unsafe-inline'` retained).
+- Inline `style` attributes and `<style>` blocks still work (`style-src 'unsafe-inline'` retained) — **on Cloudflare only. Superseded on AWS (2026-09-13):** the CloudFront policy is `style-src 'self'`; see docs/systems/api-security.md. The `/admin/*` relaxed block retires with Decap.
 
 ## What breaks if reversed
 Adding `unsafe-inline` back to the `/*` policy re-enables the XSS class. Removing the `/admin/*` block breaks CMS login (Decap needs eval).

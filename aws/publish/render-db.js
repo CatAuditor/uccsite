@@ -8,7 +8,7 @@
 // fixed-page template with the same slug — the eight long-form templates
 // stay in the repo for the git/build.js path until cutover, but once a
 // Document with that slug is published the database wins.
-const { buildSite, PAGES, documents: docs } = require('@uccsite/render');
+const { buildSite, PAGES, withColorClasses, documents: docs } = require('@uccsite/render');
 const { loadContent, contentMeta, makeDbLastmod } = require('@uccsite/db/content');
 const { loadPublishBundle, markDocumentLive, markDocumentPublishError } = require('@uccsite/db/documents');
 
@@ -45,7 +45,7 @@ function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl }) {
     rules: bundle.rules,
     overrides: bundle.overrides,
     foreignClassMaps,
-    coverage: content.coverage,
+    coverage: withColorClasses(content).content.coverage, // badge_class for the strips
   });
 
   const docSlugs = new Set(bundle.documents.map(d => d.slug));

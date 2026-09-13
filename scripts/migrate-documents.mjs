@@ -20,7 +20,7 @@ import { createHash } from 'node:crypto';
 import { resolveEnv, argValue } from './lib/stack.mjs';
 
 const require = createRequire(import.meta.url);
-const { buildSite, PAGES, documents: docs } = require('@uccsite/render');
+const { buildSite, PAGES, withColorClasses, documents: docs } = require('@uccsite/render');
 const { loadRenderInputs } = require('../aws/publish/inputs.js');
 const { parseFragmentTree, walkElements } = require('@uccsite/html-ingest');
 
@@ -151,7 +151,7 @@ const documents = Object.keys(DOCS).map(slug => extract(slug, inputs.templates[`
 const built = docs.buildDocuments({
   documents, shells: inputs.shells, partials: inputs.partials, settings: inputs.content.settings,
   siteUrl: 'https://utahciviccompact.org', siteCss, rules: [], overrides: [], foreignClassMaps: {},
-  coverage: inputs.content.coverage,
+  coverage: withColorClasses(inputs.content).content.coverage,
 });
 mkdirSync(OUT, { recursive: true });
 let hard = 0;
@@ -179,7 +179,7 @@ for (const doc of documents) {
       hard++;
     }
   } else hard++;
-  const ingested = docs.composeDocument({ doc, shell: inputs.shells.report, partials: inputs.partials, settings: inputs.content.settings, siteUrl: 'https://utahciviccompact.org', siteCss, coverage: inputs.content.coverage }).ingestResult;
+  const ingested = docs.composeDocument({ doc, shell: inputs.shells.report, partials: inputs.partials, settings: inputs.content.settings, siteUrl: 'https://utahciviccompact.org', siteCss, coverage: withColorClasses(inputs.content).content.coverage }).ingestResult;
   report.ingest = { removed: ingested.report.removed, foreignClasses: ingested.report.foreignClasses.slice(0, 20), warnings: ingested.report.warnings, a11y: ingested.report.a11y, ok: ingested.ok };
   // Store the ingest result too (the editor's tree/preview read body_html_normalized;
   // without it a migrated document looks empty until its first save).

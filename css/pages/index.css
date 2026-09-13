@@ -1,0 +1,173 @@
+/* Page styles for templates/index.html (moved out of the template for style-src 'self'). */
+.press { background: var(--white); }
+.press-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+.press-header .section-title { margin-bottom: 0; }
+.press-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.press-card {
+  background: var(--cream);
+  border-radius: var(--radius-lg);
+  padding: 22px 28px;
+  text-decoration: none;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+  transition: box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.press-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+.press-card-top { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.press-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--white);
+  padding: 4px 8px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.press-date {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+}
+.press-headline {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy-dark);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  flex: 1;
+}
+.press-more {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--red);
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .press-card { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .press-see-all { display: none; }
+  .press-header { margin-bottom: 28px; }
+}
+.statements { background: var(--cream); }
+.statement-feature {
+  display: block;
+  background: var(--white);
+  border-left: 4px solid var(--red);
+  border-radius: var(--radius-lg);
+  padding: 36px 44px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  text-decoration: none;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.statement-feature:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+.statement-feature-date {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: 10px;
+}
+.statement-feature-title {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--navy-dark);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin-bottom: 14px;
+}
+.statement-feature-snippet {
+  font-size: 15px;
+  color: var(--gray-600);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.statement-feature-more {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--red);
+}
+@media (max-width: 640px) {
+  .statement-feature { padding: 28px 24px; }
+}
+.fights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 40px;
+  margin-bottom: 36px;
+}
+.fight-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fight-status {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--white);
+  padding: 4px 10px;
+  border-radius: 4px;
+  line-height: 1;
+  align-self: flex-start;
+}
+.fight-region {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+}
+.fight-name {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--navy-dark);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+.fight-tagline {
+  font-size: 14px;
+  color: var(--gray-600);
+  line-height: 1.6;
+  margin: 0;
+  flex: 1;
+}
+.fight-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--red);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  margin-top: 4px;
+}
+.fight-link:hover { text-decoration: underline; }
+.fights-all-link {
+  text-align: center;
+}
+@media (max-width: 600px) {
+  .fights-grid { grid-template-columns: 1fr; }
+}

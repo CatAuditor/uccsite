@@ -45,6 +45,11 @@ button { cursor: pointer; border: none; background: none; font: inherit; }
 input, textarea, select { font: inherit; }
 
 /* CONTAINERS */
+/* @class container
+   @label Content container
+   @applies div section
+   @group Layout
+   @desc Centers content at the site max width with side padding. */
 .container {
   max-width: var(--max-w);
   margin: 0 auto;
@@ -52,11 +57,21 @@ input, textarea, select { font: inherit; }
 }
 @media (max-width: 768px) { .container { padding: 0 24px; } }
 
+/* @class section
+   @label Page section
+   @applies section div
+   @group Layout
+   @desc Vertical padding for a full-width page section. */
 .section { padding: var(--section-pad) 0; }
 
 /* ============================================
    TYPOGRAPHY UTILITIES
    ============================================ */
+/* @class section-label
+   @label Section label
+   @applies div span p
+   @group Typography
+   @desc Small uppercase eyebrow above a section title. */
 .section-label {
   font-size: 12px;
   font-weight: 700;
@@ -67,6 +82,11 @@ input, textarea, select { font: inherit; }
 }
 .section-label.light { color: rgba(255,255,255,0.6); }
 
+/* @class section-title
+   @label Section title
+   @applies h1 h2 h3
+   @group Typography
+   @desc Large display heading for a section. */
 .section-title {
   font-family: var(--font-sans);
   font-size: clamp(28px, 4vw, 44px);
@@ -78,6 +98,11 @@ input, textarea, select { font: inherit; }
 }
 .section-title.light { color: var(--white); }
 
+/* @class section-sub
+   @label Section subtitle
+   @applies p
+   @group Typography
+   @desc Muted subtitle paragraph under a section title. */
 .section-sub {
   font-size: 18px;
   color: var(--gray-600);
@@ -89,6 +114,11 @@ input, textarea, select { font: inherit; }
 /* ============================================
    BUTTONS
    ============================================ */
+/* @class btn
+   @label Button
+   @applies a
+   @group Buttons
+   @desc Base button shape. Combine with a colour variant (btn-primary, btn-outline…). */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -101,6 +131,11 @@ input, textarea, select { font: inherit; }
   transition: all 0.2s var(--ease);
   white-space: nowrap;
 }
+/* @class btn-primary
+   @label Primary button
+   @applies a
+   @group Buttons
+   @desc Filled red call-to-action. Use with btn. */
 .btn-primary {
   background: var(--red);
   color: var(--white);
@@ -112,6 +147,11 @@ input, textarea, select { font: inherit; }
   transform: translateY(-1px);
   box-shadow: 0 8px 24px rgba(192,57,43,0.35);
 }
+/* @class btn-ghost
+   @label Ghost button
+   @applies a
+   @group Buttons
+   @desc Transparent button with a light border for dark backgrounds. Use with btn. */
 .btn-ghost {
   background: transparent;
   color: var(--white);
@@ -121,6 +161,11 @@ input, textarea, select { font: inherit; }
   background: rgba(255,255,255,0.1);
   border-color: rgba(255,255,255,0.8);
 }
+/* @class btn-outline
+   @label Outline button
+   @applies a
+   @group Buttons
+   @desc Outlined secondary button. Use with btn. */
 .btn-outline {
   background: transparent;
   color: var(--navy);
@@ -130,7 +175,17 @@ input, textarea, select { font: inherit; }
   background: var(--navy);
   color: var(--white);
 }
+/* @class btn-sm
+   @label Small button
+   @applies a
+   @group Buttons
+   @desc Compact button size. Use with btn. */
 .btn-sm { padding: 10px 22px; border-radius: 6px; font-size: 14px; font-weight: 700; }
+/* @class btn-full
+   @label Full-width button
+   @applies a
+   @group Buttons
+   @desc Stretches the button to its container. Use with btn. */
 .btn-full { width: 100%; justify-content: center; }
 .btn-donate {
   background: var(--navy);
@@ -1394,6 +1449,11 @@ input, textarea, select { font: inherit; }
 /* ============================================
    SUBPAGE HERO (shared across subpages)
    ============================================ */
+/* @class subpage-hero
+   @label Report hero
+   @applies div section
+   @group Report pages
+   @desc Dark gradient hero banner with the report title (long-form pages). */
 .subpage-hero {
   background: linear-gradient(135deg, var(--navy-dark) 0%, #1B3A5C 100%);
   padding: 160px 48px 80px;
@@ -1430,6 +1490,11 @@ input, textarea, select { font: inherit; }
   max-width: 860px;
   margin: 0 auto;
 }
+/* @class news-section-label
+   @label News section label
+   @applies div
+   @group Report pages
+   @desc Uppercase label separating groups of news cards. */
 .news-section-label {
   font-size: 12px;
   font-weight: 700;
@@ -1460,6 +1525,11 @@ input, textarea, select { font: inherit; }
   align-items: flex-start;
   padding-top: 4px;
 }
+/* @class outlet-badge
+   @label Outlet badge
+   @applies span
+   @group Report pages
+   @desc Coloured pill naming a news outlet. Pair with a c-<hex> colour class from css/colors.css. */
 .outlet-badge {
   font-size: 11px;
   font-weight: 800;
@@ -1529,6 +1599,11 @@ input, textarea, select { font: inherit; }
   gap: 16px;
   margin-bottom: 20px;
 }
+/* @class video-embed
+   @label Video embed
+   @applies div
+   @group Report pages
+   @desc Responsive 16:9 wrapper for an embedded video iframe. */
 .video-embed {
   position: relative;
   padding-bottom: 56.25%;
@@ -1564,3 +1639,59 @@ input, textarea, select { font: inherit; }
   .news-more-cta { flex-direction: column; text-align: center; }
   .video-card { padding: 24px 20px; }
 }
+
+/* ── Utilities (replace the last inline style attributes; CSP style-src 'self') ── */
+/* @class bg-cream
+   @label Cream background
+   @applies div section
+   @group Utilities
+   @desc Cream page background band. */
+.bg-cream { background: var(--cream); }
+/* @class nowrap
+   @label No wrap
+   @applies a span
+   @group Utilities
+   @desc Keeps the text on one line. */
+.nowrap { white-space: nowrap; }
+/* @class is-hidden
+   @label Hidden
+   @applies div p span
+   @group Utilities
+   @desc display: none — hidden until a script shows it. */
+.is-hidden { display: none; }
+/* @class mt-40
+   @label Margin top 40
+   @applies div p
+   @group Utilities
+   @desc 40px top margin. */
+.mt-40 { margin-top: 40px; }
+/* @class mt-56
+   @label Margin top 56
+   @applies div p
+   @group Utilities
+   @desc 56px top margin. */
+.mt-56 { margin-top: 56px; }
+/* @class mb-16
+   @label Margin bottom 16
+   @applies div p
+   @group Utilities
+   @desc 16px bottom margin. */
+.mb-16 { margin-bottom: 16px; }
+/* @class consent-label
+   @label Consent label
+   @applies label
+   @group Forms
+   @desc Small muted label for a consent checkbox. */
+.consent-label { font-size: 12.5px; color: var(--gray-600); }
+/* @class consent-link
+   @label Consent link
+   @applies a
+   @group Forms
+   @desc Underlined navy link inside a consent label. */
+.consent-link { color: var(--navy); text-decoration: underline; }
+/* @class req-star
+   @label Required marker
+   @applies span
+   @group Forms
+   @desc Red asterisk marking a required field. */
+.req-star { color: var(--red); }

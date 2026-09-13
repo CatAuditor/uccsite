@@ -1,0 +1,55 @@
+/* Page styles for templates/statements.html (moved out of the template for style-src 'self'). */
+.statements-section {
+  padding: 80px 48px 100px;
+  background: var(--cream);
+}
+.statements-inner {
+  max-width: 780px;
+  margin: 0 auto;
+}
+.statement-article {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 56px 64px;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.statement-meta {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 14px;
+}
+.statement-title {
+  font-family: var(--font-serif);
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 800;
+  color: var(--navy-dark);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin-bottom: 12px;
+}
+.statement-byline {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-bottom: 28px;
+}
+.statement-body p {
+  font-size: 17px;
+  color: var(--gray-900);
+  line-height: 1.8;
+  margin-bottom: 22px;
+}
+.statement-signoff {
+  margin-top: 32px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy-dark);
+}
+@media (max-width: 768px) {
+  .statements-section { padding: 56px 24px 72px; }
+  .statement-article { padding: 36px 24px; }
+}

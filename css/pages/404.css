@@ -1,0 +1,3 @@
+/* Page styles for templates/404.html (moved out of the template for style-src 'self'). */
+/* .hero-ctas is a per-page pattern (alpr, how-did-this-happen) — not in styles.css */
+.hero-ctas { display: flex; justify-content: center; margin: 32px auto 8px; }

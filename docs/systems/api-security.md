@@ -65,8 +65,20 @@ Requires `STRIPE_SECRET_KEY`, `RESEND_API_KEY`, `TOKEN_SECRET`.
 - Checkout: `customer_creation: 'always'` for one-time payments so the webhook can always link a donation to a member; `publicDonor` is copied to `subscription_data.metadata` so recurring invoices honor the opt-out.
 - Stripe requests pin `Stripe-Version` (`STRIPE_API_VERSION` in `_lib.js`). `webhook.js` reads both the pinned and newer invoice shapes (`invoice.subscription` / `invoice.parent.subscription_details`).
 
-## Headers / CSP (`static/_headers`)
+## Headers / CSP (`static/_headers` on Cloudflare; `infra/cdk/lib/ucc-stack.js` SITE_CSP on AWS)
 - Site-wide: `script-src 'self' https://static.cloudflareinsights.com` — **no `unsafe-inline`/`unsafe-eval`**. Any new inline `<script>` will be blocked; put it in `js/`. JSON-LD blocks are fine (not executed).
+- **AWS (2026-09-13, Phase 8): `style-src 'self'` and `font-src 'self'`** — no
+  `unsafe-inline`, no Google Fonts. Every stylesheet is a file: `css/styles.css`,
+  `css/fonts.css` (self-hosted woff2 in `assets/fonts/`, regenerate with
+  `scripts/fetch-fonts.mjs`), `css/colors.css` (generated at render from content
+  `badge_color`/`status_color` values → `.c-<hex>` classes), `css/pages/<page>.css`
+  (the fixed pages' former inline `<style>` blocks) and each Document's
+  `css/pages/<slug>.<hash>.css`. **No `style="…"` attributes in templates** — use
+  a class (utilities at the bottom of `css/styles.css`). Scripts may still set
+  `element.style.*` (CSSOM writes are not governed by CSP). The Cloudflare
+  `_headers` file keeps `unsafe-inline` until cutover; a git-source publish to
+  AWS would render the old inline styles, which the AWS CSP now blocks — publish
+  AWS from the database (`--source db`).
 - `/admin/*`: relaxed CSP (Decap needs `unsafe-inline`/`unsafe-eval`), `X-Robots-Tag: noindex`, `Cache-Control: no-store`.
 - `X-Frame-Options: DENY` matches `frame-ancestors 'none'`; `object-src 'none'`.
 
