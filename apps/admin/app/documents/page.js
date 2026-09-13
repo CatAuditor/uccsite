@@ -37,7 +37,9 @@ export default async function DocumentsPage({ searchParams }) {
               <td className={d.status === 'published' ? 'status-succeeded' : 'status-noop'}>{d.status}</td>
               <td>
                 {d.lastPublishError ? <span className="status-failed" title={d.lastPublishError}>publish error</span>
-                  : d.liveAt ? d.liveAt.slice(0, 16).replace('T', ' ') : '—'}
+                  : !d.liveAt ? '—'
+                  : d.updatedAt > d.liveAt ? <span className="status-publishing" title={`live ${d.liveAt.slice(0, 16)}`}>edited since publish</span>
+                  : d.liveAt.slice(0, 16).replace('T', ' ')}
               </td>
               <td>{d.updatedAt?.slice(0, 16).replace('T', ' ')}</td>
             </tr>

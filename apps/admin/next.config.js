@@ -7,7 +7,7 @@ const appOrigin = process.env.APP_ORIGIN || 'http://localhost:3000';
 /** @type {import('next').NextConfig} */
 module.exports = {
   // Runtime reads of the copied site sources on Amplify (see amplify.yml).
-  outputFileTracingIncludes: { '/documents/**': ['./site-src/**/*'], '/styles': ['./site-src/**/*'] },
+  outputFileTracingIncludes: { '/documents/**': ['./site-src/**/*'], '/styles': ['./site-src/**/*'], '/revisions': ['./site-src/**/*'] },
   experimental: {
     serverActions: {
       allowedOrigins: [new URL(appOrigin).host],

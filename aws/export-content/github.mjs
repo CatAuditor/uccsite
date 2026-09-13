@@ -44,10 +44,11 @@ export async function installationToken({ appId, privateKeyPem, installationId }
 }
 
 // commitFiles({ token, repo, branch, files: Map<path,text>, changed: [path],
-//   message }) → { sha, created } — one commit on `branch` containing every
-// path in `changed` (plus manifest.json when present). Creates the branch
-// from the repo's default branch if it does not exist yet.
-export async function commitFiles({ token, repo, branch, files, changed, message, author }) {
+//   removed: [path], message }) → { sha, created } — one commit on `branch`
+// containing every path in `changed` (plus manifest.json when present) and
+// deleting every path in `removed`. Creates the branch from the repo's
+// default branch if it does not exist yet.
+export async function commitFiles({ token, repo, branch, files, changed, removed = [], message, author }) {
   let ref = await gh(token, 'GET', `/repos/${repo}/git/ref/heads/${branch}`);
   let created = false;
   if (!ref) {
@@ -66,6 +67,7 @@ export async function commitFiles({ token, repo, branch, files, changed, message
     const blob = await gh(token, 'POST', `/repos/${repo}/git/blobs`, { content: files.get(path), encoding: 'utf-8' });
     tree.push({ path, mode: '100644', type: 'blob', sha: blob.sha });
   }
+  for (const path of removed) tree.push({ path, mode: '100644', type: 'blob', sha: null }); // null sha = delete
   const newTree = await gh(token, 'POST', `/repos/${repo}/git/trees`, { base_tree: headCommit.tree.sha, tree });
   const commit = await gh(token, 'POST', `/repos/${repo}/git/commits`, {
     message, tree: newTree.sha, parents: [headSha], ...(author ? { author, committer: author } : {}),
@@ -74,18 +76,18 @@ export async function commitFiles({ token, repo, branch, files, changed, message
   return { sha: commit.sha, created };
 }
 
-// remoteBlobShas({ token, repo, branch, paths }) → Map<path, sha> for the
-// paths present on the branch (absent paths simply have no entry). Uses a
-// recursive tree read — one request — so nothing is downloaded.
-export async function remoteBlobShas({ token, repo, branch, paths }) {
+// remoteBlobShas({ token, repo, branch, prefixes }) → Map<path, sha> for every
+// blob on the branch under the given prefixes (plus manifest.json). Uses a
+// recursive tree read — one request — so nothing is downloaded. The full
+// listing lets the exporter detect paths it no longer produces (deletions).
+export async function remoteBlobShas({ token, repo, branch, prefixes }) {
   const out = new Map();
   const ref = await gh(token, 'GET', `/repos/${repo}/git/ref/heads/${branch}`);
   if (!ref) return out;
   const commit = await gh(token, 'GET', `/repos/${repo}/git/commits/${ref.object.sha}`);
   const tree = await gh(token, 'GET', `/repos/${repo}/git/trees/${commit.tree.sha}?recursive=1`);
-  const wanted = new Set(paths);
   for (const entry of tree?.tree || []) {
-    if (entry.type === 'blob' && wanted.has(entry.path)) out.set(entry.path, entry.sha);
+    if (entry.type === 'blob' && (entry.path === 'manifest.json' || prefixes.some(p => entry.path.startsWith(p)))) out.set(entry.path, entry.sha);
   }
   if (tree?.truncated) console.warn('[export-content] remote tree listing truncated — some paths may re-commit unchanged');
   return out;

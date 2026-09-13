@@ -5,7 +5,7 @@
 // vocabulary that is actually published, locally and on Amplify alike).
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { ingest, stripNids } from '@uccsite/html-ingest';
-import { applyStyles, explainStyles, validateSelector, matchCount, orphanedOverrides } from '@uccsite/style-apply';
+import { applyStyles, explainStyles, validateSelector, matchCountTree, rootedTree, orphanedOverrides } from '@uccsite/style-apply';
 import { parseStyleKit, classNames } from '@uccsite/style-kit';
 import { documents as compose, SITE_URL } from '@uccsite/render';
 import {
@@ -101,13 +101,16 @@ export async function editorData(client, id) {
       doc, shell: sources.shells[doc.templateKey] || sources.shells.report, partials: sources.partials,
       settings, siteUrl: SITE_URL, siteCss: sources.siteCss, rules: docRules, overrides, coverage,
     });
+    // Replacer FUNCTIONS: author-controlled CSS/HTML must not be interpreted
+    // as $-patterns by String.prototype.replace.
+    const cssTag = (css) => `<style>${String(css || '').replace(/<\/style/gi, '<\\/style')}</style>`;
     preview = composed.html
-      .replace(/<main id="main">[\s\S]*<\/main>/, `<main id="main">\n${withTokens}\n</main>`)
-      .replace(/<link href="https:\/\/fonts[^>]*>/g, '')
-      .replace('<link rel="stylesheet" href="/css/styles.css" />', `<style>${sources.siteCss}</style>`)
-      .replace(/<link rel="stylesheet" href="\/css\/pages\/[^"]+" \/>/, `<style>${doc.pageCss || ''}</style>`)
-      .replace('<head>', `<head><base href="${config.publicOrigin}/" />`)
-      .replace('</body>', `${PREVIEW_SCRIPT}</body>`);
+      .replace(/<main id="main">[\s\S]*<\/main>/, () => `<main id="main">\n${withTokens}\n</main>`)
+      .replace('<link rel="stylesheet" href="/css/fonts.css" />', () => `<link rel="stylesheet" href="${config.publicOrigin}/css/fonts.css" />`)
+      .replace('<link rel="stylesheet" href="/css/styles.css" />', () => cssTag(sources.siteCss))
+      .replace(/<link rel="stylesheet" href="\/css\/pages\/[^"]+" \/>/, () => cssTag(doc.pageCss))
+      .replace('<head>', () => `<head><base href="${config.publicOrigin}/" />`)
+      .replace('</body>', () => `${PREVIEW_SCRIPT}</body>`);
   }
   return {
     doc, rules: docRules, allRules: rules, overrides, orphans, kit, rows, preview,
@@ -121,21 +124,40 @@ const PREVIEW_SCRIPT = `<script>
 (function(){
   var last=null;
   function outline(nid){ if(last){last.style.outline='';} last=null; if(!nid) return; var el=document.querySelector('[data-nid="'+nid+'"]'); if(el){ el.style.outline='2px solid #c8a84b'; el.scrollIntoView({block:'nearest'}); last=el; } }
-  document.addEventListener('click', function(e){ var el=e.target.closest('[data-nid]'); if(!el) return; e.preventDefault(); parent.postMessage({ucc:'select', nid: el.getAttribute('data-nid')}, '*'); });
+  document.addEventListener('click', function(e){ var a=e.target.closest('a'); if(a) e.preventDefault(); var el=e.target.closest('[data-nid]'); if(!el) return; e.preventDefault(); parent.postMessage({ucc:'select', nid: el.getAttribute('data-nid')}, '*'); });
   window.addEventListener('message', function(e){ if(e.data && e.data.ucc==='hover') outline(e.data.nid); });
 })();
 </script>`;
 
-// ruleMatchCounts(client, rule, { siteCss }) → { total, perDocument: [{slug, count}] }
+// parsedDocuments(client) → [{ id, slug, templateKey, rooted }] — every
+// document parsed ONCE; pass to ruleMatchCounts for many rules.
+export async function parsedDocuments(client) {
+  return (await listDocuments(client)).map(d => ({
+    id: d.id, slug: d.slug, templateKey: d.templateKey, pageCss: d.pageCss,
+    rooted: d.bodyHtmlNormalized ? rootedTree(d.bodyHtmlNormalized) : null,
+  }));
+}
+
+// ruleMatchCounts(client, rule, parsed?) → { total, perDocument: [{slug, count}] }
 // across every document that the rule would apply to.
-export async function ruleMatchCounts(client, rule) {
+export async function ruleMatchCounts(client, rule, parsed) {
   const v = validateSelector(rule.selector);
   if (!v.ok) return { error: v.reason, total: 0, perDocument: [] };
-  const docs = rule.scope === 'page'
-    ? [await getDocument(client, { id: rule.documentId })].filter(Boolean)
-    : (await listDocuments(client)).filter(d => d.templateKey === rule.templateKey);
-  const perDocument = docs.map(d => ({ slug: d.slug, count: d.bodyHtmlNormalized ? matchCount(d.bodyHtmlNormalized, rule.selector) : 0 }));
+  const all = parsed || await parsedDocuments(client);
+  const docs = rule.scope === 'page' ? all.filter(d => d.id === rule.documentId) : all.filter(d => d.templateKey === rule.templateKey);
+  const perDocument = docs.map(d => ({ slug: d.slug, count: d.rooted ? matchCountTree(d.rooted, rule.selector) : 0 }));
   return { total: perDocument.reduce((n, d) => n + d.count, 0), perDocument };
+}
+
+// tokenErrors(client, normalizedHtml, sources) → [message] — the same token
+// expansion the publish path runs, with every coverage key that exists, so a
+// save can refuse to publish a document whose tokens would fail the run.
+export async function tokenErrors(client, normalizedHtml, sources) {
+  const keys = (await client.query('SELECT DISTINCT report_key FROM coverage_entries')).rows.map(r => r.report_key);
+  const coverage = Object.fromEntries(keys.map(k => [`${k}_coverage`, []]));
+  const errors = [];
+  compose.replaceTokens(normalizedHtml || '', { partials: sources.partials, coverage, fail: (m) => errors.push(m) });
+  return errors;
 }
 
 // suggestSelector(rows, nid) → a generated selector for promote-to-rule:

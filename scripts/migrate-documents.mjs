@@ -199,11 +199,24 @@ if (APPLY) {
   const { withConnection } = require('../packages/db');
   const { upsertDocument, getDocument } = require('../packages/db/documents');
   const { region, stackName, outputs } = await resolveEnv(envName, ['DsqlEndpoint']);
+  const overwrite = args.includes('--overwrite');
   await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) => {
     for (const doc of documents) {
       const existing = await getDocument(client, { slug: doc.slug });
+      if (existing && !overwrite) {
+        // The admin is the source of truth once a row exists: a re-run would
+        // silently discard every edit made there (no revision is taken here).
+        console.log(`skip ${doc.slug}: already migrated (pass --overwrite to replace it from the template)`);
+        continue;
+      }
+      if (existing) {
+        // Carry node ids forward so any overrides set in the admin survive.
+        const again = docs.composeDocument({ doc: { ...doc, bodyHtmlNormalized: existing.bodyHtmlNormalized }, shell: inputs.shells.report, partials: inputs.partials, settings: inputs.content.settings, siteUrl: 'https://utahciviccompact.org', siteCss, coverage: withColorClasses(inputs.content).content.coverage }).ingestResult;
+        doc.bodyHtmlNormalized = again.bodyHtmlNormalized;
+        doc.ingestReport = again.report;
+      }
       const id = await upsertDocument(client, { ...doc, id: existing?.id });
-      console.log(`${existing ? 'updated' : 'inserted'} ${doc.slug} (${id})`);
+      console.log(`${existing ? 'overwrote' : 'inserted'} ${doc.slug} (${id})`);
     }
   });
   console.log(`Documents written to ${stackName}.`);

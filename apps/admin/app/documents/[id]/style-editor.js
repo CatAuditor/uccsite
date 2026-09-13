@@ -24,12 +24,19 @@ export default function StyleEditor({ documentId, rows, kit, undocumented, rules
 
   // Preview → tree (click) ; tree → preview (hover/select)
   useEffect(() => {
-    const onMsg = (e) => { if (e.data?.ucc === 'select') setSelected(e.data.nid); };
+    const onMsg = (e) => {
+      if (e.source !== frame.current?.contentWindow) return; // only our preview frame
+      if (e.data?.ucc === 'select' && typeof e.data.nid === 'string') setSelected(e.data.nid);
+    };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
   }, []);
   const outline = (nid) => frame.current?.contentWindow?.postMessage({ ucc: 'hover', nid }, '*');
-  useEffect(() => { outline(selected); }, [selected]);
+  useEffect(() => {
+    outline(selected);
+    // A row selected from the preview scrolls into view in the tree.
+    document.querySelector(`.tree-row[data-nid="${selected}"]`)?.scrollIntoView({ block: 'nearest' });
+  }, [selected]);
 
   const groups = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -48,11 +55,26 @@ export default function StyleEditor({ documentId, rows, kit, undocumented, rules
       if (!r.error) router.refresh();
     });
   }
+  // Toggle semantics: a class that is ON because of a rule or the paste can
+  // only be turned off by a replace-mode override that omits it; a class
+  // that is ON because of the override is simply removed from it.
   const toggleClass = (cls) => {
     if (!row) return;
-    const current = row.override ? row.override.classes : [];
-    const next = current.includes(cls) ? current.filter(c => c !== cls) : [...current, cls];
-    apply([row.nid], next, row.override?.mode || 'append');
+    const mode = row.override?.mode || 'append';
+    const ovr = row.override ? row.override.classes : [];
+    if (row.classes.includes(cls)) {
+      if (ovr.includes(cls) && mode === 'append') return apply([row.nid], ovr.filter(c => c !== cls), 'append');
+      return apply([row.nid], row.classes.filter(c => c !== cls), 'replace'); // came from a rule/paste
+    }
+    return apply([row.nid], mode === 'replace' ? [...row.classes, cls] : [...ovr, cls], mode);
+  };
+  // Replace ↔ append is visually neutral: replace stores the resolved set;
+  // append keeps only what the rules/paste don't already give.
+  const setMode = (replace) => {
+    if (!row) return;
+    if (replace) return apply([row.nid], row.classes, 'replace');
+    const fromRules = new Set([...row.pasteClasses, ...row.ruleClasses.flatMap(r => r.classes)]);
+    apply([row.nid], row.classes.filter(c => !fromRules.has(c)), 'append');
   };
   const siblings = () => {
     if (!row) return [];
@@ -76,12 +98,19 @@ export default function StyleEditor({ documentId, rows, kit, undocumented, rules
     const selector = parent ? `${parent.tag} > ${row.tag}` : row.tag;
     setPromote({ selector, classes: row.classes.join(' '), priority: 10, count: null, perDocument: [] });
   }
+  // Debounced + sequenced: one request ~300ms after the last keystroke, and
+  // a slow earlier response can never overwrite a newer selector's count.
+  const seq = useRef(0);
+  const timer = useRef(null);
   function previewPromote(next) {
     setPromote(next);
-    start(async () => {
+    clearTimeout(timer.current);
+    const mine = ++seq.current;
+    timer.current = setTimeout(() => start(async () => {
       const r = await previewRule({ scope: 'template', templateKey, selector: next.selector });
+      if (mine !== seq.current) return;
       setPromote(p => p && ({ ...p, count: r.error ? `invalid: ${r.error}` : r.total, perDocument: r.perDocument || [] }));
-    });
+    }), 300);
   }
   function savePromote() {
     start(async () => {
@@ -101,9 +130,9 @@ export default function StyleEditor({ documentId, rows, kit, undocumented, rules
           {rows.map((r) => (
             <div key={r.nid} className={`tree-row${r.nid === selected ? ' selected' : ''}${r.unstyled ? ' unstyled' : ''}`}
               style={{ paddingLeft: 8 + r.depth * 14 }}
-              onMouseEnter={() => outline(r.nid)} onMouseLeave={() => outline(selected)}
-              onClick={() => setSelected(r.nid)} role="button" tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter') setSelected(r.nid); }}>
+              onMouseEnter={() => outline(r.nid)} onMouseLeave={() => outline(selected)} onFocus={() => outline(r.nid)}
+              onClick={() => setSelected(r.nid)} role="button" tabIndex={0} data-nid={r.nid}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(r.nid); } }}>
               <span className="tag">{r.tag}</span>
               <span className="txt">{r.text}</span>
               <span className="chips">
@@ -116,7 +145,7 @@ export default function StyleEditor({ documentId, rows, kit, undocumented, rules
           ))}
         </div>
         <div className="preview">
-          {preview ? <iframe ref={frame} title="Live preview" srcDoc={preview} sandbox="allow-scripts allow-same-origin" /> : null}
+          {preview ? <iframe ref={frame} title="Live preview" srcDoc={preview} sandbox="allow-scripts" onLoad={() => outline(selected)} /> : null}
         </div>
       </div>
 
@@ -128,7 +157,7 @@ export default function StyleEditor({ documentId, rows, kit, undocumented, rules
             <div className="picker-tools">
               <input type="search" placeholder="Search classes…" value={search} onChange={(e) => setSearch(e.target.value)} />
               <label><input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} /> show classes for any tag</label>
-              <label><input type="checkbox" checked={row.override?.mode === 'replace'} onChange={(e) => apply([row.nid], rowClasses(row), e.target.checked ? 'replace' : 'append')} /> override replaces rule classes</label>
+              <label><input type="checkbox" checked={row.override?.mode === 'replace'} onChange={(e) => setMode(e.target.checked)} /> override replaces rule classes</label>
               <button type="button" onClick={() => apply(siblings(), rowClasses(row), row.override?.mode || 'append')} disabled={pending || !row.override}>Apply to sibling &lt;{row.tag}&gt;s ({siblings().length})</button>
               <button type="button" onClick={() => apply(sameTag(), rowClasses(row), row.override?.mode || 'append')} disabled={pending || !row.override}>Apply to every &lt;{row.tag}&gt; ({sameTag().length})</button>
               <button type="button" onClick={openPromote} disabled={pending || !row.classes.length}>Promote to template rule…</button>

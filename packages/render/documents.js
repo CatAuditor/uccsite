@@ -9,7 +9,7 @@
 // The sanitizer runs here on every publish — never only on save. Author HTML
 // never reaches the <head>; the shell is developer-owned (templates/documents/).
 const { createHash } = require('crypto');
-const { ingest, stripNids } = require('@uccsite/html-ingest');
+const { ingest, stripNids, replaceTextTokens } = require('@uccsite/html-ingest');
 const { applyStyles } = require('@uccsite/style-apply');
 const { parseStyleKit, classNames } = require('@uccsite/style-kit');
 const { render } = require('./engine');
@@ -82,19 +82,23 @@ function jsonldBlock(doc, seo, settings, siteUrl) {
 }
 
 // Tokens are the only way dynamic markup enters a Document (§5 YouTube note,
-// coverage strips). They're plain text in the body so they survive ingest.
+// coverage strips). They're plain text in the body so they survive ingest,
+// and they are expanded on the TREE — text nodes only, never attribute
+// values, never inside <pre>/<code> (html-ingest replaceTextTokens), so an
+// author cannot smuggle markup through a token in an attribute.
 const YT_ID = /^[A-Za-z0-9_-]{6,20}$/;
+const TOKEN_RE = /\{\{(coverage|video):([A-Za-z0-9_-]+)\}\}/g;
 function replaceTokens(body, { partials, coverage = {}, fail }) {
-  return body
-    .replace(/\{\{coverage:([a-z0-9_-]+)\}\}/g, (_, key) => {
-      const entries = coverage[`${key}_coverage`];
-      if (!Array.isArray(entries)) { fail(`unknown coverage key "${key}"`); return ''; }
+  return replaceTextTokens(body, TOKEN_RE, (_, kind, arg) => {
+    if (kind === 'coverage') {
+      const entries = coverage[`${arg}_coverage`];
+      if (!Array.isArray(entries)) { fail(`unknown coverage key "${arg}"`); return ''; }
       return render(partials['coverage-strip'] || '', { entries }, partials, fail);
-    })
-    .replace(/\{\{video:([^}]+)\}\}/g, (_, id) => {
-      if (!YT_ID.test(id)) { fail(`invalid video id "${id}"`); return ''; }
-      return `<div class="video-embed"><iframe src="https://www.youtube-nocookie.com/embed/${id}" title="Video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
-    });
+    }
+    if (!YT_ID.test(arg)) { fail(`invalid video id "${arg}"`); return ''; }
+    // www.youtube.com — the only video host the site CSP's frame-src allows.
+    return `<div class="video-embed"><iframe src="https://www.youtube.com/embed/${arg}" title="Video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+  });
 }
 
 // knownClassesFor(siteCss, pageCss) → Set — the Style Kit vocabulary plus the
@@ -174,7 +178,8 @@ function buildDocuments({ documents = [], shells, partials, settings, siteUrl, s
     files[`${doc.slug}.html`] = out.html;
     if (out.cssKey) files[out.cssKey] = out.css;
     hashes[doc.slug] = sha(out.html + (out.css || ''));
-    pages.push({ template: `${doc.slug}.html`, priority: doc.sitemapPriority || undefined, sitemap: !doc.noindex, lastmodAt: doc.updatedAt });
+    const priority = /^(0(\.\d)?|1(\.0)?)$/.test(doc.sitemapPriority || '') ? doc.sitemapPriority : undefined;
+    pages.push({ template: `${doc.slug}.html`, priority, sitemap: !doc.noindex, lastmodAt: doc.updatedAt });
   }
   return { files, errors, pages, hashes };
 }

@@ -14,7 +14,7 @@ import {
 import { requireRole } from '../../lib/auth';
 import { withWriteTx, withDb, recordChange } from '../../lib/data';
 import { runAction } from '../../lib/actions';
-import { runIngest, loadSiteSources, styleKitFor, ruleMatchCounts, validateSelector } from '../../lib/documents';
+import { runIngest, loadSiteSources, styleKitFor, ruleMatchCounts, validateSelector, tokenErrors } from '../../lib/documents';
 import { CONFLICT_MESSAGE } from '../../lib/collection-save';
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,80}$/;
@@ -96,6 +96,13 @@ export async function saveDocument(prevState, formData) {
         jsonldType: str(formData, 'jsonldType', 60), jsonldOverrides, allowScripts,
         sitemapPriority: str(formData, 'sitemapPriority', 5),
       };
+      if (next.sitemapPriority && !/^(0(\.\d)?|1(\.0)?)$/.test(next.sitemapPriority)) {
+        throw new Error('Sitemap priority must be 0.0–1.0 (e.g. 0.7) or blank');
+      }
+      // URL fields: absolute https only; the canonical must stay on this site.
+      const SITE = 'https://utahciviccompact.org';
+      if (next.canonicalUrl && !next.canonicalUrl.startsWith(SITE + '/')) throw new Error(`Canonical URL must start with ${SITE}/`);
+      if (next.ogImage && !/^https:\/\/[^\s"<>]+$/.test(next.ogImage)) throw new Error('og:image must be an absolute https URL');
       if (!next.title) throw new Error('Title is required');
       const foreignClassMap = await loadForeignClassMap(client, templateKey);
       const result = runIngest(next, { siteCss: sources.siteCss, foreignClassMap });
@@ -103,6 +110,13 @@ export async function saveDocument(prevState, formData) {
       next.ingestReport = result.report;
       if (status === 'published' && !result.ok) {
         throw new Error(`Cannot publish: ${result.report.a11y.map(a => a.message).join(' ')} Fix the HTML or save as draft.`);
+      }
+      // Tokens are validated here too: a bad {{coverage:}}/{{video:}} would
+      // otherwise abort the whole site publish for everyone.
+      const tokenProblems = await tokenErrors(client, result.bodyHtmlNormalized, sources);
+      if (tokenProblems.length) {
+        if (status === 'published') throw new Error(`Cannot publish: ${tokenProblems.join('; ')}`);
+        result.report.warnings.push(...tokenProblems.map(t => `Token problem (blocks publishing): ${t}`));
       }
       if (status === 'published' && !next.metaDescription) throw new Error('A meta description is required to publish (SEO §12).');
       if (status === 'published' && !current.publishedAt) next.publishedAt = new Date().toISOString();
@@ -149,6 +163,7 @@ export async function setOverrides(payload) {
     const s = await requireRole('editor');
     const { documentId, nids, classes, mode } = payload || {};
     if (!documentId || !Array.isArray(nids) || !nids.length) throw new Error('Nothing selected');
+    if (nids.length > 500) throw new Error('Too many elements at once (max 500)');
     const sources = await loadSiteSources();
     await withWriteTx(async (client) => {
       const doc = await getDocument(client, { id: documentId });
@@ -157,7 +172,14 @@ export async function setOverrides(payload) {
       const clean = [...new Set((classes || []).map(String))].filter(c => known.has(c));
       const unknown = (classes || []).filter(c => !known.has(c));
       if (unknown.length) throw new Error(`Not in the Style Kit: ${unknown.join(', ')}`);
-      for (const nid of nids) await setOverride(client, { documentId, nid: String(nid), classes: clean, mode });
+      // Bulk append MERGES with each target's existing override; a single
+      // target (the picker) and replace mode set exactly what was sent.
+      const existing = new Map((await listOverrides(client, documentId)).map(o => [o.nid, o]));
+      for (const nid of nids) {
+        const prior = existing.get(String(nid));
+        const merged = mode === 'append' && nids.length > 1 && prior ? [...new Set([...prior.classes, ...clean])] : clean;
+        await setOverride(client, { documentId, nid: String(nid), classes: merged, mode });
+      }
       await recordChange(client, {
         actor: s.email, action: 'document.override', entityType: 'document', entityId: documentId,
         diff: { nids, classes: clean, mode },
@@ -199,11 +221,13 @@ export async function saveRule(payload) {
     if (rule.scope === 'page' && !rule.documentId) throw new Error('Page rule needs a document');
     if (!TEMPLATE_KEYS.includes(rule.templateKey || 'report')) throw new Error('Unknown template');
     const sources = await loadSiteSources();
-    const known = styleKitFor(sources.siteCss, '').known;
-    const unknown = rule.classes.filter(c => !known.has(c));
-    if (unknown.length) throw new Error(`Not in the Style Kit: ${unknown.join(', ')}`);
     let id;
     await withWriteTx(async (client) => {
+      // Page rules may use the page's own stylesheet classes; template rules only the site kit.
+      const pageCss = rule.scope === 'page' ? (await getDocument(client, { id: rule.documentId }))?.pageCss || '' : '';
+      const known = styleKitFor(sources.siteCss, pageCss).known;
+      const unknown = rule.classes.filter(c => !known.has(c));
+      if (unknown.length) throw new Error(`Not in the Style Kit: ${unknown.join(', ')}`);
       id = await upsertStyleRule(client, rule);
       await recordChange(client, { actor: s.email, action: rule.id ? 'style_rule.update' : 'style_rule.create', entityType: 'style_rule', entityId: id, diff: rule });
     });

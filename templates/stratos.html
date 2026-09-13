@@ -982,12 +982,12 @@
           <p>Utah and national newsrooms have reported on this investigation independently. Each link goes to the outlet’s own coverage.</p>
           <div class="coverage-list">
             {{#stratos_coverage}}
-            <a class="coverage-card" href="{{{url}}}" target="_blank" rel="noopener">
+            <a class="coverage-card" href="{{url}}" target="_blank" rel="noopener">
               <div class="coverage-top">
                 <span class="coverage-badge {{badge_class}}">{{outlet}}</span>
                 <span class="coverage-date">{{date}}</span>
               </div>
-              <div class="coverage-headline" {{{lang_attr}}}>{{headline}}</div>
+              <div class="coverage-headline" {{#lang}}lang="{{lang}}"{{/lang}}>{{headline}}</div>
               <div class="coverage-more">{{read_more}}</div>
             </a>
             {{/stratos_coverage}}

@@ -142,7 +142,7 @@
             <span class="press-badge {{badge_class}}">{{outlet}}</span>
             <span class="press-date">{{date}}</span>
           </div>
-          <div class="press-headline" {{{lang_attr}}}>{{headline}}</div>
+          <div class="press-headline" {{#lang}}lang="{{lang}}"{{/lang}}>{{headline}}</div>
           <div class="press-more">{{read_more}}</div>
         </a>
         {{/press}}

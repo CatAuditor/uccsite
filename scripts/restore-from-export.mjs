@@ -20,10 +20,11 @@ const { withConnection } = require('../packages/db');
 const { loadContent, saveContent } = require('../packages/db/content');
 const { COLLECTIONS, SCHEMA_VERSION, DOC_JSON_KEYS } = require('../packages/db/export');
 const {
-  listDocuments, getDocument, upsertDocument, replaceOverrides, listStyleRules, deleteStyleRule, upsertStyleRule,
-  listForeignClassMap, deleteForeignClassMapping, setForeignClassMapping, loadForeignClassMap,
+  listDocuments, getDocument, upsertDocument, deleteDocument, replaceOverrides, listStyleRules, deleteStyleRule, upsertStyleRule,
+  listForeignClassMap, deleteForeignClassMapping, setForeignClassMapping, loadForeignClassMap, setPublishedAt,
 } = require('../packages/db/documents');
 const { ingest } = require('@uccsite/html-ingest');
+const { orphanedOverrides } = require('@uccsite/style-apply');
 const { documents: compose } = require('@uccsite/render');
 
 const args = process.argv.slice(2);
@@ -60,8 +61,10 @@ const documents = docFiles.map((f) => {
   const meta = JSON.parse(readFileSync(join(docsDir, f), 'utf8'));
   const html = join(docsDir, f.replace(/\.json$/, '.html'));
   if (!existsSync(html)) { console.error(`Missing ${html}`); process.exit(2); }
-  return { ...meta, bodyHtmlRaw: readFileSync(html, 'utf8') };
+  const normalized = join(docsDir, f.replace(/\.json$/, '.normalized.html'));
+  return { ...meta, bodyHtmlRaw: readFileSync(html, 'utf8'), exportedNormalized: existsSync(normalized) ? readFileSync(normalized, 'utf8') : null };
 });
+const allowOrphans = args.includes('--allow-orphaned-overrides');
 const stylesPath = join(fromDir, 'styles', 'rules.json');
 const styles = existsSync(stylesPath) ? JSON.parse(readFileSync(stylesPath, 'utf8')) : null;
 
@@ -72,14 +75,20 @@ await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) 
   deepStrictEqual(loaded, repo);
 
   if (docFiles.length) {
-    // Documents: upsert by slug (ids are not portable), replace overrides,
-    // delete documents absent from the export, then rules + foreign map.
-    // Normalized bodies + ingest reports are derived: regenerated here with
-    // the repo stylesheet as the Style Kit (the publish path re-ingests again).
+    // Order matters: the foreign class map first (ingest consults it), then
+    // documents (upsert by slug — ids are not portable — with overrides), then
+    // rules (page rules need the new ids), then deletions of documents absent
+    // from the export. Normalized bodies are re-ingested against the
+    // EXPORTED normalized tree so override nids carry forward (§5.4).
     const siteCss = readFileSync(join(import.meta.dirname, '..', 'css', 'styles.css'), 'utf8');
+    if (styles) {
+      for (const m of await listForeignClassMap(client)) await deleteForeignClassMapping(client, m.id);
+      for (const m of styles.foreignClassMap || []) await setForeignClassMapping(client, m);
+    }
     const existing = await listDocuments(client);
     const keep = new Set(documents.map(d => d.slug));
     const idBySlug = {};
+    const orphans = [];
     for (const doc of documents) {
       const current = existing.find(d => d.slug === doc.slug);
       const fields = Object.fromEntries(DOC_JSON_KEYS.map(k => [k, doc[k]]));
@@ -87,25 +96,27 @@ await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) 
       const result = ingest(doc.bodyHtmlRaw, {
         knownClasses: compose.knownClassesFor(siteCss, next.pageCss),
         foreignClassMap: await loadForeignClassMap(client, next.templateKey),
-        previousNormalized: current?.bodyHtmlNormalized || null,
+        previousNormalized: doc.exportedNormalized || current?.bodyHtmlNormalized || null,
       });
       next.bodyHtmlNormalized = result.bodyHtmlNormalized;
       next.ingestReport = result.report;
       const id = await upsertDocument(client, next);
+      await setPublishedAt(client, id, doc.publishedAt || null);
       idBySlug[doc.slug] = id;
       await replaceOverrides(client, id, doc.overrides || []);
-    }
-    for (const d of existing) if (!keep.has(d.slug)) {
-      await client.query('DELETE FROM style_overrides WHERE document_id = $1', [d.id]);
-      await client.query('DELETE FROM documents WHERE id = $1', [d.id]);
+      for (const o of orphanedOverrides(result.bodyHtmlNormalized, doc.overrides || [])) orphans.push(`${doc.slug}:${o.nid}`);
     }
     if (styles) {
       for (const r of await listStyleRules(client)) await deleteStyleRule(client, r.id);
       for (const r of styles.rules || []) {
         await upsertStyleRule(client, { ...r, documentId: r.documentSlug ? idBySlug[r.documentSlug] || null : null });
       }
-      for (const m of await listForeignClassMap(client)) await deleteForeignClassMapping(client, m.id);
-      for (const m of styles.foreignClassMap || []) await setForeignClassMapping(client, m);
+    }
+    for (const d of existing) if (!keep.has(d.slug)) await deleteDocument(client, d.id);
+    if (orphans.length) {
+      const msg = `${orphans.length} style override(s) no longer match an element after restore: ${orphans.join(', ')}`;
+      if (!allowOrphans) throw new Error(msg + ' — re-export with the normalized bodies, or pass --allow-orphaned-overrides');
+      console.warn('WARNING: ' + msg);
     }
     // Round-trip: every restored document's raw body and metadata must read back identically.
     for (const doc of documents) {

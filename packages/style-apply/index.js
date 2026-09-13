@@ -81,19 +81,42 @@ function validateSelector(selector) {
   }
 }
 
+// Documents are body FRAGMENTS, but they publish inside <main id="main">
+// (the header partial opens it). Selectors are evaluated against a synthetic
+// <main> root so `main > h1` means "top-level heading" exactly as it will on
+// the page — applyStyles, explainStyles and matchCount all go through here.
+function rootedTree(html) {
+  const tree = parseFragmentTree(html);
+  const wrapper = parseFragmentTree('<main></main>').children[0];
+  wrapper.children = tree.children;
+  for (const child of wrapper.children) child.parent = wrapper;
+  return { tree, wrapper };
+}
+const select = (selector, wrapper) => selectAll(selector, [wrapper]).filter(el => el !== wrapper);
+
+// Tags whose lack of classes is expected — never counted as "unstyled"
+// (the pre-publish signal is about blocks an editor can style).
+const INERT_TAGS = new Set(['br', 'wbr', 'hr', 'strong', 'em', 'b', 'i', 'u', 's', 'small', 'sub', 'sup', 'code', 'kbd', 'var',
+  'dfn', 'abbr', 'cite', 'q', 'mark', 'time', 'span', 'li', 'dt', 'dd', 'tr', 'td', 'th', 'thead', 'tbody', 'tfoot', 'caption',
+  'summary', 'source', 'picture', 'g', 'path', 'polyline', 'polygon', 'line', 'circle', 'rect', 'svg']);
+
 // matchCount(html, selector) → number of elements matched (for the rule
-// editor's match-count preview; validates first).
+// editor's match-count preview; validates first). matchCountTree takes an
+// already-rooted tree so a page can parse each document once.
 function matchCount(html, selector) {
+  return matchCountTree(rootedTree(html), selector);
+}
+function matchCountTree(rooted, selector) {
   const v = validateSelector(selector);
   if (!v.ok) return 0;
-  return selectAll(selector, parseFragmentTree(html).children).length;
+  return select(selector, rooted.wrapper).length;
 }
 
 // applyStyles(normalizedHtml, rules, overrides) → styled HTML string.
 // data-nid attributes are preserved (the editor preview needs them); the
 // publish compose step strips them via html-ingest's stripNids.
 function applyStyles(normalizedHtml, rules = [], overrides = []) {
-  const tree = parseFragmentTree(normalizedHtml);
+  const { tree, wrapper } = rootedTree(normalizedHtml);
 
   // Seed every element once from its surviving paste classes (priority 0).
   const perNode = new Map();
@@ -104,7 +127,7 @@ function applyStyles(normalizedHtml, rules = [], overrides = []) {
   for (const rule of [...rules].sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))) {
     const v = validateSelector(rule.selector);
     if (!v.ok) continue; // save-time validation is the gate; a bad stored rule is inert
-    for (const el of selectAll(rule.selector, tree.children)) {
+    for (const el of select(rule.selector, wrapper)) {
       const set = perNode.get(el);
       if (!set) continue;
       for (const cls of rule.classes || []) set.add(cls);
@@ -134,9 +157,9 @@ function applyStyles(normalizedHtml, rules = [], overrides = []) {
 //   row = { nid, tag, depth, text, pasteClasses, ruleClasses: [{ ruleId, classes }],
 //           override: { classes, mode } | null, classes, unstyled }
 function explainStyles(normalizedHtml, rules = [], overrides = []) {
-  const tree = parseFragmentTree(normalizedHtml);
+  const { tree, wrapper } = rootedTree(normalizedHtml);
   const rows = new Map(); // el → row
-  const depthOf = (el) => { let d = 0; for (let p = el.parent; p && p.type !== 'root'; p = p.parent) d++; return d; };
+  const depthOf = (el) => { let d = 0; for (let p = el.parent; p && p !== wrapper && p.type !== 'root'; p = p.parent) d++; return d; };
   for (const el of walkElements(tree)) {
     rows.set(el, {
       nid: el.attribs['data-nid'] || '',
@@ -152,7 +175,7 @@ function explainStyles(normalizedHtml, rules = [], overrides = []) {
   }
   for (const rule of [...rules].sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))) {
     if (!validateSelector(rule.selector).ok) continue;
-    for (const el of selectAll(rule.selector, tree.children)) {
+    for (const el of select(rule.selector, wrapper)) {
       const row = rows.get(el);
       if (row) row.ruleClasses.push({ ruleId: rule.id, classes: [...(rule.classes || [])] });
     }
@@ -166,7 +189,7 @@ function explainStyles(normalizedHtml, rules = [], overrides = []) {
       row.override = { classes: [...(o.classes || [])], mode: o.mode === 'replace' ? 'replace' : 'append' };
       row.classes = o.mode === 'replace' ? [...(o.classes || [])] : [...new Set([...set, ...(o.classes || [])])];
     } else row.classes = [...set];
-    row.unstyled = row.classes.length === 0 && row.ruleClasses.length === 0;
+    row.unstyled = row.classes.length === 0 && row.ruleClasses.length === 0 && !INERT_TAGS.has(row.tag);
   }
   return [...rows.values()];
 }
@@ -182,4 +205,4 @@ function orphanedOverrides(normalizedHtml, overrides) {
   return (overrides || []).filter((o) => !present.has(o.nid));
 }
 
-module.exports = { validateSelector, matchCount, applyStyles, explainStyles, orphanedOverrides };
+module.exports = { validateSelector, matchCount, matchCountTree, rootedTree, applyStyles, explainStyles, orphanedOverrides, INERT_TAGS };

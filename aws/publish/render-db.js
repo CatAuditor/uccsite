@@ -48,7 +48,10 @@ function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl }) {
     coverage: withColorClasses(content).content.coverage, // badge_class for the strips
   });
 
-  const docSlugs = new Set(bundle.documents.map(d => d.slug));
+  // Any document row (draft included) supersedes the same-slug fixed template:
+  // unpublishing a migrated report must not resurrect templates/<slug>.html
+  // (which still carries inline styles the CSP blocks) — it 404s instead.
+  const docSlugs = new Set([...(bundle.allSlugs || []), ...bundle.documents.map(d => d.slug)]);
   const pages = PAGES.filter(p => !docSlugs.has(p.template.replace(/\.html$/, '')));
   const dbLastmod = makeDbLastmod(meta);
   const lastmod = (page) => (page.lastmodAt ? new Date(page.lastmodAt).toISOString().slice(0, 10) : dbLastmod(page));
@@ -58,7 +61,8 @@ function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl }) {
   const files = errors.length ? {} : { ...site.files, ...built.files };
   return {
     files, errors,
-    documentHashes: built.hashes,
+    // A run that failed anywhere writes nothing — no document went live.
+    documentHashes: errors.length ? {} : built.hashes,
     documentIds: Object.fromEntries(bundle.documents.map(d => [d.slug, d.id])),
   };
 }

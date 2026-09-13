@@ -4,7 +4,8 @@
 import { listStyleRules, listForeignClassMap, listDocuments, TEMPLATE_KEYS } from '@uccsite/db/documents';
 import { requireSession } from '../../lib/auth';
 import { withDb } from '../../lib/data';
-import { loadSiteSources, styleKitFor, ruleMatchCounts } from '../../lib/documents';
+import { loadSiteSources, styleKitFor, ruleMatchCounts, parsedDocuments } from '../../lib/documents';
+import { rootedTree } from '@uccsite/style-apply';
 import ActionForm from '../action-form';
 import RuleForm from './rule-form';
 import { removeRule, mapForeignClass, unmapForeignClass } from '../documents/actions';
@@ -16,9 +17,12 @@ export default async function StylesPage() {
   const readOnly = session.role === 'viewer';
   const { rules, map, docs, counts } = await withDb(async (client) => {
     const rules = await listStyleRules(client);
+    const docs = await listDocuments(client);
+    // Parse every document once; each rule counts against the parsed trees.
+    const parsed = docs.map(d => ({ id: d.id, slug: d.slug, templateKey: d.templateKey, rooted: d.bodyHtmlNormalized ? rootedTree(d.bodyHtmlNormalized) : null }));
     const counts = {};
-    for (const r of rules) counts[r.id] = await ruleMatchCounts(client, r);
-    return { rules, map: await listForeignClassMap(client), docs: await listDocuments(client), counts };
+    for (const r of rules) counts[r.id] = await ruleMatchCounts(client, r, parsed);
+    return { rules, map: await listForeignClassMap(client), docs, counts };
   });
   const sources = await loadSiteSources();
   const kit = styleKitFor(sources.siteCss, '');
@@ -31,7 +35,8 @@ export default async function StylesPage() {
     <div>
       <h1>Styles</h1>
       <p className="notice">
-        Template rules style every document on arrival (“main &gt; h1 → .report-title”). Style one document by hand,
+        Template rules style every document on arrival (“main &gt; h1 → .report-title” — selectors run against the page’s
+        &lt;main&gt;, so “main &gt; p:first-of-type” is the first top-level paragraph). Style one document by hand,
         promote the patterns to rules from its editor, and the next paste lands mostly styled.
       </p>
 

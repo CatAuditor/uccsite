@@ -66,6 +66,13 @@ function withColorClasses(content) {
       if (hex) { colors.add(hex); out[key.replace('_color', '_class')] = `c-${hex.slice(1)}`; }
       else if (out[key]) out[key.replace('_color', '_class')] = '';
     }
+    // lang_attr was rendered RAW ({{{lang_attr}}}) — a free-text attribute
+    // sink. It is now parsed into a validated BCP-47-ish code (`lang`) and
+    // the templates render lang="{{lang}}"; anything else renders nothing.
+    if ('lang_attr' in out) {
+      const m = typeof out.lang_attr === 'string' && out.lang_attr.trim().match(/^lang="([A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*)"$/);
+      out.lang = m ? m[1] : '';
+    }
     return out;
   };
   const derived = visit(content);

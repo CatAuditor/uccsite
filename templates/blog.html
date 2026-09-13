@@ -46,8 +46,8 @@
         </div>
         <div class="news-content">
           <div class="news-meta">{{date}} &nbsp;·&nbsp; {{region}}</div>
-          <h2 class="news-headline" {{{lang_attr}}}>{{headline}}</h2>
-          <div class="news-excerpt" {{{lang_attr}}}>{{excerpt}}</div>
+          <h2 class="news-headline" {{#lang}}lang="{{lang}}"{{/lang}}>{{headline}}</h2>
+          <div class="news-excerpt" {{#lang}}lang="{{lang}}"{{/lang}}>{{excerpt}}</div>
           <div class="news-read-more">{{read_more}}</div>
         </div>
       </a>

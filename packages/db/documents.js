@@ -91,6 +91,12 @@ async function deleteDocument(client, id) {
   await client.query('DELETE FROM documents WHERE id = $1', [id]);
 }
 
+// setPublishedAt(client, id, iso|null) — published_at sits outside DOCUMENT_FIELDS
+// (stamped once on first publish, restored from exports).
+async function setPublishedAt(client, id, iso) {
+  await client.query('UPDATE documents SET published_at = $2 WHERE id = $1', [id, iso || null]);
+}
+
 // Publish bookkeeping (§9: content_hash / live_hash / live_at / last_publish_error).
 async function markDocumentLive(client, { id, contentHash }) {
   await withRetry(() => client.query(
@@ -116,7 +122,7 @@ function rowToRule(r) {
 async function listStyleRules(client) {
   const res = await client.query(
     `SELECT id, scope, template_key, document_id, selector, classes, priority, note, updated_at::text AS updated_at
-     FROM style_rules ORDER BY scope, template_key, priority, selector`);
+     FROM style_rules ORDER BY scope, template_key, priority, selector, id`);
   return res.rows.map(rowToRule);
 }
 async function upsertStyleRule(client, rule) {
@@ -146,8 +152,11 @@ async function listOverrides(client, documentId) {
     documentId ? [documentId] : []);
   return res.rows.map(rowToOverride);
 }
-// setOverride: one row per (document, nid); empty classes = delete.
+// setOverride: one row per (document, nid); empty classes = delete. Bumps the
+// document's updated_at: a style-only change alters the published page
+// (sitemap lastmod) and must invalidate open editors' baseline stamps.
 async function setOverride(client, { documentId, nid, classes, mode = 'append' }) {
+  await client.query('UPDATE documents SET updated_at = now() WHERE id = $1', [documentId]);
   await client.query('DELETE FROM style_overrides WHERE document_id = $1 AND nid = $2', [documentId, nid]);
   if (classes && classes.length) {
     await client.query(
@@ -204,9 +213,12 @@ async function loadExportBundle(client) {
 }
 
 // loadPublishBundle(client) → everything the publish path needs in one shot.
+// allSlugs: every document row regardless of status — a slug that exists as a
+// document (even a draft) must never fall back to the old fixed template.
 async function loadPublishBundle(client) {
   return {
     documents: await listDocuments(client, { status: 'published' }),
+    allSlugs: (await client.query('SELECT slug FROM documents')).rows.map(r => r.slug),
     rules: await listStyleRules(client),
     overrides: await listOverrides(client),
     foreignClassMapRows: await listForeignClassMap(client),
@@ -216,7 +228,7 @@ async function loadPublishBundle(client) {
 module.exports = {
   DOCUMENT_FIELDS, STATUSES, TEMPLATE_KEYS,
   rowToDocument, documentToParams, listDocuments, getDocument, upsertDocument, deleteDocument,
-  markDocumentLive, markDocumentPublishError,
+  markDocumentLive, markDocumentPublishError, setPublishedAt,
   listStyleRules, upsertStyleRule, deleteStyleRule,
   listOverrides, setOverride, replaceOverrides,
   loadForeignClassMap, listForeignClassMap, setForeignClassMapping, deleteForeignClassMapping,

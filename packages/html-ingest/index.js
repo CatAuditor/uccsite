@@ -17,7 +17,7 @@ const serialize = require('dom-serializer').default;
 // quotes - bloating pages and breaking byte comparisons against the templates).
 const SERIALIZE_OPTS = { encodeEntities: 'utf8' };
 const { textContent } = require('domutils');
-const { SAFE_URL_SCHEMES } = require('@uccsite/render/engine');
+const { SAFE_URL_SCHEMES, escapeHtml } = require('@uccsite/render/engine');
 
 // Separator for composite hash/lookup keys — can't occur in tag names or text.
 const SEP = '\u0000';
@@ -199,6 +199,10 @@ function reportRemovals(rawTree, cleanTree, rawHtmlForUrls, report) {
   }
 }
 
+// Element ids the site's chrome and scripts (js/main.js, partials) look up —
+// an author id with one of these would borrow site behaviour/markup.
+const RESERVED_ID_RE = /^(main|site-header|nav(-.*)?|donate(-.*)?|modal(-.*)?|join-form|form-success|tracker(-.*)?|skip-link|site-footer)$/i;
+
 // ── Step 3: sanitize ────────────────────────────────────────────────────────
 function sanitize(html) {
   return sanitizeHtml(html, {
@@ -212,7 +216,13 @@ function sanitize(html) {
     // Boolean attributes (no value) are dropped by default; these are the
     // ones the allowlist admits in boolean form.
     allowedEmptyAttributes: ['alt', 'download', 'open'],
-    transformTags: { a: transformAnchor },
+    transformTags: {
+      a: transformAnchor,
+      '*': (tagName, attribs) => {
+        if (attribs.id && RESERVED_ID_RE.test(attribs.id)) { const { id, ...rest } = attribs; return { tagName, attribs: rest }; }
+        return { tagName, attribs };
+      },
+    },
     parser: { lowerCaseTags: true, lowerCaseAttributeNames: true },
   });
 }
@@ -401,6 +411,46 @@ function ingest(rawHtml, opts = {}) {
   };
 }
 
+// replaceTextTokens(html, re, render) → html. Runs `render(match)` for token
+// matches found in TEXT NODES only — never attribute values, never inside
+// <pre>/<code> (an example of the token syntax stays literal). The rendered
+// replacement is parsed as a fragment and spliced in place, so it can carry
+// markup (compose uses this for {{coverage:}} / {{video:}}).
+function replaceTextTokens(html, re, render) {
+  const tree = parseFragmentTree(html);
+  const inVerbatim = (node) => {
+    for (let p = node.parent; p && p.type !== 'root'; p = p.parent) {
+      if (p.name === 'pre' || p.name === 'code') return true;
+    }
+    return false;
+  };
+  const visit = (parent) => {
+    for (const node of [...parent.children]) {
+      if (node.type === 'text') {
+        if (!re.test(node.data) || inVerbatim(node)) { re.lastIndex = 0; continue; }
+        re.lastIndex = 0;
+        // Only the developer-owned render() output is parsed as markup. The
+        // author's text around the tokens is re-escaped before parsing, so
+        // "&lt;meta …&gt;" typed as text can never become an element here.
+        const pieces = [];
+        let last = 0;
+        for (const m of node.data.matchAll(re)) {
+          pieces.push(escapeHtml(node.data.slice(last, m.index)));
+          pieces.push(render(...m));
+          last = m.index + m[0].length;
+        }
+        pieces.push(escapeHtml(node.data.slice(last)));
+        const frag = parseFragmentTree(pieces.join(''));
+        const i = parent.children.indexOf(node);
+        for (const n of frag.children) n.parent = parent;
+        parent.children.splice(i, 1, ...frag.children);
+      } else if (node.children) visit(node);
+    }
+  };
+  visit(tree);
+  return serialize(tree.children, SERIALIZE_OPTS);
+}
+
 // Strip every data-nid — compose calls this; a published page never carries them.
 function stripNids(html) {
   const tree = parseFragmentTree(html);
@@ -409,7 +459,7 @@ function stripNids(html) {
 }
 
 module.exports = {
-  ingest, stripNids, ALLOWED_TAGS, ALLOWED_SCHEMES,
+  ingest, stripNids, replaceTextTokens, ALLOWED_TAGS, ALLOWED_SCHEMES,
   // shared tree/class primitives (used by @uccsite/style-apply)
   parseFragmentTree, walkElements, getClasses, setClasses,
 };

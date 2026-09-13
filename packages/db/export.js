@@ -40,9 +40,11 @@ const DOC_JSON_KEYS = ['slug', 'title', 'category', 'templateKey', 'status', 'so
   'metaTitle', 'metaDescription', 'metaKeywords', 'canonicalUrl', 'ogType', 'ogTitle', 'ogDescription',
   'ogImage', 'twitterCard', 'noindex', 'nofollow', 'jsonldType', 'jsonldOverrides', 'allowScripts', 'sitemapPriority'];
 
+const DOC_JSON_NULLABLE = new Set(['jsonldOverrides']);
 function documentJson(doc, overrides) {
   const out = {};
-  for (const k of DOC_JSON_KEYS) out[k] = doc[k] ?? (typeof doc[k] === 'number' ? 0 : '');
+  for (const k of DOC_JSON_KEYS) out[k] = DOC_JSON_NULLABLE.has(k) ? (doc[k] ?? null) : (doc[k] ?? '');
+  out.publishedAt = doc.publishedAt || null;
   out.overrides = (overrides || []).map(({ nid, classes, mode }) => ({ nid, classes, mode }));
   return out;
 }
@@ -58,6 +60,10 @@ function buildContentExport(content, { exportedAt = new Date().toISOString(), do
   for (const doc of [...documents].sort((a, b) => a.slug.localeCompare(b.slug))) {
     files.set(`documents/${doc.slug}.html`, doc.bodyHtmlRaw || '');
     files.set(`documents/${doc.slug}.json`, stableJson(documentJson(doc, overrides.filter(o => o.documentId === doc.id))));
+    // Derived, but load-bearing: override nids are carried forward from the
+    // PREVIOUS normalized tree on re-paste, so a restore into an empty
+    // database needs this to re-attach overrides (§5.4 tree matching).
+    if (doc.bodyHtmlNormalized) files.set(`documents/${doc.slug}.normalized.html`, doc.bodyHtmlNormalized);
   }
   files.set('styles/rules.json', stableJson({
     rules: [...rules].sort((a, b) => `${a.scope}|${a.templateKey}|${a.priority}|${a.selector}`.localeCompare(`${b.scope}|${b.templateKey}|${b.priority}|${b.selector}`))
@@ -91,4 +97,12 @@ function changedPaths(files, remoteShaByPath) {
   return out;
 }
 
-module.exports = { SCHEMA_VERSION, COLLECTIONS, DOC_JSON_KEYS, stableJson, rowCounts, documentJson, buildContentExport, gitBlobSha, changedPaths };
+// removedPaths(files, remotePaths) → export-owned paths on the branch that the
+// export no longer produces (a deleted document, a dropped file) — committed
+// as deletions so a restore cannot resurrect them.
+const EXPORT_PREFIXES = ['content/', 'documents/', 'styles/'];
+function removedPaths(files, remotePaths) {
+  return [...remotePaths].filter(p => EXPORT_PREFIXES.some(pre => p.startsWith(pre)) && !files.has(p)).sort();
+}
+
+module.exports = { SCHEMA_VERSION, COLLECTIONS, DOC_JSON_KEYS, EXPORT_PREFIXES, stableJson, rowCounts, documentJson, buildContentExport, gitBlobSha, changedPaths, removedPaths };

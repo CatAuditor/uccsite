@@ -4,6 +4,33 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.8.0 — 2026-09-13 (branch `refactor`, not yet pushed)
+
+Phase 8 — Documents & styling (`docs/systems/documents.md`).
+
+### Documents
+- Data model (`documents`, `style_rules`, `style_overrides`, `foreign_class_map`),
+  compose layer (ingest on every publish → rules/overrides → tokens → shell
+  with a generated SEO head + JSON-LD), page CSS as fingerprinted files.
+- The eight long-form pages migrated into Documents with a parity proof;
+  staging publishes them from the database (a Document replaces the
+  same-slug template). Ingest allowlist widened for the reports (ADR).
+- Admin: document list by category, editor (SEO panel with SERP preview,
+  HTML/CSS editors + ingest report, element tree ↔ live preview, class
+  picker, bulk apply, promote-to-rule), Styles page (rules with match
+  counts, foreign class map, Style Kit catalog), restore path.
+- Content export v2 (documents/, styles/rules.json) + restore drill passed.
+
+### Site
+- CSP tightened on AWS to `style-src 'self'; font-src 'self'`: self-hosted
+  fonts, fixed pages' styles moved to `css/pages/*.css`, inline style
+  attributes replaced by classes, generated `css/colors.css`.
+- 24 Style Kit annotations in `css/styles.css`.
+
+### Open items at this point
+- Same operator blockers as v0.7.0 (secrets, GitHub App, Amplify install).
+- Phase 8 review/fix loop in progress at the time of this entry.
+
 ## v0.7.0 — 2026-09-13 (branch `refactor`, not yet pushed)
 
 State of the AWS rebuild (`docs/build-spec-aws.md`) at the end of Phase 7.

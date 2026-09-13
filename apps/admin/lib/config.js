@@ -20,7 +20,10 @@ export const config = {
   // Repo files the Documents editor reads at runtime (templates/partials,
   // templates/documents, css fallback). Locally the monorepo root; on Amplify
   // amplify.yml copies them into apps/admin/site-src and sets SITE_SRC_ROOT.
-  get siteSrcRoot() { return process.env.SITE_SRC_ROOT || require('node:path').join(process.cwd(), '..', '..'); },
+  get siteSrcRoot() {
+    const { resolve } = require('node:path');
+    return resolve(process.cwd(), process.env.SITE_SRC_ROOT || '../..');
+  },
   get appOrigin() { return process.env.APP_ORIGIN || 'http://localhost:3000'; },
   get region() { return process.env.UCC_REGION || 'us-west-2'; },
 };

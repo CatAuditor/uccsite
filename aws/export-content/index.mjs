@@ -10,7 +10,7 @@ import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 import { withConnection } from '@uccsite/db';
 import { loadContent } from '@uccsite/db/content';
 import { loadExportBundle } from '@uccsite/db/documents';
-import { buildContentExport, changedPaths } from '@uccsite/db/export';
+import { buildContentExport, changedPaths, removedPaths, EXPORT_PREFIXES } from '@uccsite/db/export';
 import { installationToken, remoteBlobShas, commitFiles } from './github.mjs';
 import { SECRET_NAMES } from './secret-names.cjs';
 
@@ -60,19 +60,21 @@ export async function handler() {
       installationId: secrets.GITHUB_APP_INSTALLATION_ID,
       privateKeyPem: secrets.GITHUB_APP_PRIVATE_KEY,
     });
-    const remote = await remoteBlobShas({ token, repo: GITHUB_REPO, branch: EXPORT_BRANCH, paths: [...files.keys()] });
+    const remote = await remoteBlobShas({ token, repo: GITHUB_REPO, branch: EXPORT_BRANCH, prefixes: EXPORT_PREFIXES });
     const changed = changedPaths(files, remote);
-    if (!changed.length) {
+    const removed = removedPaths(files, remote.keys());
+    if (!changed.length && !removed.length) {
       console.log(`[export-content] no content change vs ${GITHUB_REPO}@${EXPORT_BRANCH} — nothing committed`);
       return { status: 'noop', files: files.size };
     }
+    const label = (p) => p.replace(/^content\//, '').replace(/^documents\//, 'doc:').replace(/\.(json|html)$/, '');
     const { sha, created } = await commitFiles({
-      token, repo: GITHUB_REPO, branch: EXPORT_BRANCH, files, changed,
-      message: `content export ${started.slice(0, 10)}: ${changed.map(p => p.replace(/^content\//, '').replace(/\.json$/, '')).join(', ')}`,
+      token, repo: GITHUB_REPO, branch: EXPORT_BRANCH, files, changed, removed,
+      message: `content export ${started.slice(0, 10)}: ${[...new Set([...changed.map(label), ...removed.map(p => `-${label(p)}`)])].join(', ')}`,
       author: { name: 'uccsite content export', email: 'noreply@utahciviccompact.org' },
     });
-    console.log(`[export-content] committed ${sha.slice(0, 7)} on ${EXPORT_BRANCH}${created ? ' (branch created)' : ''}: ${changed.join(', ')}`);
-    return { status: 'committed', sha, changed };
+    console.log(`[export-content] committed ${sha.slice(0, 7)} on ${EXPORT_BRANCH}${created ? ' (branch created)' : ''}: ${changed.join(', ')}${removed.length ? ` removed ${removed.join(', ')}` : ''}`);
+    return { status: 'committed', sha, changed, removed };
   } catch (err) {
     console.error(`[export-content] failed: ${err.message}`);
     await alert('uccsite content export failed', `${started}\n${err.message}`);
