@@ -18,6 +18,21 @@ functions/api/
 
 Files prefixed `_` are not routed. `static/_headers` only applies to static assets; API responses get their headers from `_middleware.js`.
 
+## AWS port (Phase 5 — serves staging now, prod at cutover)
+
+`aws/api/` is the line-by-line Lambda port of this directory (one function,
+CloudFront `/api/*` → Function URL): `lib.js` (= `_lib.js` + header stamping
+from `_middleware.js`; token code byte-compatible so TOKEN_SECRET carries
+over), `webhook.js`, `routes.js`, `stripe.js`, `index.mjs` (router + origin
+lock), `secrets.js` (runtime Secrets Manager loads — `ucc/<env>/<NAME>`).
+Behavioral deltas, all deliberate: client IP = last `X-Forwarded-For` entry
+(was `CF-Connecting-IP`); subscribe's welcome email sends inline (no
+`waitUntil`); the portal magic-link lookup runs in a constant-shape async
+self-invocation (timing-safe 202 preserved); Turnstile verification on
+subscribe + tip (fail-open, skipped until keys exist); stats returns `recent`
+only. Everything below (rate limits, tokens, webhook semantics) applies to
+both stacks until Cloudflare retires.
+
 ## Rate Limiting
 D1-based, implemented once in `_lib.js` (`checkRateLimit`, wrapped by `rateLimitOr429`). Table: `rate_limits (id, ip, endpoint, timestamp)`.
 

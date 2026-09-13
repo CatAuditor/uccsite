@@ -29,6 +29,8 @@ aws/publish/             publish pipeline core + store + shared input loader
                          (see publish-pipeline.md). AWS code lives under aws/,
                          never functions/ - Pages compiles functions/* as routes.
 aws/reconcile-drift/     hourly drift reconciler Lambda
+aws/api/                 API Lambda port of functions/api (see api-security.md)
+aws/export-operational/  nightly donor-data export to the restricted bucket (§14.3)
 packages/db/             DSQL connection helper (IAM auth, retry on 40001)
 scripts/publish.mjs      publish driver (repo → staging/prod)
 scripts/staging-check.mjs   25-check e2e distribution verification

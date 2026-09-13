@@ -1,18 +1,24 @@
 // Sends a periodical email to all subscribers + opted-in members via Mailgun.
 //
 // Usage:
-//   node --env-file=.env scripts/send-periodical.js --subject "Subject line" --html path/to/email.html [--text path/to/email.txt] [--dry-run] [--test you@example.com] [--resume sent.log]
+//   $env:AWS_PROFILE='uccsite'; node --env-file=.env scripts/send-periodical.js --subject "Subject line" --html path/to/email.html [--text path/to/email.txt] [--dry-run] [--test you@example.com] [--resume sent.log] [--env staging|prod]
 //
 // Requires in .env (gitignored):
 //   MAILGUN_API_KEY  — Mailgun private API key
-//   TOKEN_SECRET     — same secret the Pages Functions use; signs per-recipient unsubscribe links
+//   TOKEN_SECRET     — same secret the API uses; signs per-recipient unsubscribe links
+// plus AWS credentials (profile uccsite) — recipients are read from the
+// environment's DSQL database (was: wrangler d1 execute against D1).
 //
 // Every send is appended to sent-<timestamp>.log. If a run aborts, re-run with
 // --resume <that log> to skip addresses already sent.
 
 import { readFileSync, appendFileSync, existsSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import { createHmac } from 'node:crypto';
+import { createRequire } from 'node:module';
+import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
+
+const require = createRequire(import.meta.url);
+const { withConnection } = require('../packages/db');
 
 const MAILGUN_DOMAIN = 'utahciviccompact.org';
 const FROM_ADDRESS = 'Utah Civic Compact <hello@utahciviccompact.org>';
@@ -29,26 +35,30 @@ function parseArgs(argv) {
     else if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--test') args.test = argv[++i];
     else if (arg === '--resume') args.resume = argv[++i];
+    else if (arg === '--env') args.env = argv[++i];
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return args;
 }
 
-function getRecipients() {
-  const sql = `SELECT DISTINCT email FROM (
-    SELECT email FROM subscribers
-    UNION
-    SELECT email FROM members WHERE newsletter_opt_in = 1
-  ) ORDER BY email`;
+async function getRecipients(envName = 'prod') {
+  const stackName = { staging: 'UccStaging', prod: 'UccProd' }[envName];
+  if (!stackName) throw new Error(`Unknown env ${envName}`);
+  const region = 'us-west-2';
+  const cfn = new CloudFormationClient({ region });
+  const res = await cfn.send(new DescribeStacksCommand({ StackName: stackName }));
+  const endpoint = (res.Stacks[0].Outputs || []).find((o) => o.OutputKey === 'DsqlEndpoint')?.OutputValue;
+  if (!endpoint) throw new Error(`Stack ${stackName} has no DsqlEndpoint output`);
 
-  const output = execFileSync(
-    process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    ['wrangler', 'd1', 'execute', 'ucc-members', '--remote', '--json', '--command', sql],
-    { encoding: 'utf-8', shell: process.platform === 'win32' }
-  );
-
-  const [{ results }] = JSON.parse(output);
-  return results.map((row) => row.email);
+  // Same recipient set as always: subscribers UNION opted-in members.
+  const rows = await withConnection({ endpoint, region }, (client) => client.query(
+    `SELECT DISTINCT email FROM (
+       SELECT email FROM subscribers
+       UNION
+       SELECT email FROM members WHERE newsletter_opt_in = 1
+     ) AS all_recipients ORDER BY email`,
+  ));
+  return rows.rows.map((row) => row.email);
 }
 
 // Mirrors signToken() in functions/api/_lib.js (purpose 'unsubscribe').
@@ -104,7 +114,7 @@ async function main() {
   const alreadySent = new Set(
     args.resume && existsSync(args.resume) ? readFileSync(args.resume, 'utf-8').split('\n').filter(Boolean) : []
   );
-  const recipients = (args.test ? [args.test] : getRecipients()).filter((e) => !alreadySent.has(e));
+  const recipients = (args.test ? [args.test] : await getRecipients(args.env || 'prod')).filter((e) => !alreadySent.has(e));
 
   console.log(`Subject: ${args.subject}`);
   console.log(`Recipients: ${recipients.length}${alreadySent.size ? ` (skipping ${alreadySent.size} already sent)` : ''}`);
