@@ -70,8 +70,16 @@ function pickVariant(variants, targetWidth, format = 'webp') {
   return ofFormat.find(v => v.width >= targetWidth) || ofFormat[ofFormat.length - 1];
 }
 
-// Row ⇄ object. variants is stored as JSON text.
+// Row ⇄ object. variants is stored as JSON text; a malformed cell degrades
+// to "no variants" (surfaced via error) instead of 500ing every page that
+// lists assets.
 function rowToAsset(row) {
+  let variants = [];
+  let parseError = '';
+  if (row.variants) {
+    try { variants = JSON.parse(row.variants); } catch { parseError = 'variants column is not valid JSON'; }
+    if (!Array.isArray(variants)) { variants = []; parseError = 'variants column is not a JSON array'; }
+  }
   return {
     id: row.id,
     s3Key: row.s3_key,
@@ -81,10 +89,10 @@ function rowToAsset(row) {
     height: row.height,
     bytes: row.bytes,
     alt: row.alt || '',
-    variants: row.variants ? JSON.parse(row.variants) : [],
+    variants,
     uploadedBy: row.uploaded_by,
     status: row.status,
-    error: row.error || '',
+    error: row.error || parseError,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

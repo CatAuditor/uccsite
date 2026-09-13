@@ -17,7 +17,7 @@ export default async function MediaPage() {
   const session = await requireSession();
   const readOnly = session.role === 'viewer';
   const assets = await withDb((client) => listAssets(client));
-  const inFlight = assets.some(a => a.status === 'pending' || a.status === 'processing');
+  const inFlight = assets.some(a => (a.status === 'pending' || a.status === 'processing') && !a.stalled);
 
   return (
     <div>
@@ -36,7 +36,7 @@ export default async function MediaPage() {
           <div key={a.id} className={`media-card status-${a.status}`}>
             <div className="media-thumb">
               {a.thumbUrl ? <img src={a.thumbUrl} alt={a.alt || ''} />
-                : <span className="media-status">{a.status === 'failed' ? 'failed' : `${a.status}…`}</span>}
+                : <span className="media-status">{a.status === 'failed' ? 'failed' : a.stalled ? `stalled (${a.status})` : `${a.status}…`}</span>}
             </div>
             <div className="media-meta">
               <div className="media-name" title={a.originalFilename}>{a.originalFilename}</div>
@@ -45,6 +45,7 @@ export default async function MediaPage() {
                 {a.variants.length ? ` · ${a.variants.length} variants` : ''}
               </div>
               {a.error && <div className="error">{a.error}</div>}
+              {a.stalled && <div className="error">No progress for 15+ minutes — the upload never arrived or processing crashed. Delete and re-upload.</div>}
               {a.status === 'ready' && (
                 <details>
                   <summary>Variant URLs</summary>

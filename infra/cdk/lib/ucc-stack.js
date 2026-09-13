@@ -252,6 +252,17 @@ class UccStack extends Stack {
 
     // ── Distribution ────────────────────────────────────────────────────────
     const siteOrigin = origins.S3BucketOrigin.withOriginAccessControl(siteBucket);
+    // Media OAC: CDK's automatic grant would cover the whole bucket, including
+    // the private originals under uploads/ (and an empty originAccessLevels
+    // fails validation). Bind the origin to an IMPORTED view of the bucket,
+    // which CDK cannot add policy to, and grant media/* by hand below.
+    const mediaOac = new cloudfront.S3OriginAccessControl(this, 'MediaOAC');
+    const mediaBucketRef = s3.Bucket.fromBucketAttributes(this, 'MediaBucketOriginRef', {
+      bucketName: mediaBucket.bucketName,
+      bucketArn: mediaBucket.bucketArn,
+      bucketRegionalDomainName: mediaBucket.bucketRegionalDomainName,
+      region: this.region,
+    });
     const siteBehaviorBase = {
       origin: siteOrigin,
       viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -283,7 +294,9 @@ class UccStack extends Stack {
         // (keys carry extensions, so its clean-URL logic passes them through).
         '/media/*': {
           ...siteBehaviorBase,
-          origin: origins.S3BucketOrigin.withOriginAccessControl(mediaBucket),
+          origin: origins.S3BucketOrigin.withOriginAccessControl(mediaBucketRef, {
+            originAccessControl: mediaOac,
+          }),
           responseHeadersPolicy: siteHeaders,
         },
         '/api/*': {
@@ -308,6 +321,16 @@ class UccStack extends Stack {
       minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
       // Custom domain + ACM cert attach at cutover (Phase 6).
     });
+
+    mediaBucket.addToResourcePolicy(new iam.PolicyStatement({
+      sid: 'AllowCloudFrontMediaPrefixOnly',
+      principals: [new iam.ServicePrincipal('cloudfront.amazonaws.com')],
+      actions: ['s3:GetObject'],
+      resources: [mediaBucket.arnForObjects('media/*')],
+      conditions: {
+        StringEquals: { 'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}` },
+      },
+    }));
 
     // ── Drift reconciler (§7): hourly manifest-vs-live check, restores from
     // version history, invalidates, alerts. Expected state comes from the

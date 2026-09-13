@@ -22,7 +22,9 @@ aws/media-process/index.mjs  S3-event Lambda: sharp variants + row update
                              (status pending → processing → ready | failed)
 infra/cdk/lib/ucc-stack.js   MediaBucket (private, versioned, CORS PUT from
                              admin origins), /media/* CloudFront behavior
-                             (OAC, CACHING_OPTIMIZED, site headers policy,
+                             (OAC with a HAND-WRITTEN bucket policy scoped to
+                             media/* — originals under uploads/ are never
+                             readable by CloudFront; CACHING_OPTIMIZED, site headers policy,
                              viewer fn for staging basic auth), MediaProcessFn
                              (x86_64, 1536 MB, 2 min; sharp cross-installed
                              for linux-x64 in an afterBundling hook, external
@@ -44,13 +46,18 @@ scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
 ## Data flow
 
 1. Editor picks files on `/media`. For each: `beginUpload({filename, mime,
-   bytes})` → role check → `INSERT media_assets (status 'pending')` → presigned
-   PUT (15 min) for exactly `uploads/<id>/<safe-filename>` + that content type.
+   bytes})` → role check → presigned PUT (15 min) for exactly
+   `uploads/<id>/<safe-filename>` with the Content-Type header SIGNED (the
+   presigner leaves it unsigned unless asked; a mismatched type is a 403) →
+   `INSERT media_assets (status 'pending')`. Presign first so a config or
+   credential failure leaves no orphan row.
 2. Browser `PUT`s the file to S3 directly (bucket CORS allows PUT from the
    admin origins). `finishUpload(id)` writes the `media.upload` audit row.
 3. S3 `ObjectCreated` (prefix `uploads/`) invokes `MediaProcessFn`. It looks
    up the row by the id in the key (no row → warn + skip), sets `processing`,
-   reads the original, rejects >25 MB / non-image content types, hashes the
+   HeadObjects the original and rejects >25 MB / non-image content types
+   BEFORE reading the body (a presigned PUT cannot cap Content-Length; an
+   oversized read would OOM the function and strand the row), reads it, hashes the
    bytes (sha256, 12 hex), reads dimensions (EXIF-rotated), and for every
    width ≤ the original's width (or the original width if it is smaller than
    400) writes `media/<id>/<hash>-<w>.avif|webp` with
@@ -59,8 +66,11 @@ scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
    `[{format,width,height,path,bytes}]`.
    Any failure → `status='failed'`, `error` (shown on the card), NOT rethrown
    (S3 → Lambda retries would fail identically; the alarm is for crashes only).
-   Idempotent: a duplicate event rewrites identical keys.
-4. `/media` polls (Refresher) while any asset is pending/processing.
+   Idempotent: a duplicate event rewrites identical keys. Row updates are
+   wrapped in `withRetry` (40001) so an alt save racing the final `ready`
+   write cannot flip a finished asset to failed.
+4. `/media` polls (Refresher) while any asset is pending/processing and not
+   stalled (no update for 15 min → shown as stalled, polling stops).
    Thumbnails are presigned GETs of the smallest WebP (the bucket is private
    and staging CloudFront is behind basic auth, so public URLs would not
    render inside the admin).
@@ -68,10 +78,15 @@ scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
    from READY assets WITH alt text; picking sets the field to the WebP variant
    nearest ≥ `targetWidth` (400 for headshots, rendered at 160 CSS px).
    `saveCollection` re-checks every `/media/<id>/…` value with
-   `assertAltText` — a typed path or an alt wiped after picking fails the save.
-6. Delete removes the original + all variants (`DeleteObjects`) then the row;
-   audited as `media.delete`. Pages still referencing the path 404 that image
-   on next publish — the library shows no usage count yet.
+   `assertAltText` — a typed path fails the save, and `saveAlt` refuses to
+   clear an alt once set. NOTE: the alt stored here is a placement policy,
+   not yet rendered — `templates/team.html` emits `alt="{{name}}"` (correct
+   for a headshot). Rendering `media_assets.alt` for arbitrary images is
+   Phase 8 (Documents ingest, spec §5 step 6).
+6. Delete removes the row first (retried on 40001), then the original + all
+   variants (`DeleteObjects` — delete markers on this versioned bucket; bytes
+   expire after 90 days); audited as `media.delete`. Pages still referencing
+   the path 404 that image on next publish — no usage count yet.
 
 ## media_assets (DSQL)
 
@@ -115,6 +130,9 @@ scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
 ## Hard constraints
 
 - Key layout is shared through `packages/db/media.js` — change it there only.
+- The media origin passes `originAccessLevels: []` and adds its own
+  `media/*` GetObject statement; restoring CDK's default grant would expose
+  `uploads/` originals (with EXIF) to anyone who guesses a key.
 - sharp's Lambda binaries come from the CDK `afterBundling` hook
   (`npm install --os=linux --cpu=x64 --libc=glibc sharp@<version from
   aws/media-process/package.json>`); the function must stay `X86_64`, and
@@ -128,7 +146,10 @@ scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
 Built and deployed to staging 2026-09-13. E2E verified the same day (scripted:
 row insert → presigned PUT 200 → Lambda ready in ~12 s → 8 variants for a
 2048px JPEG (2400 skipped) → `/media/*` through CloudFront 200 with
-`image/webp` + immutable cache, 401 without staging basic auth). Not yet: usage counts / delete
+`image/webp` + immutable cache, 401 without staging basic auth; mismatched
+Content-Type PUT → 403). Review pass done (2026-09-13): size check before
+body read, retried row writes, stalled detection, row-first delete, scoped
+OAC policy, signed Content-Type, variants JSON guard. Not yet: usage counts / delete
 protection for referenced assets, migrating `/assets/*` into the bucket,
 picker on fields other than `team.photo` (Documents' image handling is
 Phase 8 ingest, spec §5 step 6).

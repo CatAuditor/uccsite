@@ -9,9 +9,9 @@
 // state. Failures land on the row as status 'failed' + error (the admin shows
 // it) and are NOT rethrown — an S3 → Lambda retry would only fail the same way.
 import { createHash } from 'node:crypto';
-import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, HeadObjectCommand, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
-import { withConnection } from '@uccsite/db';
+import { withConnection, withRetry } from '@uccsite/db';
 import {
   VARIANT_WIDTHS, FORMATS, ACCEPTED_MIMES, MAX_UPLOAD_BYTES,
   parseUploadKey, variantKey, publicPath,
@@ -28,6 +28,8 @@ const ENCODE = {
 };
 const CACHE_CONTROL = 'public, max-age=31536000, immutable';
 
+// Retried on DSQL 40001: an editor saving alt text on the same row at the
+// moment we commit 'ready' must not turn a finished asset into 'failed'.
 async function setStatus(client, id, status, extra = {}) {
   const sets = ['status = $2', 'updated_at = now()'];
   const params = [id, status];
@@ -35,7 +37,7 @@ async function setStatus(client, id, status, extra = {}) {
     params.push(v);
     sets.push(`${k} = $${params.length}`);
   }
-  await client.query(`UPDATE media_assets SET ${sets.join(', ')} WHERE id = $1`, params);
+  await withRetry(() => client.query(`UPDATE media_assets SET ${sets.join(', ')} WHERE id = $1`, params));
 }
 
 // processOne(key) → { id, variants } | null (null = skipped, logged why)
@@ -49,11 +51,15 @@ async function processOne(key) {
     if (!row) { console.warn(`[media] no media_assets row for ${id} (${key}) — skipping`); return null; }
     await setStatus(client, id, 'processing', { s3_key: key, error: null });
     try {
+      // Size + type from metadata BEFORE reading the body: a presigned PUT
+      // cannot cap Content-Length, and pulling an oversized object into
+      // memory would OOM the function and strand the row in 'processing'.
+      const head = await s3.send(new HeadObjectCommand({ Bucket: MEDIA_BUCKET, Key: key }));
+      const mime = head.ContentType || row.mime || '';
+      if (head.ContentLength > MAX_UPLOAD_BYTES) throw new Error(`original is ${head.ContentLength} bytes (max ${MAX_UPLOAD_BYTES})`);
+      if (!ACCEPTED_MIMES.includes(mime)) throw new Error(`unsupported content type ${mime || '(none)'}`);
       const obj = await s3.send(new GetObjectCommand({ Bucket: MEDIA_BUCKET, Key: key }));
       const original = Buffer.from(await obj.Body.transformToByteArray());
-      const mime = obj.ContentType || row.mime || '';
-      if (original.length > MAX_UPLOAD_BYTES) throw new Error(`original is ${original.length} bytes (max ${MAX_UPLOAD_BYTES})`);
-      if (!ACCEPTED_MIMES.includes(mime)) throw new Error(`unsupported content type ${mime || '(none)'}`);
 
       const hash = createHash('sha256').update(original).digest('hex').slice(0, 12);
       const meta = await sharp(original).rotate().metadata();

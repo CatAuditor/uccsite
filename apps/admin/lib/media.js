@@ -6,6 +6,7 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
+import { withRetry } from '@uccsite/db';
 import {
   ACCEPTED_MIMES, MAX_UPLOAD_BYTES, uploadKey, pickVariant, rowToAsset, ASSET_COLUMNS,
 } from '@uccsite/db/media';
@@ -19,15 +20,24 @@ function getS3() {
 
 const PUT_EXPIRY_S = 15 * 60;
 const GET_EXPIRY_S = 60 * 60;
+// A pending/processing row older than this is abandoned (PUT never landed,
+// or the Lambda crashed): shown as stalled, and it stops the page polling.
+const STALL_MS = 15 * 60 * 1000;
+
+export function isStalled(asset) {
+  return (asset.status === 'pending' || asset.status === 'processing')
+    && Date.now() - new Date(asset.updatedAt || asset.createdAt).getTime() > STALL_MS;
+}
 
 // listAssets(client) → asset[] newest first, each with thumbUrl (presigned
-// GET of the smallest WebP variant) when ready.
+// GET of the smallest WebP variant) when ready, and stalled (see above).
 export async function listAssets(client) {
   const res = await client.query(`SELECT ${ASSET_COLUMNS} FROM media_assets ORDER BY created_at DESC`);
   const assets = res.rows.map(rowToAsset);
   await Promise.all(assets.map(async (a) => {
     const thumb = pickVariant(a.variants, 1, 'webp');
     a.thumbUrl = thumb ? await presignGet(thumb.path.slice(1)) : null;
+    a.stalled = isStalled(a);
   }));
   return assets;
 }
@@ -38,28 +48,35 @@ function presignGet(key) {
 }
 
 // createUpload(client, { filename, mime, bytes, actor }) → { id, key, url }
-// Inserts the pending row FIRST so the Lambda always finds it.
+// Presign first (local crypto, but it is where a missing MEDIA_BUCKET or
+// expired credentials throw), then insert the pending row so the Lambda
+// always finds it — no orphan rows from a failed presign. The content type
+// is SIGNED (the presigner leaves it unsigned by default), so the browser's
+// PUT must carry exactly the type it declared.
 export async function createUpload(client, { filename, mime, bytes, actor }) {
   if (!ACCEPTED_MIMES.includes(mime)) throw new Error(`Unsupported file type ${mime || '(unknown)'}`);
   if (!(bytes > 0) || bytes > MAX_UPLOAD_BYTES) throw new Error(`File must be 1 byte to ${MAX_UPLOAD_BYTES / 1024 / 1024} MB`);
   const id = randomUUID();
   const key = uploadKey(id, filename);
+  const url = await getSignedUrl(getS3(),
+    new PutObjectCommand({ Bucket: config.mediaBucket, Key: key, ContentType: mime }),
+    { expiresIn: PUT_EXPIRY_S, signableHeaders: new Set(['content-type']) });
   await client.query(
     `INSERT INTO media_assets (id, s3_key, original_filename, mime, bytes, uploaded_by, status)
      VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
     [id, key, String(filename).slice(0, 200), mime, bytes, actor]);
-  const url = await getSignedUrl(getS3(),
-    new PutObjectCommand({ Bucket: config.mediaBucket, Key: key, ContentType: mime }),
-    { expiresIn: PUT_EXPIRY_S });
   console.log(`[media] ${actor} upload begun ${id} ${key} ${mime} ${bytes}B`);
   return { id, key, url };
 }
 
-// deleteAsset(client, id) → asset. Removes original + variants from S3, then the row.
+// deleteAsset(client, id) → asset. Row FIRST (retried on 40001 — the Lambda
+// may be updating it), then the S3 objects: a failed object delete leaves
+// orphaned bytes, never a live row whose variants are gone.
 export async function deleteAsset(client, id) {
   const row = (await client.query(`SELECT ${ASSET_COLUMNS} FROM media_assets WHERE id = $1`, [id])).rows[0];
   if (!row) throw new Error('Asset not found');
   const asset = rowToAsset(row);
+  await withRetry(() => client.query('DELETE FROM media_assets WHERE id = $1', [id]));
   const keys = [asset.s3Key, ...asset.variants.map(v => v.path.slice(1))].filter(Boolean);
   if (keys.length) {
     await getS3().send(new DeleteObjectsCommand({
@@ -67,7 +84,6 @@ export async function deleteAsset(client, id) {
       Delete: { Objects: keys.map(Key => ({ Key })), Quiet: true },
     }));
   }
-  await client.query('DELETE FROM media_assets WHERE id = $1', [id]);
   return asset;
 }
 

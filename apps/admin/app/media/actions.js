@@ -31,6 +31,8 @@ export async function saveAlt(formData) {
   await withWriteDb(async (client) => {
     const before = (await client.query('SELECT alt FROM media_assets WHERE id = $1', [id])).rows[0];
     if (!before) throw new Error('Asset not found');
+    // Alt is a placement gate; an asset already on a page must not lose it.
+    if (before.alt && !alt) throw new Error('Alt text cannot be cleared once set — edit it instead');
     await client.query('UPDATE media_assets SET alt = $2, updated_at = now() WHERE id = $1', [id, alt]);
     await recordChange(client, {
       actor: s.email, action: 'media.alt', entityType: 'media', entityId: id,
