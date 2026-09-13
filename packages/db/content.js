@@ -173,7 +173,24 @@ async function saveHomepage(client, homepage) {
   await replaceCollectionRows(client, 'homepage_press', homepage.press || []);
 }
 
+// contentMeta(client) → { tableName: newest updated_at ISO string } for every
+// content table — the publish Lambda's sitemap-lastmod source.
+const CONTENT_TABLES = [
+  'site_settings', 'homepage', 'homepage_press', 'team_members', 'statements',
+  'issues', 'blog_articles', 'blog_videos', 'projects', 'project_articles',
+  'project_videos', 'coverage_entries',
+];
+
+async function contentMeta(client) {
+  const meta = {};
+  for (const table of CONTENT_TABLES) {
+    const res = await client.query(`SELECT MAX(updated_at)::text AS newest FROM ${table}`);
+    if (res.rows[0]?.newest) meta[table] = new Date(res.rows[0].newest).toISOString();
+  }
+  return meta;
+}
+
 module.exports = {
-  SINGLETON, FIELD_MAPS, rowToObject, loadContent,
+  SINGLETON, FIELD_MAPS, rowToObject, loadContent, contentMeta, CONTENT_TABLES,
   replaceCollectionRows, saveSettings, saveHomepage,
 };

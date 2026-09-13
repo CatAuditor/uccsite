@@ -379,6 +379,98 @@ class UccStack extends Stack {
       })
       .addAlarmAction(new cwActions.SnsAction(alertTopic));
 
+    // ── Publish Lambda (Phase 7): admin-triggered render+publish, content
+    // from DSQL, site sources (templates/css/js/assets/static) bundled into
+    // the asset by the commandHooks below. Async invoke; the admin polls
+    // publish_runs for the Draft/Publishing/Live/Failed state.
+    const siteSrcDirs = ['templates', 'css', 'js', 'assets', 'static'];
+    const siteSrcFiles = ['robots.txt', 'llms.txt', 'favicon.svg', 'UCC.png'];
+    const repoRoot = path.join(__dirname, '..', '..', '..');
+    const publishFn = new nodejs.NodejsFunction(this, 'PublishFn', {
+      entry: path.join(repoRoot, 'aws', 'publish', 'handler.mjs'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      memorySize: 512,
+      timeout: Duration.minutes(10),
+      environment: {
+        SITE_BUCKET: siteBucket.bucketName,
+        DISTRIBUTION_ID: distribution.distributionId,
+        DSQL_ENDPOINT: dsqlEndpoint,
+      },
+      bundling: {
+        externalModules: ['pg-native'],
+        commandHooks: {
+          beforeBundling: () => [],
+          beforeInstall: () => [],
+          afterBundling: (inputDir, outputDir) => {
+            // Windows-safe copies of the site sources next to the bundle.
+            const src = (p) => path.join(inputDir, p);
+            const dst = path.join(outputDir, 'site-src');
+            const cmds = [`node -e "require('fs').mkdirSync(String.raw\`${dst}\`, {recursive:true})"`];
+            for (const dir of siteSrcDirs) {
+              cmds.push(`node -e "require('fs').cpSync(String.raw\`${src(dir)}\`, String.raw\`${path.join(dst, dir)}\`, {recursive:true})"`);
+            }
+            for (const file of siteSrcFiles) {
+              cmds.push(`node -e "require('fs').copyFileSync(String.raw\`${src(file)}\`, String.raw\`${path.join(dst, file)}\`)"`);
+            }
+            return cmds;
+          },
+        },
+      },
+      depsLockFilePath: path.join(repoRoot, 'package-lock.json'),
+    });
+    siteBucket.grantReadWrite(publishFn);
+    publishFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['cloudfront:CreateInvalidation', 'cloudfront:GetInvalidation'],
+      resources: [`arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`],
+    }));
+    publishFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['dsql:DbConnectAdmin'],
+      resources: [cluster.attrResourceArn],
+    }));
+
+    // ── Cognito (spec §11): email login, invite-only (no self-signup —
+    // operators use AdminCreateUser), optional TOTP, owner/editor/viewer.
+    const { aws_cognito: cognito } = require('aws-cdk-lib');
+    const userPool = new cognito.UserPool(this, 'AdminUserPool', {
+      selfSignUpEnabled: false,
+      signInAliases: { email: true },
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      mfa: cognito.Mfa.OPTIONAL,
+      mfaSecondFactor: { otp: true, sms: false },
+      passwordPolicy: { minLength: 12 },
+      removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+    });
+    for (const group of ['owner', 'editor', 'viewer']) {
+      new cognito.CfnUserPoolGroup(this, `Group${group}`, {
+        userPoolId: userPool.userPoolId,
+        groupName: group,
+      });
+    }
+    const userPoolDomain = userPool.addDomain('AdminAuthDomain', {
+      cognitoDomain: { domainPrefix: `ucc-admin-${envName}` },
+    });
+    const adminClient = userPool.addClient('AdminAppClient', {
+      generateSecret: false, // public client + PKCE; the Next.js server does the code exchange
+      authFlows: { userSrp: true },
+      oAuth: {
+        flows: { authorizationCodeGrant: true },
+        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
+        callbackUrls: [
+          'http://localhost:3000/auth/callback',
+          ...(isProd ? ['https://admin.utahciviccompact.org/auth/callback'] : []),
+        ],
+        logoutUrls: [
+          'http://localhost:3000/login',
+          ...(isProd ? ['https://admin.utahciviccompact.org/login'] : []),
+        ],
+      },
+    });
+
+    new CfnOutput(this, 'PublishFunctionName', { value: publishFn.functionName });
+    new CfnOutput(this, 'AdminUserPoolId', { value: userPool.userPoolId });
+    new CfnOutput(this, 'AdminUserPoolClientId', { value: adminClient.userPoolClientId });
+    new CfnOutput(this, 'AdminAuthDomain', { value: `${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com` });
     new CfnOutput(this, 'OperationalExportBucketName', { value: exportBucket.bucketName });
     new CfnOutput(this, 'PublicOrigin', { value: publicOrigin });
     new CfnOutput(this, 'OpsAlertTopicArn', { value: alertTopic.topicArn });

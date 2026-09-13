@@ -21,18 +21,22 @@ function pageInputFiles(page) {
   ];
 }
 
-// loadRenderInputs(root, fail) → { templates, partials, content }
+// loadRenderInputs(root, fail, { includeContent }) → { templates, partials, content }
 // fail(msg) collects errors (invalid JSON, missing files) without throwing,
-// preserving build.js's report-then-abort behavior.
-function loadRenderInputs(root, fail = (msg) => { throw new Error(msg); }) {
+// preserving build.js's report-then-abort behavior. includeContent: false
+// skips content/*.json for callers that supply content from the database
+// (the publish Lambda bundles no content directory).
+function loadRenderInputs(root, fail = (msg) => { throw new Error(msg); }, { includeContent = true } = {}) {
   const content = {};
   const contentDir = path.join(root, 'content');
-  for (const file of fs.readdirSync(contentDir)) {
-    if (!file.endsWith('.json')) continue;
-    try {
-      content[path.basename(file, '.json')] = JSON.parse(fs.readFileSync(path.join(contentDir, file), 'utf8'));
-    } catch (err) {
-      fail(`Invalid JSON in content/${file}: ${err.message}`);
+  if (includeContent) {
+    for (const file of fs.readdirSync(contentDir)) {
+      if (!file.endsWith('.json')) continue;
+      try {
+        content[path.basename(file, '.json')] = JSON.parse(fs.readFileSync(path.join(contentDir, file), 'utf8'));
+      } catch (err) {
+        fail(`Invalid JSON in content/${file}: ${err.message}`);
+      }
     }
   }
   const templates = {};
