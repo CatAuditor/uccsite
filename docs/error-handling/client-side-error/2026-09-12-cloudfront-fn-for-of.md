@@ -30,6 +30,7 @@ several other ES2015+ constructs.
 ## What would catch it earlier
 
 `aws cloudfront test-function` with a sample viewer-request event immediately
-after deploy — now part of the phase verification script
-(`staging-check.mjs` exercises every function path end-to-end). A synth-time
-check can't catch it: CloudFormation accepts the function body regardless.
+after deploy, or the committed end-to-end check `scripts/staging-check.mjs`,
+which exercises every function path against the live distribution — run it
+after every infra deploy. A synth-time check can't catch it: CloudFormation
+accepts the function body regardless of runtime support.

@@ -9,6 +9,7 @@
     "test": "node --test \"test/**/*.test.mjs\""
   },
   "dependencies": {
+    "@uccsite/render": "*",
     "dom-serializer": "^2.0.0",
     "domhandler": "^5.0.3",
     "domutils": "^3.1.0",

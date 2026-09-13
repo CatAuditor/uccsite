@@ -58,6 +58,37 @@ test('classes inside @media and compound/multi selectors are found', () => {
   assert.ok(!names.has('root'));
 });
 
+// ── Regressions from the Phase 2 review ─────────────────────────────────────
+
+test('block-less at-statements do not swallow the following rule', () => {
+  const kit = parseStyleKit('@import url(x.css); @charset "utf-8"; .lead { font-size: 1rem; } .after { color: red; }');
+  const names = classNames(kit);
+  assert.ok(names.has('lead'), 'lead survived the @import');
+  assert.ok(names.has('after'));
+});
+
+test('braces inside strings and comments do not corrupt blocks', () => {
+  const kit = parseStyleKit('.a { content: "}"; color: red; } .b { /* } */ background: blue; } .c { color: green; }');
+  const a = kit.entries.find(e => e.className === 'a');
+  const b = kit.entries.find(e => e.className === 'b');
+  assert.match(a.declarations, /color: red/);
+  assert.match(b.declarations, /background: blue/);
+  assert.ok(classNames(kit).has('c'));
+});
+
+test('duplicate rule bodies dedupe without substring false positives', () => {
+  const kit = parseStyleKit('.x { color: red; } .x { color: red; } .x { color: r }');
+  const x = kit.entries.find(e => e.className === 'x');
+  // exact duplicate collapsed; "color: r" kept even though it's a substring
+  assert.equal(x.declarations, 'color: red; /* + */ color: r');
+});
+
+test('entries carry only the declared StyleKitEntry shape', () => {
+  const kit = parseStyleKit('.y { color: red; }');
+  assert.deepEqual(Object.keys(kit.entries[0]).sort(),
+    ['applies', 'className', 'declarations', 'description', 'group', 'label']);
+});
+
 test('parses the real stylesheet without errors and finds known classes', () => {
   const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'css', 'styles.css'), 'utf8');
   const kit = parseStyleKit(css);

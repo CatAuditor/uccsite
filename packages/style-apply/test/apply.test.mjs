@@ -4,15 +4,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const { validateSelector, matchCount, applyStyles, orphanedOverrides } = require('../index.js');
-const { ingest } = require('../../html-ingest/index.js');
-
-const HERE = dirname(fileURLToPath(import.meta.url));
+const { ingest } = require('@uccsite/html-ingest');
 
 // ── Selector subset ─────────────────────────────────────────────────────────
 
@@ -120,14 +115,24 @@ test('report template rules style a naked semantic document — snapshot', () =>
   ];
   const styled = applyStyles(bodyHtmlNormalized, TEMPLATE_RULES).replace(/ data-nid="[0-9a-f]+"/g, '');
 
-  const snapPath = join(HERE, 'snapshots', 'report-template.html');
-  if (!existsSync(snapPath)) {
-    writeFileSync(snapPath, styled);
-  }
-  assert.equal(styled, readFileSync(snapPath, 'utf8'));
-  // and the meat of the assertion, readable:
-  assert.match(styled, /<h1 class="report-title">/);
-  assert.match(styled, /<p class="body-copy lead">Records/);
-  assert.match(styled, /<blockquote class="pull-quote">/);
-  assert.match(styled, /<h2 class="section-head">/);
+  // Inline expectation (no write-on-missing snapshot file — that pattern
+  // passes vacuously on a fresh checkout). Note :first-of-type is per-parent,
+  // so the blockquote's inner <p> is also "first of type" among its siblings.
+  assert.equal(styled,
+    '<h1 class="report-title">Ten Cameras</h1>'
+    + '<p class="body-copy lead">Records released under GRAMA show millions of searches.</p>'
+    + '<p class="body-copy">Second paragraph of body text.</p>'
+    + '<blockquote class="pull-quote"><p class="body-copy lead">A quoted passage.</p></blockquote>'
+    + '<h2 class="section-head">Findings</h2>'
+    + '<ul><li>first</li><li>second</li></ul>');
+});
+
+// ── Regression: validator must be linear-time (was ReDoS-able) ──────────────
+
+test('validateSelector rejects pathological input fast', () => {
+  const start = Date.now();
+  const r = validateSelector('a'.repeat(40) + '#');
+  const ms = Date.now() - start;
+  assert.equal(r.ok, false);
+  assert.ok(ms < 100, `took ${ms}ms`);
 });

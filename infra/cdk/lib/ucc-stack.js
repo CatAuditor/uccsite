@@ -180,14 +180,23 @@ class UccStack extends Stack {
         eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
       }],
     };
+    const adminBehavior = {
+      ...siteBehaviorBase,
+      responseHeadersPolicy: adminHeaders,
+      cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+    };
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
       comment: `uccsite ${isProd ? 'prod' : 'staging'}`,
       defaultBehavior: { ...siteBehaviorBase, responseHeadersPolicy: siteHeaders },
       additionalBehaviors: {
-        // '/admin*' (not '/admin/*') so the extensionless /admin request —
-        // which the viewer function rewrites to /admin/index.html — also gets
-        // the Decap headers policy. Behavior matching uses the ORIGINAL URI.
-        '/admin*': { ...siteBehaviorBase, responseHeadersPolicy: adminHeaders },
+        // Exact '/admin' (matching is on the ORIGINAL URI, before the viewer
+        // function rewrites it to /admin/index.html) plus '/admin/*'. NOT a
+        // single '/admin*' — that would pull any future /admin-... page under
+        // the loosened Decap policy. CACHING_DISABLED matches the no-store
+        // header (with CACHING_OPTIMIZED the edge cached the shell for 24h
+        // while telling browsers not to).
+        '/admin': { ...adminBehavior },
+        '/admin/*': { ...adminBehavior },
         '/api/*': {
           origin: new origins.FunctionUrlOrigin(apiUrl, {
             customHeaders: { 'x-origin-verify': originVerifyValue },

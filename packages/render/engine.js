@@ -18,6 +18,12 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// The site's URL-scheme policy, single source of truth: safeUrl()'s regex
+// below allows exactly these schemes (plus rooted/# relative forms), and
+// @uccsite/html-ingest derives its sanitizer allowlist from this constant.
+// Change both the list and the regex together.
+const SAFE_URL_SCHEMES = ['http', 'https', 'mailto'];
+
 // Only allow http(s), relative, mailto links in hrefs sourced from content
 function safeUrl(url) {
   const u = String(url ?? '').trim();
@@ -108,4 +114,4 @@ function render(template, data, partials, fail) {
   return out + template.slice(pos);
 }
 
-module.exports = { escapeHtml, safeUrl, mdToHtml, resolvePath, render, findSectionEnd, TAG_RE_SRC };
+module.exports = { escapeHtml, safeUrl, mdToHtml, resolvePath, render, findSectionEnd, TAG_RE_SRC, SAFE_URL_SCHEMES };

@@ -12,101 +12,122 @@
 // Selector subset (§6.2): tag, class, descendant, child, :first-of-type,
 // :last-of-type, :nth-of-type(), :not(<simple>). Anything else is rejected at
 // save time — arbitrary selector support is a debugging liability.
-const parse5 = require('parse5');
-const { adapter } = require('parse5-htmlparser2-tree-adapter');
 const { selectAll } = require('css-select');
 const serialize = require('dom-serializer').default;
+// Shared tree/class primitives — style-apply must parse the normalized HTML
+// with exactly the options ingest serialized it under.
+const { parseFragmentTree, walkElements, getClasses, setClasses } = require('@uccsite/html-ingest');
 
 // type StyleRule = { id, scope: 'template'|'page', templateKey?, documentId?,
 //                    selector, classes: string[], priority, note? }
 // type StyleOverride = { documentId, nid, classes: string[], mode: 'replace'|'append' }
 
-const SIMPLE = String.raw`(?:[a-z][a-z0-9]*|\.[A-Za-z0-9_-]+)`;
-const PSEUDO = String.raw`(?::(?:first-of-type|last-of-type|nth-of-type\((?:\d+|odd|even)\)|not\(${SIMPLE}\)))`;
-const COMPOUND = `(?:${SIMPLE}+${PSEUDO}*|${PSEUDO}+)`;
-const SELECTOR_RE = new RegExp(`^${COMPOUND}(?:\\s*(?:>\\s*)?${COMPOUND})*$`);
+// Validation is a hand-rolled linear tokenizer, NOT one big regex — a nested-
+// quantifier regex here was ReDoS-able from the rule editor (verified hang on
+// ~20 chars of input). Grammar:
+//   selector := compound ( (' ' | ' > ') compound )*
+//   compound := (tag | class)+ pseudo*  |  pseudo+
+//   pseudo   := :first-of-type | :last-of-type | :nth-of-type(<n|odd|even>) | :not(tag|class)
+const TAG_RE = /^[a-z][a-z0-9]*/;
+const CLASS_RE = /^\.[A-Za-z0-9_-]+/;
+const PSEUDO_RE = /^:(first-of-type|last-of-type|nth-of-type\((?:\d+|odd|even)\)|not\((?:[a-z][a-z0-9]*|\.[A-Za-z0-9_-]+)\))/;
+
+function consumeCompound(s) {
+  let i = 0, simples = 0, pseudos = 0;
+  for (;;) {
+    const rest = s.slice(i);
+    let m;
+    if (pseudos === 0 && ((m = rest.match(TAG_RE)) || (m = rest.match(CLASS_RE)))) {
+      simples++; i += m[0].length;
+    } else if ((m = rest.match(PSEUDO_RE))) {
+      pseudos++; i += m[0].length;
+    } else {
+      break;
+    }
+  }
+  return (simples + pseudos) > 0 ? i : -1;
+}
 
 // validateSelector(selector) → { ok: true } | { ok: false, reason }
 function validateSelector(selector) {
   const s = String(selector || '').trim();
   if (!s) return { ok: false, reason: 'Empty selector' };
   if (s.includes(',')) return { ok: false, reason: 'Selector lists (commas) are not supported — one rule per selector' };
-  if (!SELECTOR_RE.test(s)) {
+  let i = 0;
+  let expectCompound = true;
+  while (i < s.length) {
+    if (expectCompound) {
+      const len = consumeCompound(s.slice(i));
+      if (len <= 0) return unsupported();
+      i += len;
+      expectCompound = false;
+    } else {
+      const m = s.slice(i).match(/^\s*(>\s*)?/);
+      if (!m || m[0].length === 0) return unsupported();
+      i += m[0].length;
+      expectCompound = true;
+    }
+  }
+  if (expectCompound) return unsupported(); // trailing combinator
+  return { ok: true };
+
+  function unsupported() {
     return { ok: false, reason: 'Only tag, .class, descendant, >, :first-of-type, :last-of-type, :nth-of-type(), and :not(<tag or .class>) are supported' };
   }
-  return { ok: true };
 }
 
-function parseTree(html) {
-  return parse5.parseFragment(html, { treeAdapter: adapter });
-}
-
-// matchCounts(html, selector) → number of elements matched (for the rule
+// matchCount(html, selector) → number of elements matched (for the rule
 // editor's match-count preview; validates first).
 function matchCount(html, selector) {
   const v = validateSelector(selector);
   if (!v.ok) return 0;
-  return selectAll(selector, parseTree(html).children).length;
+  return selectAll(selector, parseFragmentTree(html).children).length;
 }
 
 // applyStyles(normalizedHtml, rules, overrides) → styled HTML string.
 // data-nid attributes are preserved (the editor preview needs them); the
 // publish compose step strips them via html-ingest's stripNids.
 function applyStyles(normalizedHtml, rules = [], overrides = []) {
-  const tree = parseTree(normalizedHtml);
-  const perNode = new Map(); // element -> Set(classes), seeded from surviving paste classes
+  const tree = parseFragmentTree(normalizedHtml);
 
-  const collect = (el) => {
-    if (!perNode.has(el)) {
-      perNode.set(el, new Set((el.attribs.class || '').split(/\s+/).filter(Boolean)));
-    }
-    return perNode.get(el);
-  };
+  // Seed every element once from its surviving paste classes (priority 0).
+  const perNode = new Map();
+  for (const el of walkElements(tree)) {
+    perNode.set(el, new Set(getClasses(el)));
+  }
 
   for (const rule of [...rules].sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))) {
     const v = validateSelector(rule.selector);
     if (!v.ok) continue; // save-time validation is the gate; a bad stored rule is inert
     for (const el of selectAll(rule.selector, tree.children)) {
-      const set = collect(el);
+      const set = perNode.get(el);
+      if (!set) continue;
       for (const cls of rule.classes || []) set.add(cls);
     }
   }
 
   const byNid = new Map(overrides.map((o) => [o.nid, o]));
-  for (const el of allElements(tree)) {
+  for (const [el, set] of perNode) {
     const nid = el.attribs['data-nid'];
     const override = nid && byNid.get(nid);
-    let classes = perNode.has(el)
-      ? [...perNode.get(el)]
-      : (el.attribs.class || '').split(/\s+/).filter(Boolean);
+    let classes = [...set];
     if (override) {
       classes = override.mode === 'replace'
         ? [...(override.classes || [])]
         : [...new Set([...classes, ...(override.classes || [])])];
     }
-    if (classes.length) el.attribs.class = classes.join(' ');
-    else delete el.attribs.class;
+    setClasses(el, classes);
   }
 
   return serialize(tree.children);
 }
 
-function* allElements(node) {
-  for (const child of node.children || []) {
-    if (child.type === 'tag') {
-      yield child;
-      yield* allElements(child);
-    } else if (child.children) {
-      yield* allElements(child);
-    }
-  }
-}
-
 // orphanedOverrides(normalizedHtml, overrides) → overrides whose nid no longer
-// exists (surfaced after a re-paste).
+// exists (surfaced after a re-paste). Runs on the rare re-paste path, so the
+// extra parse is fine.
 function orphanedOverrides(normalizedHtml, overrides) {
   const present = new Set();
-  for (const el of allElements(parseTree(normalizedHtml))) {
+  for (const el of walkElements(parseFragmentTree(normalizedHtml))) {
     if (el.attribs['data-nid']) present.add(el.attribs['data-nid']);
   }
   return (overrides || []).filter((o) => !present.has(o.nid));
