@@ -25,8 +25,10 @@ packages/style-apply/    StyleRules/Overrides resolution (§6.2-6.4; pure)
 infra/cdk/               AWS CDK app: UccStaging/UccProd stacks (CloudFront, S3,
                          DSQL, API Lambda origin, CF Function + KVS redirects,
                          drift reconciler + hourly rule + SNS alerts)
-functions/publish/       publish pipeline core (see publish-pipeline.md)
-functions/reconcile-drift/  hourly drift reconciler Lambda
+aws/publish/             publish pipeline core + store + shared input loader
+                         (see publish-pipeline.md). AWS code lives under aws/,
+                         never functions/ - Pages compiles functions/* as routes.
+aws/reconcile-drift/     hourly drift reconciler Lambda
 packages/db/             DSQL connection helper (IAM auth, retry on 40001)
 scripts/publish.mjs      publish driver (repo → staging/prod)
 scripts/staging-check.mjs   25-check e2e distribution verification
