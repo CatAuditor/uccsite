@@ -15,6 +15,15 @@ as they're done. Context: `docs/build-spec-aws.md`.
   clients. Needed before Phase 5 (API port). If it is truly unrecoverable,
   tell the dev BEFORE Phase 5 — that changes the cutover plan.
 
+- [ ] **SECURITY: rotate the old Cloudflare API token** — a Cloudflare API
+  token was accidentally committed to git in `.claude/settings.local.json`
+  (inside an old permission-allowlist entry) and pushed to the GitHub repo
+  (CatAuditor/uccsite, commit df44bc7). Treat it as exposed: Cloudflare
+  dashboard → My Profile → API Tokens → find the token (it had Workers
+  Scripts read access) → Roll or Delete it. The file is now untracked and
+  gitignored, but the token remains in git history until rotated — rotation
+  is the fix, not history rewriting.
+
 ## Quick dashboard tweaks (whenever convenient)
 
 - [ ] Cloudflare Pages → uccsite project → Settings → Build: change the build

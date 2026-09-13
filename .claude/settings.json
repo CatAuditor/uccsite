@@ -27,6 +27,9 @@
     ]
   },
   "skipDangerousModePermissionPrompt": true,
+  "sandbox": {
+    "enabled": false
+  },
   "permissions": {
     "defaultMode": "bypassPermissions",
     "allow": [
