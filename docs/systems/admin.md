@@ -73,7 +73,8 @@ manual pass pending.
 
 ## Not yet (rest of Phase 7)
 
-Nightly content export to GitHub (§14.2 — needs the GitHub App from
-docs/for-conner.md) + restore drill, Amplify Hosting deployment, THEN Decap +
-workers/auth retirement. Media library and revisions restore-and-republish
-are done (2026-09-13).
+Amplify Hosting deployment, THEN Decap + workers/auth retirement (only once
+the export is actually committing — needs the GitHub App secrets from
+docs/for-conner.md). Done 2026-09-13: media library, revisions
+restore-and-republish, content export Lambda + restore script + staging
+restore drill (docs/systems/content-export.md).

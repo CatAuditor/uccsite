@@ -82,9 +82,15 @@ minutes (next Lambda cold start), no deploy needed. Sources:
 ## Needed at Phase 7 (admin + backups)
 
 - [ ] **GitHub App** for the nightly content export: create a GitHub App on the
-  `CatAuditor` org/account with contents:write on the `uccsite` repo, install
-  it, and hand over the App ID + private key (`GITHUB_APP_PRIVATE_KEY` →
-  Secrets Manager)
+  `CatAuditor` org/account with **Contents: Read and write** on the `uccsite`
+  repo (no other permissions), install it on that repo, then fill THREE
+  secrets in Secrets Manager (us-west-2), for staging now and prod later:
+  `ucc/<env>/GITHUB_APP_ID` (the App ID number), `ucc/<env>/GITHUB_APP_INSTALLATION_ID`
+  (the number at the end of the installation URL, Settings → Applications →
+  Configure), `ucc/<env>/GITHUB_APP_PRIVATE_KEY` (the whole downloaded .pem
+  file, header and footer lines included). Until then the nightly export
+  logs "skipped". It commits to the `content-export` / `content-export-staging`
+  branches, never `main` (docs/decisions/content-export-branch.md).
 - [ ] Admin accounts: list of who gets `owner` / `editor` / `viewer` in the new
   admin (email addresses — no GitHub account needed anymore)
 

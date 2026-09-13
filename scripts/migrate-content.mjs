@@ -17,7 +17,7 @@ import { resolveEnv, argValue } from './lib/stack.mjs';
 
 const require = createRequire(import.meta.url);
 const { withConnection } = require('../packages/db');
-const { loadContent, replaceCollectionRows, insertRow, saveSettings, saveHomepage } = require('../packages/db/content');
+const { loadContent, saveContent } = require('../packages/db/content');
 
 const ROOT = join(import.meta.dirname, '..');
 const args = process.argv.slice(2);
@@ -38,33 +38,8 @@ const repo = {
 const { region, stackName, outputs } = await resolveEnv(envName, ['DsqlEndpoint']);
 
 await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) => {
-  await saveSettings(client, repo.settings);
-  await saveHomepage(client, repo.homepage);
-  await replaceCollectionRows(client, 'team_members', repo.team.members);
-  await replaceCollectionRows(client, 'statements', repo.statements.statements);
-  await replaceCollectionRows(client, 'issues', repo.issues.issues);
-  await replaceCollectionRows(client, 'blog_articles', repo.blog.articles);
-  await replaceCollectionRows(client, 'blog_videos', repo.blog.videos);
-
-  // projects + children — FIELD_MAPS-driven inserts (insertRow), so a new
-  // column is one edit in packages/db, not a hand-synced SQL literal here.
-  await client.query('DELETE FROM project_articles');
-  await client.query('DELETE FROM project_videos');
-  await client.query('DELETE FROM projects');
-  for (let i = 0; i < repo.projects.projects.length; i++) {
-    const p = repo.projects.projects[i];
-    const projectId = await insertRow(client, 'projects', p, { sort_order: i });
-    for (let j = 0; j < (p.articles || []).length; j++) {
-      await insertRow(client, 'project_articles', p.articles[j], { project_id: projectId, sort_order: j });
-    }
-    for (let j = 0; j < (p.videos || []).length; j++) {
-      await insertRow(client, 'project_videos', p.videos[j], { project_id: projectId, sort_order: j });
-    }
-  }
-
-  // Coverage strips: one scoped replace per report key.
-  await replaceCollectionRows(client, 'coverage_entries', repo.coverage.alpr_coverage, { where: ['report_key', 'alpr'] });
-  await replaceCollectionRows(client, 'coverage_entries', repo.coverage.stratos_coverage, { where: ['report_key', 'stratos'] });
+  // saveContent is the shared write path (also restore-from-export.mjs).
+  await saveContent(client, repo);
 
   // ── Round-trip verification ────────────────────────────────────────────
   const loaded = await loadContent(client);

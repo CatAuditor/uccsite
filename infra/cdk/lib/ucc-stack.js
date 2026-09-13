@@ -437,6 +437,57 @@ class UccStack extends Stack {
       })
       .addAlarmAction(new cwActions.SnsAction(alertTopic));
 
+    // ── Content export to git (§14.2): nightly, content tables only, ONE
+    // commit on EXPORT_BRANCH when something changed. GitHub App credentials
+    // are Secrets Manager placeholders until the operator fills them
+    // (docs/for-conner.md); the Lambda logs "skipped" until then. The branch
+    // is NOT main: before cutover a commit to main would trigger a Cloudflare
+    // Pages production deploy (docs/decisions/content-export-branch.md).
+    const { SECRET_NAMES: EXPORT_SECRET_NAMES } = require('../../../aws/export-content/secret-names.cjs');
+    const exportSecrets = {};
+    for (const name of EXPORT_SECRET_NAMES) {
+      exportSecrets[name] = new secretsmanager.Secret(this, `ExportSecret${name}`, {
+        secretName: `ucc/${envName}/${name}`,
+        description: `uccsite ${envName} ${name} for the content export GitHub App (see docs/for-conner.md)`,
+        secretStringValue: SecretValue.unsafePlainText(PLACEHOLDER),
+        removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+      });
+    }
+    const exportContentFn = new nodejs.NodejsFunction(this, 'ExportContentFn', {
+      entry: path.join(__dirname, '..', '..', '..', 'aws', 'export-content', 'index.mjs'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      memorySize: 256,
+      timeout: Duration.minutes(5),
+      environment: {
+        DSQL_ENDPOINT: dsqlEndpoint,
+        ALERT_TOPIC_ARN: alertTopic.topicArn,
+        GITHUB_REPO: 'CatAuditor/uccsite',
+        EXPORT_BRANCH: isProd ? 'content-export' : 'content-export-staging',
+        ...Object.fromEntries(EXPORT_SECRET_NAMES.map(n => [`SECRET_ARN_${n}`, exportSecrets[n].secretArn])),
+      },
+      bundling: { externalModules: ['pg-native'] },
+      depsLockFilePath: path.join(__dirname, '..', '..', '..', 'package-lock.json'),
+    });
+    for (const name of EXPORT_SECRET_NAMES) exportSecrets[name].grantRead(exportContentFn);
+    exportContentFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['dsql:DbConnectAdmin'],
+      resources: [cluster.attrResourceArn],
+    }));
+    alertTopic.grantPublish(exportContentFn);
+    new events.Rule(this, 'ExportContentNightly', {
+      schedule: events.Schedule.cron({ minute: '30', hour: '9' }), // 09:30 UTC ~ 3:30am MT, after the operational export
+      targets: [new targets.LambdaFunction(exportContentFn)],
+    });
+    exportContentFn.metricErrors({ period: Duration.days(1), statistic: 'Sum' })
+      .createAlarm(this, 'ExportContentErrorsAlarm', {
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+        alarmDescription: 'uccsite content export to git failed',
+      })
+      .addAlarmAction(new cwActions.SnsAction(alertTopic));
+
     // ── Publish Lambda (Phase 7): admin-triggered render+publish, content
     // from DSQL, site sources (templates/css/js/assets/static) bundled into
     // the asset by the commandHooks below. Async invoke; the admin polls
@@ -578,6 +629,7 @@ class UccStack extends Stack {
 
     new CfnOutput(this, 'PublishFunctionName', { value: publishFn.functionName });
     new CfnOutput(this, 'MediaBucketName', { value: mediaBucket.bucketName });
+    new CfnOutput(this, 'ExportContentFunctionName', { value: exportContentFn.functionName });
     new CfnOutput(this, 'AdminUserPoolId', { value: userPool.userPoolId });
     new CfnOutput(this, 'AdminUserPoolClientId', { value: adminClient.userPoolClientId });
     new CfnOutput(this, 'AdminAuthDomain', { value: `${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com` });

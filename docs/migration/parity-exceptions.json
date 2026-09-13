@@ -1,0 +1,46 @@
+{
+  "_note": "Known, deliberate or baseline-artifact differences vs the 2026-09-12 production crawl. canonical: Phase 1 named diff (clean-URL canonicals, docs/changelog + spec addendum 10). /js/tip.js: the prod crawl captured the SPA-fallback index.html for a then-missing script path; staging serves the real file. /weber-county h1: the refactor branch (commit 4c49966) made the report headline the h1 and demoted the June 6 update heading — flagged for an explicit decision before cutover.",
+  "/alpr": [
+    "canonical"
+  ],
+  "/blog": [
+    "canonical"
+  ],
+  "/dignity-index-statement": [
+    "canonical"
+  ],
+  "/how-did-this-happen": [
+    "canonical"
+  ],
+  "/issues": [
+    "canonical"
+  ],
+  "/privacy": [
+    "canonical"
+  ],
+  "/privacy-report": [
+    "canonical"
+  ],
+  "/projects": [
+    "canonical"
+  ],
+  "/statements": [
+    "canonical"
+  ],
+  "/stratos": [
+    "canonical"
+  ],
+  "/team": [
+    "canonical"
+  ],
+  "/theory": [
+    "canonical"
+  ],
+  "/weber-county": [
+    "canonical",
+    "h1"
+  ],
+  "/js/tip.js": [
+    "*"
+  ]
+}

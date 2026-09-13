@@ -268,9 +268,52 @@ async function saveHomepage(client, homepage) {
   await replaceCollectionRows(client, 'homepage_press', homepage.press || []);
 }
 
+// saveContent(client, repo) — the inverse of loadContent: load the eight
+// content/*.json shapes into the tables (singletons upsert, lists
+// wipe-and-load). THE write path for the initial migration and for
+// restore-from-export (§14.4) — one implementation, so a restore can never
+// drift from what the migration proved round-trips.
+async function saveContent(client, repo) {
+  await saveSettings(client, repo.settings);
+  await saveHomepage(client, repo.homepage);
+  await replaceCollectionRows(client, 'team_members', repo.team.members);
+  await replaceCollectionRows(client, 'statements', repo.statements.statements);
+  await replaceCollectionRows(client, 'issues', repo.issues.issues);
+  await replaceCollectionRows(client, 'blog_articles', repo.blog.articles);
+  await replaceCollectionRows(client, 'blog_videos', repo.blog.videos);
+
+  // projects + children in ONE transaction (a 40001 abort or a crash between
+  // the parent wipe and the child inserts must not publish empty projects).
+  await withRetry(async () => {
+    await client.query('BEGIN');
+    try {
+      await client.query('DELETE FROM project_articles');
+      await client.query('DELETE FROM project_videos');
+      await client.query('DELETE FROM projects');
+      for (let i = 0; i < repo.projects.projects.length; i++) {
+        const p = repo.projects.projects[i];
+        const projectId = await insertRow(client, 'projects', p, { sort_order: i });
+        for (let j = 0; j < (p.articles || []).length; j++) {
+          await insertRow(client, 'project_articles', p.articles[j], { project_id: projectId, sort_order: j });
+        }
+        for (let j = 0; j < (p.videos || []).length; j++) {
+          await insertRow(client, 'project_videos', p.videos[j], { project_id: projectId, sort_order: j });
+        }
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw err;
+    }
+  });
+
+  await replaceCollectionRows(client, 'coverage_entries', repo.coverage.alpr_coverage, { where: ['report_key', 'alpr'] });
+  await replaceCollectionRows(client, 'coverage_entries', repo.coverage.stratos_coverage, { where: ['report_key', 'stratos'] });
+}
+
 module.exports = {
   SINGLETON, FIELD_MAPS, HOMEPAGE_GROUP_COLS, COLLECTION_TABLES, CONTENT_TABLES,
   rowToObject, objectToParams, list, insertRow,
   loadSettings, loadHomepage, loadContent, contentMeta, makeDbLastmod,
-  replaceCollectionRows, saveSettings, saveHomepage,
+  replaceCollectionRows, saveSettings, saveHomepage, saveContent,
 };

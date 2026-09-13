@@ -39,8 +39,10 @@ packages/db/content.js      content tables ⇄ renderer JSON (FIELD_MAPS,
                             COLLECTION_TABLES, loadContent/contentMeta,
                             transactional replaceCollectionRows, insertRow);
                             content-schema.js holds the DDL;
-                            scripts/migrate-content.mjs migrates + verifies
-                            the round trip (deepStrictEqual).
+                            saveContent = the inverse write path shared by
+                            scripts/migrate-content.mjs (initial migration)
+                            and scripts/restore-from-export.mjs (§14.4);
+                            both verify the round trip (deepStrictEqual).
 scripts/publish.mjs         CLI driver; resolves bucket/distribution/DSQL at
                             RUN TIME from the UccStaging/UccProd stack
                             outputs. --source git|db picks the content
