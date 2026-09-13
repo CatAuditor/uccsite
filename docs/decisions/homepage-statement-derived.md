@@ -1,5 +1,7 @@
 # Homepage featured statement derived from statements.json
 
+**Status (2026-09-13):** still in force — `deriveHomepage` in `packages/render/site.js`; see also homepage-statement-links.md.
+
 > **Partially superseded 2026-09-12** by
 > [homepage-statement-links.md](homepage-statement-links.md): derivation stays,
 > but the mapping now also supplies `url`/`more` (with optional per-entry

@@ -1,5 +1,7 @@
 # Billing portal access via emailed magic link
 
+**Status (2026-09-13):** still in force on AWS — ported to `aws/api` with the same `TOKEN_SECRET` (never rotated, spec §20).
+
 **Date:** 2026-08-23
 
 ## Decision

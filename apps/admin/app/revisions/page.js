@@ -7,7 +7,7 @@
 import { revalidatePath } from 'next/cache';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import {
-  saveSettings, saveHomepage, replaceCollectionRows, loadSettings, loadHomepage,
+  saveSettings, saveHomepage, replaceCollectionRows, replaceProjects, loadSettings, loadHomepage,
 } from '@uccsite/db/content';
 import { requireSession, requireRole } from '../../lib/auth';
 import { withDb, withWriteTx, recordChange } from '../../lib/data';
@@ -63,6 +63,7 @@ async function applySnapshot(client, entityType, snapshot, entityId) {
   // The alt-text gate applies to restores too: a snapshot may point at an
   // asset deleted or alt-stripped since it was taken.
   await assertAltText(client, mediaAssetIds(spec, snapshot));
+  if (spec.nested) return replaceProjects(client, snapshot, { tx: false });
   return replaceCollectionRows(client, spec.table, snapshot, { where: spec.where, tx: false });
 }
 

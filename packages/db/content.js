@@ -128,9 +128,8 @@ async function loadHomepage(client) {
 
 // loadContent(client) → the renderer's full content map. Project children are
 // fetched in two grouped queries (not 2 per project).
-async function loadContent(client) {
-  const settings = await loadSettings(client);
-  const homepage = await loadHomepage(client);
+// loadProjects(client) → projects with nested articles/videos (the projects.json shape).
+async function loadProjects(client) {
 
   const projectRows = (await client.query(`SELECT * FROM projects ORDER BY sort_order`)).rows;
   const groupByProject = (rows, table) => {
@@ -145,11 +144,17 @@ async function loadContent(client) {
     (await client.query(`SELECT * FROM project_articles ORDER BY project_id, sort_order`)).rows, 'project_articles');
   const videosBy = groupByProject(
     (await client.query(`SELECT * FROM project_videos ORDER BY project_id, sort_order`)).rows, 'project_videos');
-  const projects = projectRows.map(row => ({
+  return projectRows.map(row => ({
     ...rowToObject('projects', row),
     articles: articlesBy.get(row.id) || [],
     videos: videosBy.get(row.id) || [],
   }));
+}
+
+async function loadContent(client) {
+  const settings = await loadSettings(client);
+  const homepage = await loadHomepage(client);
+  const projects = await loadProjects(client);
 
   return {
     settings,
@@ -277,6 +282,33 @@ async function saveHomepage(client, homepage, { tx = true } = {}) {
   await replaceCollectionRows(client, 'homepage_press', homepage.press || [], { tx });
 }
 
+// replaceProjects(client, projects, { tx }) — projects + children in ONE
+// transaction (a 40001 abort or a crash between the parent wipe and the
+// child inserts must not publish empty projects). tx: false when the caller
+// owns the transaction (the admin's projects editor).
+async function replaceProjects(client, projects, { tx = true } = {}) {
+  const body = async () => {
+    await client.query('DELETE FROM project_articles');
+    await client.query('DELETE FROM project_videos');
+    await client.query('DELETE FROM projects');
+    for (let i = 0; i < projects.length; i++) {
+      const p = projects[i];
+      const projectId = await insertRow(client, 'projects', p, { sort_order: i });
+      for (let j = 0; j < (p.articles || []).length; j++) {
+        await insertRow(client, 'project_articles', p.articles[j], { project_id: projectId, sort_order: j });
+      }
+      for (let j = 0; j < (p.videos || []).length; j++) {
+        await insertRow(client, 'project_videos', p.videos[j], { project_id: projectId, sort_order: j });
+      }
+    }
+  };
+  if (!tx) return body();
+  await withRetry(async () => {
+    await client.query('BEGIN');
+    try { await body(); await client.query('COMMIT'); } catch (err) { await client.query('ROLLBACK').catch(() => {}); throw err; }
+  });
+}
+
 // saveContent(client, repo) — the inverse of loadContent: load the eight
 // content/*.json shapes into the tables (singletons upsert, lists
 // wipe-and-load). THE write path for the initial migration and for
@@ -291,30 +323,7 @@ async function saveContent(client, repo) {
   await replaceCollectionRows(client, 'blog_articles', repo.blog.articles);
   await replaceCollectionRows(client, 'blog_videos', repo.blog.videos);
 
-  // projects + children in ONE transaction (a 40001 abort or a crash between
-  // the parent wipe and the child inserts must not publish empty projects).
-  await withRetry(async () => {
-    await client.query('BEGIN');
-    try {
-      await client.query('DELETE FROM project_articles');
-      await client.query('DELETE FROM project_videos');
-      await client.query('DELETE FROM projects');
-      for (let i = 0; i < repo.projects.projects.length; i++) {
-        const p = repo.projects.projects[i];
-        const projectId = await insertRow(client, 'projects', p, { sort_order: i });
-        for (let j = 0; j < (p.articles || []).length; j++) {
-          await insertRow(client, 'project_articles', p.articles[j], { project_id: projectId, sort_order: j });
-        }
-        for (let j = 0; j < (p.videos || []).length; j++) {
-          await insertRow(client, 'project_videos', p.videos[j], { project_id: projectId, sort_order: j });
-        }
-      }
-      await client.query('COMMIT');
-    } catch (err) {
-      await client.query('ROLLBACK').catch(() => {});
-      throw err;
-    }
-  });
+  await replaceProjects(client, repo.projects.projects);
 
   await replaceCollectionRows(client, 'coverage_entries', repo.coverage.alpr_coverage, { where: ['report_key', 'alpr'] });
   await replaceCollectionRows(client, 'coverage_entries', repo.coverage.stratos_coverage, { where: ['report_key', 'stratos'] });
@@ -323,6 +332,6 @@ async function saveContent(client, repo) {
 module.exports = {
   SINGLETON, FIELD_MAPS, HOMEPAGE_GROUP_COLS, COLLECTION_TABLES, CONTENT_TABLES,
   rowToObject, objectToParams, list, insertRow,
-  loadSettings, loadHomepage, loadContent, contentMeta, makeDbLastmod,
-  replaceCollectionRows, saveSettings, saveHomepage, saveContent,
+  loadSettings, loadHomepage, loadProjects, loadContent, contentMeta, makeDbLastmod,
+  replaceCollectionRows, replaceProjects, saveSettings, saveHomepage, saveContent,
 };

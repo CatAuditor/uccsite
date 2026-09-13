@@ -1,5 +1,7 @@
 # Dignity Index statement is its own page, not a statements.json entry
 
+**Status (2026-09-13):** the page is now a Document (Reports category) with its own page CSS and self-hosted Newsreader / IBM Plex Sans fonts.
+
 **Date:** September 11, 2026
 
 ## Decision

@@ -4,6 +4,18 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.9.0 — 2026-09-13 (branch `refactor`, not yet pushed)
+
+Phase 9 — Projects and cleanup (`docs/systems/projects.md`).
+
+- Admin projects editor with nested press articles / videos (recursive list
+  editor), filter box and A–Z / newest-first sorting; whole tree saved in one
+  transaction; restore path handles the nested snapshot.
+- `/projects` gains client-side status/region filters and sort (featured,
+  newest, A–Z) with no inline script/style; option lists derived from content.
+- ADR reconciliation: every pre-migration decision carries a status line;
+  cms.md and state-of-the-site.md point at the AWS state.
+
 ## v0.8.0 — 2026-09-13 (branch `refactor`, not yet pushed)
 
 Phase 8 — Documents & styling (`docs/systems/documents.md`).

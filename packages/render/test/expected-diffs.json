@@ -7,7 +7,7 @@
   "blog.html": "canonical/og:url .html \u2192 clean (addendum 10); CSP tightening (Phase 8): self-hosted fonts link, css/colors.css, inline <style>/style= moved to css/pages + classes",
   "statements.html": "canonical/og:url .html \u2192 clean (addendum 10); CSP tightening (Phase 8): self-hosted fonts link, css/colors.css, inline <style>/style= moved to css/pages + classes",
   "issues.html": "canonical/og:url .html \u2192 clean (addendum 10); CSP tightening (Phase 8): self-hosted fonts link, css/colors.css, inline <style>/style= moved to css/pages + classes",
-  "projects.html": "canonical/og:url .html \u2192 clean (addendum 10); CSP tightening (Phase 8): self-hosted fonts link, css/colors.css, inline <style>/style= moved to css/pages + classes",
+  "projects.html": "canonical/og:url .html \u2192 clean (addendum 10); CSP tightening (Phase 8): self-hosted fonts link, css/colors.css, inline <style>/style= moved to css/pages + classes; Phase 9: filter/sort controls + data attributes (js/projects.js)",
   "team.html": "canonical/og:url .html \u2192 clean (addendum 10); CSP tightening (Phase 8): self-hosted fonts link, css/colors.css, inline <style>/style= moved to css/pages + classes",
   "theory.html": "canonical/og:url .html \u2192 clean (addendum 10); CSP tightening (Phase 8): self-hosted fonts link, css/colors.css, inline <style>/style= moved to css/pages + classes",
   "privacy.html": "canonical .html \u2192 clean (addendum 10); CSP tightening (Phase 8): self-hosted fonts link, css/colors.css, inline <style>/style= moved to css/pages + classes",

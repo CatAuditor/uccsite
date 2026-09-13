@@ -1,5 +1,7 @@
 # Shared header/footer partials in build.js
 
+**Status (2026-09-13):** still in force — `packages/render` renders the same partials; Documents compose into them via `templates/documents/report.html`.
+
 **Date:** 2026-08-23
 
 ## Decision

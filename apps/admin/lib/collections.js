@@ -98,6 +98,49 @@ export const COLLECTIONS = {
       { name: 'youtube_title', label: 'Player title (accessibility)' },
     ],
   },
+  // Nested collection (spec §3.1 "projects keeps its nested articles and
+  // videos"): child lists are widget 'list' with their own fields and child
+  // table; the whole tree saves in one transaction (replaceProjects).
+  projects: {
+    title: 'Projects',
+    table: 'projects',
+    nested: true,
+    childTables: { articles: 'project_articles', videos: 'project_videos' },
+    note: 'Order here is the order on /projects and the homepage cards. Use the filter box to find a project; drag order with the arrows.',
+    itemLabel: (item) => item.name || 'project',
+    fields: [
+      { name: 'name', label: 'Project name' },
+      { name: 'slug', label: 'Slug', hint: 'lowercase-with-dashes; matches the report page slug when there is one' },
+      { name: 'date', label: 'Date', hint: 'e.g. August 2026 or June 4, 2026 (used for "newest first" sorting on the site)' },
+      { name: 'author', label: 'Author' },
+      { name: 'status', label: 'Status', hint: 'e.g. Active, Closed' },
+      { name: 'status_color', label: 'Status colour', hint: 'hex, e.g. #c0392b' },
+      { name: 'region', label: 'Region' },
+      { name: 'tagline', label: 'Tagline', widget: 'textarea' },
+      { name: 'cta_url', label: 'Button link', hint: 'e.g. /alpr.html' },
+      { name: 'cta_text', label: 'Button text' },
+      { name: 'articles', label: 'In the press', widget: 'list', itemLabelField: 'headline', fields: [
+        { name: 'outlet', label: 'Outlet' },
+        { name: 'badge_color', label: 'Badge colour' },
+        { name: 'date', label: 'Date' },
+        { name: 'region', label: 'Region' },
+        { name: 'headline', label: 'Headline' },
+        { name: 'excerpt', label: 'Excerpt', widget: 'textarea' },
+        { name: 'url', label: 'Article URL' },
+        { name: 'read_more', label: 'Read-more text' },
+        { name: 'lang_attr', label: 'lang attribute', hint: 'optional, e.g. lang="es"' },
+      ]},
+      { name: 'videos', label: 'On television', widget: 'list', itemLabelField: 'headline', fields: [
+        { name: 'outlet', label: 'Outlet' },
+        { name: 'badge_color', label: 'Badge colour' },
+        { name: 'date', label: 'Date' },
+        { name: 'region', label: 'Region' },
+        { name: 'headline', label: 'Headline' },
+        { name: 'youtube_id', label: 'YouTube video id' },
+        { name: 'youtube_title', label: 'Player title (accessibility)' },
+      ]},
+    ],
+  },
   'coverage-alpr': {
     title: 'Report Coverage — ALPR',
     table: 'coverage_entries',
@@ -119,18 +162,22 @@ export const COLLECTIONS = {
 // a column added to the DB but not here is silently WIPED on the next save
 // (sanitizeItems drops unknown keys, then wipe-and-load) — Decap's exact
 // delete-on-save hazard. Drift is a loud startup error instead.
-for (const [key, spec] of Object.entries(COLLECTIONS)) {
-  const mapped = new Set(Object.values(FIELD_MAPS[spec.table]));
-  const declared = new Set(spec.fields.map(f => f.name));
+function assertFieldsMatch(label, table, fields) {
+  const mapped = new Set(Object.values(FIELD_MAPS[table]));
+  const declared = new Set(fields.filter(f => f.widget !== 'list').map(f => f.name));
   for (const f of declared) {
-    if (!mapped.has(f)) {
-      throw new Error(`collections.${key}: field "${f}" not in FIELD_MAPS.${spec.table}`);
-    }
+    if (!mapped.has(f)) throw new Error(`${label}: field "${f}" not in FIELD_MAPS.${table}`);
   }
   for (const m of mapped) {
-    if (!declared.has(m)) {
-      throw new Error(`collections.${key}: FIELD_MAPS.${spec.table} key "${m}" missing from editor fields — saves would wipe it`);
-    }
+    if (!declared.has(m)) throw new Error(`${label}: FIELD_MAPS.${table} key "${m}" missing from editor fields — saves would wipe it`);
+  }
+}
+for (const [key, spec] of Object.entries(COLLECTIONS)) {
+  assertFieldsMatch(`collections.${key}`, spec.table, spec.fields);
+  for (const f of spec.fields.filter(f => f.widget === 'list')) {
+    const child = spec.childTables?.[f.name];
+    if (!child) throw new Error(`collections.${key}: list field "${f.name}" has no childTables entry`);
+    assertFieldsMatch(`collections.${key}.${f.name}`, child, f.fields);
   }
 }
 

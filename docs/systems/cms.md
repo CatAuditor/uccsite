@@ -1,5 +1,7 @@
 # CMS — Decap CMS + Static Build
 
+> **Superseded (AWS rebuild, 2026-09-13):** content editing moves to the Next.js admin (docs/systems/admin.md, documents.md, media.md, projects.md) with the database as the source of truth. Decap and `workers/auth/` stay only until the nightly content export is committing (spec §19 Phase 7); everything below describes the Cloudflare-era path that still runs from `main`.
+
 Editors can change site copy at `/admin` without touching code. Changes commit to git and Cloudflare Pages rebuilds automatically.
 
 ## Code Map

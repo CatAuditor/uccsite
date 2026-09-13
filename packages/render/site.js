@@ -81,6 +81,28 @@ function withColorClasses(content) {
   return { content: derived, colorsCss };
 }
 
+// deriveProjectFilters(content) → content with project_statuses /
+// project_regions (distinct, in first-seen order) and per-project date_ts
+// (Date.parse of the free-text date, '' when unparseable) for the projects
+// page's client-side filter/sort controls (js/projects.js).
+function deriveProjectFilters(content) {
+  const projects = content.projects?.projects;
+  if (!Array.isArray(projects)) return content;
+  const uniq = (key) => [...new Set(projects.map(p => (p[key] || '').trim()).filter(Boolean))].map(value => ({ value }));
+  return {
+    ...content,
+    projects: {
+      ...content.projects,
+      projects: projects.map(p => {
+        const ts = Date.parse(String(p.date || ''));
+        return { ...p, date_ts: Number.isNaN(ts) ? '' : String(ts) };
+      }),
+      project_statuses: uniq('status'),
+      project_regions: uniq('region'),
+    },
+  };
+}
+
 // buildSite({ templates, partials, content, lastmod, pages?, siteUrl? })
 //   templates: { 'index.html' → template string } — must cover every PAGES entry
 //   partials:  { 'header' → string, ... }
@@ -103,7 +125,7 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
   if (errors.length) return { files: {}, errors };
 
   const colored = withColorClasses(content);
-  const derived = deriveHomepage(colored.content);
+  const derived = deriveProjectFilters(deriveHomepage(colored.content));
 
   const files = { 'css/colors.css': colored.colorsCss };
   for (const { template, content: names } of pages) {
@@ -141,4 +163,4 @@ ${pages.filter(p => p.sitemap !== false).map(p => {
 `;
 }
 
-module.exports = { PAGES, MARKDOWN_FIELDS, SITE_URL, deriveHomepage, withColorClasses, buildSite, makeSitemap };
+module.exports = { PAGES, MARKDOWN_FIELDS, SITE_URL, deriveHomepage, deriveProjectFilters, withColorClasses, buildSite, makeSitemap };

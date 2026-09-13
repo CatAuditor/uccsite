@@ -1,5 +1,7 @@
 # Nav: About Us Dropdown, Stratos Folded into Projects
 
+**Status (2026-09-13):** still in force (unchanged by the AWS rebuild).
+
 Replaced the flat top-level "Theory of Change" and "Stratos" nav links with an "About Us" dropdown (Team & Bios, Theory of Change, Policies) plus a flatter top level: Mission, About Us, News & Media, Projects, Submit a Tip, Donate, Get Involved.
 
 **Why:** Nav had grown to 9 items. Theory of Change and Policy Positions are "about the org" context rather than destinations someone navigates to directly, so they're grouped under About Us. Stratos no longer needs standalone top-level placement — it's still one click away via its project card on `/projects.html` (which links to `/stratos.html`).

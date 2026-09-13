@@ -1,5 +1,7 @@
 # Byline Attribution by Content Type
 
+**Status (2026-09-13):** still in force — the author fields are edited in the admin collection editors.
+
 Projects are bylined to Conner Radcliffe; statements and issue positions are bylined to Clark Dice. `privacy-report.html` and `theory.html` get no byline.
 
 **Why:** Authorship on this site splits cleanly along a division of labor — Conner does the investigative/project work, Clark writes the org's public statements and policy positions. Encoding that as a per-entry `author` field rather than a hardcoded per-template constant means a future piece written by someone else needs a data change, not a template change.

@@ -25,8 +25,9 @@ apps/admin/
   lib/media.js             media library server helpers (docs/systems/media.md)
   app/page.js              Publish button (async PublishFn invoke, audit-logged)
                            + publish_runs history (Publishing…/Live hh:mm/failed)
-  app/settings, /homepage, /team, /statements, /issues, /blog, /coverage
-                           collection editors (generic ListEditor client component)
+  app/settings, /homepage, /team, /statements, /issues, /blog, /coverage,
+  /projects                collection editors (generic ListEditor client component;
+                           projects is nested — docs/systems/projects.md)
   app/media                media library: presigned-PUT uploads, sharp variants
                            via the MediaProcessFn Lambda, alt text, delete
                            (docs/systems/media.md)

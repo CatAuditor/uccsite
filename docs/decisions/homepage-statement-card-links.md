@@ -1,5 +1,7 @@
 # Homepage statement cards link anywhere
 
+**Status (2026-09-13):** still in force — `deriveHomepage` in `packages/render/site.js`; see also homepage-statement-links.md.
+
 > **SUPERSEDED 2026-09-12** by [homepage-statement-links.md](homepage-statement-links.md).
 > The `homepage.json` statements array this relies on was removed by the
 > derived-statement refactor; the two decisions together produced a dead-link

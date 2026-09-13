@@ -1,5 +1,7 @@
 # Tipline: Cloudflare Function proxy instead of direct client-side Airtable API
 
+**Status (2026-09-13):** still in force on AWS — the tipline proxy is the `/api/tip` route in `aws/api` (Lambda), same no-logging rule (CLAUDE.md).
+
 ## Decision
 
 The tip form POSTs to `/api/tip` (a Cloudflare Pages Function) rather than calling the Airtable REST API directly from the browser.

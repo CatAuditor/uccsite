@@ -74,3 +74,36 @@
 @media (max-width: 640px) {
   .project-block { padding: 48px 24px 56px; }
 }
+
+/* Filter / sort controls (js/projects.js reveals them) */
+.project-filters {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 28px 48px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  align-items: end;
+}
+.project-filters label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.project-filters select {
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--gray-200);
+  border-radius: 4px;
+  background: var(--white);
+  color: var(--navy);
+  min-width: 160px;
+}
+.project-filters-count { font-size: 13px; color: var(--gray-600); }
+@media (max-width: 640px) { .project-filters { padding: 24px 24px 0; } }

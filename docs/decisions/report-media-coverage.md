@@ -1,5 +1,7 @@
 # Report Media Coverage Lives in Its Own Content File
 
+**Status (2026-09-13):** still in force — coverage strips render from `coverage_entries` through the `{{coverage:key}}` token in Documents (docs/systems/documents.md).
+
 "Read About This in the Media" sections on `alpr.html` and `stratos.html` are driven by `content/coverage.json`, keyed per report (`alpr_coverage`, `stratos_coverage`) — not by reusing `blog.json` and not by hardcoding links into the templates.
 
 **Why not reuse `blog.json`:** The blog feed is chronological across every topic. A report needs only the stories about *that* report, in the order the report wants them. The template engine has no filtering — `{{#articles}}` renders the whole array — so pulling from `blog.json` would put every unrelated story on every report page.

@@ -1,5 +1,7 @@
 # Nav Flatten + Donate Button
 
+**Status (2026-09-13):** still in force (unchanged by the AWS rebuild).
+
 Removed all dropdown menus from navigation. Replaced "About" dropdown (Team & Bios, Theory of Change) and "Our Work" dropdown (Issues, News & Blog) with flat top-level links.
 
 **Why:** Dropdowns added friction and hid important pages. All destination pages are valuable enough to be first-class nav items. Flat nav is faster on mobile and removes the JS dependency for hover/click states.

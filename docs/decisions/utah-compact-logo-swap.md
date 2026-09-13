@@ -1,5 +1,7 @@
 # Logo Swap: Utah Outline Mark
 
+**Status (2026-09-13):** still in force (unchanged by the AWS rebuild).
+
 Replaced the old red "UCC" square + wordmark, and the never-shipped torch-icon nav plan, with the org's new brand mark (Utah state outline containing a sunrise, mountains, and a bee, paired with a "UTAH CIVIC COMPACT" wordmark).
 
 **Why:** The torch nav icon (see [nav-flatten-donate-button.md](nav-flatten-donate-button.md)) was scrapped before shipping in favor of this new mark, provided by the org as a single flattened image (icon + wordmark + tagline on a navy background — not a layered source file).

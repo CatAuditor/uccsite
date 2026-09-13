@@ -36,8 +36,32 @@
 
   <div class="bg-cream">
 
+    <div class="project-filters" id="project-filters" hidden>
+      <label>Status
+        <select data-filter="status" aria-label="Filter by status">
+          <option value="">All</option>
+          {{#project_statuses}}<option value="{{value}}">{{value}}</option>{{/project_statuses}}
+        </select>
+      </label>
+      <label>Region
+        <select data-filter="region" aria-label="Filter by region">
+          <option value="">All</option>
+          {{#project_regions}}<option value="{{value}}">{{value}}</option>{{/project_regions}}
+        </select>
+      </label>
+      <label>Sort
+        <select data-sort aria-label="Sort projects">
+          <option value="featured">Featured order</option>
+          <option value="date">Newest first</option>
+          <option value="name">Name A–Z</option>
+        </select>
+      </label>
+      <span class="project-filters-count" data-count aria-live="polite"></span>
+    </div>
+
+    <div id="project-list">
     {{#projects}}
-    <div class="project-block">
+    <div class="project-block" data-name="{{name}}" data-status="{{status}}" data-region="{{region}}" data-date="{{date_ts}}">
       <div class="project-block-inner">
 
         <div class="project-meta-row">
@@ -88,6 +112,7 @@
       </div>
     </div>
     {{/projects}}
+    </div>
 
   </div>
 
@@ -95,5 +120,6 @@
 {{> footer}}
 
   <script src="/js/main.js"></script>
+  <script src="/js/projects.js"></script>
 </body>
 </html>

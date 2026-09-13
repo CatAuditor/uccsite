@@ -1,5 +1,7 @@
 # State of the Site — utahciviccompact.org
 
+> **2026-09-13:** this snapshot describes the pre-migration Cloudflare stack on `main`. The `refactor` branch now carries the AWS rebuild (Phases 0–9 built; cutover pending) — see `docs/changelog.md`, `docs/build-spec-aws.md`, and `docs/systems/{admin,documents,media,projects,publish-pipeline,content-export}.md` for the current state.
+
 Snapshot of the **working tree** as of 2026-09-12, branch `refactor`. This describes what exists in the code right now, including staged-but-uncommitted changes. It contains no roadmap or future plans.
 
 **Git state:** `refactor` sits at the same commit as `main` (`923568c`). The entire refactor is **staged but uncommitted**: 51 files, +1,525/−2,365 lines, plus 13 untracked paths (new files/dirs). The only unstaged change is a small CLAUDE.md addition. Nothing described below as "new this cycle" has been pushed or deployed yet — production still runs the pre-refactor code.

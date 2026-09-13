@@ -4,7 +4,7 @@
 // gate, then ONE transaction holding the wipe-and-load AND the revision
 // snapshot + audit row (recordChange) — a 40001 retry replays all of it, so
 // a save can never land without its revision.
-import { list, replaceCollectionRows } from '@uccsite/db/content';
+import { list, replaceCollectionRows, loadProjects, replaceProjects } from '@uccsite/db/content';
 import { assetIdFromPath } from '@uccsite/db/media';
 import { requireRole } from './auth';
 import { withWriteTx, recordChange, collectionStamp } from './data';
@@ -13,13 +13,20 @@ import { assertAltText } from './media';
 
 export const CONFLICT_MESSAGE = 'Someone else saved this since you opened it. Copy your changes, reload, and re-apply them.';
 
+// sanitizeItems(fields, payload | array) → items with only the declared
+// fields, trimmed strings, empty values dropped; widget 'list' fields
+// recurse (nested child lists are always present as arrays).
 export function sanitizeItems(fields, payload) {
-  let parsed;
-  try { parsed = JSON.parse(payload); } catch { throw new Error('Bad payload'); }
+  let parsed = payload;
+  if (typeof payload === 'string') {
+    try { parsed = JSON.parse(payload); } catch { throw new Error('Bad payload'); }
+  }
   if (!Array.isArray(parsed)) throw new Error('Bad payload');
+  if (parsed.length > 2000) throw new Error('Too many items');
   return parsed.map((item) => Object.fromEntries(
     fields.map(f => {
       const v = item?.[f.name];
+      if (f.widget === 'list') return [f.name, sanitizeItems(f.fields, Array.isArray(v) ? v : [])];
       const s = (typeof v === 'string' ? v : '').trim();
       return [f.name, s];
     }).filter(([, v]) => v !== ''),
@@ -28,6 +35,7 @@ export function sanitizeItems(fields, payload) {
 
 export function loadCollectionItems(client, key) {
   const spec = COLLECTIONS[key];
+  if (spec.nested) return loadProjects(client); // the one nested collection
   const where = spec.where ? `WHERE ${spec.where[0]} = $1` : '';
   const params = spec.where ? [spec.where[1]] : [];
   return list(client, spec.table, where, params);
@@ -58,7 +66,8 @@ export async function saveCollection(key, formData) {
     // typed path or an alt wiped after picking must not slip through.
     await assertAltText(client, mediaIds);
     const before = await loadCollectionItems(client, key);
-    await replaceCollectionRows(client, spec.table, items, { where: spec.where, tx: false });
+    if (spec.nested) await replaceProjects(client, items, { tx: false });
+    else await replaceCollectionRows(client, spec.table, items, { where: spec.where, tx: false });
     await recordChange(client, {
       actor: session.email,
       action: `${key}.save`,

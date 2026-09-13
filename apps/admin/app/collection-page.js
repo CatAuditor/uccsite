@@ -53,6 +53,7 @@ export function makeCollectionPage(...keys) {
                   itemLabelField={spec.fields[0].name}
                   readOnly={readOnly}
                   mediaOptions={mediaOptions}
+                  sortable={Boolean(spec.nested || spec.sortable)}
                 />
                 {!readOnly && <button type="submit">Save {spec.title}</button>}
               </ActionForm>
