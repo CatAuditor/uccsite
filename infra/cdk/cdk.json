@@ -4,6 +4,7 @@
     "account": "017110365763",
     "region": "us-west-2",
     "stagingBasicAuth": "preview:wasatch-front-2026",
+    "stagingPublicOrigin": "https://d3heb9s058a59m.cloudfront.net",
     "@aws-cdk/aws-s3:createDefaultLoggingPolicy": true,
     "@aws-cdk/core:checkSecretUsage": true
   }

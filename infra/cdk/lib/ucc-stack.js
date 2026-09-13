@@ -108,16 +108,41 @@ class UccStack extends Stack {
     });
     const originVerifyValue = originVerifySecret.secretValue.unsafeUnwrap(); // renders as {{resolve:secretsmanager:...}}
 
-    // ── API Lambda (Phase 3 health placeholder; Phase 5 ports functions/api) ─
+    // ── API secrets (spec §17): created with placeholders, values entered by
+    // the operator in the console (docs/for-conner.md). The Lambda fetches
+    // them AT RUNTIME (aws/api/secrets.js) — values never enter the template
+    // or the Lambda env, and rotation needs no redeploy.
+    const API_SECRET_NAMES = [
+      'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'AIRTABLE_TOKEN',
+      'RESEND_API_KEY', 'TOKEN_SECRET', 'TURNSTILE_SECRET_KEY',
+    ];
+    const envName = isProd ? 'prod' : 'staging';
+    const apiSecrets = {};
+    for (const name of API_SECRET_NAMES) {
+      apiSecrets[name] = new secretsmanager.Secret(this, `ApiSecret${name}`, {
+        secretName: `ucc/${envName}/${name}`,
+        description: `uccsite ${envName} ${name} (fill in the real value; see docs/for-conner.md)`,
+        secretStringValue: SecretValue.unsafePlainText('REPLACE_ME'),
+        removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+      });
+    }
+
+    // ── API Lambda (functions/api port — aws/api, spec §10) ─────────────────
     const apiFn = new nodejs.NodejsFunction(this, 'ApiFunction', {
-      entry: path.join(__dirname, '..', 'lambda-health', 'index.mjs'),
+      entry: path.join(__dirname, '..', '..', '..', 'aws', 'api', 'index.mjs'),
       handler: 'handler',
       runtime: lambda.Runtime.NODEJS_22_X,
       memorySize: 256,
-      timeout: Duration.seconds(15),
+      timeout: Duration.seconds(20),
       environment: {
         DSQL_ENDPOINT: dsqlEndpoint,
         ORIGIN_VERIFY_SECRET: originVerifyValue,
+        // Public site origin for links in emails and Stripe redirects. The
+        // staging value is the distribution's stable *.cloudfront.net domain,
+        // set in cdk.json context after the first deploy (can't reference the
+        // distribution here — that would be a CFN cycle through the origin).
+        PUBLIC_ORIGIN: isProd ? 'https://utahciviccompact.org' : (this.node.tryGetContext('stagingPublicOrigin') || ''),
+        ...Object.fromEntries(API_SECRET_NAMES.map(n => [`SECRET_ARN_${n}`, apiSecrets[n].secretArn])),
       },
       bundling: {
         externalModules: ['pg-native'], // optional native dep of pg, not installed
@@ -128,6 +153,17 @@ class UccStack extends Stack {
       actions: ['dsql:DbConnectAdmin'],
       resources: [cluster.attrResourceArn],
     }));
+    for (const name of API_SECRET_NAMES) apiSecrets[name].grantRead(apiFn);
+    // Async self-invocation (portal magic-link job). A STANDALONE policy, not
+    // addToRolePolicy: CDK makes the function DependsOn its role's default
+    // policy, so putting our own ARN there is a circular dependency.
+    new iam.Policy(this, 'ApiSelfInvokePolicy', {
+      roles: [apiFn.role],
+      statements: [new iam.PolicyStatement({
+        actions: ['lambda:InvokeFunction'],
+        resources: [apiFn.functionArn, `${apiFn.functionArn}:*`],
+      })],
+    });
     const apiUrl = apiFn.addFunctionUrl({ authType: lambda.FunctionUrlAuthType.NONE });
 
     // ── CloudFront Function + KVS redirect map ──────────────────────────────
@@ -280,6 +316,51 @@ class UccStack extends Stack {
       })
       .addAlarmAction(new cwActions.SnsAction(alertTopic));
 
+    // ── Operational data export (§14.3): nightly donor/newsletter snapshot
+    // to a RESTRICTED private bucket. 90-day retention; never to git.
+    const exportBucket = new s3.Bucket(this, 'OperationalExportBucket', {
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      versioned: true,
+      lifecycleRules: [{ expiration: Duration.days(90) }],
+      removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+      autoDeleteObjects: !isProd,
+    });
+    const exportFn = new nodejs.NodejsFunction(this, 'ExportOperationalFn', {
+      entry: path.join(__dirname, '..', '..', '..', 'aws', 'export-operational', 'index.mjs'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      memorySize: 256,
+      timeout: Duration.minutes(5),
+      environment: {
+        EXPORT_BUCKET: exportBucket.bucketName,
+        DSQL_ENDPOINT: dsqlEndpoint,
+        ALERT_TOPIC_ARN: alertTopic.topicArn,
+      },
+      bundling: { externalModules: ['pg-native'] },
+      depsLockFilePath: path.join(__dirname, '..', '..', '..', 'package-lock.json'),
+    });
+    exportBucket.grantWrite(exportFn);
+    exportFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['dsql:DbConnectAdmin'],
+      resources: [cluster.attrResourceArn],
+    }));
+    alertTopic.grantPublish(exportFn);
+    new events.Rule(this, 'ExportOperationalNightly', {
+      schedule: events.Schedule.cron({ minute: '0', hour: '9' }), // 09:00 UTC ~ 3am MT
+      targets: [new targets.LambdaFunction(exportFn)],
+    });
+    exportFn.metricErrors({ period: Duration.days(1), statistic: 'Sum' })
+      .createAlarm(this, 'ExportErrorsAlarm', {
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+        alarmDescription: 'uccsite operational export failed',
+      })
+      .addAlarmAction(new cwActions.SnsAction(alertTopic));
+
+    new CfnOutput(this, 'OperationalExportBucketName', { value: exportBucket.bucketName });
     new CfnOutput(this, 'OpsAlertTopicArn', { value: alertTopic.topicArn });
     new CfnOutput(this, 'DistributionDomain', { value: distribution.distributionDomainName });
     new CfnOutput(this, 'DistributionId', { value: distribution.distributionId });

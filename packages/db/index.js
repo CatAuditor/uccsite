@@ -78,4 +78,33 @@ async function withRetry(fn, { attempts = 3, baseDelayMs = 100 } = {}) {
   throw lastErr;
 }
 
-module.exports = { authToken, connect, withConnection, withRetry };
+// Warm-invocation connection cache for Lambdas: reuses one client across
+// invocations, refreshed before DSQL's 1-hour kill and replaced on error.
+// makeCachedClient(cfg) → { query(text, params), end() }
+function makeCachedClient(cfg, { maxAgeMs = 50 * 60 * 1000 } = {}) {
+  let client = null;
+  let bornAt = 0;
+  async function get() {
+    if (client && Date.now() - bornAt < maxAgeMs) return client;
+    if (client) { try { await client.end(); } catch {} }
+    client = await connect(cfg);
+    bornAt = Date.now();
+    return client;
+  }
+  return {
+    async query(text, params) {
+      try {
+        return await (await get()).query(text, params);
+      } catch (err) {
+        // Connection-level failure: drop the cached client, retry once.
+        if (err.code === '40001' || err.severity) throw err; // SQL errors pass through
+        try { await client?.end(); } catch {}
+        client = null;
+        return (await get()).query(text, params);
+      }
+    },
+    async end() { if (client) { try { await client.end(); } catch {} client = null; } },
+  };
+}
+
+module.exports = { authToken, connect, withConnection, withRetry, makeCachedClient };

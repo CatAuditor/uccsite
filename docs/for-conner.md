@@ -30,9 +30,19 @@ as they're done. Context: `docs/build-spec-aws.md`.
   Email → confirm the email it sends you. Repeat for the prod topic when the
   prod stack exists.
 
+- [ ] **Cloudflare API token for the data migration** — the donor-database
+  copy (D1 → AWS) needs read access to the `ucc-members` D1 database. Either
+  run `npx wrangler login` on the dev machine, or create an API token
+  (Cloudflare dashboard → My Profile → API Tokens) with D1 read permission
+  and provide it as `CLOUDFLARE_API_TOKEN`. Needed before cutover.
+
 ## Needed at Phase 3/5 (AWS Secrets Manager, us-west-2, account 017110365763)
 
-Each of these gets entered into AWS Secrets Manager when asked. Sources:
+**The staging + prod stacks now create these secrets with placeholder values
+named `ucc/staging/<NAME>` and `ucc/prod/<NAME>`.** To fill one in: AWS
+Console → Secrets Manager → the secret → "Retrieve secret value" → Edit →
+paste the real value (replacing REPLACE_ME). The API picks changes up within
+minutes (next Lambda cold start), no deploy needed. Sources:
 
 - [ ] `STRIPE_SECRET_KEY` — Stripe Dashboard → Developers → API keys (live key)
 - [ ] `STRIPE_WEBHOOK_SECRET` — carries over UNCHANGED (the webhook URL doesn't
