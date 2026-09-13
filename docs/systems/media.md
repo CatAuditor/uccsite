@@ -47,8 +47,9 @@ scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
 
 1. Editor picks files on `/media`. For each: `beginUpload({filename, mime,
    bytes})` → role check → presigned PUT (15 min) for exactly
-   `uploads/<id>/<safe-filename>` with the Content-Type header SIGNED (the
-   presigner leaves it unsigned unless asked; a mismatched type is a 403) →
+   `uploads/<id>/<safe-filename>` with Content-Type AND Content-Length
+   SIGNED (the presigner leaves headers unsigned unless asked; a mismatched
+   type or size is a 403 from S3 — the 25 MB limit is enforced by S3) →
    `INSERT media_assets (status 'pending')`. Presign first so a config or
    credential failure leaves no orphan row.
 2. Browser `PUT`s the file to S3 directly (bucket CORS allows PUT from the
@@ -56,8 +57,9 @@ scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
 3. S3 `ObjectCreated` (prefix `uploads/`) invokes `MediaProcessFn`. It looks
    up the row by the id in the key (no row → warn + skip), sets `processing`,
    HeadObjects the original and rejects >25 MB / non-image content types
-   BEFORE reading the body (a presigned PUT cannot cap Content-Length; an
-   oversized read would OOM the function and strand the row), reads it, hashes the
+   BEFORE reading the body (defense in depth behind the signed length; an
+   oversized read would OOM the function and strand the row) — a rejected
+   original is DELETED from the bucket, the row keeps the reason — reads it, hashes the
    bytes (sha256, 12 hex), reads dimensions (EXIF-rotated), and for every
    width ≤ the original's width (or the original width if it is smaller than
    400) writes `media/<id>/<hash>-<w>.avif|webp` with
@@ -111,8 +113,8 @@ scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
 
 ## IAM
 
-- MediaProcessFn: `s3:GetObject` on `uploads/*`, `s3:PutObject` on `media/*`,
-  `dsql:DbConnectAdmin`.
+- MediaProcessFn: `s3:GetObject` + `s3:DeleteObject` on `uploads/*`,
+  `s3:PutObject` on `media/*`, `dsql:DbConnectAdmin`.
 - Admin (local profile / Amplify SSR role): `s3:PutObject` (presign),
   `s3:GetObject` (thumbnail presign), `s3:DeleteObject` on the media bucket.
   The SSR role wire-up is still pending (docs/systems/admin.md).

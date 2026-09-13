@@ -99,7 +99,7 @@ class UccStack extends Stack {
     // stays on the site bucket untouched (URLs never move).
     const stagingAdminOrigin = this.node.tryGetContext('stagingAdminOrigin');
     const adminOrigins = [
-      'http://localhost:3000',
+      ...(isProd ? [] : ['http://localhost:3000']),
       ...(stagingAdminOrigin && !isProd ? [stagingAdminOrigin] : []),
       ...(isProd ? ['https://admin.utahciviccompact.org'] : []),
     ];
@@ -566,6 +566,7 @@ class UccStack extends Stack {
       depsLockFilePath: path.join(repoRoot, 'package-lock.json'),
     });
     mediaBucket.grantRead(mediaFn, 'uploads/*');
+    mediaBucket.grantDelete(mediaFn, 'uploads/*'); // rejected originals (size/type)
     mediaBucket.grantPut(mediaFn, 'media/*');
     mediaFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['dsql:DbConnectAdmin'],
@@ -608,7 +609,11 @@ class UccStack extends Stack {
     });
     const adminClient = userPool.addClient('AdminAppClient', {
       generateSecret: false, // public client + PKCE; the Next.js server does the code exchange
-      authFlows: { userSrp: true, userPassword: true }, // userPassword: scripted smoke tests
+      // userPassword: scripted smoke tests on STAGING ONLY — on prod a
+      // secret-less public client with password auth is a stuffing target
+      // that bypasses the hosted UI.
+      authFlows: { userSrp: true, userPassword: !isProd },
+      preventUserExistenceErrors: true, // no account enumeration via error text
 
       oAuth: {
         flows: { authorizationCodeGrant: true },
@@ -616,18 +621,11 @@ class UccStack extends Stack {
         // A deployed staging admin origin (Amplify Hosting) registers here via
         // cdk.json context once it exists — Cognito rejects any redirect_uri
         // not on this list.
-        callbackUrls: [
-          'http://localhost:3000/auth/callback',
-          ...(this.node.tryGetContext('stagingAdminOrigin') && !isProd
-            ? [`${this.node.tryGetContext('stagingAdminOrigin')}/auth/callback`] : []),
-          ...(isProd ? ['https://admin.utahciviccompact.org/auth/callback'] : []),
-        ],
-        logoutUrls: [
-          'http://localhost:3000/login',
-          ...(this.node.tryGetContext('stagingAdminOrigin') && !isProd
-            ? [`${this.node.tryGetContext('stagingAdminOrigin')}/login`] : []),
-          ...(isProd ? ['https://admin.utahciviccompact.org/login'] : []),
-        ],
+        // ONE origin list (adminOrigins, defined with the media bucket CORS):
+        // localhost only off prod, the Amplify staging origin from cdk.json
+        // context, the custom domain on prod.
+        callbackUrls: adminOrigins.map(o => `${o}/auth/callback`),
+        logoutUrls: adminOrigins.map(o => `${o}/login`),
       },
     });
 

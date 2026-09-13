@@ -11,7 +11,7 @@ export function middleware(request) {
     return NextResponse.next();
   }
   if (!request.cookies.get(SESSION_COOKIE)) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/login', process.env.APP_ORIGIN || request.url));
   }
   return NextResponse.next();
 }

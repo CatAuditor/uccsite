@@ -48,7 +48,7 @@ export default async function RootLayout({ children }) {
                 <>
                   <div className="session-user">{session.email}</div>
                   <div className="session-role">{session.role}</div>
-                  <a href="/logout" className="nav-link">Sign out</a>
+                  <form action="/logout" method="post"><button type="submit" className="nav-link linkish">Sign out</button></form>
                 </>
               ) : (
                 <Link href="/login" className="nav-link">Sign in</Link>

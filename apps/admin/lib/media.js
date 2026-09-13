@@ -29,10 +29,15 @@ export function isStalled(asset) {
     && Date.now() - new Date(asset.updatedAt || asset.createdAt).getTime() > STALL_MS;
 }
 
+// Bounded lists: the library page presigns one GET per row and the editor
+// pickers ship every option as client props. Pagination arrives when the
+// library outgrows this.
+const LIST_LIMIT = 500;
+
 // listAssets(client) → asset[] newest first, each with thumbUrl (presigned
 // GET of the smallest WebP variant) when ready, and stalled (see above).
 export async function listAssets(client) {
-  const res = await client.query(`SELECT ${ASSET_COLUMNS} FROM media_assets ORDER BY created_at DESC`);
+  const res = await client.query(`SELECT ${ASSET_COLUMNS} FROM media_assets ORDER BY created_at DESC LIMIT ${LIST_LIMIT}`);
   const assets = res.rows.map(rowToAsset);
   await Promise.all(assets.map(async (a) => {
     const thumb = pickVariant(a.variants, 1, 'webp');
@@ -58,9 +63,12 @@ export async function createUpload(client, { filename, mime, bytes, actor }) {
   if (!(bytes > 0) || bytes > MAX_UPLOAD_BYTES) throw new Error(`File must be 1 byte to ${MAX_UPLOAD_BYTES / 1024 / 1024} MB`);
   const id = randomUUID();
   const key = uploadKey(id, filename);
+  // Content-Type AND Content-Length are signed: the browser must send
+  // exactly the declared type and size, so the 25 MB gate is enforced by S3
+  // itself, not just by the declared `bytes`.
   const url = await getSignedUrl(getS3(),
-    new PutObjectCommand({ Bucket: config.mediaBucket, Key: key, ContentType: mime }),
-    { expiresIn: PUT_EXPIRY_S, signableHeaders: new Set(['content-type']) });
+    new PutObjectCommand({ Bucket: config.mediaBucket, Key: key, ContentType: mime, ContentLength: bytes }),
+    { expiresIn: PUT_EXPIRY_S, signableHeaders: new Set(['content-type', 'content-length']) });
   await client.query(
     `INSERT INTO media_assets (id, s3_key, original_filename, mime, bytes, uploaded_by, status)
      VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
@@ -93,7 +101,7 @@ export async function deleteAsset(client, id) {
 export async function mediaOptionsFor(client, targetWidth) {
   const res = await client.query(
     `SELECT ${ASSET_COLUMNS} FROM media_assets
-     WHERE status = 'ready' AND alt IS NOT NULL AND alt <> '' ORDER BY created_at DESC`);
+     WHERE status = 'ready' AND alt IS NOT NULL AND alt <> '' ORDER BY created_at DESC LIMIT ${LIST_LIMIT}`);
   return res.rows.map(rowToAsset).map((a) => {
     const v = pickVariant(a.variants, targetWidth, 'webp');
     return v ? { value: v.path, label: `${a.alt} (${a.originalFilename}, ${v.width}px)` } : null;

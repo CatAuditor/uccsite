@@ -98,6 +98,17 @@ minutes (next Lambda cold start), no deploy needed. Sources:
 
 - [x] 2026-09-12 — nothing yet
 
+## Phase 7 — admin hosting (needs the GitHub repo owner)
+
+- [ ] **Amplify Hosting app for the admin**: AWS Console (017110365763,
+  us-west-2) → Amplify → New app → GitHub → authorize the Amplify GitHub App
+  on `CatAuditor/uccsite` → tick "monorepo", app root `apps/admin`, branch
+  `refactor` for now. Then follow the numbered checklist in
+  docs/systems/admin.md "Amplify Hosting" (env vars, the SSR role, and the
+  one `cdk.json` value + redeploy that registers the new URL with Cognito).
+  Until this exists the admin runs only on a developer machine
+  (`npm run dev -w @uccsite/admin`).
+
 ## Phase 7 — media library (2026-09-13)
 
 - [ ] When the admin app moves to Amplify Hosting, its SSR compute role needs

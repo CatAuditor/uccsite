@@ -1,13 +1,16 @@
 // Donations dashboard (org decision, planning addendum 2): staff see every
 // donation — amount, donor, contact info where given — while the public site
 // shows only the opt-in ticker.
-import { requireSession } from '../../lib/auth';
+import { requireRole } from '../../lib/auth';
 import { withDb } from '../../lib/data';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DonationsPage() {
-  await requireSession(); // donor PII — a verified session or a redirect, never cookie presence
+  // Donor PII: editor or owner only (spec §11 gives "read form submissions"
+  // to editor; viewer is read-only CONTENT). requireRole throws for viewer —
+  // the layout still gates unauthenticated users to /login.
+  await requireRole('editor');
   const rows = await withDb(async (client) => (await client.query(
     `SELECT d.amount_cents, d.public, d.created_at::text AS created_at,
             m.first_name, m.last_name, m.email, m.zip

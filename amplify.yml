@@ -1,0 +1,32 @@
+# Amplify Hosting build spec for the admin app (apps/admin) — spec §11/§16,
+# docs/systems/admin.md "Amplify Hosting". Monorepo: the Amplify app's
+# "app root" is apps/admin; this file at the repo root overrides console
+# build settings.
+#
+# Amplify console env vars are BUILD-time only. The SSR runtime sees them
+# only if the build writes them into apps/admin/.env.production — the grep
+# below does exactly that for the runtime names lib/config.js reads
+# (docs/systems/admin.md lists them). Never put secrets here: the admin has
+# none (AWS access comes from the app's SSR compute role).
+version: 1
+applications:
+  - appRoot: apps/admin
+    frontend:
+      buildPath: /
+      phases:
+        preBuild:
+          commands:
+            - nvm use 22
+            - npm ci --no-audit --no-fund
+        build:
+          commands:
+            - env | grep -e '^UCC_ENV=' -e '^UCC_REGION=' -e '^COGNITO_' -e '^DSQL_ENDPOINT=' -e '^PUBLISH_FUNCTION_NAME=' -e '^MEDIA_BUCKET=' -e '^APP_ORIGIN=' >> apps/admin/.env.production
+            - npm run build --workspace=@uccsite/admin
+      artifacts:
+        baseDirectory: apps/admin/.next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+          - apps/admin/.next/cache/**/*

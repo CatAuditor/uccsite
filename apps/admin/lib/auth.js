@@ -41,7 +41,8 @@ export function beginLogin() {
   return { authorizeUrl: url.toString(), pkceCookieValue: JSON.stringify({ v: verifierValue, s: state }) };
 }
 
-// exchangeCode(code, state, pkceCookieValue) → idToken (throws on any mismatch)
+// exchangeCode(code, state, pkceCookieValue) → { idToken, role } (throws on
+// any mismatch; role null = authenticated but in no group)
 export async function exchangeCode(code, state, pkceCookieValue) {
   const pkce = JSON.parse(pkceCookieValue || '{}');
   if (!pkce.v || pkce.s !== state) throw new Error('PKCE state mismatch');
@@ -58,23 +59,32 @@ export async function exchangeCode(code, state, pkceCookieValue) {
   });
   const data = await res.json();
   if (!res.ok || !data.id_token) throw new Error(`token exchange failed (${res.status})`);
-  await getVerifier().verify(data.id_token); // reject before we ever store it
-  return data.id_token;
+  const payload = await getVerifier().verify(data.id_token); // reject before we ever store it
+  return { idToken: data.id_token, role: roleFromGroups(payload['cognito:groups']) };
+}
+
+// roleFromGroups(groups) → 'owner' | 'editor' | 'viewer' | null
+export function roleFromGroups(groups = []) {
+  return groups.includes('owner') ? 'owner'
+    : groups.includes('editor') ? 'editor'
+    : groups.includes('viewer') ? 'viewer' : null;
 }
 
 // getSession() → { email, groups, role, raw } | null. Verifies the JWT every call.
 export async function getSession() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
+  // Config errors (missing COGNITO_* env) must surface as a loud 500, not
+  // masquerade as "not logged in" — so the verifier is built OUTSIDE the try.
+  const verifier = getVerifier();
   try {
-    const payload = await getVerifier().verify(token);
-    const groups = payload['cognito:groups'] || [];
-    const role = groups.includes('owner') ? 'owner'
-      : groups.includes('editor') ? 'editor'
-      : groups.includes('viewer') ? 'viewer' : null;
+    const payload = await verifier.verify(token);
+    const role = roleFromGroups(payload['cognito:groups']);
     if (!role) return null; // authenticated but ungrouped = no access
-    return { email: payload.email, groups, role, raw: payload };
-  } catch {
+    return { email: payload.email, groups: payload['cognito:groups'] || [], role, raw: payload };
+  } catch (err) {
+    // A JWKS outage must look different from a forged token in the logs.
+    console.warn(`[admin] session token rejected: ${err?.name || 'Error'}: ${err?.message || ''}`);
     return null;
   }
 }

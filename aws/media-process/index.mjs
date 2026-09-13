@@ -9,7 +9,7 @@
 // state. Failures land on the row as status 'failed' + error (the admin shows
 // it) and are NOT rethrown — an S3 → Lambda retry would only fail the same way.
 import { createHash } from 'node:crypto';
-import { S3Client, HeadObjectCommand, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, HeadObjectCommand, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 import { withConnection, withRetry } from '@uccsite/db';
 import {
@@ -56,8 +56,15 @@ async function processOne(key) {
       // memory would OOM the function and strand the row in 'processing'.
       const head = await s3.send(new HeadObjectCommand({ Bucket: MEDIA_BUCKET, Key: key }));
       const mime = head.ContentType || row.mime || '';
-      if (head.ContentLength > MAX_UPLOAD_BYTES) throw new Error(`original is ${head.ContentLength} bytes (max ${MAX_UPLOAD_BYTES})`);
-      if (!ACCEPTED_MIMES.includes(mime)) throw new Error(`unsupported content type ${mime || '(none)'}`);
+      const rejection = head.ContentLength > MAX_UPLOAD_BYTES
+        ? `original is ${head.ContentLength} bytes (max ${MAX_UPLOAD_BYTES})`
+        : !ACCEPTED_MIMES.includes(mime) ? `unsupported content type ${mime || '(none)'}` : null;
+      if (rejection) {
+        // A rejected original must not sit in the bucket (storage abuse via
+        // a leaked presigned URL); the row keeps the reason.
+        await s3.send(new DeleteObjectCommand({ Bucket: MEDIA_BUCKET, Key: key }));
+        throw new Error(rejection);
+      }
       const obj = await s3.send(new GetObjectCommand({ Bucket: MEDIA_BUCKET, Key: key }));
       const original = Buffer.from(await obj.Body.transformToByteArray());
 

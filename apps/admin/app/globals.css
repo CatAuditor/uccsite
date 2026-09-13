@@ -8,6 +8,7 @@ body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: #1c2733; backgrou
 .nav-group-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #7f9488; padding: 6px 20px; }
 .nav-link { display: block; color: #e8e8e2; text-decoration: none; padding: 6px 20px; }
 .nav-link:hover { background: #1f3a2b; }
+button.linkish { background: none; border: 0; margin: 0; width: 100%; text-align: left; font: inherit; }
 .session { margin-top: auto; padding: 14px 0 0; border-top: 1px solid #2b4636; }
 .session-user { padding: 0 20px; font-size: 12px; word-break: break-all; }
 .session-role { padding: 0 20px 6px; font-size: 11px; color: #c8a84b; text-transform: uppercase; }

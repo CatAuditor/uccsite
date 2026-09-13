@@ -43,7 +43,17 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
   code + PKCE exchanged server-side; ID token stored httpOnly/SameSite=Lax,
   1h expiry (re-login after; no refresh flow yet).
 - `getSession()` verifies the JWT on every server read. Roles: `owner` >
-  `editor` > `viewer`; an authenticated user in no group has NO access.
+  `editor` > `viewer`; an authenticated user in no group has NO access —
+  the callback refuses to set the cookie and `/login?error=nogroup` says why.
+- Sign-out is a POST (`/logout`); redirects in the callback/middleware are
+  built from `APP_ORIGIN`, never the request Host.
+- Donor PII (`/donations`) is `editor`+ (spec §11: viewer = read-only
+  content; editor "reads form submissions"). Viewer sees every content
+  editor read-only and the audit/revision lists.
+- Prod Cognito client: SRP only (no `USER_PASSWORD_AUTH` — staging keeps it
+  for scripted smoke tests), `preventUserExistenceErrors`, no localhost
+  callback. Cognito callback/logout URLs and the media bucket CORS come
+  from ONE origin list in the stack.
 - **Every server action calls `requireRole('editor')`** — UI disabling is
   cosmetic, authorization lives in the data layer (spec §11).
 - No self-signup. Users are created with `admin-create-user` (see
@@ -98,6 +108,30 @@ pre-filled from DSQL, and all six collection editors show live content
 (team names, statement slug, blog articles, coverage strips, homepage
 groups + press). Form-submit round trip needs a browser session — first
 manual pass pending.
+
+## Amplify Hosting (deploy checklist — blocked on repo access, see for-conner.md)
+
+1. Amplify console → new app → GitHub `CatAuditor/uccsite`, "monorepo",
+   app root `apps/admin`, platform WEB_COMPUTE. Branch `refactor` (staging)
+   now; `main` → prod with custom domain `admin.utahciviccompact.org` at
+   cutover. `amplify.yml` at the repo root is the build spec (it copies the
+   runtime env vars into `.env.production` — console env vars are
+   build-time only on Amplify).
+2. Env vars per branch: everything `scripts/admin-env.mjs` writes (`UCC_ENV,
+   UCC_REGION, COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_DOMAIN,
+   DSQL_ENDPOINT, PUBLISH_FUNCTION_NAME, MEDIA_BUCKET`) + `APP_ORIGIN` = the
+   branch URL (`https://<branch>.<appid>.amplifyapp.com`).
+3. SSR compute role (App settings → IAM roles, trust `amplify.amazonaws.com`):
+   `dsql:DbConnectAdmin` on the cluster, `lambda:InvokeFunction` on
+   PublishFn, `s3:PutObject/GetObject/DeleteObject` on `<MediaBucketName>/*`.
+4. Put the branch URL in `infra/cdk/cdk.json` as `stagingAdminOrigin` and
+   `cdk deploy UccStaging` — that registers the Cognito callback/logout
+   URLs and the S3 CORS origin. Without it: `redirect_mismatch` on sign-in
+   and CORS failures on upload.
+5. `next.config.js` allows Server Actions from `APP_ORIGIN`'s host; if
+   saves still fail with "Invalid Server Actions request", compare the
+   `x-forwarded-host` Amplify sends and add it there.
+6. Optional: Amplify branch password on staging as a second gate.
 
 ## Not yet (rest of Phase 7)
 
