@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { requireRole, requireSession } from '../lib/auth';
-import { withDb, withWriteDb, recordChange, latestPublishRuns } from '../lib/data';
+import { withDb, withWriteDb, recordChange, latestPublishRuns, inFlightPublish, IN_FLIGHT_GRACE_MS } from '../lib/data';
 import { config } from '../lib/config';
 import Refresher from './refresher';
 
@@ -12,8 +12,6 @@ export const dynamic = 'force-dynamic';
 
 // Matches the drift reconciler's grace: a 'publishing' row older than this is
 // an abandoned run (crashed Lambda) — shown as stalled, and no longer blocks.
-const IN_FLIGHT_GRACE_MS = 30 * 60 * 1000;
-
 function isFreshPublishing(run) {
   return run?.status === 'publishing'
     && Date.now() - new Date(run.started_at).getTime() < IN_FLIGHT_GRACE_MS;
@@ -22,15 +20,16 @@ function isFreshPublishing(run) {
 export default async function Dashboard() {
   const session = await requireSession();
   const runs = await withDb((client) => latestPublishRuns(client));
-  const inFlight = isFreshPublishing(runs[0]);
+  const inFlight = Boolean(await withDb(inFlightPublish));
 
   async function publishNow() {
     'use server';
     const s = await requireRole('editor');
-    // Server-side in-flight guard — the disabled button is only cosmetics.
-    const latest = (await withDb((client) => latestPublishRuns(client, 1)))[0];
-    if (isFreshPublishing(latest)) {
-      console.warn(`[admin] ${s.email} publish refused: run ${latest.id} in flight`);
+    // UX-level in-flight guard; the authoritative mutex is publish_lock,
+    // taken by the Lambda itself (a losing run shows as 'refused' below).
+    const inFlightRun = await withDb(inFlightPublish);
+    if (inFlightRun) {
+      console.warn(`[admin] ${s.email} publish not sent: run ${inFlightRun.id} in flight`);
       return;
     }
     const lambda = new LambdaClient({ region: config.region });
@@ -71,6 +70,7 @@ export default async function Dashboard() {
               <td className={`status-${run.status}`}>
                 {run.status === 'succeeded' ? `Live (${run.finished_at?.slice(11, 16)})`
                   : run.status === 'publishing' ? (isFreshPublishing(run) ? 'Publishing…' : 'Stalled (abandoned)')
+                  : run.status === 'refused' ? 'Refused (another publish was running)'
                   : run.status}
               </td>
               <td>{run.changed}</td>

@@ -154,3 +154,56 @@ test('an empty outputs set is refused outright', async () => {
   const clients = fakeClients();
   await assert.rejects(() => publish({ ...baseOpts(clients, null), outputs: new Map() }), /empty outputs/);
 });
+
+// ── Review fixes: early failures recorded, mutex semantics ──────────────────
+
+test('a pre-S3 failure (bulk-delete refusal) records a failed row', async () => {
+  const clients = fakeClients();
+  const store = makeMemoryStore();
+  const many = new Map(Array.from({ length: 10 }, (_, i) => [`f${i}.css`, Buffer.from('x')]));
+  await publish({ ...baseOpts(clients, store), outputs: many });
+  const few = new Map([['f0.css', Buffer.from('x')]]);
+  await assert.rejects(() => publish({ ...baseOpts(clients, store), outputs: few, runId: 'early-1' }), /Refusing to delete/);
+  const row = store.rows.find(r => r.runId === 'early-1');
+  assert.equal(row.status, 'failed');
+  assert.match(row.error, /Refusing to delete/);
+});
+
+test('an empty outputs set records a failed row when a store is present', async () => {
+  const clients = fakeClients();
+  const store = makeMemoryStore();
+  await assert.rejects(() => publish({ ...baseOpts(clients, store), outputs: new Map(), runId: 'empty-1' }), /empty outputs/);
+  assert.equal(store.rows.find(r => r.runId === 'empty-1').status, 'failed');
+});
+
+test('caller-supplied runId/startedAt are used for the run row', async () => {
+  const clients = fakeClients();
+  const store = makeMemoryStore();
+  const startedAt = new Date('2026-01-01T00:00:00Z');
+  await publish({ ...baseOpts(clients, store), outputs: new Map([['a.html', Buffer.from('a')]]), runId: 'given', startedAt });
+  assert.equal(store.rows.at(-1).runId, 'given');
+  assert.equal(store.rows.at(-1).startedAt, startedAt);
+});
+
+test('memory store lock: one winner, released by owner only, stale takeover', async () => {
+  const store = makeMemoryStore();
+  assert.equal(await store.acquireLock('A'), true);
+  assert.equal(await store.acquireLock('B'), false);
+  await store.releaseLock('B'); // not the owner — no effect
+  assert.equal(await store.acquireLock('B'), false);
+  await store.releaseLock('A');
+  assert.equal(await store.acquireLock('B'), true);
+  store.lock.startedAt = Date.now() - 31 * 60_000; // crashed run
+  assert.equal(await store.acquireLock('C'), true);
+});
+
+test('latestState surfaces an unfinished run even after a later run finished', async () => {
+  const store = makeMemoryStore();
+  await store.startRun({ runId: 'old', trigger: 't', manifest: { a: '1' }, startedAt: new Date(1) });
+  await store.startRun({ runId: 'new', trigger: 't', manifest: { a: '2' }, startedAt: new Date(2) });
+  await store.finishRun({ runId: 'new', status: 'succeeded' });
+  const { latest, good } = await store.latestState();
+  assert.equal(latest.id, 'old');
+  assert.equal(latest.status, 'publishing');
+  assert.equal(good.runId, 'new');
+});

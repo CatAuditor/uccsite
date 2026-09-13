@@ -45,6 +45,18 @@ export async function recordChange(client, { actor, action, entityType, entityId
   console.log(`[admin] ${actor} ${action}${entityType ? ` ${entityType}/${entityId}` : ''}`);
 }
 
+// inFlightPublish(client) → the freshest 'publishing' row younger than the
+// abandonment grace, or null. Authoritative mutex is publish_lock in the
+// Lambda; this only drives the dashboard's button state and polling.
+export const IN_FLIGHT_GRACE_MS = 30 * 60 * 1000;
+export async function inFlightPublish(client) {
+  const res = await client.query(
+    `SELECT id, started_at::text AS started_at FROM publish_runs
+     WHERE status = 'publishing' AND started_at > now() - interval '30 minutes'
+     ORDER BY started_at DESC LIMIT 1`);
+  return res.rows[0] || null;
+}
+
 // latestPublishRuns(client, limit) → recent rows for the dashboard.
 export async function latestPublishRuns(client, limit = 10) {
   const res = await client.query(

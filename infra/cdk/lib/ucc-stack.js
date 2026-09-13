@@ -520,6 +520,10 @@ class UccStack extends Stack {
       },
       depsLockFilePath: path.join(repoRoot, 'package-lock.json'),
     });
+    // Async invoke (admin button / restore): NO retries. A failed run is
+    // already recorded in publish_runs; Lambda's default 2 retries would
+    // re-run the whole diff/PUT cycle and write duplicate failed rows.
+    publishFn.configureAsyncInvoke({ retryAttempts: 0 });
     siteBucket.grantReadWrite(publishFn);
     publishFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['cloudfront:CreateInvalidation', 'cloudfront:GetInvalidation'],

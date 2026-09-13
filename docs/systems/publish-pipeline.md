@@ -15,16 +15,27 @@ aws/publish/core.js         pipeline core: diff vs live S3 sha256 metadata,
                             outputs; refuses deleting >5 live keys without
                             --allow-bulk-delete.
 aws/publish/store.js        publish_runs persistence (DSQL) + in-memory test
-                            store. Lifecycle: 'publishing' row with the intended
-                            manifest is written BEFORE any S3 mutation, flipped
-                            to succeeded/noop/failed after; every failure path
-                            records a 'failed' row.
+                            store + THE PUBLISH MUTEX (publish_lock singleton
+                            row; acquireLock = conditional UPDATE serialized
+                            by DSQL OCC, stale after 30 min). Lifecycle:
+                            'publishing' row with the intended manifest is
+                            written BEFORE any S3 mutation, flipped to
+                            succeeded/noop/failed after; EVERY failure path
+                            records a 'failed' row, including render errors
+                            and pre-S3 refusals (empty outputs, bulk delete);
+                            a run that lost the mutex records 'refused'.
+                            latestState() returns the newest UNFINISHED run
+                            if one exists (a later finished run can't hide
+                            it). Index idx_publish_runs_started.
 aws/publish/inputs.js       THE shared repo-input loader (COPY_FROM_ROOT,
                             render inputs, static files, git/mtime lastmod
                             providers) used by BOTH build.js and publish.mjs —
                             the file list can never diverge between them.
 aws/publish/handler.mjs     PUBLISH LAMBDA (Phase 7): the admin's Publish
-                            button async-invokes it; content from DSQL
+                            button and Restore async-invoke it (retryAttempts
+                            0 — a retry would be a duplicate run); it takes
+                            publish_lock FIRST (refused → 'refused' row),
+                            releases it in finally; content from DSQL
                             (packages/db/content loadContent), site sources
                             bundled into the asset via infra/cdk/
                             copy-site-src.js (list = inputs.js SITE_SRC_*),
@@ -83,6 +94,15 @@ everything under `functions/` as live routes.
    not the edge).
 6. The row flips to `succeeded` (or `failed` with the error — every throw
    between first PUT and completion records `failed`).
+
+## Publish mutex (review fix 2026-09-13)
+
+The admin's in-flight check (`inFlightPublish`: freshest 'publishing' row
+< 30 min) only drives the button/polling. The authoritative guard is
+`publish_lock` in the Lambda: two invocations (two tabs, a restore during a
+publish) get exactly one winner; the loser writes a `refused` row the
+dashboard shows as "Refused (another publish was running)". A crashed
+holder's lock is taken over after 30 min (> the 10-min Lambda timeout).
 
 ## publish_runs (DSQL)
 

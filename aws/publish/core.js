@@ -138,28 +138,50 @@ async function publish(opts) {
   const log = (m) => (opts.log || (() => {}))(`[publish] ${m}`);
   const store = opts.store || (opts.dbConfig ? makeDsqlStore(opts.dbConfig) : null);
 
-  const startedAt = new Date();
-  const runId = randomUUID();
+  // runId/startedAt may come from the caller (the Lambda acquires the mutex
+  // under the same id before rendering) — see aws/publish/handler.mjs.
+  const startedAt = opts.startedAt || new Date();
+  const runId = opts.runId || randomUUID();
   const manifest = {};
   for (const [key, bytes] of outputs) manifest[key] = sha256(bytes);
-  if (!Object.keys(manifest).length) throw new Error('Refusing to publish an empty outputs set.');
 
-  // ── Diff against live state ───────────────────────────────────────────────
-  const liveKeys = await listKeys(s3, bucket);
-  const manifestKeys = Object.keys(manifest);
-  const liveHashes = await pMap(
-    manifestKeys,
-    async (key) => (liveKeys.has(key) ? headHash(s3, bucket, key) : null),
-    HEAD_CONCURRENCY,
-  );
-  const changed = manifestKeys.filter((key, i) => liveHashes[i] !== manifest[key]);
-  const removed = [...liveKeys].filter(key => !(key in manifest));
+  // Failures BEFORE the S3 phase still get a 'failed' row: an async-invoked
+  // Lambda has no return value to surface them through, and "the dashboard
+  // shows nothing" is not a failure state (§7).
+  const recordEarlyFailure = async (err) => {
+    if (!store) return;
+    try {
+      await store.startRun({ runId, trigger, manifest, startedAt });
+      await store.finishRun({ runId, status: 'failed', error: String(err && err.message || err) });
+    } catch (dbErr) {
+      log(`WARNING: could not record early failure: ${dbErr.message}`);
+    }
+  };
 
-  if (removed.length > MAX_REMOVED_WITHOUT_OPTIN && !allowBulkDelete) {
-    throw new Error(
-      `Refusing to delete ${removed.length} live objects (${removed.slice(0, 5).join(', ')}…). `
-      + 'If this is intentional, re-run with allowBulkDelete/--allow-bulk-delete. '
-      + 'A missing input directory produces exactly this signature.');
+  let changed, removed;
+  try {
+    if (!Object.keys(manifest).length) throw new Error('Refusing to publish an empty outputs set.');
+
+    // ── Diff against live state ─────────────────────────────────────────────
+    const liveKeys = await listKeys(s3, bucket);
+    const manifestKeys = Object.keys(manifest);
+    const liveHashes = await pMap(
+      manifestKeys,
+      async (key) => (liveKeys.has(key) ? headHash(s3, bucket, key) : null),
+      HEAD_CONCURRENCY,
+    );
+    changed = manifestKeys.filter((key, i) => liveHashes[i] !== manifest[key]);
+    removed = [...liveKeys].filter(key => !(key in manifest));
+
+    if (removed.length > MAX_REMOVED_WITHOUT_OPTIN && !allowBulkDelete) {
+      throw new Error(
+        `Refusing to delete ${removed.length} live objects (${removed.slice(0, 5).join(', ')}…). `
+        + 'If this is intentional, re-run with allowBulkDelete/--allow-bulk-delete. '
+        + 'A missing input directory produces exactly this signature.');
+    }
+  } catch (err) {
+    await recordEarlyFailure(err);
+    throw err;
   }
 
   if (!changed.length && !removed.length) {
