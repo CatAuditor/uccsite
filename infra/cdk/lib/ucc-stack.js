@@ -452,7 +452,8 @@ class UccStack extends Stack {
     });
     const adminClient = userPool.addClient('AdminAppClient', {
       generateSecret: false, // public client + PKCE; the Next.js server does the code exchange
-      authFlows: { userSrp: true },
+      authFlows: { userSrp: true, userPassword: true }, // userPassword: scripted smoke tests
+
       oAuth: {
         flows: { authorizationCodeGrant: true },
         scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],

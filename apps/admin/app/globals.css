@@ -1,0 +1,31 @@
+/* Minimal, dependency-free admin styling (spec §15: no CSS framework). */
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: #1c2733; background: #f5f6f4; }
+.shell { display: flex; min-height: 100vh; }
+.sidebar { width: 230px; background: #16281e; color: #e8e8e2; padding: 20px 0; display: flex; flex-direction: column; }
+.brand { font-weight: 700; letter-spacing: 0.08em; padding: 0 20px 18px; color: #c8a84b; }
+.nav-group { margin-bottom: 14px; }
+.nav-group-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #7f9488; padding: 6px 20px; }
+.nav-link { display: block; color: #e8e8e2; text-decoration: none; padding: 6px 20px; }
+.nav-link:hover { background: #1f3a2b; }
+.session { margin-top: auto; padding: 14px 0 0; border-top: 1px solid #2b4636; }
+.session-user { padding: 0 20px; font-size: 12px; word-break: break-all; }
+.session-role { padding: 0 20px 6px; font-size: 11px; color: #c8a84b; text-transform: uppercase; }
+.content { flex: 1; padding: 32px 40px; max-width: 900px; }
+h1 { font-size: 22px; margin: 0 0 18px; }
+h2 { font-size: 16px; margin: 24px 0 10px; }
+table { border-collapse: collapse; width: 100%; background: #fff; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e4e6e2; font-size: 13px; }
+th { background: #eceee9; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+form.editor { background: #fff; padding: 20px; border: 1px solid #e4e6e2; max-width: 640px; }
+label { display: block; font-weight: 600; margin: 12px 0 4px; }
+input[type="text"], textarea { width: 100%; padding: 8px; border: 1px solid #c9cdc6; font: inherit; }
+textarea { min-height: 100px; }
+button { background: #16281e; color: #fff; border: 0; padding: 10px 18px; font: inherit; cursor: pointer; margin-top: 16px; }
+button:disabled { opacity: 0.5; }
+.status-succeeded { color: #1c7c3c; font-weight: 600; }
+.status-failed { color: #b3261e; font-weight: 600; }
+.status-publishing { color: #8a6d1a; font-weight: 600; }
+.status-noop { color: #667; }
+.notice { background: #fdf6e3; border: 1px solid #e6d9a8; padding: 10px 14px; margin: 12px 0; }
+.error { background: #fdecea; border: 1px solid #e6b3ae; padding: 10px 14px; margin: 12px 0; }

@@ -1,0 +1,19 @@
+{
+  "name": "@uccsite/admin",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Admin app (build-spec-aws.md §11, Phase 7): Cognito-gated content editing + publish. Next.js on Amplify Hosting; local: npm run dev after scripts/admin-env.mjs.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@aws-sdk/client-lambda": "^3.700.0",
+    "@uccsite/db": "*",
+    "aws-jwt-verify": "^4.0.1",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

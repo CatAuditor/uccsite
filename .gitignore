@@ -7,3 +7,5 @@ dist/
 assets/Screenshot*
 node_modules/
 infra/cdk/cdk.out/
+apps/admin/.env.local
+apps/admin/.next/
