@@ -63,7 +63,16 @@
       "CronList",
       "CronDelete",
       "WebFetch(domain:www.semafor.com)",
-      "WebFetch(domain:www.forbes.com)"
+      "WebFetch(domain:www.forbes.com)",
+      "Bash(curl *)",
+      "Bash(aws logs tail *)",
+      "Bash(aws logs filter-log-events *)",
+      "Bash(aws lambda get-function *)",
+      "Bash(aws cloudformation describe-stacks *)",
+      "Bash(aws s3 ls *)",
+      "Bash(aws cloudfront get-distribution *)",
+      "Bash(stripe get *)",
+      "PowerShell(curl *)"
     ]
   }
 }
