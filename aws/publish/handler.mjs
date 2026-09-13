@@ -13,12 +13,13 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { S3Client } from '@aws-sdk/client-s3';
 import { CloudFrontClient } from '@aws-sdk/client-cloudfront';
-import { buildSite, PAGES } from '@uccsite/render';
+import { PAGES } from '@uccsite/render';
 import { publish } from '@uccsite/publish';
 import { makeDsqlStore } from '@uccsite/publish/store';
 import { loadRenderInputs, collectStaticFiles } from '@uccsite/publish/inputs';
+import { loadSiteFromDb, renderSiteFromDb, recordDocumentPublish } from '@uccsite/publish/render-db';
 import { withConnection } from '@uccsite/db';
-import { loadContent, contentMeta, makeDbLastmod } from '@uccsite/db/content';
+import { SITE_URL } from '@uccsite/render/site';
 
 const { SITE_BUCKET, DISTRIBUTION_ID, DSQL_ENDPOINT } = process.env;
 const region = process.env.AWS_REGION;
@@ -27,27 +28,28 @@ const region = process.env.AWS_REGION;
 // eslint-disable-next-line no-undef
 const SITE_SRC = join(typeof __dirname !== 'undefined' ? __dirname : dirname(fileURLToPath(import.meta.url)), 'site-src');
 
-// Render from the database. Throws with every error listed (fail-fast, §7).
+// Render from the database (collections + Documents, aws/publish/render-db.js).
+// Throws with every error listed (fail-fast, §7); document-level errors are
+// also recorded on the document rows so the admin shows them.
 async function renderFromDb(dbConfig, log) {
-  const { content, meta } = await withConnection(dbConfig, async (client) => ({
-    content: await loadContent(client),
-    meta: await contentMeta(client),
-  }));
+  const db = await withConnection(dbConfig, loadSiteFromDb);
   const errors = [];
   const inputs = loadRenderInputs(SITE_SRC, (msg) => errors.push(msg), { includeContent: false });
-  inputs.content = content;
-  const { files, errors: renderErrors } = errors.length
-    ? { files: {}, errors: [] }
-    : buildSite({ ...inputs, lastmod: makeDbLastmod(meta) });
-  const allErrors = [...errors, ...renderErrors];
+  const outputs = collectStaticFiles(SITE_SRC);
+  const siteCss = outputs.get('css/styles.css')?.toString('utf8') || '';
+  const rendered = errors.length
+    ? { files: {}, errors: [], documentHashes: {}, documentIds: {} }
+    : renderSiteFromDb({ inputs, siteCss, ...db, siteUrl: SITE_URL });
+  const allErrors = [...errors, ...rendered.errors];
   if (allErrors.length) {
     for (const e of allErrors) console.error('[publish] RENDER ERROR: ' + e);
+    await withConnection(dbConfig, (client) => recordDocumentPublish(client, { ...rendered, errors: allErrors }))
+      .catch((err) => log(`[publish] WARNING: could not record document errors: ${err.message}`));
     throw new Error(`render failed: ${allErrors.length} error(s): ${allErrors[0]}`);
   }
-  const outputs = collectStaticFiles(SITE_SRC);
-  for (const [name, text] of Object.entries(files)) outputs.set(name, Buffer.from(text, 'utf8'));
-  log(`[publish] rendered ${Object.keys(files).length} files, ${outputs.size} total outputs (${PAGES.length} pages)`);
-  return outputs;
+  for (const [name, text] of Object.entries(rendered.files)) outputs.set(name, Buffer.from(text, 'utf8'));
+  log(`[publish] rendered ${Object.keys(rendered.files).length} files (${PAGES.length} fixed pages, ${db.bundle.documents.length} documents), ${outputs.size} total outputs`);
+  return { outputs, rendered };
 }
 
 export async function handler(event = {}) {
@@ -69,9 +71,9 @@ export async function handler(event = {}) {
     return { status: 'refused' };
   }
   try {
-    let outputs;
+    let outputs, rendered;
     try {
-      outputs = await renderFromDb(dbConfig, log);
+      ({ outputs, rendered } = await renderFromDb(dbConfig, log));
     } catch (err) {
       // Nothing was written; record the failure where the admin can see it.
       await store.startRun({ runId, trigger, manifest: null, startedAt });
@@ -91,6 +93,9 @@ export async function handler(event = {}) {
       allowBulkDelete: Boolean(event.allowBulkDelete),
       log,
     });
+    // Documents went live with this run (or were unchanged): record it.
+    await withConnection(dbConfig, (client) => recordDocumentPublish(client, rendered))
+      .catch((err) => log(`[publish] WARNING: could not record document live state: ${err.message}`));
     return { status: result.status, changed: result.changed.length, removed: result.removed.length, invalidationId: result.invalidationId };
   } finally {
     await store.releaseLock(runId).catch((err) => log(`[publish] WARNING: lock release failed: ${err.message}`));

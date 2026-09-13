@@ -3,4 +3,5 @@
 const engine = require('./engine');
 const site = require('./site');
 
-module.exports = { ...engine, ...site };
+const documents = require('./documents');
+module.exports = { ...engine, ...site, documents };

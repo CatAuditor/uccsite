@@ -58,7 +58,16 @@ function loadRenderInputs(root, fail = (msg) => { throw new Error(msg); }, { inc
       if (file.endsWith('.html')) partials[path.basename(file, '.html')] = fs.readFileSync(path.join(partialsDir, file), 'utf8');
     }
   }
-  return { templates, partials, content };
+  // Document shells (templates/documents/<templateKey>.html) — developer-owned
+  // head/body wrappers Documents compose into (packages/render/documents.js).
+  const shells = {};
+  const shellsDir = path.join(root, 'templates', 'documents');
+  if (fs.existsSync(shellsDir)) {
+    for (const file of fs.readdirSync(shellsDir)) {
+      if (file.endsWith('.html')) shells[path.basename(file, '.html')] = fs.readFileSync(path.join(shellsDir, file), 'utf8');
+    }
+  }
+  return { templates, partials, shells, content };
 }
 
 // collectStaticFiles(root) → Map<key, Buffer>. THROWS on unreadable inputs —

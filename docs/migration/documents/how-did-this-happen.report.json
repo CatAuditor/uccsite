@@ -1,0 +1,12 @@
+{
+  "slug": "how-did-this-happen",
+  "errors": [],
+  "ingest": {
+    "removed": [],
+    "foreignClasses": [],
+    "warnings": [],
+    "a11y": [],
+    "ok": true
+  },
+  "diffs": []
+}

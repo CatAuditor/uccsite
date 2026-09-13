@@ -1,0 +1,19 @@
+{
+  "slug": "weber-county",
+  "errors": [],
+  "ingest": {
+    "removed": [],
+    "foreignClasses": [],
+    "warnings": [],
+    "a11y": [],
+    "ok": true
+  },
+  "diffs": [
+    {
+      "field": "headings",
+      "expected": true,
+      "old": "h1 h3",
+      "new": "h1 h2"
+    }
+  ]
+}

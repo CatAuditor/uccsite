@@ -14,6 +14,10 @@
 // save time — arbitrary selector support is a debugging liability.
 const { selectAll } = require('css-select');
 const serialize = require('dom-serializer').default;
+// UTF-8 text stays literal; only markup-significant characters become entities
+// (the default numeric-encodes every non-ASCII character - em dashes, curly
+// quotes - bloating pages and breaking byte comparisons against the templates).
+const SERIALIZE_OPTS = { encodeEntities: 'utf8' };
 // Shared tree/class primitives — style-apply must parse the normalized HTML
 // with exactly the options ingest serialized it under.
 const { parseFragmentTree, walkElements, getClasses, setClasses } = require('@uccsite/html-ingest');
@@ -119,7 +123,7 @@ function applyStyles(normalizedHtml, rules = [], overrides = []) {
     setClasses(el, classes);
   }
 
-  return serialize(tree.children);
+  return serialize(tree.children, SERIALIZE_OPTS);
 }
 
 // orphanedOverrides(normalizedHtml, overrides) → overrides whose nid no longer

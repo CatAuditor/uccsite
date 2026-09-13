@@ -153,6 +153,80 @@ const STATEMENTS = [
     updated_at TIMESTAMPTZ DEFAULT now()
   )`,
   `CREATE INDEX ASYNC IF NOT EXISTS idx_media_assets_created ON media_assets(created_at)`,
+
+  // ── Documents + styling (spec §3.2, §5, §6, §9; packages/db/documents.js) ─
+  // body_html_raw is exactly what was pasted and is never mutated; normalized
+  // + ingest_report are regenerated on every save AND on every publish.
+  // page_css is the page's own stylesheet text (published as a fingerprinted
+  // file). SEO fields are structured (§12) — the head is generated.
+  `CREATE TABLE IF NOT EXISTS documents (
+    id UUID PRIMARY KEY,
+    slug TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    category TEXT,
+    template_key TEXT NOT NULL DEFAULT 'report',
+    status TEXT NOT NULL DEFAULT 'draft',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    body_html_raw TEXT,
+    body_html_normalized TEXT,
+    ingest_report TEXT,
+    page_css TEXT,
+    meta_title TEXT,
+    meta_description TEXT,
+    meta_keywords TEXT,
+    canonical_url TEXT,
+    og_type TEXT,
+    og_title TEXT,
+    og_description TEXT,
+    og_image TEXT,
+    twitter_card TEXT,
+    noindex INTEGER NOT NULL DEFAULT 0,
+    nofollow INTEGER NOT NULL DEFAULT 0,
+    jsonld_type TEXT,
+    jsonld_overrides TEXT,
+    allow_scripts INTEGER NOT NULL DEFAULT 0,
+    sitemap_priority TEXT,
+    published_at TIMESTAMPTZ,
+    content_hash TEXT,
+    live_hash TEXT,
+    live_at TIMESTAMPTZ,
+    last_publish_error TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`,
+  `CREATE INDEX ASYNC IF NOT EXISTS idx_documents_status ON documents(status, sort_order)`,
+  // Rules match structure (selector subset, §6.2); scope 'template' rules
+  // apply to every document with that template_key, 'page' rules to one.
+  `CREATE TABLE IF NOT EXISTS style_rules (
+    id UUID PRIMARY KEY,
+    scope TEXT NOT NULL,
+    template_key TEXT,
+    document_id UUID,
+    selector TEXT NOT NULL,
+    classes TEXT NOT NULL,
+    priority INTEGER NOT NULL DEFAULT 10,
+    note TEXT,
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`,
+  // Per-element exceptions keyed by node id (§6.3); can be orphaned by a re-paste.
+  `CREATE TABLE IF NOT EXISTS style_overrides (
+    id UUID PRIMARY KEY,
+    document_id UUID NOT NULL,
+    nid TEXT NOT NULL,
+    classes TEXT NOT NULL,
+    mode TEXT NOT NULL DEFAULT 'append',
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`,
+  `CREATE INDEX ASYNC IF NOT EXISTS idx_style_overrides_doc ON style_overrides(document_id)`,
+  // Foreign class → Style Kit class substitutions applied on ingest (§5.5).
+  // to_class NULL = drop silently. template_key NULL = every template.
+  `CREATE TABLE IF NOT EXISTS foreign_class_map (
+    id UUID PRIMARY KEY,
+    template_key TEXT,
+    from_class TEXT NOT NULL,
+    to_class TEXT,
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`,
 ];
 
 module.exports = { STATEMENTS };

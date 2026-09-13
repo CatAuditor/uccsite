@@ -1,0 +1,12 @@
+      <div class="coverage-list">
+        {{#entries}}
+        <a class="coverage-card" href="{{{url}}}" target="_blank" rel="noopener">
+          <div class="coverage-top">
+            <span class="coverage-badge" style="background: {{badge_color}};">{{outlet}}</span>
+            <span class="coverage-date">{{date}}</span>
+          </div>
+          <div class="coverage-headline" {{{lang_attr}}}>{{headline}}</div>
+          <div class="coverage-more">{{read_more}}</div>
+        </a>
+        {{/entries}}
+      </div>

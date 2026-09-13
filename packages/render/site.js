@@ -55,7 +55,9 @@ function deriveHomepage(content) {
 //   lastmod:   (page) => 'YYYY-MM-DD' — injected so CI/Lambda don't depend on fs mtimes
 // Returns { files: { 'index.html' → html, 'sitemap.xml' → xml }, errors: [] }.
 // Fail-fast contract matches build.js: on any error, callers must write nothing.
-function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteUrl = SITE_URL }) {
+// sitemapExtra: additional { template, priority, sitemap } entries (Documents
+// rendered by packages/render/documents.js) that belong in the same sitemap.
+function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteUrl = SITE_URL, sitemapExtra = [] }) {
   const errors = [];
   const fail = (msg) => errors.push(msg);
 
@@ -87,7 +89,7 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
   }
   if (errors.length) return { files: {}, errors };
 
-  files['sitemap.xml'] = makeSitemap(pages, lastmod, siteUrl);
+  files['sitemap.xml'] = makeSitemap([...pages, ...sitemapExtra], lastmod, siteUrl);
   return { files, errors };
 }
 

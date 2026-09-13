@@ -1,0 +1,37 @@
+{
+  "slug": "privacy",
+  "errors": [],
+  "ingest": {
+    "removed": [],
+    "foreignClasses": [],
+    "warnings": [],
+    "a11y": [],
+    "ok": true
+  },
+  "diffs": [
+    {
+      "field": "ogTitle",
+      "expected": "Privacy Policy | Utah Civic Compact",
+      "old": "undefined",
+      "new": "Privacy Policy | Utah Civic Compact"
+    },
+    {
+      "field": "ogDescription",
+      "expected": "Utah Civic Compact's privacy policy — how we collect, use, and protect information submitted through our website and tipline.",
+      "old": "",
+      "new": "Utah Civic Compact's privacy policy — how we collect, use, and protect information submitted through our website and tipline."
+    },
+    {
+      "field": "ogImage",
+      "expected": "https://utahciviccompact.org/UCC.png",
+      "old": "undefined",
+      "new": "https://utahciviccompact.org/UCC.png"
+    },
+    {
+      "field": "twitterCard",
+      "expected": "summary",
+      "old": "undefined",
+      "new": "summary"
+    }
+  ]
+}

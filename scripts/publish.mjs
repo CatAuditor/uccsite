@@ -23,7 +23,8 @@ const { buildSite } = require('../packages/render');
 const { publish } = require('../aws/publish/core.js');
 const { loadRenderInputs, collectStaticFiles, gitLastmodProvider } = require('../aws/publish/inputs.js');
 const { withConnection } = require('../packages/db');
-const { loadContent, contentMeta, makeDbLastmod } = require('../packages/db/content');
+const { loadSiteFromDb, renderSiteFromDb, recordDocumentPublish } = require('../aws/publish/render-db.js');
+const { SITE_URL } = require('../packages/render/site');
 
 const args = process.argv.slice(2);
 const envName = argValue(args, '--env', 'staging');
@@ -49,28 +50,29 @@ async function main() {
   const errors = [];
   const inputs = loadRenderInputs(ROOT, (msg) => errors.push(msg), { includeContent: source === 'git' });
   let stack, region, stackName;
-  let lastmod = gitLastmodProvider(ROOT);
+  const outputs = collectStaticFiles(ROOT);
+  let files, renderErrors = [], rendered = null, dbConfig = null;
   if (source === 'db') {
+    // Same code path as the publish Lambda (aws/publish/render-db.js):
+    // collections + Documents, Documents replacing same-slug templates.
     ({ region, stackName, outputs: stack } = await resolveEnv(envName, ['SiteBucketName', 'DistributionId', 'DsqlEndpoint']));
-    const { content, meta } = await withConnection({ endpoint: stack.DsqlEndpoint, region }, async (client) => ({
-      content: await loadContent(client),
-      meta: await contentMeta(client),
-    }));
-    inputs.content = content;
-    lastmod = makeDbLastmod(meta); // same sitemap dates as the publish Lambda
-    console.log('[publish] content source: database');
+    dbConfig = { endpoint: stack.DsqlEndpoint, region };
+    const db = await withConnection(dbConfig, loadSiteFromDb);
+    const siteCss = outputs.get('css/styles.css')?.toString('utf8') || '';
+    rendered = errors.length ? { files: {}, errors: [] } : renderSiteFromDb({ inputs, siteCss, ...db, siteUrl: SITE_URL });
+    ({ files, errors: renderErrors } = rendered);
+    console.log(`[publish] content source: database (${db.bundle.documents.length} documents)`);
+  } else {
+    ({ files, errors: renderErrors } = errors.length ? { files: {}, errors: [] } : buildSite({ ...inputs, lastmod: gitLastmodProvider(ROOT) }));
   }
-  const { files, errors: renderErrors } = errors.length
-    ? { files: {}, errors }
-    : buildSite({ ...inputs, lastmod });
   const allErrors = [...errors, ...renderErrors];
   if (allErrors.length) {
     // Fail-fast (§7): abort before anything is written.
     for (const e of allErrors) console.error('RENDER ERROR: ' + e);
+    if (rendered && dbConfig) await withConnection(dbConfig, (client) => recordDocumentPublish(client, { ...rendered, errors: allErrors })).catch(() => {});
     process.exit(1);
   }
 
-  const outputs = collectStaticFiles(ROOT);
   for (const [name, text] of Object.entries(files)) outputs.set(name, Buffer.from(text, 'utf8'));
   console.log(`Rendered ${Object.keys(files).length} files, ${outputs.size} total outputs`);
 
@@ -90,6 +92,7 @@ async function main() {
     allowBulkDelete,
     log: (m) => console.log(m),
   });
+  if (rendered && dbConfig) await withConnection(dbConfig, (client) => recordDocumentPublish(client, rendered));
   console.log(JSON.stringify({ status: result.status, changed: result.changed.length, removed: result.removed.length, invalidationId: result.invalidationId }));
 }
 

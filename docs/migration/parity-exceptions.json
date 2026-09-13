@@ -1,5 +1,5 @@
 {
-  "_note": "Known, deliberate or baseline-artifact differences vs the 2026-09-12 production crawl. canonical: Phase 1 named diff (clean-URL canonicals, docs/changelog + spec addendum 10). /js/tip.js: the prod crawl captured the SPA-fallback index.html for a then-missing script path; staging serves the real file. /weber-county heading order restored to production's (2026-09-13, org decision: keep what the live site shows).",
+  "_note": "Known, deliberate or baseline-artifact differences vs the 2026-09-12 production crawl. canonical: Phase 1 named diff (clean-URL canonicals, docs/changelog + spec addendum 10). /js/tip.js: the prod crawl captured the SPA-fallback index.html for a then-missing script path; staging serves the real file. /weber-county heading order restored to production's (2026-09-13, org decision: keep what the live site shows). /privacy ogTitle/ogDescription: the page had no Open Graph tags; the Document head generator adds them (spec \u00a712 fallback chain).",
   "/alpr": [
     "canonical"
   ],
@@ -16,7 +16,9 @@
     "canonical"
   ],
   "/privacy": [
-    "canonical"
+    "canonical",
+    "ogDescription",
+    "ogTitle"
   ],
   "/privacy-report": [
     "canonical"

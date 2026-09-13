@@ -1,0 +1,19 @@
+{
+  "slug": "stratos",
+  "errors": [],
+  "ingest": {
+    "removed": [],
+    "foreignClasses": [],
+    "warnings": [],
+    "a11y": [],
+    "ok": true
+  },
+  "diffs": [
+    {
+      "field": "ogImage",
+      "expected": "https://utahciviccompact.org/UCC.png",
+      "old": "undefined",
+      "new": "https://utahciviccompact.org/UCC.png"
+    }
+  ]
+}

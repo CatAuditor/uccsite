@@ -1,0 +1,12 @@
+{
+  "slug": "dignity-index-statement",
+  "errors": [],
+  "ingest": {
+    "removed": [],
+    "foreignClasses": [],
+    "warnings": [],
+    "a11y": [],
+    "ok": true
+  },
+  "diffs": []
+}

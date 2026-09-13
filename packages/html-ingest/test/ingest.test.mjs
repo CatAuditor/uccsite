@@ -189,11 +189,40 @@ test('skipped heading level blocks; proper order passes', () => {
 
 // ── Removal report completeness (diff-based; Phase 2 review regressions) ────
 
-test('disallowed non-URL attributes are reported (e.g. target)', () => {
-  const { bodyHtmlNormalized, report } = ingest('<a href="https://a.b" target="_blank" rel="noopener">x</a>');
-  assert.ok(!/target|rel=/.test(bodyHtmlNormalized));
-  assert.ok(report.removed.some(r => r.kind === 'attribute' && r.attr === 'target'));
-  assert.ok(report.removed.some(r => r.kind === 'attribute' && r.attr === 'rel'));
+test('disallowed non-URL attributes are reported (e.g. contenteditable)', () => {
+  const { bodyHtmlNormalized, report } = ingest('<p contenteditable="true" tabindex="0">x</p>');
+  assert.ok(!/contenteditable|tabindex/.test(bodyHtmlNormalized));
+  assert.ok(report.removed.some(r => r.kind === 'attribute' && r.attr === 'contenteditable'));
+  assert.ok(report.removed.some(r => r.kind === 'attribute' && r.attr === 'tabindex'));
+});
+
+test('boolean download/open survive', () => {
+  const out = stripNids(ingest('<a href="/x.csv" download>y</a><details open><summary>s</summary>t</details>').bodyHtmlNormalized);
+  assert.match(out, /download/);
+  assert.match(out, /<details open/);
+});
+
+test('<a target="_blank"> is kept and always carries rel="noopener"; other targets are dropped', () => {
+  const a = ingest('<a href="https://a.b" target="_blank">x</a>').bodyHtmlNormalized;
+  assert.match(a, /target="_blank"/);
+  assert.match(a, /rel="noopener"/);
+  const b = ingest('<a href="https://a.b" target="_blank" rel="nofollow">x</a>').bodyHtmlNormalized;
+  assert.match(b, /rel="nofollow noopener"/);
+  const c = ingest('<a href="https://a.b" target="_top">x</a>').bodyHtmlNormalized;
+  assert.doesNotMatch(c, /target=/);
+});
+
+test('decorative inline SVG keeps geometry/paint attributes only; href and script never survive', () => {
+  const svg = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"><path d="M1 1"/><a href="javascript:x"><circle cx="1" cy="1" r="1"/></a><script>x()</script><use href="#y"/></svg>';
+  const out = stripNids(ingest(svg).bodyHtmlNormalized);
+  assert.match(out, /<svg viewbox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor">/i);
+  assert.match(out, /<path d="M1 1"\/?>/);
+  assert.doesNotMatch(out, /javascript|<script|<use|href=/);
+});
+
+test('UTF-8 text stays literal (no numeric entities for em dashes or apostrophes)', () => {
+  const out = stripNids(ingest("<p>it’s — fine &amp; <b>ok</b></p>").bodyHtmlNormalized);
+  assert.equal(out, "<p>it’s — fine &amp; <b>ok</b></p>");
 });
 
 test('bad scheme in srcset is stripped AND reported', () => {
