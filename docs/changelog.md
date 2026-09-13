@@ -27,9 +27,16 @@ Phase 8 — Documents & styling (`docs/systems/documents.md`).
   attributes replaced by classes, generated `css/colors.css`.
 - 24 Style Kit annotations in `css/styles.css`.
 
+### Review loop (688ec60)
+- Three review passes fixed: failed runs marking documents live, export
+  deletions + normalized bodies for restore, migration overwrite guard,
+  token expansion on the tree with re-escaped author text, coverage
+  partial sinks (`{{url}}`, validated `lang`), YouTube host vs CSP,
+  preview iframe isolation, React 19 form reset on rejected saves,
+  rooted selectors, class toggle semantics, `/styles` parse-once.
+
 ### Open items at this point
 - Same operator blockers as v0.7.0 (secrets, GitHub App, Amplify install).
-- Phase 8 review/fix loop in progress at the time of this entry.
 
 ## v0.7.0 — 2026-09-13 (branch `refactor`, not yet pushed)
 

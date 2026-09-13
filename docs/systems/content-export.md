@@ -46,7 +46,10 @@ docs/migration/parity-exceptions.json  known diffs the parity gate may ignore
 content/settings.json … content/coverage.json   eight collections
 documents/<slug>.html    body_html_raw, byte-exact (what the author would re-paste)
 documents/<slug>.json    title, category, template, status, page CSS, SEO fields,
-                         JSON-LD, allow_scripts, sitemap priority, overrides
+                         JSON-LD, allow_scripts, sitemap priority, published_at, overrides
+documents/<slug>.normalized.html  derived but LOAD-BEARING: override nids are
+                         carried forward from the previous normalized tree on
+                         re-paste, so a restore into an empty database needs it
 styles/rules.json        { rules: [scope, templateKey, documentSlug, selector,
                            classes, priority, note], foreignClassMap: [...] }
 manifest.json            { schema_version: 2, exported_at, counts }
@@ -65,9 +68,11 @@ arrives with the redirects table (Phase 9).
    recursively; compare git blob sha1s computed locally — nothing downloaded.
 4. No changed content file → `noop`, no commit (manifest alone never
    triggers one).
-5. Else create blobs for changed paths + manifest, a tree on the head tree,
-   a commit (author "uccsite content export"), fast-forward the ref. Branch
-   missing → created from the repo's default branch first.
+5. Else create blobs for changed paths + manifest, DELETE export-owned paths
+   the export no longer produces (a removed document — otherwise a restore
+   would resurrect it), a tree on the head tree, a commit (author "uccsite
+   content export"), fast-forward the ref. Branch missing → created from the
+   repo's default branch first.
 6. Any error → SNS alert (`OpsAlerts`) + rethrow (CloudWatch alarm).
 
 ## Why a branch, not main
@@ -80,11 +85,14 @@ See docs/decisions/content-export-branch.md: until cutover, a commit to
 
 `node scripts/restore-from-export.mjs --env staging --from <dir>` —
 wipe-and-load through `saveContent`, then `loadContent` must deep-equal the
-files. Documents: upsert by slug (ids are not portable), overrides replaced,
-documents absent from the export deleted, rules + foreign map replaced,
-bodies re-ingested with the repo stylesheet as the Style Kit; every raw body
-and metadata field must read back identically. Accepts schema 1 exports
-(collections only). Then `node scripts/publish.mjs --env staging --source db` and
+files. Documents (order matters): foreign class map first, then each
+document upserted by slug (ids are not portable) with its body re-ingested
+against the EXPORTED normalized tree so override nids match, published_at
+restored, overrides replaced; then rules (page rules need the new ids); then
+documents absent from the export deleted. Any override whose nid no longer
+matches an element FAILS the restore (`--allow-orphaned-overrides` to
+proceed with a warning). Every raw body and metadata field must read back
+identically. Accepts schema 1 exports (collections only). Then `node scripts/publish.mjs --env staging --source db` and
 `node scripts/seo-parity-check.mjs --target … --exceptions
 docs/migration/parity-exceptions.json`.
 

@@ -57,9 +57,11 @@ body_html_raw ─ingest(knownClasses = site css ∪ page css, foreignClassMap,
                      one h1, no heading skips → publish error if violated)
   ─applyStyles(template rules for template_key + page rules for id,
                overrides for id)─▶ styled
-  ─stripNids─▶ ─replaceTokens─▶ body
+  ─stripNids─▶ ─replaceTokens (on the TREE: text nodes only, never attribute
+      values or <pre>/<code>; author text around a token is re-escaped)─▶ body
       {{coverage:alpr}} → coverage-strip partial from coverage_entries
-      {{video:ID}}      → youtube-nocookie iframe (id validated)
+                          (href="{{url}}" safeUrl+escaped, validated lang)
+      {{video:ID}}      → www.youtube.com/embed iframe (the CSP frame-src host)
   ─render(shell, { ...settings, page: slug, current, seo_block,
                    jsonld_block, page_css_link, body })─▶ <slug>.html
 page_css ─▶ css/pages/<slug>.<sha256[0:8]>.css (linked from the head)
@@ -74,25 +76,42 @@ headline, description, url, publisher}` merged under `jsonld_overrides`.
 
 `loadSiteFromDb` → `renderSiteFromDb({ inputs, siteCss, content, meta, bundle })`:
 `buildDocuments` for every `status='published'` document; `PAGES` minus
-same-slug templates; one sitemap (`sitemapExtra`), document lastmod =
-`updated_at`. After the run `recordDocumentPublish` writes `live_hash` /
-`live_at` or `last_publish_error` per document. Any document error aborts
-the whole run (fail-fast, §7) and names the document.
+every slug that has a document row of ANY status (a draft must not
+resurrect the old inline-styled template — the URL 404s instead); one
+sitemap (`sitemapExtra`), document lastmod = `updated_at` (style override
+changes bump it too). After a SUCCESSFUL run `recordDocumentPublish` writes
+`live_hash` / `live_at`; a failed run records `last_publish_error` on the
+failing documents and marks nothing live. Any document error aborts the
+whole run (fail-fast, §7) and names the document; the save action
+pre-validates tokens, the a11y gate and the meta description so one editor
+cannot wedge publishing.
 
 ## Admin editor
 
 - **Save** (`saveDocument`): one transaction — baseline (`updated_at`) lost-
-  update check, slug uniqueness/reserved check, ingest with the template's
-  foreign-class map, refuse `published` when the a11y gate fails or the meta
-  description is empty, upsert, revision snapshot (fields + `body_html_raw`
-  + resolved overrides), audit. Returns the ingest summary; the page shows
+  update check, slug uniqueness/reserved check, canonical on-site / og:image
+  https / sitemap priority validation, ingest with the template's
+  foreign-class map (author `id`s that match site chrome or script hooks are
+  stripped), refuse `published` when the a11y gate fails, a token is
+  invalid, or the meta description is empty, upsert, revision snapshot
+  (fields + `body_html_raw` + resolved overrides), audit. Forms dispatch
+  through `ActionForm`'s onSubmit + startTransition so React 19 does not
+  reset uncontrolled fields on a rejected save. Returns the ingest summary; the page shows
   the full report (removed tags/attributes, foreign classes, a11y, warnings,
   re-paste match, orphaned overrides).
+- **Selectors** run against a synthetic `<main>` root (style-apply
+  `rootedTree`), so `main > h1` means the top-level heading exactly as on the
+  published page; `/styles` parses each document once for all match counts.
 - **Styling split view**: element tree (`explainStyles` rows: paste chips /
-  rule chips with the source selector on hover / override chips / unstyled)
-  ↔ live preview (`iframe srcdoc` = composed page with nids kept, stylesheets
-  inlined, `<base href=PUBLIC_ORIGIN>`; click → selects the row, hover →
-  outline). Class picker grouped by Style Kit group, filtered by `applies`
+  rule chips with the source selector on hover / override chips / unstyled —
+  inert tags such as li/td/strong never count) ↔ live preview (`iframe srcdoc`
+  with `sandbox="allow-scripts"` only — an OPAQUE origin, never the admin's;
+  composed page with nids kept, stylesheets inlined with `</style` neutralised,
+  `<base href=PUBLIC_ORIGIN>`, links inert; click → selects the row, hover /
+  focus → outline; messages accepted only from that frame). Class toggle:
+  a class ON via a rule/paste turns off through a replace-mode override; the
+  replace↔append switch is visually neutral. Bulk append merges with each
+  target's existing override (max 500 elements). Class picker grouped by Style Kit group, filtered by `applies`
   (show-all toggle), hover shows description + declarations. Bulk: siblings
   with the same tag / every element with the tag. **Promote to template
   rule**: generated `parent > tag` selector, live match count across the
