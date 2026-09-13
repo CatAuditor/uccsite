@@ -44,9 +44,17 @@ docs/migration/parity-exceptions.json  known diffs the parity gate may ignore
 
 ```
 content/settings.json … content/coverage.json   eight collections
-manifest.json   { schema_version: 1, exported_at, counts: {collection: rows} }
+documents/<slug>.html    body_html_raw, byte-exact (what the author would re-paste)
+documents/<slug>.json    title, category, template, status, page CSS, SEO fields,
+                         JSON-LD, allow_scripts, sitemap priority, overrides
+styles/rules.json        { rules: [scope, templateKey, documentSlug, selector,
+                           classes, priority, note], foreignClassMap: [...] }
+manifest.json            { schema_version: 2, exported_at, counts }
 ```
-`documents/`, `styles/rules.json`, `redirects.json` arrive with Phase 8.
+Derived document state (normalized body, ingest report, hashes, live_at) is
+excluded — it regenerates. Every document is exported, drafts included (the
+export is the source of truth, not the published site). `redirects.json`
+arrives with the redirects table (Phase 9).
 
 ## Data flow (nightly)
 
@@ -72,9 +80,18 @@ See docs/decisions/content-export-branch.md: until cutover, a commit to
 
 `node scripts/restore-from-export.mjs --env staging --from <dir>` —
 wipe-and-load through `saveContent`, then `loadContent` must deep-equal the
-files. Then `node scripts/publish.mjs --env staging --source db` and
+files. Documents: upsert by slug (ids are not portable), overrides replaced,
+documents absent from the export deleted, rules + foreign map replaced,
+bodies re-ingested with the repo stylesheet as the Style Kit; every raw body
+and metadata field must read back identically. Accepts schema 1 exports
+(collections only). Then `node scripts/publish.mjs --env staging --source db` and
 `node scripts/seo-parity-check.mjs --target … --exceptions
 docs/migration/parity-exceptions.json`.
+
+## Restore drill 2 (2026-09-13, staging, with Documents) — PASSED
+
+export (26 files: 8 collections, 8×2 documents, styles, manifest) → restore →
+round-trip OK → `publish --source db` reported **no changes**.
 
 ## Restore drill (2026-09-13, staging) — PASSED
 

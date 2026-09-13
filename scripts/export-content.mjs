@@ -13,6 +13,7 @@ import { resolveEnv, argValue } from './lib/stack.mjs';
 const require = createRequire(import.meta.url);
 const { withConnection } = require('../packages/db');
 const { loadContent } = require('../packages/db/content');
+const { loadExportBundle } = require('../packages/db/documents');
 const { buildContentExport } = require('../packages/db/export');
 
 const args = process.argv.slice(2);
@@ -20,8 +21,10 @@ const envName = argValue(args, '--env', 'staging');
 const outDir = resolve(argValue(args, '--out', `./export-${envName}`));
 
 const { region, stackName, outputs } = await resolveEnv(envName, ['DsqlEndpoint']);
-const content = await withConnection({ endpoint: outputs.DsqlEndpoint, region }, (client) => loadContent(client));
-const files = buildContentExport(content);
+const { content, bundle } = await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) => ({
+  content: await loadContent(client), bundle: await loadExportBundle(client),
+}));
+const files = buildContentExport(content, bundle);
 for (const [path, text] of files) {
   const abs = join(outDir, path);
   mkdirSync(dirname(abs), { recursive: true });

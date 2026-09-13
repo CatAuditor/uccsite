@@ -192,6 +192,17 @@ async function deleteForeignClassMapping(client, id) {
   await client.query('DELETE FROM foreign_class_map WHERE id = $1', [id]);
 }
 
+// loadExportBundle(client) → every document (drafts included — the export is
+// the source of truth, not the published site), overrides, rules, map.
+async function loadExportBundle(client) {
+  return {
+    documents: await listDocuments(client),
+    overrides: await listOverrides(client),
+    rules: await listStyleRules(client),
+    foreignClassMap: await listForeignClassMap(client),
+  };
+}
+
 // loadPublishBundle(client) → everything the publish path needs in one shot.
 async function loadPublishBundle(client) {
   return {
@@ -209,5 +220,5 @@ module.exports = {
   listStyleRules, upsertStyleRule, deleteStyleRule,
   listOverrides, setOverride, replaceOverrides,
   loadForeignClassMap, listForeignClassMap, setForeignClassMapping, deleteForeignClassMapping,
-  loadPublishBundle,
+  loadPublishBundle, loadExportBundle,
 };

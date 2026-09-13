@@ -14,7 +14,7 @@
 // EXCLUDED from the "did anything change" decision (isContentChanged).
 const { createHash } = require('crypto');
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2; // 2: documents/ + styles/rules.json (Phase 8)
 const COLLECTIONS = ['settings', 'homepage', 'team', 'statements', 'issues', 'blog', 'projects', 'coverage'];
 
 function stableJson(obj) {
@@ -31,17 +31,44 @@ function rowCounts(content) {
   return counts;
 }
 
-// buildContentExport(content, { exportedAt }) → Map<path, string>
-function buildContentExport(content, { exportedAt = new Date().toISOString() } = {}) {
+// Document export (§14.2): documents/<slug>.html = body_html_raw exactly
+// (the author's paste — what they would re-paste), documents/<slug>.json =
+// metadata + SEO + page CSS + overrides. Derived state (normalized, ingest
+// report, hashes, live_at) is excluded — it regenerates. styles/rules.json =
+// every rule + the foreign class map.
+const DOC_JSON_KEYS = ['slug', 'title', 'category', 'templateKey', 'status', 'sortOrder', 'pageCss',
+  'metaTitle', 'metaDescription', 'metaKeywords', 'canonicalUrl', 'ogType', 'ogTitle', 'ogDescription',
+  'ogImage', 'twitterCard', 'noindex', 'nofollow', 'jsonldType', 'jsonldOverrides', 'allowScripts', 'sitemapPriority'];
+
+function documentJson(doc, overrides) {
+  const out = {};
+  for (const k of DOC_JSON_KEYS) out[k] = doc[k] ?? (typeof doc[k] === 'number' ? 0 : '');
+  out.overrides = (overrides || []).map(({ nid, classes, mode }) => ({ nid, classes, mode }));
+  return out;
+}
+
+// buildContentExport(content, { exportedAt, documents, overrides, rules, foreignClassMap })
+//   → Map<path, string>
+function buildContentExport(content, { exportedAt = new Date().toISOString(), documents = [], overrides = [], rules = [], foreignClassMap = [] } = {}) {
   const files = new Map();
   for (const name of COLLECTIONS) {
     if (!(name in content)) throw new Error(`export: content is missing "${name}"`);
     files.set(`content/${name}.json`, stableJson(content[name]));
   }
+  for (const doc of [...documents].sort((a, b) => a.slug.localeCompare(b.slug))) {
+    files.set(`documents/${doc.slug}.html`, doc.bodyHtmlRaw || '');
+    files.set(`documents/${doc.slug}.json`, stableJson(documentJson(doc, overrides.filter(o => o.documentId === doc.id))));
+  }
+  files.set('styles/rules.json', stableJson({
+    rules: [...rules].sort((a, b) => `${a.scope}|${a.templateKey}|${a.priority}|${a.selector}`.localeCompare(`${b.scope}|${b.templateKey}|${b.priority}|${b.selector}`))
+      .map(r => ({ scope: r.scope, templateKey: r.templateKey || null, documentSlug: r.documentId ? (documents.find(d => d.id === r.documentId)?.slug || null) : null, selector: r.selector, classes: r.classes, priority: r.priority, note: r.note || '' })),
+    foreignClassMap: [...foreignClassMap].sort((a, b) => a.fromClass.localeCompare(b.fromClass))
+      .map(m => ({ templateKey: m.templateKey || null, fromClass: m.fromClass, toClass: m.toClass || '' })),
+  }));
   files.set('manifest.json', stableJson({
     schema_version: SCHEMA_VERSION,
     exported_at: exportedAt,
-    counts: rowCounts(content),
+    counts: { ...rowCounts(content), documents: documents.length, style_rules: rules.length },
   }));
   return files;
 }
@@ -64,4 +91,4 @@ function changedPaths(files, remoteShaByPath) {
   return out;
 }
 
-module.exports = { SCHEMA_VERSION, COLLECTIONS, stableJson, rowCounts, buildContentExport, gitBlobSha, changedPaths };
+module.exports = { SCHEMA_VERSION, COLLECTIONS, DOC_JSON_KEYS, stableJson, rowCounts, documentJson, buildContentExport, gitBlobSha, changedPaths };

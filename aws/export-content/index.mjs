@@ -9,6 +9,7 @@ import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-sec
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 import { withConnection } from '@uccsite/db';
 import { loadContent } from '@uccsite/db/content';
+import { loadExportBundle } from '@uccsite/db/documents';
 import { buildContentExport, changedPaths } from '@uccsite/db/export';
 import { installationToken, remoteBlobShas, commitFiles } from './github.mjs';
 import { SECRET_NAMES } from './secret-names.cjs';
@@ -49,8 +50,10 @@ export async function handler() {
       console.warn('[export-content] GitHub App secrets unset (placeholder) — export skipped');
       return { status: 'skipped', reason: 'secrets unset' };
     }
-    const content = await withConnection({ endpoint: DSQL_ENDPOINT, region }, (client) => loadContent(client));
-    const files = buildContentExport(content, { exportedAt: started });
+    const { content, bundle } = await withConnection({ endpoint: DSQL_ENDPOINT, region }, async (client) => ({
+      content: await loadContent(client), bundle: await loadExportBundle(client),
+    }));
+    const files = buildContentExport(content, { exportedAt: started, ...bundle });
 
     const token = await installationToken({
       appId: secrets.GITHUB_APP_ID,
