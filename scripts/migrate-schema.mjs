@@ -9,14 +9,15 @@ import { resolveEnv, argValue } from './lib/stack.mjs';
 
 const require = createRequire(import.meta.url);
 const { withConnection } = require('../packages/db');
-const { STATEMENTS } = require('../packages/db/schema');
+const { STATEMENTS: OPERATIONAL } = require('../packages/db/schema');
+const { STATEMENTS: CONTENT } = require('../packages/db/content-schema');
 
 const args = process.argv.slice(2);
 const envName = argValue(args, '--env', 'staging');
 const { region, stackName, outputs } = await resolveEnv(envName, ['DsqlEndpoint']);
 
 await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) => {
-  for (const ddl of STATEMENTS) {
+  for (const ddl of [...OPERATIONAL, ...CONTENT]) {
     const label = ddl.trim().split('\n')[0].replace(/\s+/g, ' ').slice(0, 70);
     await client.query(ddl);
     console.log(`ok  ${label}`);

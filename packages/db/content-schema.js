@@ -88,15 +88,15 @@ const STATEMENTS = [
     id UUID PRIMARY KEY,
     project_id UUID REFERENCES projects(id),
     sort_order INTEGER NOT NULL,
-    outlet TEXT, badge_color TEXT, date TEXT, headline TEXT, url TEXT,
-    read_more TEXT, lang_attr TEXT,
+    outlet TEXT, badge_color TEXT, date TEXT, region TEXT, headline TEXT,
+    excerpt TEXT, url TEXT, read_more TEXT, lang_attr TEXT,
     updated_at TIMESTAMPTZ DEFAULT now()
   )`,
   `CREATE TABLE IF NOT EXISTS project_videos (
     id UUID PRIMARY KEY,
     project_id UUID REFERENCES projects(id),
     sort_order INTEGER NOT NULL,
-    outlet TEXT, badge_color TEXT, date TEXT, headline TEXT,
+    outlet TEXT, badge_color TEXT, date TEXT, region TEXT, headline TEXT,
     youtube_id TEXT, youtube_title TEXT,
     updated_at TIMESTAMPTZ DEFAULT now()
   )`,

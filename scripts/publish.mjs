@@ -22,17 +22,29 @@ const require = createRequire(import.meta.url);
 const { buildSite } = require('../packages/render');
 const { publish } = require('../aws/publish/core.js');
 const { loadRenderInputs, collectStaticFiles, gitLastmodProvider } = require('../aws/publish/inputs.js');
+const { withConnection } = require('../packages/db');
+const { loadContent } = require('../packages/db/content');
 
 const args = process.argv.slice(2);
 const envName = argValue(args, '--env', 'staging');
 const trigger = argValue(args, '--trigger', 'manual');
 const allowBulkDelete = args.includes('--allow-bulk-delete');
+// --source db: content comes from the environment's DSQL content tables
+// (Phase 7 source of truth) instead of content/*.json. Templates, partials,
+// and static files always come from the repo.
+const source = argValue(args, '--source', 'git');
 
 const ROOT = join(import.meta.dirname, '..');
 
 async function main() {
+  const { region, stackName, outputs: stack } = await resolveEnv(envName, ['SiteBucketName', 'DistributionId', 'DsqlEndpoint']);
+
   const errors = [];
   const inputs = loadRenderInputs(ROOT, (msg) => errors.push(msg));
+  if (source === 'db') {
+    inputs.content = await withConnection({ endpoint: stack.DsqlEndpoint, region }, loadContent);
+    console.log('[publish] content source: database');
+  }
   const { files, errors: renderErrors } = errors.length
     ? { files: {}, errors }
     : buildSite({ ...inputs, lastmod: gitLastmodProvider(ROOT) });
@@ -46,8 +58,6 @@ async function main() {
   const outputs = collectStaticFiles(ROOT);
   for (const [name, text] of Object.entries(files)) outputs.set(name, Buffer.from(text, 'utf8'));
   console.log(`Rendered ${Object.keys(files).length} files, ${outputs.size} total outputs`);
-
-  const { region, stackName, outputs: stack } = await resolveEnv(envName, ['SiteBucketName', 'DistributionId', 'DsqlEndpoint']);
   console.log(`[publish] target ${stackName}: bucket=${stack.SiteBucketName} distribution=${stack.DistributionId}`);
 
   const result = await publish({
