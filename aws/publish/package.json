@@ -1,0 +1,18 @@
+{
+  "name": "@uccsite/publish",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Publish pipeline: render-all, hash-diff, put-changed, invalidate, verify (build-spec-aws.md §7). Driven by scripts/publish.mjs now; the Phase 7 admin invokes the same core as a Lambda. Lives under aws/ (NOT functions/ - Cloudflare Pages compiles everything under functions/ as routes).",
+  "type": "commonjs",
+  "main": "core.js",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudformation": "^3.700.0",
+    "@aws-sdk/client-cloudfront": "^3.700.0",
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@uccsite/db": "*",
+    "@uccsite/render": "*"
+  }
+}

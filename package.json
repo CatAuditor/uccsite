@@ -7,7 +7,7 @@
   },
   "workspaces": [
     "packages/*",
-    "functions/*",
+    "aws/*",
     "apps/*",
     "infra/*"
   ],

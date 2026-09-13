@@ -20,10 +20,12 @@ if (-not $command) { exit 0 }
 # Does the command invoke an AWS-credentialed CLI in COMMAND POSITION?
 # (start of line/segment, optionally after inline env assignments or npx) —
 # not merely the word "aws" appearing inside arguments or commit messages.
+# -cmatch: case-SENSITIVE. PowerShell -match is case-insensitive by default,
+# which made prose like "; AWS code" inside commit messages trip the guard.
 $cmdPos = '(?m)(^|[;&|(]\s*)([A-Za-z_][A-Za-z0-9_]*=\S+\s+)*'
-$invokesAws = $command -match ($cmdPos + 'aws(\.exe)?\s') -or
-              $command -match ($cmdPos + '(npx(\.cmd)?\s+(-y\s+)?)?(aws-)?cdk(\.cmd)?\s') -or
-              $command -match ($cmdPos + '(npx(\.cmd)?\s+(-y\s+)?)?ampx(\.cmd)?\s')
+$invokesAws = $command -cmatch ($cmdPos + 'aws(\.exe)?\s') -or
+              $command -cmatch ($cmdPos + '(npx(\.cmd)?\s+(-y\s+)?)?(aws-)?cdk(\.cmd)?\s') -or
+              $command -cmatch ($cmdPos + '(npx(\.cmd)?\s+(-y\s+)?)?ampx(\.cmd)?\s')
 
 if (-not $invokesAws) { exit 0 }
 
