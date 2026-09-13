@@ -60,6 +60,8 @@ async function withConnection(cfg, fn) {
 }
 
 // Retry wrapper for DSQL optimistic-concurrency aborts (SQLSTATE 40001 / OC000).
+// Retries are logged — a run that retried twice must look different in
+// CloudWatch from one that sailed through.
 async function withRetry(fn, { attempts = 3, baseDelayMs = 100 } = {}) {
   let lastErr;
   for (let i = 0; i < attempts; i++) {
@@ -68,10 +70,12 @@ async function withRetry(fn, { attempts = 3, baseDelayMs = 100 } = {}) {
     } catch (err) {
       lastErr = err;
       if (err.code !== '40001') throw err;
+      console.warn(`[db] 40001 optimistic-concurrency abort, retry ${i + 1}/${attempts - 1}`);
       await new Promise(r => setTimeout(r, baseDelayMs * (i + 1) + Math.random() * baseDelayMs));
     }
   }
+  console.error(`[db] giving up after ${attempts} attempts: ${lastErr.message}`);
   throw lastErr;
 }
 
-module.exports = { connect, withConnection, withRetry };
+module.exports = { authToken, connect, withConnection, withRetry };

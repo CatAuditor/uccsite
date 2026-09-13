@@ -18,6 +18,8 @@ const {
   aws_sns: sns,
   aws_events: events,
   aws_events_targets: targets,
+  aws_cloudwatch: cloudwatch,
+  aws_cloudwatch_actions: cwActions,
 } = require('aws-cdk-lib');
 const { Construct } = require('constructs');
 
@@ -230,7 +232,7 @@ class UccStack extends Stack {
       displayName: `uccsite ${isProd ? 'prod' : 'staging'} ops alerts`,
     });
     const reconcileFn = new nodejs.NodejsFunction(this, 'ReconcileDriftFn', {
-      entry: path.join(__dirname, '..', '..', '..', 'functions', 'reconcile-drift', 'index.mjs'),
+      entry: path.join(__dirname, '..', '..', '..', 'aws', 'reconcile-drift', 'index.mjs'),
       handler: 'handler',
       runtime: lambda.Runtime.NODEJS_22_X,
       memorySize: 256,
@@ -266,6 +268,17 @@ class UccStack extends Stack {
       schedule: events.Schedule.rate(Duration.hours(1)),
       targets: [new targets.LambdaFunction(reconcileFn)],
     });
+    // A reconciler that cannot run is itself an incident: alarm its Errors
+    // metric into the same ops topic (the handler also alerts before
+    // rethrowing, but a crash pre-alert must still reach a human).
+    reconcileFn.metricErrors({ period: Duration.hours(1), statistic: 'Sum' })
+      .createAlarm(this, 'ReconcileErrorsAlarm', {
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+        alarmDescription: 'uccsite drift reconciler failed to run',
+      })
+      .addAlarmAction(new cwActions.SnsAction(alertTopic));
 
     new CfnOutput(this, 'OpsAlertTopicArn', { value: alertTopic.topicArn });
     new CfnOutput(this, 'DistributionDomain', { value: distribution.distributionDomainName });
