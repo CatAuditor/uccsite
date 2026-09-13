@@ -81,30 +81,71 @@ async function withRetry(fn, { attempts = 3, baseDelayMs = 100 } = {}) {
 // Warm-invocation connection cache for Lambdas: reuses one client across
 // invocations, refreshed before DSQL's 1-hour kill and replaced on error.
 // makeCachedClient(cfg) → { query(text, params), end() }
+// - An idle cached pg.Client can emit 'error' between invocations (dropped
+//   TCP); with no listener that kills the whole Node process, so every cached
+//   client gets one that just drops it from the cache.
+// - 40001 optimistic-concurrency aborts are retried here (the transaction
+//   applied nothing, so single-statement retries are safe) — DSQL raises
+//   these routinely and the D1-era code never saw them.
 function makeCachedClient(cfg, { maxAgeMs = 50 * 60 * 1000 } = {}) {
   let client = null;
   let bornAt = 0;
+  async function drop() {
+    const c = client;
+    client = null;
+    if (c) { try { await c.end(); } catch {} }
+  }
   async function get() {
     if (client && Date.now() - bornAt < maxAgeMs) return client;
-    if (client) { try { await client.end(); } catch {} }
-    client = await connect(cfg);
+    await drop();
+    const c = await connect(cfg);
+    c.on('error', (err) => {
+      console.warn(`[db] cached connection errored (${err.message}); dropping`);
+      if (client === c) client = null;
+    });
+    client = c;
     bornAt = Date.now();
     return client;
   }
   return {
-    async query(text, params) {
-      try {
-        return await (await get()).query(text, params);
-      } catch (err) {
-        // Connection-level failure: drop the cached client, retry once.
-        if (err.code === '40001' || err.severity) throw err; // SQL errors pass through
-        try { await client?.end(); } catch {}
-        client = null;
-        return (await get()).query(text, params);
-      }
+    query(text, params) {
+      return withRetry(async () => {
+        try {
+          return await (await get()).query(text, params);
+        } catch (err) {
+          if (err.severity || err.code === '40001') throw err; // SQL-level errors pass to withRetry/caller
+          await drop(); // connection-level failure: reconnect and retry once
+          return (await get()).query(text, params);
+        }
+      });
     },
-    async end() { if (client) { try { await client.end(); } catch {} client = null; } },
+    end: drop,
   };
 }
 
-module.exports = { authToken, connect, withConnection, withRetry, makeCachedClient };
+// insertChunked(client, sql, rows, toParams, { chunk }) → inserted count.
+// THE bulk-insert loop for DSQL (3,000-row DML cap → default 500-row
+// transactions, 40001 retries re-running only the failed chunk). Rows are
+// sent as multi-row VALUES batches — one round trip per chunk, not per row.
+// `sql` is a template containing the literal token /*VALUES*/ where the
+// placeholder tuples go, e.g.:
+//   INSERT INTO t (a, b) VALUES /*VALUES*/ ON CONFLICT (a) DO NOTHING
+async function insertChunked(client, sql, rows, toParams, { chunk = 500 } = {}) {
+  let inserted = 0;
+  for (let i = 0; i < rows.length; i += chunk) {
+    const slice = rows.slice(i, i + chunk);
+    const params = [];
+    const tupleSql = slice.map((row) =>
+      '(' + toParams(row).map((v) => { params.push(v); return `$${params.length}`; }).join(', ') + ')'
+    ).join(', ');
+    // One multi-row INSERT per chunk — its own implicit transaction, so a
+    // 40001 retry replays just this chunk and ON CONFLICT keeps it idempotent.
+    await withRetry(async () => {
+      const res = await client.query(sql.replace('/*VALUES*/', tupleSql), params);
+      inserted += res.rowCount;
+    });
+  }
+  return inserted;
+}
+
+module.exports = { authToken, connect, withConnection, withRetry, makeCachedClient, insertChunked };

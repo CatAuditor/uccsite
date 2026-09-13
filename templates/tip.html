@@ -509,7 +509,8 @@
             </label>
           </div>
 
-          <button type="submit" class="submit-btn" id="submitBtn">Submit Tip</button>
+          {{#turnstileSiteKey}}<div class="field-group cf-turnstile" data-sitekey="{{turnstileSiteKey}}"></div>
+          {{/turnstileSiteKey}}<button type="submit" class="submit-btn" id="submitBtn">Submit Tip</button>
 
           <div class="status-msg success" id="successMsg">
             Your tip has been received. Thank you — we'll be in touch if we need more information.
@@ -519,7 +520,8 @@
             <a href="mailto:info@utahciviccompact.org">info@utahciviccompact.org</a> directly.
           </div>
 
-        </form>
+        </form>{{#turnstileSiteKey}}
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{{/turnstileSiteKey}}
       </div>
 
     </div>

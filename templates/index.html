@@ -561,9 +561,11 @@
               <label for="zip">ZIP Code</label>
               <input type="text" id="zip" name="zip" placeholder="Utah ZIP code" maxlength="5" />
             </div>
-            <button type="submit" class="btn btn-donate btn-full">Join the Compact</button>
+            {{#turnstileSiteKey}}<div class="form-group cf-turnstile" data-sitekey="{{turnstileSiteKey}}"></div>
+            {{/turnstileSiteKey}}<button type="submit" class="btn btn-donate btn-full">Join the Compact</button>
             <p class="form-note">No spam. Unsubscribe anytime. We're in this together.</p>
-          </form>
+          </form>{{#turnstileSiteKey}}
+          <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{{/turnstileSiteKey}}
           <div class="form-success" id="form-success" style="display:none;">
             <div class="success-icon">✓</div>
             <h3>You're in.</h3>

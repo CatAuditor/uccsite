@@ -187,6 +187,40 @@ test('subscribe: invalid email 400; valid upserts with lowercased email', async 
   assert.equal(upsert.params[0], 'a@b.co');
 });
 
+test('subscribe dispatches the welcome-email job (not inline) when Resend is configured', async () => {
+  const db = fakeDb();
+  const invocations = [];
+  const res = await routes.subscribe({
+    ...baseCtx(db, { body: { email: 'a@b.co', firstName: 'Q' } }),
+    secrets: { RESEND_API_KEY: 'k' },
+    selfInvoke: async (p) => invocations.push(p),
+  });
+  assert.equal(res.statusCode, 200);
+  assert.equal(invocations.length, 1);
+  assert.equal(invocations[0].job, 'welcome-email');
+  assert.equal(invocations[0].email, 'a@b.co');
+});
+
+test('subscribe still 200s if the welcome-email dispatch fails', async () => {
+  const db = fakeDb();
+  const res = await routes.subscribe({
+    ...baseCtx(db, { body: { email: 'a@b.co' } }),
+    secrets: { RESEND_API_KEY: 'k' },
+    selfInvoke: async () => { throw new Error('throttled'); },
+  });
+  assert.equal(res.statusCode, 200);
+});
+
+test('portal POST still 202s if the self-invoke fails (constant response)', async () => {
+  const db = fakeDb();
+  const res = await routes.createPortalSessionPost({
+    ...baseCtx(db, { body: { email: 'a@b.co' } }),
+    secrets: { TOKEN_SECRET: SECRET, RESEND_API_KEY: 'k' },
+    selfInvoke: async () => { throw new Error('throttled'); },
+  });
+  assert.equal(res.statusCode, 202);
+});
+
 test('rate limit trips at the threshold with a 429', async () => {
   const db = fakeDb({ 'SELECT COUNT(*)': { rows: [{ count: 5 }], rowCount: 1 } });
   const res = await routes.subscribe(baseCtx(db, { body: { email: 'a@b.co' } }));

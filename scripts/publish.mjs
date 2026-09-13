@@ -16,37 +16,19 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { S3Client } from '@aws-sdk/client-s3';
 import { CloudFrontClient } from '@aws-sdk/client-cloudfront';
-import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
+import { resolveEnv, argValue } from './lib/stack.mjs';
 
 const require = createRequire(import.meta.url);
 const { buildSite } = require('../packages/render');
 const { publish } = require('../aws/publish/core.js');
 const { loadRenderInputs, collectStaticFiles, gitLastmodProvider } = require('../aws/publish/inputs.js');
 
-const STACKS = { staging: 'UccStaging', prod: 'UccProd' };
-
 const args = process.argv.slice(2);
-function argVal(name, def) {
-  const i = args.indexOf(name);
-  return i !== -1 && args[i + 1] ? args[i + 1] : def;
-}
-const envName = argVal('--env', 'staging');
-const trigger = argVal('--trigger', 'manual');
+const envName = argValue(args, '--env', 'staging');
+const trigger = argValue(args, '--trigger', 'manual');
 const allowBulkDelete = args.includes('--allow-bulk-delete');
-const stackName = STACKS[envName];
-if (!stackName) { console.error(`Unknown env ${envName} (use: ${Object.keys(STACKS).join(', ')})`); process.exit(2); }
 
 const ROOT = join(import.meta.dirname, '..');
-
-async function resolveStack(region) {
-  const cfn = new CloudFormationClient({ region });
-  const res = await cfn.send(new DescribeStacksCommand({ StackName: stackName }));
-  const outputs = Object.fromEntries((res.Stacks[0].Outputs || []).map(o => [o.OutputKey, o.OutputValue]));
-  for (const key of ['SiteBucketName', 'DistributionId', 'DsqlEndpoint']) {
-    if (!outputs[key]) throw new Error(`Stack ${stackName} is missing output ${key}`);
-  }
-  return outputs;
-}
 
 async function main() {
   const errors = [];
@@ -65,8 +47,7 @@ async function main() {
   for (const [name, text] of Object.entries(files)) outputs.set(name, Buffer.from(text, 'utf8'));
   console.log(`Rendered ${Object.keys(files).length} files, ${outputs.size} total outputs`);
 
-  const region = 'us-west-2';
-  const stack = await resolveStack(region);
+  const { region, stackName, outputs: stack } = await resolveEnv(envName, ['SiteBucketName', 'DistributionId', 'DsqlEndpoint']);
   console.log(`[publish] target ${stackName}: bucket=${stack.SiteBucketName} distribution=${stack.DistributionId}`);
 
   const result = await publish({

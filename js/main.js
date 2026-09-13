@@ -85,6 +85,8 @@ if (form) {
           lastName: form.querySelector('#last-name').value,
           address: form.querySelector('#address').value,
           zip: form.querySelector('#zip').value,
+          // Present only when the Turnstile widget is rendered (settings.turnstileSiteKey set)
+          turnstileToken: window.turnstile ? window.turnstile.getResponse() : undefined,
         }),
       });
 
@@ -96,6 +98,7 @@ if (form) {
         showFormError(form, data.error || 'Something went wrong. Please try again.');
         btn.textContent = 'Join the Compact';
         btn.disabled = false;
+        if (window.turnstile) window.turnstile.reset();
       }
     } catch {
       showFormError(form, 'Network error. Please check your connection and try again.');

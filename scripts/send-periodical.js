@@ -15,7 +15,7 @@
 import { readFileSync, appendFileSync, existsSync } from 'node:fs';
 import { createHmac } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
+import { resolveEnv } from './lib/stack.mjs';
 
 const require = createRequire(import.meta.url);
 const { withConnection } = require('../packages/db');
@@ -41,36 +41,34 @@ function parseArgs(argv) {
   return args;
 }
 
-async function getRecipients(envName = 'prod') {
-  const stackName = { staging: 'UccStaging', prod: 'UccProd' }[envName];
-  if (!stackName) throw new Error(`Unknown env ${envName}`);
-  const region = 'us-west-2';
-  const cfn = new CloudFormationClient({ region });
-  const res = await cfn.send(new DescribeStacksCommand({ StackName: stackName }));
-  const endpoint = (res.Stacks[0].Outputs || []).find((o) => o.OutputKey === 'DsqlEndpoint')?.OutputValue;
-  if (!endpoint) throw new Error(`Stack ${stackName} has no DsqlEndpoint output`);
+// Recipients + the origin unsubscribe links point at, both from the target
+// environment's stack — a staging test send must NOT carry prod unsubscribe
+// URLs (clicking one would act on the production tables).
+async function resolveRecipients(envName = 'prod') {
+  const { region, outputs } = await resolveEnv(envName, ['DsqlEndpoint', 'PublicOrigin']);
 
   // Same recipient set as always: subscribers UNION opted-in members.
-  const rows = await withConnection({ endpoint, region }, (client) => client.query(
+  const rows = await withConnection({ endpoint: outputs.DsqlEndpoint, region }, (client) => client.query(
     `SELECT DISTINCT email FROM (
        SELECT email FROM subscribers
        UNION
        SELECT email FROM members WHERE newsletter_opt_in = 1
      ) AS all_recipients ORDER BY email`,
   ));
-  return rows.rows.map((row) => row.email);
+  return { recipients: rows.rows.map((row) => row.email), origin: outputs.PublicOrigin };
 }
 
-// Mirrors signToken() in functions/api/_lib.js (purpose 'unsubscribe').
-function unsubscribeUrl(secret, email) {
+// Mirrors signToken() in packages/tokens (purpose 'unsubscribe') — the
+// cross-verification test in aws/api/test pins the byte format.
+function unsubscribeUrl(secret, email, origin = SITE_URL) {
   const b64url = (buf) => Buffer.from(buf).toString('base64url');
   const payload = Buffer.from(JSON.stringify({ p: 'unsubscribe', e: email, x: Math.floor(Date.now() / 1000) + UNSUB_TTL_SECONDS }));
   const sig = createHmac('sha256', secret).update(payload).digest();
-  return `${SITE_URL}/api/unsubscribe?token=${encodeURIComponent(`${b64url(payload)}.${b64url(sig)}`)}`;
+  return `${origin}/api/unsubscribe?token=${encodeURIComponent(`${b64url(payload)}.${b64url(sig)}`)}`;
 }
 
-async function sendOne(apiKey, secret, to, subject, html, text) {
-  const unsub = unsubscribeUrl(secret, to);
+async function sendOne(apiKey, secret, to, subject, html, text, origin) {
+  const unsub = unsubscribeUrl(secret, to, origin);
   const form = new FormData();
   form.set('from', FROM_ADDRESS);
   form.set('to', to);
@@ -114,7 +112,9 @@ async function main() {
   const alreadySent = new Set(
     args.resume && existsSync(args.resume) ? readFileSync(args.resume, 'utf-8').split('\n').filter(Boolean) : []
   );
-  const recipients = (args.test ? [args.test] : await getRecipients(args.env || 'prod')).filter((e) => !alreadySent.has(e));
+  const resolved = await resolveRecipients(args.env || 'prod');
+  const origin = resolved.origin;
+  const recipients = (args.test ? [args.test] : resolved.recipients).filter((e) => !alreadySent.has(e));
 
   console.log(`Subject: ${args.subject}`);
   console.log(`Recipients: ${recipients.length}${alreadySent.size ? ` (skipping ${alreadySent.size} already sent)` : ''}`);
@@ -129,7 +129,7 @@ async function main() {
   const failures = [];
   for (const email of recipients) {
     try {
-      await sendOne(apiKey, secret, email, args.subject, html, text);
+      await sendOne(apiKey, secret, email, args.subject, html, text, origin);
       appendFileSync(log, email + '\n');
       console.log(`Sent to ${email}`);
     } catch (err) {

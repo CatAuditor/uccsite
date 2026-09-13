@@ -55,7 +55,12 @@ minutes (next Lambda cold start), no deploy needed. Sources:
 - [ ] `MAILGUN_API_KEY` — Mailgun dashboard (used by the periodical send script)
 - [ ] `TURNSTILE_SECRET_KEY` — NEW: create a Cloudflare Turnstile widget for
   utahciviccompact.org (Cloudflare dashboard → Turnstile), gives a site key
-  (public, goes in the repo) + secret key (goes in Secrets Manager)
+  (public) + secret key (goes in Secrets Manager).
+  **ORDER MATTERS:** put the SITE key into the site first (Site Settings →
+  "Turnstile Site Key" in the CMS, or content/settings.json) and let it
+  publish — THEN fill the secret in Secrets Manager. Filling the secret while
+  the site key is blank makes the join + tip forms reject everyone (the
+  server demands a CAPTCHA token the pages aren't collecting yet).
 
 ## Needed at Phase 6 (cutover) — details will be filled in when we get there
 

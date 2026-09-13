@@ -105,19 +105,31 @@ async function handleCheckoutComplete(session, db) {
   }
 
   if (session.mode === 'payment' && session.payment_intent) {
-    const member = await getMemberByStripeId(db, customerId);
-    if (!member) {
-      console.warn(`[api] no member for customer ${customerId}; donation ${session.payment_intent} not recorded`);
-      return;
-    }
-    const isPublic = publicDonor === '0' ? 0 : 1;
-    await db.query(
-      `INSERT INTO donations (id, member_id, stripe_payment_intent_id, amount_cents, public)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4)
-       ON CONFLICT (stripe_payment_intent_id) DO NOTHING`,
-      [member.id, session.payment_intent, session.amount_total, isPublic],
-    );
+    await recordDonation(db, {
+      customerId,
+      paymentIntentId: session.payment_intent,
+      amountCents: session.amount_total,
+      publicDonor,
+    });
   }
+}
+
+// THE donation insert — one-time (checkout) and recurring (invoice.paid)
+// both land here, so the SQL, the public-donor default, and the
+// missing-member warn-and-drop behavior cannot drift between the two paths.
+async function recordDonation(db, { customerId, paymentIntentId, amountCents, publicDonor }) {
+  const member = await getMemberByStripeId(db, customerId);
+  if (!member) {
+    console.warn(`[api] no member for customer ${customerId}; donation ${paymentIntentId} not recorded`);
+    return;
+  }
+  const isPublic = publicDonor === '0' ? 0 : 1;
+  await db.query(
+    `INSERT INTO donations (id, member_id, stripe_payment_intent_id, amount_cents, public)
+     VALUES (gen_random_uuid(), $1, $2, $3, $4)
+     ON CONFLICT (stripe_payment_intent_id) DO NOTHING`,
+    [member.id, paymentIntentId, amountCents, isPublic],
+  );
 }
 
 async function handleInvoicePaid(invoice, db) {
@@ -132,21 +144,15 @@ async function handleInvoicePaid(invoice, db) {
 
   const paymentIntentId = invoicePaymentIntentId(invoice);
   if (paymentIntentId && invoice.amount_paid > 0) {
-    const member = await getMemberByStripeId(db, invoice.customer);
-    if (!member) {
-      console.warn(`[api] no member for customer ${invoice.customer}; recurring donation ${paymentIntentId} not recorded`);
-      return;
-    }
     // publicDonor is carried on subscription_data.metadata at checkout.
     const publicDonor = invoice.subscription_details?.metadata?.publicDonor
       ?? invoice.parent?.subscription_details?.metadata?.publicDonor;
-    const isPublic = publicDonor === '0' ? 0 : 1;
-    await db.query(
-      `INSERT INTO donations (id, member_id, stripe_payment_intent_id, amount_cents, public)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4)
-       ON CONFLICT (stripe_payment_intent_id) DO NOTHING`,
-      [member.id, paymentIntentId, invoice.amount_paid, isPublic],
-    );
+    await recordDonation(db, {
+      customerId: invoice.customer,
+      paymentIntentId,
+      amountCents: invoice.amount_paid,
+      publicDonor,
+    });
   }
 }
 
@@ -203,13 +209,14 @@ async function getMemberByStripeId(db, stripeCustomerId) {
   return res.rows[0] || null;
 }
 
-function timingSafeEqual(a, b) {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) {
-    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return diff === 0;
+// Constant-time hex comparison via the platform primitive (the Cloudflare
+// original hand-rolled this because Workers lack node:crypto). Non-hex or
+// odd-length candidate signatures are rejected outright.
+const { timingSafeEqual: nodeTimingSafeEqual } = require('node:crypto');
+
+function timingSafeEqual(aHex, bHex) {
+  if (typeof bHex !== 'string' || !/^[0-9a-f]+$/i.test(bHex) || bHex.length !== aHex.length) return false;
+  return nodeTimingSafeEqual(Buffer.from(aHex, 'hex'), Buffer.from(bHex, 'hex'));
 }
 
 // Stripe webhook signature verification using Web Crypto API (line-for-line

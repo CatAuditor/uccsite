@@ -39,15 +39,17 @@ const SECURITY_HEADERS = {
 };
 
 // Site-wide CSP: static/_headers posture minus the Cloudflare Insights origins
-// (the beacon was edge-injected by Cloudflare and never part of repo output).
+// (the beacon was edge-injected by Cloudflare and never part of repo output),
+// plus challenges.cloudflare.com for the Turnstile widget on the join/tip
+// forms (spec §10's one net-new abuse control).
 const SITE_CSP = [
   "default-src 'self'",
-  "script-src 'self'",
+  "script-src 'self' https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
   "connect-src 'self'",
-  "frame-src https://www.youtube.com",
+  "frame-src https://www.youtube.com https://challenges.cloudflare.com",
   "object-src 'none'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
@@ -112,17 +114,26 @@ class UccStack extends Stack {
     // the operator in the console (docs/for-conner.md). The Lambda fetches
     // them AT RUNTIME (aws/api/secrets.js) — values never enter the template
     // or the Lambda env, and rotation needs no redeploy.
-    const API_SECRET_NAMES = [
-      'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'AIRTABLE_TOKEN',
-      'RESEND_API_KEY', 'TOKEN_SECRET', 'TURNSTILE_SECRET_KEY',
-    ];
+    // Single source: the Lambda's own secret list drives what CDK creates,
+    // so a name added in one place can't silently miss the other.
+    const { NAMES: API_SECRET_NAMES, PLACEHOLDER } = require('../../../aws/api/secrets.js');
     const envName = isProd ? 'prod' : 'staging';
+    const publicOrigin = isProd
+      ? 'https://utahciviccompact.org'
+      : this.node.tryGetContext('stagingPublicOrigin');
+    if (!publicOrigin) {
+      throw new Error(
+        'stagingPublicOrigin is not set in cdk.json context. After the first deploy of a '
+        + 'staging distribution, set it to https://<its-domain>.cloudfront.net - without it, '
+        + 'email links and Stripe redirect URLs would point at the raw Function URL, which '
+        + 'the origin lock rejects.');
+    }
     const apiSecrets = {};
     for (const name of API_SECRET_NAMES) {
       apiSecrets[name] = new secretsmanager.Secret(this, `ApiSecret${name}`, {
         secretName: `ucc/${envName}/${name}`,
         description: `uccsite ${envName} ${name} (fill in the real value; see docs/for-conner.md)`,
-        secretStringValue: SecretValue.unsafePlainText('REPLACE_ME'),
+        secretStringValue: SecretValue.unsafePlainText(PLACEHOLDER),
         removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
       });
     }
@@ -141,7 +152,9 @@ class UccStack extends Stack {
         // staging value is the distribution's stable *.cloudfront.net domain,
         // set in cdk.json context after the first deploy (can't reference the
         // distribution here — that would be a CFN cycle through the origin).
-        PUBLIC_ORIGIN: isProd ? 'https://utahciviccompact.org' : (this.node.tryGetContext('stagingPublicOrigin') || ''),
+        // publicOrigin is validated non-empty below — an empty value would
+        // put Function URL hosts into email links, which the origin lock 403s.
+        PUBLIC_ORIGIN: publicOrigin,
         ...Object.fromEntries(API_SECRET_NAMES.map(n => [`SECRET_ARN_${n}`, apiSecrets[n].secretArn])),
       },
       bundling: {
@@ -323,7 +336,13 @@ class UccStack extends Stack {
       encryption: s3.BucketEncryption.S3_MANAGED,
       enforceSSL: true,
       versioned: true,
-      lifecycleRules: [{ expiration: Duration.days(90) }],
+      // BOTH rules: without noncurrentVersionExpiration the versioned bucket
+      // keeps every expired PII export forever as a noncurrent version —
+      // the opposite of the 90-day retention the policy promises.
+      lifecycleRules: [{
+        expiration: Duration.days(90),
+        noncurrentVersionExpiration: Duration.days(7),
+      }],
       removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
       autoDeleteObjects: !isProd,
     });
@@ -361,6 +380,7 @@ class UccStack extends Stack {
       .addAlarmAction(new cwActions.SnsAction(alertTopic));
 
     new CfnOutput(this, 'OperationalExportBucketName', { value: exportBucket.bucketName });
+    new CfnOutput(this, 'PublicOrigin', { value: publicOrigin });
     new CfnOutput(this, 'OpsAlertTopicArn', { value: alertTopic.topicArn });
     new CfnOutput(this, 'DistributionDomain', { value: distribution.distributionDomainName });
     new CfnOutput(this, 'DistributionId', { value: distribution.distributionId });

@@ -1,0 +1,8 @@
+{
+  "name": "@uccsite/tokens",
+  "private": true,
+  "version": "0.0.0",
+  "description": "THE HMAC token implementation (unsubscribe/portal links). Byte-compatible with functions/api/_lib.js - TOKEN_SECRET carries over; 1-year links in the wild must keep verifying.",
+  "type": "commonjs",
+  "main": "index.js"
+}

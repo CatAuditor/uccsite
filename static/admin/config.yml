@@ -30,6 +30,7 @@ collections:
           - { label: Instagram URL, name: instagram, widget: string, pattern: ['^https://', 'Must start with https://'] }
           - { label: Footer Tagline, name: footerTagline, widget: string }
           - { label: Copyright Line, name: copyright, widget: string }
+          - { label: Turnstile Site Key, name: turnstileSiteKey, widget: string, required: false, hint: "Cloudflare Turnstile PUBLIC site key. Blank = no CAPTCHA widget on the join/tip forms. Set this BEFORE the secret key goes into AWS." }
 
   # ── Homepage ──────────────────────────────────────────────────────────────
   - name: homepage

@@ -6,31 +6,26 @@
 // Reads via `wrangler d1 execute --remote --json` (needs CLOUDFLARE_API_TOKEN
 // or a wrangler login), transforms integer ids to UUIDs while preserving
 // member_id joins, carries created_at, stores the old id in legacy_id, and
-// inserts in chunks (DSQL caps DML at 3,000 rows/transaction). Idempotent:
-// every insert is ON CONFLICT DO NOTHING keyed on the original UNIQUEs, and
-// re-runs skip rows whose legacy_id already landed.
+// inserts in multi-row batches via insertChunked (DSQL 3,000-row DML cap,
+// 40001 retries). Idempotent: ON CONFLICT DO NOTHING on the original UNIQUEs,
+// and re-runs adopt already-migrated members' UUIDs via legacy_id.
 //
-// Verification: prints per-table D1 vs DSQL counts and the donations SUM —
-// the SUM must match the pre-migration figure exactly (spec §19 Phase 5).
+// Verification: per-table D1 vs DSQL counts and the donations SUM — the SUM
+// must match the pre-migration figure exactly (spec §19 Phase 5).
 //
 // Usage:
 //   $env:AWS_PROFILE='uccsite'; node scripts/migrate-d1.mjs --env staging [--dry-run]
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
+import { resolveEnv, argValue } from './lib/stack.mjs';
 
 const require = createRequire(import.meta.url);
-const { withConnection, withRetry } = require('../packages/db');
+const { withConnection, insertChunked } = require('../packages/db');
 
-const STACKS = { staging: 'UccStaging', prod: 'UccProd' };
 const args = process.argv.slice(2);
-const envName = args[args.indexOf('--env') + 1] || 'staging';
+const envName = argValue(args, '--env', 'staging');
 const dryRun = args.includes('--dry-run');
-const stackName = STACKS[envName];
-if (!stackName) { console.error(`Unknown env ${envName}`); process.exit(2); }
-
-const CHUNK = 500;
 
 function d1(sql) {
   const cmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
@@ -53,67 +48,43 @@ async function main() {
   console.log(`D1: members=${members.length} subscriptions=${subscriptions.length} donations=${donations.length} subscribers=${subscribers.length} processed_events=${processedEvents.length} donations SUM=${d1TotalCents}`);
   if (dryRun) { console.log('Dry run — nothing written.'); return; }
 
-  const region = 'us-west-2';
-  const cfn = new CloudFormationClient({ region });
-  const stacks = await cfn.send(new DescribeStacksCommand({ StackName: stackName }));
-  const endpoint = (stacks.Stacks[0].Outputs || []).find(o => o.OutputKey === 'DsqlEndpoint')?.OutputValue;
-  if (!endpoint) throw new Error('No DsqlEndpoint output');
+  const { region, outputs } = await resolveEnv(envName, ['DsqlEndpoint']);
 
   // Old integer member id -> new UUID (stable across re-runs via legacy_id lookup).
   const memberUuid = new Map(members.map(m => [m.id, randomUUID()]));
 
-  await withConnection({ endpoint, region }, async (client) => {
+  await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) => {
     // Re-run safety: adopt UUIDs of already-migrated members.
     const existing = await client.query('SELECT id, legacy_id FROM members WHERE legacy_id IS NOT NULL');
     for (const row of existing.rows) memberUuid.set(row.legacy_id, row.id);
 
-    const insert = async (label, rows, sql, toParams) => {
-      let inserted = 0;
-      for (let i = 0; i < rows.length; i += CHUNK) {
-        const slice = rows.slice(i, i + CHUNK);
-        await withRetry(async () => {
-          await client.query('BEGIN');
-          try {
-            for (const row of slice) {
-              const res = await client.query(sql, toParams(row));
-              inserted += res.rowCount;
-            }
-            await client.query('COMMIT');
-          } catch (err) {
-            await client.query('ROLLBACK');
-            throw err;
-          }
-        });
-      }
+    const load = async (label, rows, sql, toParams) => {
+      const inserted = await insertChunked(client, sql, rows, toParams);
       console.log(`${label}: ${inserted} inserted (${rows.length - inserted} already present/skipped)`);
     };
 
-    await insert('members', members,
+    await load('members', members,
       `INSERT INTO members (id, legacy_id, stripe_customer_id, email, first_name, last_name, zip, newsletter_opt_in, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       ON CONFLICT (stripe_customer_id) DO NOTHING`,
+       VALUES /*VALUES*/ ON CONFLICT (stripe_customer_id) DO NOTHING`,
       m => [memberUuid.get(m.id), m.id, m.stripe_customer_id, m.email, m.first_name, m.last_name, m.zip, m.newsletter_opt_in ?? 0, m.created_at]);
 
-    await insert('subscriptions', subscriptions,
+    await load('subscriptions', subscriptions,
       `INSERT INTO subscriptions (id, legacy_id, member_id, stripe_subscription_id, stripe_price_id, amount_cents, status, current_period_end, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       ON CONFLICT (stripe_subscription_id) DO NOTHING`,
+       VALUES /*VALUES*/ ON CONFLICT (stripe_subscription_id) DO NOTHING`,
       s => [randomUUID(), s.id, memberUuid.get(s.member_id) ?? null, s.stripe_subscription_id, s.stripe_price_id, s.amount_cents, s.status, s.current_period_end, s.created_at, s.updated_at ?? s.created_at]);
 
-    await insert('donations', donations,
+    await load('donations', donations,
       `INSERT INTO donations (id, legacy_id, member_id, stripe_payment_intent_id, amount_cents, public, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       ON CONFLICT (stripe_payment_intent_id) DO NOTHING`,
+       VALUES /*VALUES*/ ON CONFLICT (stripe_payment_intent_id) DO NOTHING`,
       d => [randomUUID(), d.id, memberUuid.get(d.member_id) ?? null, d.stripe_payment_intent_id, d.amount_cents, d.public ?? 1, d.created_at]);
 
-    await insert('subscribers', subscribers,
+    await load('subscribers', subscribers,
       `INSERT INTO subscribers (id, legacy_id, email, first_name, last_name, address, zip, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       ON CONFLICT (email) DO NOTHING`,
+       VALUES /*VALUES*/ ON CONFLICT (email) DO NOTHING`,
       s => [randomUUID(), s.id, s.email, s.first_name, s.last_name, s.address, s.zip, s.created_at]);
 
-    await insert('processed_events', processedEvents,
-      `INSERT INTO processed_events (id, created_at) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
+    await load('processed_events', processedEvents,
+      `INSERT INTO processed_events (id, created_at) VALUES /*VALUES*/ ON CONFLICT (id) DO NOTHING`,
       e => [e.id, e.created_at]);
 
     // ── Verify ──────────────────────────────────────────────────────────────

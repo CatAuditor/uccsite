@@ -10,7 +10,7 @@
 //     total/goal — docs/build-spec-aws.md addendum 2)
 const {
   json, html, redirect, escapeHtml, isValidEmail, str, rateLimitOr429,
-  signToken, verifyToken, turnstileOr403, STRIPE_API_VERSION,
+  signToken, verifyToken, turnstileOr403,
 } = require('./lib');
 const { StripeError, stripePost } = require('./stripe');
 
@@ -24,7 +24,8 @@ const RECENT_LIMIT = 3;
 const AIRTABLE_URL = 'https://api.airtable.com/v0/appgd3KnYil6zQgHp/tblRLdlEgvV1KqqiL';
 
 // ── POST /api/subscribe ─────────────────────────────────────────────────────
-async function subscribe({ event, db, secrets, body, origin }) {
+async function subscribe(ctx) {
+  const { event, db, secrets, body, origin } = ctx;
   const limited = await rateLimitOr429(db, event, 'subscribe', 5);
   if (limited) return limited;
 
@@ -60,17 +61,41 @@ async function subscribe({ event, db, secrets, body, origin }) {
     return json({ error: 'Could not save subscription' }, 500);
   }
 
-  // Welcome email INLINE before responding (Lambda has no waitUntil; the
-  // deferral was purely latency). A send failure never blocks the signup.
-  if (secrets.RESEND_API_KEY) {
+  // Welcome email via async self-invocation — off the response path like the
+  // Cloudflare waitUntil original. Inline sending meant a Resend stall held
+  // the user's response (and each retry burned a rate-limit slot).
+  if (secrets.RESEND_API_KEY && ctx.selfInvoke) {
     try {
-      await sendWelcomeEmail(secrets, origin, email, firstName);
+      await ctx.selfInvoke({ job: 'welcome-email', email, firstName, origin });
     } catch (err) {
-      console.error('[api] welcome email failed:', err?.message);
+      console.error('[api] welcome email dispatch failed:', err?.message);
     }
   }
 
   return json({ ok: true });
+}
+
+// Runs from the self-invocation (unreachable over HTTP — see index.mjs).
+async function welcomeEmailJob({ secrets, email, firstName, origin }) {
+  try {
+    await sendWelcomeEmail(secrets, origin, email, firstName);
+  } catch (err) {
+    console.error('[api] welcome email failed:', err?.message);
+  }
+}
+
+// THE Resend send path — both transactional emails go through it.
+const FROM_ADDRESS = 'Utah Civic Compact <hello@utahciviccompact.org>';
+const EMAIL_TIMEOUT_MS = 8000;
+
+async function resendSend(apiKey, { to, subject, html, headers }) {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: FROM_ADDRESS, to: [to], subject, html, ...(headers ? { headers } : {}) }),
+    signal: AbortSignal.timeout(EMAIL_TIMEOUT_MS),
+  });
+  if (!res.ok) console.error('[api] Resend error:', res.status);
 }
 
 async function sendWelcomeEmail(secrets, origin, email, firstName) {
@@ -81,27 +106,15 @@ async function sendWelcomeEmail(secrets, origin, email, firstName) {
     unsubscribeUrl = `${origin}/api/unsubscribe?token=${encodeURIComponent(token)}`;
   }
 
-  const emailRes = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
+  await resendSend(secrets.RESEND_API_KEY, {
+    to: email,
+    subject: "You're in. Here's what that means.",
+    html: buildWelcomeEmail(greeting, unsubscribeUrl),
     headers: {
-      Authorization: `Bearer ${secrets.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     },
-    body: JSON.stringify({
-      from: 'Utah Civic Compact <hello@utahciviccompact.org>',
-      to: [email],
-      subject: "You're in. Here's what that means.",
-      html: buildWelcomeEmail(greeting, unsubscribeUrl),
-      headers: {
-        'List-Unsubscribe': `<${unsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
-    }),
   });
-
-  if (!emailRes.ok) {
-    console.error('[api] Resend error:', emailRes.status);
-  }
 }
 
 function buildWelcomeEmail(greeting, unsubscribeUrl) {
@@ -356,7 +369,13 @@ async function createPortalSessionPost({ event, db, secrets, body, origin, selfI
     return json({ error: 'Portal is temporarily unavailable' }, 503);
   }
 
-  await selfInvoke({ job: 'portal-link', email, origin });
+  try {
+    await selfInvoke({ job: 'portal-link', email, origin });
+  } catch (err) {
+    // The 202 contract holds even if the dispatch fails (e.g. throttling) —
+    // a 500 here would break the constant-response guarantee.
+    console.error('[api] portal link dispatch failed:', err?.message);
+  }
 
   return json({ ok: true, message: 'If that email is on file, a sign-in link has been sent.' }, 202);
 }
@@ -384,27 +403,17 @@ async function createPortalSessionGet({ event, db, secrets, origin }) {
     const member = await findMember(db, email);
     if (!member) return json({ error: 'No account found' }, 404);
 
-    const res = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${secrets.STRIPE_SECRET_KEY}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Stripe-Version': STRIPE_API_VERSION,
-      },
-      body: new URLSearchParams({
-        customer: member.stripe_customer_id,
-        return_url: `${origin}/#donate`,
-      }),
+    // Through the shared stripePost — one place owns the pinned API version.
+    const session = await stripePost(secrets.STRIPE_SECRET_KEY, 'billing_portal/sessions', {
+      customer: member.stripe_customer_id,
+      return_url: `${origin}/#donate`,
     });
-
-    const session = await res.json();
-    if (!res.ok) {
-      console.error('[api] Stripe portal error:', res.status, session.error?.type);
-      return json({ error: 'Could not open billing portal' }, 502);
-    }
-
     return redirect(session.url, 302);
   } catch (err) {
+    if (err instanceof StripeError) {
+      console.error('[api] Stripe portal error:', err.status);
+      return json({ error: 'Could not open billing portal' }, 502);
+    }
     console.error('[api] create-portal-session error:', err);
     return json({ error: 'Internal error' }, 500);
   }
@@ -413,11 +422,13 @@ async function createPortalSessionGet({ event, db, secrets, origin }) {
 // Most recent real Stripe customer for this email (ignores any legacy
 // pending_ placeholder rows). ORDER BY created_at — UUID ids are unordered
 // (the D1 original used ORDER BY id; migration carries created_at over).
+// No legacy_id reference: that column is migration scaffolding and gets
+// dropped after cutover verification.
 async function findMember(db, email) {
   const res = await db.query(
     `SELECT stripe_customer_id FROM members
      WHERE email = $1 AND stripe_customer_id LIKE 'cus_%'
-     ORDER BY created_at DESC, legacy_id DESC LIMIT 1`,
+     ORDER BY created_at DESC LIMIT 1`,
     [email],
   );
   return res.rows[0] || null;
@@ -425,19 +436,13 @@ async function findMember(db, email) {
 
 async function sendPortalLink(apiKey, email, link) {
   const safeLink = escapeHtml(link);
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: 'Utah Civic Compact <hello@utahciviccompact.org>',
-      to: [email],
-      subject: 'Manage your Utah Civic Compact membership',
-      html: `<p>Use the link below to manage your recurring donation. It expires in 15 minutes.</p>
+  await resendSend(apiKey, {
+    to: email,
+    subject: 'Manage your Utah Civic Compact membership',
+    html: `<p>Use the link below to manage your recurring donation. It expires in 15 minutes.</p>
 <p><a href="${safeLink}">${safeLink}</a></p>
 <p>If you didn't request this, you can ignore this email.</p>`,
-    }),
   });
-  if (!res.ok) console.error('[api] Resend error:', res.status);
 }
 
 // ── GET /api/donations/stats ────────────────────────────────────────────────
@@ -468,5 +473,5 @@ async function donationStats({ db }) {
 
 module.exports = {
   subscribe, unsubscribe, tip, createCheckoutSession,
-  createPortalSessionPost, createPortalSessionGet, portalLinkJob, donationStats,
+  createPortalSessionPost, createPortalSessionGet, portalLinkJob, welcomeEmailJob, donationStats,
 };

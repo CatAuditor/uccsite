@@ -22,19 +22,21 @@ export async function handler() {
     const counts = {};
     await withConnection({ endpoint: DSQL_ENDPOINT, region }, async (client) => {
       for (const table of TABLES) {
-        const res = await client.query(`SELECT * FROM ${table} ORDER BY created_at, legacy_id`);
+        // No legacy_id in the ORDER BY — that column is migration scaffolding
+        // and is dropped after cutover verification; the export must survive it.
+        const res = await client.query(`SELECT * FROM ${table} ORDER BY created_at`);
         counts[table] = res.rowCount;
         await s3.send(new PutObjectCommand({
           Bucket: EXPORT_BUCKET,
           Key: `${date}/${table}.json`,
-          Body: JSON.stringify(res.rows, null, 1),
+          Body: JSON.stringify(res.rows),
           ContentType: 'application/json',
         }));
       }
       await s3.send(new PutObjectCommand({
         Bucket: EXPORT_BUCKET,
         Key: `${date}/manifest.json`,
-        Body: JSON.stringify({ exported_at: new Date().toISOString(), counts }, null, 1),
+        Body: JSON.stringify({ exported_at: new Date().toISOString(), counts }),
         ContentType: 'application/json',
       }));
     });

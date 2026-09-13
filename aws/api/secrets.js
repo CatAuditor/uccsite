@@ -12,28 +12,38 @@ const NAMES = [
   'RESEND_API_KEY', 'TOKEN_SECRET', 'TURNSTILE_SECRET_KEY',
 ];
 
-let cached = null;
+// Per-secret cache. A FAILED fetch is never cached — a transient Secrets
+// Manager throttle at cold start must not poison a warm container for its
+// whole life (a container stuck without STRIPE_WEBHOOK_SECRET would 401
+// every Stripe delivery for hours). Placeholder/unset results ARE cached:
+// they're a stable configuration state, not an error.
+const cache = new Map(); // name -> value | null (null = confirmed unset)
+let client = null;
 
 // loadSecrets() → { NAME: value | undefined, ... }
 // Env var SECRET_ARN_<NAME> carries each secret's ARN (set by CDK).
 async function loadSecrets() {
-  if (cached) return cached;
-  const client = new SecretsManagerClient({});
-  const out = {};
+  client ??= new SecretsManagerClient({});
   await Promise.all(NAMES.map(async (name) => {
+    if (cache.has(name)) return;
     const arn = process.env[`SECRET_ARN_${name}`];
-    if (!arn) return;
+    if (!arn) { cache.set(name, null); return; }
     try {
       const res = await client.send(new GetSecretValueCommand({ SecretId: arn }));
       const value = res.SecretString;
-      if (value && value !== PLACEHOLDER) out[name] = value;
-      else console.warn(`[api] secret ${name} is unset (placeholder)`);
+      if (value && value !== PLACEHOLDER) cache.set(name, value);
+      else { cache.set(name, null); console.warn(`[api] secret ${name} is unset (placeholder)`); }
     } catch (err) {
+      // NOT cached — retried on the next invocation.
       console.error(`[api] failed to load secret ${name}: ${err.name}`);
     }
   }));
-  cached = out;
-  return cached;
+  const out = {};
+  for (const name of NAMES) {
+    const v = cache.get(name);
+    if (v) out[name] = v;
+  }
+  return out;
 }
 
 module.exports = { loadSecrets, PLACEHOLDER, NAMES };

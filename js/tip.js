@@ -54,6 +54,8 @@
       email,
       subject_of_tip: document.getElementById('subject').value.trim(),
       tip_summary: tipBody,
+      // Present only when the Turnstile widget is rendered (settings.turnstileSiteKey set)
+      turnstileToken: window.turnstile ? window.turnstile.getResponse() : undefined,
     };
 
     try {
@@ -68,6 +70,7 @@
         showError(data.error || null);
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit Tip';
+        if (window.turnstile) window.turnstile.reset();
         return;
       }
 

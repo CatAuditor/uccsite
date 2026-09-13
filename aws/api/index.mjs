@@ -16,7 +16,7 @@ import { loadSecrets } from './secrets.js';
 import { handleWebhook } from './webhook.js';
 import {
   subscribe, unsubscribe, tip, createCheckoutSession,
-  createPortalSessionPost, createPortalSessionGet, portalLinkJob, donationStats,
+  createPortalSessionPost, createPortalSessionGet, portalLinkJob, welcomeEmailJob, donationStats,
 } from './routes.js';
 
 const { DSQL_ENDPOINT, ORIGIN_VERIFY_SECRET, PUBLIC_ORIGIN } = process.env;
@@ -47,15 +47,36 @@ function stampHeaders(res) {
   return { ...res, headers };
 }
 
+// Route table, keyed `${method} ${path}`. Per-route flags live beside the
+// handler so the shared middle needs no route-specific ifs:
+//   rawBody: handler consumes the exact received bytes (HMAC) — never JSON-parse
+//   secrets: route reads third-party secrets (skipped for health/stats so a
+//            Secrets Manager fetch never blocks them)
+const ROUTES = {
+  'POST /api/webhook': { fn: handleWebhook, rawBody: true, secrets: true },
+  'POST /api/subscribe': { fn: subscribe, secrets: true },
+  'GET /api/unsubscribe': { fn: unsubscribe, secrets: true },
+  'POST /api/unsubscribe': { fn: unsubscribe, secrets: true },
+  'POST /api/tip': { fn: tip, secrets: true },
+  'POST /api/create-checkout-session': { fn: createCheckoutSession, secrets: true },
+  'POST /api/create-portal-session': { fn: createPortalSessionPost, secrets: true },
+  'GET /api/create-portal-session': { fn: createPortalSessionGet, secrets: true },
+  'GET /api/donations/stats': { fn: donationStats },
+  'GET /api/health': { fn: health },
+};
+
+const JOBS = {
+  'portal-link': (event, secrets) => portalLinkJob({ db, secrets, email: event.email, origin: event.origin }),
+  'welcome-email': (event, secrets) => welcomeEmailJob({ secrets, email: event.email, firstName: event.firstName, origin: event.origin }),
+};
+
 export async function handler(event) {
   // Internal job dispatch: only direct Invoke events land here — a Function
   // URL request ALWAYS carries requestContext.http, so this path is
   // unreachable from the internet.
   if (!event.requestContext?.http) {
-    if (event.job === 'portal-link') {
-      const secrets = await loadSecrets();
-      await portalLinkJob({ db, secrets, email: event.email, origin: event.origin });
-    }
+    const job = JOBS[event.job];
+    if (job) await job(event, await loadSecrets());
     return { ok: true };
   }
 
@@ -66,38 +87,32 @@ export async function handler(event) {
 
   const method = event.requestContext.http.method;
   const path = event.requestContext.http.path;
-  const secrets = await loadSecrets();
+  const route = ROUTES[`${method} ${path}`];
+  if (!route) {
+    return stampHeaders({ statusCode: 404, headers: {}, body: JSON.stringify({ error: 'Not found' }) });
+  }
 
-  // The site's public origin (links in emails, Stripe redirect URLs). The
-  // Host header CloudFront forwards is the Function URL's own, so the origin
-  // comes from config.
-  const origin = PUBLIC_ORIGIN || `https://${event.headers?.host}`;
+  const secrets = route.secrets ? await loadSecrets() : {};
 
-  // Raw body FIRST, exactly as received — the webhook HMAC covers these bytes.
+  // The site's public origin (links in emails, Stripe redirect URLs). Config
+  // only — the forwarded Host is the Function URL's own domain, and links
+  // pointing there would 403 on the origin lock. CDK refuses to synth an env
+  // without it.
+  if (!PUBLIC_ORIGIN) console.error('[api] PUBLIC_ORIGIN is not set — email links and Stripe redirects will be wrong');
+  const origin = PUBLIC_ORIGIN || 'https://utahciviccompact.org';
+
+  // Raw body exactly as received — the webhook HMAC covers these bytes.
   const rawBody = event.body === undefined ? '' :
     (event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body);
 
-  // JSON body (undefined = malformed → routes return their original 400s).
+  // JSON body for non-raw POST routes (undefined = malformed → routes 400).
   let body;
-  if (method === 'POST' && path !== '/api/webhook') {
+  if (method === 'POST' && !route.rawBody) {
     try { body = JSON.parse(rawBody); } catch { body = undefined; }
     if (body !== undefined && (typeof body !== 'object' || body === null)) body = undefined;
   }
 
-  const ctx = { event, db, secrets, body, origin, rawBody, selfInvoke };
-
-  let res;
-  if (path === '/api/webhook' && method === 'POST') res = await handleWebhook(ctx);
-  else if (path === '/api/subscribe' && method === 'POST') res = await subscribe(ctx);
-  else if (path === '/api/unsubscribe' && (method === 'GET' || method === 'POST')) res = await unsubscribe(ctx);
-  else if (path === '/api/tip' && method === 'POST') res = await tip(ctx);
-  else if (path === '/api/create-checkout-session' && method === 'POST') res = await createCheckoutSession(ctx);
-  else if (path === '/api/create-portal-session' && method === 'POST') res = await createPortalSessionPost(ctx);
-  else if (path === '/api/create-portal-session' && method === 'GET') res = await createPortalSessionGet(ctx);
-  else if (path === '/api/donations/stats' && method === 'GET') res = await donationStats(ctx);
-  else if (path === '/api/health' && method === 'GET') res = await health();
-  else res = { statusCode: 404, headers: {}, body: JSON.stringify({ error: 'Not found' }) };
-
+  const res = await route.fn({ event, db, secrets, body, origin, rawBody, selfInvoke });
   return stampHeaders(res);
 }
 
