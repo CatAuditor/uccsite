@@ -16,6 +16,7 @@ const NAV = [
     ['/blog', 'News & Media'],
     ['/projects', 'Projects'],
     ['/coverage', 'Report Coverage'],
+    ['/media', 'Media Library'],
   ]},
   { group: 'Reports', items: [['/documents', 'Long-form Documents']] },
   { group: 'Operations', items: [

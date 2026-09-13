@@ -17,11 +17,17 @@ apps/admin/
                            + latestPublishRuns
   lib/collections.js       field specs per collection (the config.yml successor —
                            but the DB is the schema; adding a field is a migration)
-  lib/collection-save.js   sanitize → scoped wipe-and-load → revision + audit
+  lib/collection-save.js   sanitize → alt-text gate → scoped wipe-and-load →
+                           revision + audit
+  lib/media.js             media library server helpers (docs/systems/media.md)
   app/page.js              Publish button (async PublishFn invoke, audit-logged)
                            + publish_runs history (Publishing…/Live hh:mm/failed)
   app/settings, /homepage, /team, /statements, /issues, /blog, /coverage
                            collection editors (generic ListEditor client component)
+  app/media                media library: presigned-PUT uploads, sharp variants
+                           via the MediaProcessFn Lambda, alt text, delete
+                           (docs/systems/media.md)
+  app/revisions            revisions browser + restore-and-republish
   app/donations            staff view: every donation + contact info (addendum 2)
   app/audit                audit trail
   app/documents            Phase 8 placeholder
@@ -50,9 +56,11 @@ dashboard polls `publish_runs` for Draft/Publishing…/Live/Failed.
 ## Env vars (lib/config.js)
 
 `UCC_ENV, UCC_REGION, COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_DOMAIN,
-DSQL_ENDPOINT, PUBLISH_FUNCTION_NAME, APP_ORIGIN`. Missing → loud throw at
-first use. AWS credentials: local = `AWS_PROFILE=uccsite`; Amplify Hosting =
-the app's SSR compute role (wire-up pending).
+DSQL_ENDPOINT, PUBLISH_FUNCTION_NAME, MEDIA_BUCKET, APP_ORIGIN`. Missing →
+loud throw at first use. AWS credentials: local = `AWS_PROFILE=uccsite`;
+Amplify Hosting = the app's SSR compute role (wire-up pending; it needs
+`dsql:DbConnectAdmin`, `lambda:InvokeFunction` on PublishFn, and
+`s3:PutObject/GetObject/DeleteObject` on the media bucket).
 
 ## Verified (2026-09-13, staging)
 
@@ -65,7 +73,7 @@ manual pass pending.
 
 ## Not yet (rest of Phase 7)
 
-Media library (S3 uploads + sharp variants), revisions restore-and-republish
-UI, nightly content export to GitHub (§14.2 — needs the GitHub App from
+Nightly content export to GitHub (§14.2 — needs the GitHub App from
 docs/for-conner.md) + restore drill, Amplify Hosting deployment, THEN Decap +
-workers/auth retirement.
+workers/auth retirement. Media library and revisions restore-and-republish
+are done (2026-09-13).

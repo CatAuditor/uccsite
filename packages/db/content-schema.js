@@ -131,6 +131,28 @@ const STATEMENTS = [
     at TIMESTAMPTZ DEFAULT now()
   )`,
   `CREATE INDEX ASYNC IF NOT EXISTS idx_audit_at ON audit_log(at)`,
+
+  // ── media library (spec §13, packages/db/media.js) ────────────────────────
+  // s3_key = the private original under uploads/; variants = JSON array of
+  // {format,width,height,path,bytes} served at /media/*. status: pending
+  // (row created, PUT not yet seen) → processing → ready | failed.
+  `CREATE TABLE IF NOT EXISTS media_assets (
+    id UUID PRIMARY KEY,
+    s3_key TEXT NOT NULL,
+    original_filename TEXT,
+    mime TEXT,
+    width INTEGER,
+    height INTEGER,
+    bytes INTEGER,
+    alt TEXT,
+    variants TEXT,
+    uploaded_by TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    error TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`,
+  `CREATE INDEX ASYNC IF NOT EXISTS idx_media_assets_created ON media_assets(created_at)`,
 ];
 
 module.exports = { STATEMENTS };

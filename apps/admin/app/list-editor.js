@@ -4,7 +4,9 @@
 // Deliberately dependency-free (spec §15: no component library).
 import { useState } from 'react';
 
-export default function ListEditor({ fields, items: initial, itemLabelField, readOnly, name = 'payload' }) {
+// mediaOptions: { [fieldName]: [{ value, label }] } for widget 'media' fields —
+// the server builds it from READY assets WITH alt text (see lib/media.js).
+export default function ListEditor({ fields, items: initial, itemLabelField, readOnly, name = 'payload', mediaOptions = {} }) {
   const [items, setItems] = useState(initial);
 
   const update = (i, field, value) => {
@@ -41,6 +43,16 @@ export default function ListEditor({ fields, items: initial, itemLabelField, rea
               {f.widget === 'textarea' ? (
                 <textarea id={`${name}-${i}-${f.name}`} value={item[f.name] ?? ''} disabled={readOnly}
                   onChange={(e) => update(i, f.name, e.target.value)} />
+              ) : f.widget === 'media' ? (
+                <div className="media-field">
+                  <input type="text" id={`${name}-${i}-${f.name}`} value={item[f.name] ?? ''} disabled={readOnly}
+                    onChange={(e) => update(i, f.name, e.target.value)} />
+                  <select aria-label={`${f.label} from media library`} value="" disabled={readOnly}
+                    onChange={(e) => { if (e.target.value) update(i, f.name, e.target.value); }}>
+                    <option value="">Pick from Media Library…</option>
+                    {(mediaOptions[f.name] || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
               ) : (
                 <input type="text" id={`${name}-${i}-${f.name}`} value={item[f.name] ?? ''} disabled={readOnly}
                   onChange={(e) => update(i, f.name, e.target.value)} />

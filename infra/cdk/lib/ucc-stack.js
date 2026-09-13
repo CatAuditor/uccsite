@@ -8,6 +8,7 @@ const fs = require('fs');
 const {
   Stack, Duration, RemovalPolicy, CfnOutput, SecretValue,
   aws_s3: s3,
+  aws_s3_notifications: s3n,
   aws_cloudfront: cloudfront,
   aws_cloudfront_origins: origins,
   aws_lambda: lambda,
@@ -88,6 +89,32 @@ class UccStack extends Stack {
       enforceSSL: true,
       versioned: true, // §14.1 — every publish leaves the prior bytes recoverable
       lifecycleRules: [{ noncurrentVersionExpiration: Duration.days(365) }],
+      removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+      autoDeleteObjects: !isProd,
+    });
+
+    // ── Media bucket (spec §13): private originals under uploads/ (admin
+    // presigned PUT — hence CORS for the admin origins), processed variants
+    // under media/ served by the /media/* behavior below. Existing /assets/*
+    // stays on the site bucket untouched (URLs never move).
+    const stagingAdminOrigin = this.node.tryGetContext('stagingAdminOrigin');
+    const adminOrigins = [
+      'http://localhost:3000',
+      ...(stagingAdminOrigin && !isProd ? [stagingAdminOrigin] : []),
+      ...(isProd ? ['https://admin.utahciviccompact.org'] : []),
+    ];
+    const mediaBucket = new s3.Bucket(this, 'MediaBucket', {
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      versioned: true,
+      lifecycleRules: [{ noncurrentVersionExpiration: Duration.days(90) }],
+      cors: [{
+        allowedMethods: [s3.HttpMethods.PUT],
+        allowedOrigins: adminOrigins,
+        allowedHeaders: ['*'],
+        maxAge: 3000,
+      }],
       removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
       autoDeleteObjects: !isProd,
     });
@@ -251,6 +278,14 @@ class UccStack extends Stack {
         // while telling browsers not to).
         '/admin': { ...adminBehavior },
         '/admin/*': { ...adminBehavior },
+        // Media library variants: fingerprinted keys, immutable cache. The
+        // viewer function stays attached for the staging basic-auth gate
+        // (keys carry extensions, so its clean-URL logic passes them through).
+        '/media/*': {
+          ...siteBehaviorBase,
+          origin: origins.S3BucketOrigin.withOriginAccessControl(mediaBucket),
+          responseHeadersPolicy: siteHeaders,
+        },
         '/api/*': {
           origin: new origins.FunctionUrlOrigin(apiUrl, {
             customHeaders: { 'x-origin-verify': originVerifyValue },
@@ -421,6 +456,57 @@ class UccStack extends Stack {
       resources: [cluster.attrResourceArn],
     }));
 
+    // ── media-process Lambda (spec §13): S3 ObjectCreated under uploads/ →
+    // sharp AVIF/WebP variants under media/ + media_assets row update.
+    // sharp ships prebuilt native binaries per platform; the bundling host
+    // (Windows dev box, no Docker) would install its own, so the hook
+    // cross-installs the linux-x64 build into the asset and esbuild leaves
+    // `sharp` external. The version pins to aws/media-process/package.json.
+    const sharpVersion = require('../../../aws/media-process/package.json').dependencies.sharp;
+    const mediaFn = new nodejs.NodejsFunction(this, 'MediaProcessFn', {
+      entry: path.join(repoRoot, 'aws', 'media-process', 'index.mjs'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      architecture: lambda.Architecture.X86_64, // must match --cpu=x64 below
+      memorySize: 1536,
+      timeout: Duration.minutes(2),
+      environment: {
+        MEDIA_BUCKET: mediaBucket.bucketName,
+        DSQL_ENDPOINT: dsqlEndpoint,
+      },
+      bundling: {
+        externalModules: ['pg-native', 'sharp'],
+        commandHooks: {
+          beforeBundling: () => [],
+          beforeInstall: () => [],
+          afterBundling: (inputDir, outputDir) => [
+            `npm install --prefix "${outputDir}" --os=linux --cpu=x64 --libc=glibc `
+            + `--no-save --omit=dev --ignore-scripts --no-audit --no-fund sharp@${sharpVersion}`,
+          ],
+        },
+      },
+      depsLockFilePath: path.join(repoRoot, 'package-lock.json'),
+    });
+    mediaBucket.grantRead(mediaFn, 'uploads/*');
+    mediaBucket.grantPut(mediaFn, 'media/*');
+    mediaFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['dsql:DbConnectAdmin'],
+      resources: [cluster.attrResourceArn],
+    }));
+    mediaBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new s3n.LambdaDestination(mediaFn),
+      { prefix: 'uploads/' },
+    );
+    mediaFn.metricErrors({ period: Duration.hours(1), statistic: 'Sum' })
+      .createAlarm(this, 'MediaProcessErrorsAlarm', {
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+        alarmDescription: 'uccsite media-process Lambda crashed (per-asset failures are recorded on the row, not here)',
+      })
+      .addAlarmAction(new cwActions.SnsAction(alertTopic));
+
     // ── Cognito (spec §11): email login, invite-only (no self-signup —
     // operators use AdminCreateUser), optional TOTP, owner/editor/viewer.
     const { aws_cognito: cognito } = require('aws-cdk-lib');
@@ -468,6 +554,7 @@ class UccStack extends Stack {
     });
 
     new CfnOutput(this, 'PublishFunctionName', { value: publishFn.functionName });
+    new CfnOutput(this, 'MediaBucketName', { value: mediaBucket.bucketName });
     new CfnOutput(this, 'AdminUserPoolId', { value: userPool.userPoolId });
     new CfnOutput(this, 'AdminUserPoolClientId', { value: adminClient.userPoolClientId });
     new CfnOutput(this, 'AdminAuthDomain', { value: `${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com` });

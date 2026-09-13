@@ -91,3 +91,14 @@ minutes (next Lambda cold start), no deploy needed. Sources:
 ## Done
 
 - [x] 2026-09-12 — nothing yet
+
+## Phase 7 — media library (2026-09-13)
+
+- [ ] When the admin app moves to Amplify Hosting, its SSR compute role needs
+  `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` on the media bucket
+  (stack output `MediaBucketName`) in addition to the DSQL / PublishFn grants
+  already listed in docs/systems/admin.md. Locally the `uccsite` profile
+  covers it.
+- Nothing else to do: uploads go straight from the browser to S3 and the
+  `MediaProcessFn` Lambda makes the AVIF/WebP variants. If an upload shows
+  "failed" on the Media Library page, the reason is printed on the card.

@@ -15,13 +15,15 @@ user data, or a third-party integration changes (CLAUDE.md rule).
 | `audit_log.actor` | **admin** email | admin sessions (Cognito) | indefinite (accountability trail) |
 | `revisions.author` | **admin** email | admin saves | pruned with revisions (last 20/entity) |
 | `publish_runs.trigger_source` | **admin** email (`admin:<email>`) | publish button | indefinite |
+| `media_assets.uploaded_by` | **admin** email | media library uploads | until the asset is deleted |
 
 ## Buckets
 
 | Bucket | Personal data | Retention |
 |---|---|---|
 | operational export (restricted, per env) | nightly JSON of members/subscriptions/donations/subscribers | 90 days (current) + 7 days (noncurrent versions) |
-| site + media buckets | none (published site content only) | n/a |
+| site bucket | none (published site content only) | n/a |
+| media bucket (per env) | none intended — uploaded images + derived variants; originals may carry EXIF metadata (variants are stripped by sharp) | until deleted in the admin (+90 days noncurrent versions) |
 
 ## Third parties
 

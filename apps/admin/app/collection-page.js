@@ -4,6 +4,7 @@ import { requireSession } from '../lib/auth';
 import { withDb } from '../lib/data';
 import { COLLECTIONS } from '../lib/collections';
 import { loadCollectionItems, saveCollection } from '../lib/collection-save';
+import { mediaOptionsFor } from '../lib/media';
 import ListEditor from './list-editor';
 
 export function makeCollectionPage(...keys) {
@@ -13,14 +14,19 @@ export function makeCollectionPage(...keys) {
     const sections = await withDb(async (client) => {
       const out = [];
       for (const key of keys) {
-        out.push({ key, spec: COLLECTIONS[key], items: await loadCollectionItems(client, key) });
+        const spec = COLLECTIONS[key];
+        const mediaOptions = {};
+        for (const f of spec.fields) {
+          if (f.widget === 'media') mediaOptions[f.name] = await mediaOptionsFor(client, f.targetWidth || 800);
+        }
+        out.push({ key, spec, items: await loadCollectionItems(client, key), mediaOptions });
       }
       return out;
     });
 
     return (
       <div>
-        {sections.map(({ key, spec, items }) => {
+        {sections.map(({ key, spec, items, mediaOptions }) => {
           async function save(formData) {
             'use server';
             await saveCollection(key, formData);
@@ -37,6 +43,7 @@ export function makeCollectionPage(...keys) {
                   items={items}
                   itemLabelField={spec.fields[0].name}
                   readOnly={readOnly}
+                  mediaOptions={mediaOptions}
                 />
                 {!readOnly && <button type="submit">Save {spec.title}</button>}
               </form>

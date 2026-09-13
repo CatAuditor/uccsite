@@ -14,6 +14,7 @@ export const config = {
   get authDomain() { return required('COGNITO_DOMAIN'); }, // ucc-admin-<env>.auth.<region>.amazoncognito.com
   get dsqlEndpoint() { return required('DSQL_ENDPOINT'); },
   get publishFunctionName() { return required('PUBLISH_FUNCTION_NAME'); },
+  get mediaBucket() { return required('MEDIA_BUCKET'); },
   get appOrigin() { return process.env.APP_ORIGIN || 'http://localhost:3000'; },
   get region() { return process.env.UCC_REGION || 'us-west-2'; },
 };

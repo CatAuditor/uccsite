@@ -4,7 +4,8 @@
 // hazard). Field lists mirror static/admin/config.yml so the editing surface
 // carries over 1:1.
 //
-// widget: 'text' | 'textarea'. markdown flags fields that accept the
+// widget: 'text' | 'textarea' | 'media' (text + media-library picker; targetWidth
+// selects the variant). markdown flags fields that accept the
 // **bold**/*italic*/[link](url) subset (hint shown to editors).
 
 import { FIELD_MAPS } from '@uccsite/db/content';
@@ -30,7 +31,8 @@ export const COLLECTIONS = {
     fields: [
       { name: 'name', label: 'Full Name' },
       { name: 'title', label: 'Title / Role' },
-      { name: 'photo', label: 'Headshot path', hint: 'e.g. /assets/team/name.jpg (media library lands later this phase)' },
+      { name: 'photo', label: 'Headshot', widget: 'media', targetWidth: 400,
+        hint: 'Pick from the Media Library (only assets with alt text are offered) or type a path such as /assets/team/name.jpg' },
       { name: 'bio', label: 'Bio', widget: 'textarea', hint: MD_HINT },
     ],
   },

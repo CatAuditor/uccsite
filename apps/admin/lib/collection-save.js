@@ -6,6 +6,8 @@ import { list, replaceCollectionRows } from '@uccsite/db/content';
 import { requireRole } from './auth';
 import { withWriteDb, recordChange } from './data';
 import { COLLECTIONS } from './collections';
+import { assetIdFromPath } from '@uccsite/db/media';
+import { assertAltText } from './media';
 
 export function sanitizeItems(fields, payload) {
   let parsed;
@@ -31,7 +33,13 @@ export async function saveCollection(key, formData) {
   const spec = COLLECTIONS[key];
   const session = await requireRole('editor');
   const items = sanitizeItems(spec.fields, formData.get('payload'));
+  // Alt-text gate (spec §13): any media-widget value pointing at /media/<id>/
+  // must resolve to a ready asset with alt text — the picker only offers
+  // those, but a typed path or a later alt wipe must not slip through.
+  const mediaFields = spec.fields.filter(f => f.widget === 'media').map(f => f.name);
+  const mediaIds = [...new Set(items.flatMap(it => mediaFields.map(f => assetIdFromPath(it[f])).filter(Boolean)))];
   await withWriteDb(async (client) => {
+    await assertAltText(client, mediaIds);
     const before = await loadCollectionItems(client, key);
     await replaceCollectionRows(client, spec.table, items, { where: spec.where });
     await recordChange(client, {
