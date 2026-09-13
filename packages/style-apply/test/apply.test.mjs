@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { validateSelector, matchCount, applyStyles, orphanedOverrides } = require('../index.js');
+const { validateSelector, matchCount, applyStyles, explainStyles, orphanedOverrides } = require('../index.js');
 const { ingest } = require('@uccsite/html-ingest');
 
 // ── Selector subset ─────────────────────────────────────────────────────────
@@ -136,3 +136,19 @@ test('validateSelector rejects pathological input fast', () => {
   assert.equal(r.ok, false);
   assert.ok(ms < 100, `took ${ms}ms`);
 });
+
+test('explainStyles attributes classes to paste, rules and overrides per element', () => {
+  const html = ingest('<section><h1 class="known">T</h1><p>a</p><p>b</p></section>', { knownClasses: new Set(['known']) }).bodyHtmlNormalized;
+  const rows = explainStyles(html,
+    [{ id: 'r1', scope: 'template', templateKey: 'report', selector: 'section > p:first-of-type', classes: ['lead'], priority: 10 }],
+    [{ nid: rows0(html)[3], classes: ['muted'], mode: 'append' }]);
+  assert.deepEqual(rows.map(r => r.tag), ['section', 'h1', 'p', 'p']);
+  assert.deepEqual(rows[1].pasteClasses, ['known']);
+  assert.deepEqual(rows[2].ruleClasses, [{ ruleId: 'r1', classes: ['lead'] }]);
+  assert.deepEqual(rows[2].classes, ['lead']);
+  assert.deepEqual(rows[3].override, { classes: ['muted'], mode: 'append' });
+  assert.deepEqual(rows[3].classes, ['muted']);
+  assert.equal(rows[0].unstyled, true);
+  assert.equal(rows[0].depth, 0); assert.equal(rows[2].depth, 1);
+});
+function rows0(html) { return [...html.matchAll(/data-nid="([0-9a-f]+)"/g)].map(m => m[1]); }

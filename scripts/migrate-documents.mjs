@@ -181,6 +181,10 @@ for (const doc of documents) {
   } else hard++;
   const ingested = docs.composeDocument({ doc, shell: inputs.shells.report, partials: inputs.partials, settings: inputs.content.settings, siteUrl: 'https://utahciviccompact.org', siteCss, coverage: inputs.content.coverage }).ingestResult;
   report.ingest = { removed: ingested.report.removed, foreignClasses: ingested.report.foreignClasses.slice(0, 20), warnings: ingested.report.warnings, a11y: ingested.report.a11y, ok: ingested.ok };
+  // Store the ingest result too (the editor's tree/preview read body_html_normalized;
+  // without it a migrated document looks empty until its first save).
+  doc.bodyHtmlNormalized = ingested.bodyHtmlNormalized;
+  doc.ingestReport = ingested.report;
   writeFileSync(join(OUT, `${doc.slug}.report.json`), JSON.stringify(report, null, 2) + '\n');
   writeFileSync(join(OUT, `${doc.slug}.document.json`), JSON.stringify(doc, null, 2) + '\n');
   const unexpected = report.diffs.filter(d => !d.expected);

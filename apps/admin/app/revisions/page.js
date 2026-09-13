@@ -14,6 +14,8 @@ import { withDb, withWriteTx, recordChange } from '../../lib/data';
 import { COLLECTIONS } from '../../lib/collections';
 import { loadCollectionItems, mediaAssetIds } from '../../lib/collection-save';
 import { assertAltText } from '../../lib/media';
+import { getDocument, upsertDocument, listOverrides, replaceOverrides, loadForeignClassMap } from '@uccsite/db/documents';
+import { runIngest, loadSiteSources } from '../../lib/documents';
 import { runAction } from '../../lib/actions';
 import { config } from '../../lib/config';
 import ActionForm from '../action-form';
@@ -21,19 +23,42 @@ import ActionForm from '../action-form';
 export const dynamic = 'force-dynamic';
 
 function hasRestorePath(entityType) {
-  return entityType === 'settings' || entityType === 'homepage' || Boolean(COLLECTIONS[entityType]);
+  return entityType === 'settings' || entityType === 'homepage' || entityType === 'document' || Boolean(COLLECTIONS[entityType]);
 }
 
-async function loadCurrent(client, entityType) {
+// Document snapshots carry the editable fields + overrides (app/documents/actions.js snapshotOf).
+async function documentSnapshot(client, id) {
+  const doc = await getDocument(client, { id });
+  if (!doc) return null;
+  const { bodyHtmlNormalized, ingestReport, liveHash, liveAt, lastPublishError, createdAt, updatedAt, contentHash, publishedAt, ...fields } = doc;
+  return { ...fields, overrides: (await listOverrides(client, id)).map(({ nid, classes, mode }) => ({ nid, classes, mode })) };
+}
+
+async function loadCurrent(client, entityType, entityId) {
   if (entityType === 'settings') return loadSettings(client);
   if (entityType === 'homepage') return loadHomepage(client);
+  if (entityType === 'document') return documentSnapshot(client, entityId);
   return loadCollectionItems(client, entityType);
 }
 
 // Inside the caller's transaction (tx: false).
-async function applySnapshot(client, entityType, snapshot) {
+async function applySnapshot(client, entityType, snapshot, entityId) {
   if (entityType === 'settings') return saveSettings(client, snapshot);
   if (entityType === 'homepage') return saveHomepage(client, snapshot, { tx: false });
+  if (entityType === 'document') {
+    // Re-ingest the restored raw body (normalized + report are derived state).
+    const current = await getDocument(client, { id: entityId });
+    const { overrides = [], ...fields } = snapshot;
+    const next = { ...(current || {}), ...fields, id: entityId };
+    const sources = await loadSiteSources();
+    const result = runIngest(next, { siteCss: sources.siteCss, foreignClassMap: await loadForeignClassMap(client, next.templateKey) });
+    next.bodyHtmlNormalized = result.bodyHtmlNormalized;
+    next.ingestReport = result.report;
+    if (next.status === 'published' && !result.ok) throw new Error('Restored HTML fails the accessibility gate — restore as draft first.');
+    await upsertDocument(client, next);
+    await replaceOverrides(client, entityId, overrides);
+    return;
+  }
   const spec = COLLECTIONS[entityType];
   // The alt-text gate applies to restores too: a snapshot may point at an
   // asset deleted or alt-stripped since it was taken.
@@ -60,8 +85,9 @@ export default async function RevisionsPage() {
         if (!rev) throw new Error('Revision not found');
         if (!hasRestorePath(rev.entity_type)) throw new Error(`No restore path for entity type ${rev.entity_type}`);
         // Snapshot the CURRENT state first so the restore itself is reversible.
-        const current = await loadCurrent(client, rev.entity_type);
-        await applySnapshot(client, rev.entity_type, JSON.parse(rev.snapshot));
+        const current = await loadCurrent(client, rev.entity_type, rev.entity_id);
+        if (rev.entity_type === 'document' && !current) throw new Error('That document was deleted; recreate it before restoring.');
+        await applySnapshot(client, rev.entity_type, JSON.parse(rev.snapshot), rev.entity_id);
         await recordChange(client, {
           actor: s.email,
           action: `${rev.entity_type}.restore`,

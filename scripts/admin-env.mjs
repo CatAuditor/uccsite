@@ -9,7 +9,7 @@ import { resolveEnv, argValue } from './lib/stack.mjs';
 const args = process.argv.slice(2);
 const envName = argValue(args, '--env', 'staging');
 const { region, outputs } = await resolveEnv(envName,
-  ['AdminUserPoolId', 'AdminUserPoolClientId', 'AdminAuthDomain', 'DsqlEndpoint', 'PublishFunctionName', 'MediaBucketName']);
+  ['AdminUserPoolId', 'AdminUserPoolClientId', 'AdminAuthDomain', 'DsqlEndpoint', 'PublishFunctionName', 'MediaBucketName', 'SiteBucketName', 'PublicOrigin']);
 
 const envFile = [
   `UCC_ENV=${envName}`,
@@ -20,6 +20,8 @@ const envFile = [
   `DSQL_ENDPOINT=${outputs.DsqlEndpoint}`,
   `PUBLISH_FUNCTION_NAME=${outputs.PublishFunctionName}`,
   `MEDIA_BUCKET=${outputs.MediaBucketName}`,
+  `SITE_BUCKET=${outputs.SiteBucketName}`,
+  `PUBLIC_ORIGIN=${outputs.PublicOrigin}`,
   `APP_ORIGIN=http://localhost:3000`,
   '',
 ].join('\n');

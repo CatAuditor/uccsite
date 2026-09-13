@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getSession } from '../lib/auth';
+import { withDb } from '../lib/data';
 import './globals.css';
 
 export const metadata = { title: 'UCC Admin' };
@@ -18,7 +19,9 @@ const NAV = [
     ['/coverage', 'Report Coverage'],
     ['/media', 'Media Library'],
   ]},
-  { group: 'Reports', items: [['/documents', 'Long-form Documents']] },
+  // Documents are grouped by their category field (planning addendum 3);
+  // the categories are read live in RootLayout and appended after this group.
+  { group: 'Documents', items: [['/documents', 'All documents'], ['/styles', 'Styles & rules']] },
   { group: 'Operations', items: [
     ['/', 'Publish & Status'],
     ['/donations', 'Donations'],
@@ -27,15 +30,28 @@ const NAV = [
   ]},
 ];
 
+async function documentCategories() {
+  try {
+    const res = await withDb((client) => client.query(
+      `SELECT category, count(*)::int AS n FROM documents GROUP BY category ORDER BY category NULLS LAST`));
+    return res.rows.map(r => [`/documents?category=${encodeURIComponent(r.category || 'Uncategorized')}`, `${r.category || 'Uncategorized'} (${r.n})`]);
+  } catch (err) {
+    console.warn(`[admin] nav categories unavailable: ${err.message}`);
+    return [];
+  }
+}
+
 export default async function RootLayout({ children }) {
   const session = await getSession();
+  const categories = session ? await documentCategories() : [];
+  const nav = NAV.map(g => (g.group === 'Documents' ? { ...g, items: [...g.items, ...categories] } : g));
   return (
     <html lang="en">
       <body>
         <div className="shell">
           <aside className="sidebar">
             <div className="brand">UCC Admin</div>
-            {NAV.map(({ group, items }) => (
+            {nav.map(({ group, items }) => (
               <div key={group} className="nav-group">
                 <div className="nav-group-title">{group}</div>
                 {items.map(([href, label]) => (

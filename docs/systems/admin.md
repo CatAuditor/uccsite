@@ -33,7 +33,9 @@ apps/admin/
   app/revisions            revisions browser + restore-and-republish
   app/donations            staff view: every donation + contact info (addendum 2)
   app/audit                audit trail
-  app/documents            Phase 8 placeholder
+  app/documents            Documents list/create + [id] editor (Phase 8,
+                           docs/systems/documents.md); app/styles rules/kit
+  lib/documents.js         editor data, Style Kit, preview, match counts
 scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 ```
 
@@ -94,7 +96,8 @@ Review fixes 2026-09-13 (the rules every editor page follows):
 ## Env vars (lib/config.js)
 
 `UCC_ENV, UCC_REGION, COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_DOMAIN,
-DSQL_ENDPOINT, PUBLISH_FUNCTION_NAME, MEDIA_BUCKET, APP_ORIGIN`. Missing →
+DSQL_ENDPOINT, PUBLISH_FUNCTION_NAME, MEDIA_BUCKET, SITE_BUCKET, PUBLIC_ORIGIN,
+APP_ORIGIN` (+ `SITE_SRC_ROOT` on Amplify). Missing →
 loud throw at first use. AWS credentials: local = `AWS_PROFILE=uccsite`;
 Amplify Hosting = the app's SSR compute role (wire-up pending; it needs
 `dsql:DbConnectAdmin`, `lambda:InvokeFunction` on PublishFn, and
@@ -119,11 +122,13 @@ manual pass pending.
    build-time only on Amplify).
 2. Env vars per branch: everything `scripts/admin-env.mjs` writes (`UCC_ENV,
    UCC_REGION, COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_DOMAIN,
-   DSQL_ENDPOINT, PUBLISH_FUNCTION_NAME, MEDIA_BUCKET`) + `APP_ORIGIN` = the
+   DSQL_ENDPOINT, PUBLISH_FUNCTION_NAME, MEDIA_BUCKET, SITE_BUCKET,
+   PUBLIC_ORIGIN`) + `APP_ORIGIN` = the
    branch URL (`https://<branch>.<appid>.amplifyapp.com`).
 3. SSR compute role (App settings → IAM roles, trust `amplify.amazonaws.com`):
    `dsql:DbConnectAdmin` on the cluster, `lambda:InvokeFunction` on
-   PublishFn, `s3:PutObject/GetObject/DeleteObject` on `<MediaBucketName>/*`.
+   PublishFn, `s3:PutObject/GetObject/DeleteObject` on `<MediaBucketName>/*`,
+   `s3:GetObject` on `<SiteBucketName>/css/styles.css` (Style Kit).
 4. Put the branch URL in `infra/cdk/cdk.json` as `stagingAdminOrigin` and
    `cdk deploy UccStaging` — that registers the Cognito callback/logout
    URLs and the S3 CORS origin. Without it: `redirect_mismatch` on sign-in

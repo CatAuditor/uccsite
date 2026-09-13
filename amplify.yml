@@ -18,9 +18,12 @@ applications:
           commands:
             - nvm use 22
             - npm ci --no-audit --no-fund
+            # Repo files the Documents editor reads at runtime (SITE_SRC_ROOT=site-src)
+            - mkdir -p apps/admin/site-src && cp -r templates css apps/admin/site-src/
         build:
           commands:
-            - env | grep -e '^UCC_ENV=' -e '^UCC_REGION=' -e '^COGNITO_' -e '^DSQL_ENDPOINT=' -e '^PUBLISH_FUNCTION_NAME=' -e '^MEDIA_BUCKET=' -e '^APP_ORIGIN=' >> apps/admin/.env.production
+            - env | grep -e '^UCC_ENV=' -e '^UCC_REGION=' -e '^COGNITO_' -e '^DSQL_ENDPOINT=' -e '^PUBLISH_FUNCTION_NAME=' -e '^MEDIA_BUCKET=' -e '^SITE_BUCKET=' -e '^PUBLIC_ORIGIN=' -e '^APP_ORIGIN=' >> apps/admin/.env.production
+            - echo 'SITE_SRC_ROOT=site-src' >> apps/admin/.env.production
             - npm run build --workspace=@uccsite/admin
       artifacts:
         baseDirectory: apps/admin/.next

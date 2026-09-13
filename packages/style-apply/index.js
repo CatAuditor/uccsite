@@ -13,6 +13,7 @@
 // :last-of-type, :nth-of-type(), :not(<simple>). Anything else is rejected at
 // save time — arbitrary selector support is a debugging liability.
 const { selectAll } = require('css-select');
+const { textContent } = require('domutils');
 const serialize = require('dom-serializer').default;
 // UTF-8 text stays literal; only markup-significant characters become entities
 // (the default numeric-encodes every non-ASCII character - em dashes, curly
@@ -126,6 +127,50 @@ function applyStyles(normalizedHtml, rules = [], overrides = []) {
   return serialize(tree.children, SERIALIZE_OPTS);
 }
 
+// explainStyles(normalizedHtml, rules, overrides) → rows in document order,
+// one per element — the editor's element tree (§6.5): what the paste
+// carried, which rule contributed which classes, the override, and the
+// resolved class list. Same resolution as applyStyles, kept side by side.
+//   row = { nid, tag, depth, text, pasteClasses, ruleClasses: [{ ruleId, classes }],
+//           override: { classes, mode } | null, classes, unstyled }
+function explainStyles(normalizedHtml, rules = [], overrides = []) {
+  const tree = parseFragmentTree(normalizedHtml);
+  const rows = new Map(); // el → row
+  const depthOf = (el) => { let d = 0; for (let p = el.parent; p && p.type !== 'root'; p = p.parent) d++; return d; };
+  for (const el of walkElements(tree)) {
+    rows.set(el, {
+      nid: el.attribs['data-nid'] || '',
+      tag: el.name,
+      depth: depthOf(el),
+      text: textContent(el).replace(/\s+/g, ' ').trim().slice(0, 60),
+      pasteClasses: getClasses(el),
+      ruleClasses: [],
+      override: null,
+      classes: [],
+      unstyled: false,
+    });
+  }
+  for (const rule of [...rules].sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))) {
+    if (!validateSelector(rule.selector).ok) continue;
+    for (const el of selectAll(rule.selector, tree.children)) {
+      const row = rows.get(el);
+      if (row) row.ruleClasses.push({ ruleId: rule.id, classes: [...(rule.classes || [])] });
+    }
+  }
+  const byNid = new Map(overrides.map((o) => [o.nid, o]));
+  for (const row of rows.values()) {
+    const set = new Set(row.pasteClasses);
+    for (const r of row.ruleClasses) for (const c of r.classes) set.add(c);
+    const o = row.nid && byNid.get(row.nid);
+    if (o) {
+      row.override = { classes: [...(o.classes || [])], mode: o.mode === 'replace' ? 'replace' : 'append' };
+      row.classes = o.mode === 'replace' ? [...(o.classes || [])] : [...new Set([...set, ...(o.classes || [])])];
+    } else row.classes = [...set];
+    row.unstyled = row.classes.length === 0 && row.ruleClasses.length === 0;
+  }
+  return [...rows.values()];
+}
+
 // orphanedOverrides(normalizedHtml, overrides) → overrides whose nid no longer
 // exists (surfaced after a re-paste). Runs on the rare re-paste path, so the
 // extra parse is fine.
@@ -137,4 +182,4 @@ function orphanedOverrides(normalizedHtml, overrides) {
   return (overrides || []).filter((o) => !present.has(o.nid));
 }
 
-module.exports = { validateSelector, matchCount, applyStyles, orphanedOverrides };
+module.exports = { validateSelector, matchCount, applyStyles, explainStyles, orphanedOverrides };
