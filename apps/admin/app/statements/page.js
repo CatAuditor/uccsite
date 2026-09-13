@@ -1,4 +1,3 @@
-﻿import { ComingSoon } from '../coming-soon';
-export default function Page() {
-  return <ComingSoon title="Statements" note="Statements editor lands with the collection-editor batch." />;
-}
+﻿import { makeCollectionPage } from '../collection-page';
+export const dynamic = 'force-dynamic';
+export default makeCollectionPage('statements');

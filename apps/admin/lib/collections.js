@@ -1,0 +1,152 @@
+// Collection editor specs — the admin's replacement for Decap's config.yml,
+// except the DATABASE is the schema (a field added here + in
+// packages/db/content-schema.js is a migration, not a silent-deletion
+// hazard). Field lists mirror static/admin/config.yml so the editing surface
+// carries over 1:1.
+//
+// widget: 'text' | 'textarea'. markdown flags fields that accept the
+// **bold**/*italic*/[link](url) subset (hint shown to editors).
+
+const MD_HINT = 'Supports **bold**, *italic*, [link text](https://url). Blank line = new paragraph.';
+
+export const COLLECTIONS = {
+  team: {
+    title: 'Team & Bios',
+    table: 'team_members',
+    itemLabel: (item) => item.name || 'member',
+    fields: [
+      { name: 'name', label: 'Full Name' },
+      { name: 'title', label: 'Title / Role' },
+      { name: 'photo', label: 'Headshot path', hint: 'e.g. /assets/team/name.jpg (media library lands later this phase)' },
+      { name: 'bio', label: 'Bio', widget: 'textarea', hint: MD_HINT },
+    ],
+  },
+  statements: {
+    title: 'Statements',
+    table: 'statements',
+    note: 'Newest first — the top statement is featured on the homepage.',
+    itemLabel: (item) => item.title || item.slug || 'statement',
+    fields: [
+      { name: 'slug', label: 'Slug (URL anchor)', hint: 'lowercase-with-dashes' },
+      { name: 'date', label: 'Date', hint: 'e.g. July 24, 2026' },
+      { name: 'topic', label: 'Topic' },
+      { name: 'author', label: 'Author' },
+      { name: 'title', label: 'Title' },
+      { name: 'snippet', label: 'Snippet (homepage card)', widget: 'textarea' },
+      { name: 'body', label: 'Body', widget: 'textarea', hint: MD_HINT },
+      { name: 'signoff', label: 'Sign-off', hint: 'optional, e.g. — Utah Civic Compact' },
+      { name: 'url', label: 'Homepage card link', hint: 'optional; blank = the statement’s spot on /statements' },
+      { name: 'more', label: 'Homepage read-more text', hint: 'optional; blank = "Read the full statement →"' },
+    ],
+  },
+  issues: {
+    title: 'Policy Positions',
+    table: 'issues',
+    itemLabel: (item) => item.title || 'position',
+    fields: [
+      { name: 'slug', label: 'Slug' },
+      { name: 'num', label: 'Number' },
+      { name: 'title', label: 'Title' },
+      { name: 'author', label: 'Author' },
+      { name: 'epigraph', label: 'Epigraph', widget: 'textarea' },
+      { name: 'body', label: 'Body', widget: 'textarea', hint: MD_HINT },
+    ],
+  },
+  'blog-articles': {
+    title: 'News & Media — Articles',
+    table: 'blog_articles',
+    itemLabel: (item) => item.headline || 'article',
+    fields: [
+      { name: 'outlet', label: 'Outlet' },
+      { name: 'badge_color', label: 'Badge color' },
+      { name: 'date', label: 'Date' },
+      { name: 'region', label: 'Region' },
+      { name: 'headline', label: 'Headline' },
+      { name: 'excerpt', label: 'Excerpt', widget: 'textarea' },
+      { name: 'url', label: 'Article URL' },
+      { name: 'read_more', label: 'Read-more text' },
+      { name: 'lang_attr', label: 'lang attribute', hint: 'optional, e.g. lang="es" for Spanish coverage' },
+    ],
+  },
+  'blog-videos': {
+    title: 'News & Media — Videos',
+    table: 'blog_videos',
+    itemLabel: (item) => item.headline || 'video',
+    fields: [
+      { name: 'outlet', label: 'Outlet' },
+      { name: 'badge_color', label: 'Badge color' },
+      { name: 'date', label: 'Date' },
+      { name: 'region', label: 'Region' },
+      { name: 'headline', label: 'Headline' },
+      { name: 'youtube_id', label: 'YouTube video id' },
+      { name: 'embed_params', label: 'Embed params', hint: 'optional, e.g. start=90' },
+      { name: 'youtube_title', label: 'Player title (accessibility)' },
+    ],
+  },
+  'coverage-alpr': {
+    title: 'Report Coverage — ALPR',
+    table: 'coverage_entries',
+    where: ['report_key', 'alpr'],
+    itemLabel: (item) => item.headline || 'entry',
+    fields: [
+      { name: 'outlet', label: 'Outlet' },
+      { name: 'badge_color', label: 'Badge color' },
+      { name: 'date', label: 'Date' },
+      { name: 'headline', label: 'Headline' },
+      { name: 'url', label: 'URL' },
+      { name: 'read_more', label: 'Read-more text' },
+      { name: 'lang_attr', label: 'lang attribute', hint: 'optional' },
+    ],
+  },
+  'coverage-stratos': {
+    title: 'Report Coverage — Stratos',
+    table: 'coverage_entries',
+    where: ['report_key', 'stratos'],
+    itemLabel: (item) => item.headline || 'entry',
+    fields: [
+      { name: 'outlet', label: 'Outlet' },
+      { name: 'badge_color', label: 'Badge color' },
+      { name: 'date', label: 'Date' },
+      { name: 'headline', label: 'Headline' },
+      { name: 'url', label: 'URL' },
+      { name: 'read_more', label: 'Read-more text' },
+      { name: 'lang_attr', label: 'lang attribute', hint: 'optional' },
+    ],
+  },
+};
+
+// Homepage singleton groups (flat string fields inside each group) + press list.
+export const HOMEPAGE_GROUPS = [
+  { key: 'hero', title: 'Hero', fields: [
+    ['headline', 'Headline', 'textarea', 'HTML allowed (line breaks with <br />)'],
+    ['subtitle', 'Subtitle', 'textarea'],
+    ['cta_primary', 'Primary button label'],
+    ['cta_secondary', 'Secondary button label'],
+  ]},
+  { key: 'mission', title: 'Mission', fields: [['quote', 'Quote', 'textarea']] },
+  { key: 'about', title: 'About', fields: [
+    ['title', 'Title'], ['body1', 'Paragraph 1', 'textarea'],
+    ['body2', 'Paragraph 2', 'textarea'], ['body3', 'Paragraph 3', 'textarea'],
+    ['quote', 'Quote', 'textarea'],
+  ]},
+  { key: 'join', title: 'Join / Get Involved', fields: [
+    ['title', 'Title'], ['body', 'Body', 'textarea'],
+    ['item1', 'Item 1'], ['item2', 'Item 2'], ['item3', 'Item 3'], ['item4', 'Item 4'],
+  ]},
+  { key: 'donate', title: 'Donate section', fields: [
+    ['label', 'Label'], ['title', 'Title'], ['body', 'Body', 'textarea'],
+  ]},
+  { key: 'modal', title: 'Donation modal', fields: [
+    ['badge', 'Badge'], ['title', 'Title'], ['body', 'Body', 'textarea'], ['cta', 'CTA label'],
+  ]},
+];
+
+export const HOMEPAGE_PRESS_FIELDS = [
+  { name: 'outlet', label: 'Outlet' },
+  { name: 'badge_color', label: 'Badge color' },
+  { name: 'date', label: 'Date' },
+  { name: 'headline', label: 'Headline' },
+  { name: 'url', label: 'URL' },
+  { name: 'read_more', label: 'Read-more text' },
+  { name: 'lang_attr', label: 'lang attribute', hint: 'optional' },
+];

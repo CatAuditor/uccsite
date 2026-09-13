@@ -28,4 +28,10 @@ button:disabled { opacity: 0.5; }
 .status-publishing { color: #8a6d1a; font-weight: 600; }
 .status-noop { color: #667; }
 .notice { background: #fdf6e3; border: 1px solid #e6d9a8; padding: 10px 14px; margin: 12px 0; }
+fieldset.item { border: 1px solid #d8dcd5; margin: 14px 0; padding: 12px 16px; background: #fafbf9; }
+fieldset.item legend { font-weight: 700; padding: 0 6px; }
+.item-tools { margin-left: 10px; }
+.item-tools button { margin: 0 2px; padding: 2px 8px; font-size: 12px; background: #5a6c60; }
+.hint { font-size: 12px; color: #667; margin-top: 2px; }
+.list-editor > button { background: #3c5a48; }
 .error { background: #fdecea; border: 1px solid #e6b3ae; padding: 10px 14px; margin: 12px 0; }
