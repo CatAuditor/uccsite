@@ -1,8 +1,10 @@
+import { requireSession } from '../../lib/auth';
 import { withDb } from '../../lib/data';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AuditPage() {
+  await requireSession();
   const rows = await withDb(async (client) => (await client.query(
     `SELECT actor, action, entity_type, entity_id, at::text AS at
      FROM audit_log ORDER BY at DESC LIMIT 100`)).rows);

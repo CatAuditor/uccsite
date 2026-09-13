@@ -17,7 +17,7 @@ import { resolveEnv, argValue } from './lib/stack.mjs';
 
 const require = createRequire(import.meta.url);
 const { withConnection } = require('../packages/db');
-const { loadContent, replaceCollectionRows, saveSettings, saveHomepage } = require('../packages/db/content');
+const { loadContent, replaceCollectionRows, insertRow, saveSettings, saveHomepage } = require('../packages/db/content');
 
 const ROOT = join(import.meta.dirname, '..');
 const args = process.argv.slice(2);
@@ -46,42 +46,25 @@ await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) 
   await replaceCollectionRows(client, 'blog_articles', repo.blog.articles);
   await replaceCollectionRows(client, 'blog_videos', repo.blog.videos);
 
-  // projects + children (child rows need the parent's generated id)
+  // projects + children — FIELD_MAPS-driven inserts (insertRow), so a new
+  // column is one edit in packages/db, not a hand-synced SQL literal here.
   await client.query('DELETE FROM project_articles');
   await client.query('DELETE FROM project_videos');
   await client.query('DELETE FROM projects');
   for (let i = 0; i < repo.projects.projects.length; i++) {
     const p = repo.projects.projects[i];
-    const res = await client.query(
-      `INSERT INTO projects (id, sort_order, name, slug, date, author, status, status_color, region, tagline, cta_url, cta_text)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
-      [i, p.name ?? null, p.slug ?? null, p.date ?? null, p.author ?? null, p.status ?? null,
-       p.status_color ?? null, p.region ?? null, p.tagline ?? null, p.cta_url ?? null, p.cta_text ?? null]);
-    const projectId = res.rows[0].id;
+    const projectId = await insertRow(client, 'projects', p, { sort_order: i });
     for (let j = 0; j < (p.articles || []).length; j++) {
-      const a = p.articles[j];
-      await client.query(
-        `INSERT INTO project_articles (id, project_id, sort_order, outlet, badge_color, date, region, headline, excerpt, url, read_more, lang_attr)
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [projectId, j, a.outlet ?? null, a.badge_color ?? null, a.date ?? null, a.region ?? null,
-         a.headline ?? null, a.excerpt ?? null, a.url ?? null, a.read_more ?? null, a.lang_attr ?? null]);
+      await insertRow(client, 'project_articles', p.articles[j], { project_id: projectId, sort_order: j });
     }
     for (let j = 0; j < (p.videos || []).length; j++) {
-      const v = p.videos[j];
-      await client.query(
-        `INSERT INTO project_videos (id, project_id, sort_order, outlet, badge_color, date, region, headline, youtube_id, youtube_title)
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [projectId, j, v.outlet ?? null, v.badge_color ?? null, v.date ?? null, v.region ?? null,
-         v.headline ?? null, v.youtube_id ?? null, v.youtube_title ?? null]);
+      await insertRow(client, 'project_videos', p.videos[j], { project_id: projectId, sort_order: j });
     }
   }
 
-  // Both coverage strips in ONE call (replaceCollectionRows wipes the table).
-  const allCoverage = [
-    ...repo.coverage.alpr_coverage.map(e => ({ ...e, __key: 'alpr' })),
-    ...repo.coverage.stratos_coverage.map(e => ({ ...e, __key: 'stratos' })),
-  ];
-  await replaceCollectionRows(client, 'coverage_entries', allCoverage, { report_key: (item) => item.__key });
+  // Coverage strips: one scoped replace per report key.
+  await replaceCollectionRows(client, 'coverage_entries', repo.coverage.alpr_coverage, { where: ['report_key', 'alpr'] });
+  await replaceCollectionRows(client, 'coverage_entries', repo.coverage.stratos_coverage, { where: ['report_key', 'stratos'] });
 
   // ── Round-trip verification ────────────────────────────────────────────
   const loaded = await loadContent(client);

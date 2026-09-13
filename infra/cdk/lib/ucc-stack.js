@@ -383,9 +383,8 @@ class UccStack extends Stack {
     // from DSQL, site sources (templates/css/js/assets/static) bundled into
     // the asset by the commandHooks below. Async invoke; the admin polls
     // publish_runs for the Draft/Publishing/Live/Failed state.
-    const siteSrcDirs = ['templates', 'css', 'js', 'assets', 'static'];
-    const siteSrcFiles = ['robots.txt', 'llms.txt', 'favicon.svg', 'UCC.png'];
     const repoRoot = path.join(__dirname, '..', '..', '..');
+    const copySiteSrcScript = path.join(__dirname, '..', 'copy-site-src.js');
     const publishFn = new nodejs.NodejsFunction(this, 'PublishFn', {
       entry: path.join(repoRoot, 'aws', 'publish', 'handler.mjs'),
       handler: 'handler',
@@ -402,19 +401,12 @@ class UccStack extends Stack {
         commandHooks: {
           beforeBundling: () => [],
           beforeInstall: () => [],
-          afterBundling: (inputDir, outputDir) => {
-            // Windows-safe copies of the site sources next to the bundle.
-            const src = (p) => path.join(inputDir, p);
-            const dst = path.join(outputDir, 'site-src');
-            const cmds = [`node -e "require('fs').mkdirSync(String.raw\`${dst}\`, {recursive:true})"`];
-            for (const dir of siteSrcDirs) {
-              cmds.push(`node -e "require('fs').cpSync(String.raw\`${src(dir)}\`, String.raw\`${path.join(dst, dir)}\`, {recursive:true})"`);
-            }
-            for (const file of siteSrcFiles) {
-              cmds.push(`node -e "require('fs').copyFileSync(String.raw\`${src(file)}\`, String.raw\`${path.join(dst, file)}\`)"`);
-            }
-            return cmds;
-          },
+          // A script file, not inline `node -e` (backtick/quote hazards broke
+          // on non-Windows shells); the file list comes from
+          // aws/publish/inputs.js — the same list the publisher reads.
+          afterBundling: (inputDir, outputDir) => [
+            `node "${copySiteSrcScript}" "${inputDir}" "${outputDir}"`,
+          ],
         },
       },
       depsLockFilePath: path.join(repoRoot, 'package-lock.json'),
@@ -457,12 +449,19 @@ class UccStack extends Stack {
       oAuth: {
         flows: { authorizationCodeGrant: true },
         scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
+        // A deployed staging admin origin (Amplify Hosting) registers here via
+        // cdk.json context once it exists — Cognito rejects any redirect_uri
+        // not on this list.
         callbackUrls: [
           'http://localhost:3000/auth/callback',
+          ...(this.node.tryGetContext('stagingAdminOrigin') && !isProd
+            ? [`${this.node.tryGetContext('stagingAdminOrigin')}/auth/callback`] : []),
           ...(isProd ? ['https://admin.utahciviccompact.org/auth/callback'] : []),
         ],
         logoutUrls: [
           'http://localhost:3000/login',
+          ...(this.node.tryGetContext('stagingAdminOrigin') && !isProd
+            ? [`${this.node.tryGetContext('stagingAdminOrigin')}/login`] : []),
           ...(isProd ? ['https://admin.utahciviccompact.org/login'] : []),
         ],
       },

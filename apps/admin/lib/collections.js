@@ -7,7 +7,20 @@
 // widget: 'text' | 'textarea'. markdown flags fields that accept the
 // **bold**/*italic*/[link](url) subset (hint shown to editors).
 
+import { FIELD_MAPS } from '@uccsite/db/content';
+
 const MD_HINT = 'Supports **bold**, *italic*, [link text](https://url). Blank line = new paragraph.';
+
+// The 7-field press/coverage shape used by three editors — one copy.
+const PRESS_FIELDS = [
+  { name: 'outlet', label: 'Outlet' },
+  { name: 'badge_color', label: 'Badge color' },
+  { name: 'date', label: 'Date' },
+  { name: 'headline', label: 'Headline' },
+  { name: 'url', label: 'URL' },
+  { name: 'read_more', label: 'Read-more text' },
+  { name: 'lang_attr', label: 'lang attribute', hint: 'optional, e.g. lang="es" for Spanish coverage' },
+];
 
 export const COLLECTIONS = {
   team: {
@@ -88,32 +101,36 @@ export const COLLECTIONS = {
     table: 'coverage_entries',
     where: ['report_key', 'alpr'],
     itemLabel: (item) => item.headline || 'entry',
-    fields: [
-      { name: 'outlet', label: 'Outlet' },
-      { name: 'badge_color', label: 'Badge color' },
-      { name: 'date', label: 'Date' },
-      { name: 'headline', label: 'Headline' },
-      { name: 'url', label: 'URL' },
-      { name: 'read_more', label: 'Read-more text' },
-      { name: 'lang_attr', label: 'lang attribute', hint: 'optional' },
-    ],
+    fields: PRESS_FIELDS,
   },
   'coverage-stratos': {
     title: 'Report Coverage — Stratos',
     table: 'coverage_entries',
     where: ['report_key', 'stratos'],
     itemLabel: (item) => item.headline || 'entry',
-    fields: [
-      { name: 'outlet', label: 'Outlet' },
-      { name: 'badge_color', label: 'Badge color' },
-      { name: 'date', label: 'Date' },
-      { name: 'headline', label: 'Headline' },
-      { name: 'url', label: 'URL' },
-      { name: 'read_more', label: 'Read-more text' },
-      { name: 'lang_attr', label: 'lang attribute', hint: 'optional' },
-    ],
+    fields: PRESS_FIELDS,
   },
 };
+
+// ── Boot-time drift guard ───────────────────────────────────────────────────
+// Every editor field must exist in FIELD_MAPS and vice versa. Without this,
+// a column added to the DB but not here is silently WIPED on the next save
+// (sanitizeItems drops unknown keys, then wipe-and-load) — Decap's exact
+// delete-on-save hazard. Drift is a loud startup error instead.
+for (const [key, spec] of Object.entries(COLLECTIONS)) {
+  const mapped = new Set(Object.values(FIELD_MAPS[spec.table]));
+  const declared = new Set(spec.fields.map(f => f.name));
+  for (const f of declared) {
+    if (!mapped.has(f)) {
+      throw new Error(`collections.${key}: field "${f}" not in FIELD_MAPS.${spec.table}`);
+    }
+  }
+  for (const m of mapped) {
+    if (!declared.has(m)) {
+      throw new Error(`collections.${key}: FIELD_MAPS.${spec.table} key "${m}" missing from editor fields — saves would wipe it`);
+    }
+  }
+}
 
 // Homepage singleton groups (flat string fields inside each group) + press list.
 export const HOMEPAGE_GROUPS = [
@@ -141,12 +158,4 @@ export const HOMEPAGE_GROUPS = [
   ]},
 ];
 
-export const HOMEPAGE_PRESS_FIELDS = [
-  { name: 'outlet', label: 'Outlet' },
-  { name: 'badge_color', label: 'Badge color' },
-  { name: 'date', label: 'Date' },
-  { name: 'headline', label: 'Headline' },
-  { name: 'url', label: 'URL' },
-  { name: 'read_more', label: 'Read-more text' },
-  { name: 'lang_attr', label: 'lang attribute', hint: 'optional' },
-];
+export const HOMEPAGE_PRESS_FIELDS = PRESS_FIELDS;

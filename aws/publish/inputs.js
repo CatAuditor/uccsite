@@ -12,6 +12,12 @@ const { PAGES } = require('@uccsite/render');
 // Static files and directories copied from repo root into the published site.
 const COPY_FROM_ROOT = ['css', 'js', 'assets', 'robots.txt', 'llms.txt', 'favicon.svg', 'UCC.png'];
 
+// EVERYTHING a publish needs from the repo — the CDK bundling hooks copy
+// exactly these into the publish Lambda's site-src (a divergence here once
+// meant publish would DELETE live assets). Derived from COPY_FROM_ROOT.
+const SITE_SRC_DIRS = ['templates', 'static', ...COPY_FROM_ROOT.filter(e => !e.includes('.'))];
+const SITE_SRC_FILES = COPY_FROM_ROOT.filter(e => e.includes('.'));
+
 // The disk files a page's render depends on (template + content JSONs) —
 // feeds both lastmod strategies.
 function pageInputFiles(page) {
@@ -120,6 +126,7 @@ function mtimeLastmodProvider(root) {
 }
 
 module.exports = {
-  COPY_FROM_ROOT, pageInputFiles, loadRenderInputs, collectStaticFiles,
+  COPY_FROM_ROOT, SITE_SRC_DIRS, SITE_SRC_FILES,
+  pageInputFiles, loadRenderInputs, collectStaticFiles,
   gitLastmodProvider, mtimeLastmodProvider,
 };

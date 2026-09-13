@@ -16,7 +16,7 @@ import { buildSite, PAGES } from '@uccsite/render';
 import { publish } from '@uccsite/publish';
 import { loadRenderInputs, collectStaticFiles } from '@uccsite/publish/inputs';
 import { withConnection } from '@uccsite/db';
-import { loadContent, contentMeta } from '@uccsite/db/content';
+import { loadContent, contentMeta, makeDbLastmod } from '@uccsite/db/content';
 
 const { SITE_BUCKET, DISTRIBUTION_ID, DSQL_ENDPOINT } = process.env;
 const region = process.env.AWS_REGION;
@@ -24,18 +24,6 @@ const region = process.env.AWS_REGION;
 // esbuild emits CJS: __dirname survives bundling (import.meta does not).
 // eslint-disable-next-line no-undef
 const SITE_SRC = join(typeof __dirname !== 'undefined' ? __dirname : dirname(fileURLToPath(import.meta.url)), 'site-src');
-
-// content/*.json names → the tables whose updated_at governs that collection.
-const COLLECTION_TABLES = {
-  settings: ['site_settings'],
-  homepage: ['homepage', 'homepage_press'],
-  team: ['team_members'],
-  statements: ['statements'],
-  issues: ['issues'],
-  blog: ['blog_articles', 'blog_videos'],
-  projects: ['projects', 'project_articles', 'project_videos'],
-  coverage: ['coverage_entries'],
-};
 
 export async function handler(event = {}) {
   const trigger = event.trigger || 'admin';
@@ -51,17 +39,7 @@ export async function handler(event = {}) {
   const inputs = loadRenderInputs(SITE_SRC, (msg) => errors.push(msg), { includeContent: false });
   inputs.content = content;
 
-  const today = new Date().toISOString().slice(0, 10);
-  const lastmod = (page) => {
-    let best = '';
-    for (const name of page.content) {
-      for (const table of COLLECTION_TABLES[name] || []) {
-        const iso = meta[table];
-        if (iso && iso > best) best = iso;
-      }
-    }
-    return best ? best.slice(0, 10) : today;
-  };
+  const lastmod = makeDbLastmod(meta);
 
   const { files, errors: renderErrors } = errors.length
     ? { files: {}, errors: [] }

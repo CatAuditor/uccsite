@@ -3,12 +3,9 @@
 // records a revision snapshot + audit row, authorization enforced in the
 // server action (requireRole), never in UI state.
 import { revalidatePath } from 'next/cache';
-import { createRequire } from 'node:module';
-import { requireRole, getSession } from '../../lib/auth';
-import { withDb, recordChange } from '../../lib/data';
-
-const require = createRequire(import.meta.url);
-const { loadContent, saveSettings } = require('@uccsite/db/content');
+import { loadSettings, saveSettings } from '@uccsite/db/content';
+import { requireRole, requireSession } from '../../lib/auth';
+import { withDb, withWriteDb, recordChange } from '../../lib/data';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,15 +20,15 @@ const FIELDS = [
 ];
 
 export default async function SettingsPage() {
-  const session = await getSession();
-  const { settings } = await withDb(loadContent);
+  const session = await requireSession();
+  const settings = await withDb(loadSettings);
 
   async function save(formData) {
     'use server';
     const s = await requireRole('editor');
     const next = Object.fromEntries(FIELDS.map(([key]) => [key, String(formData.get(key) ?? '').trim()]));
-    await withDb(async (client) => {
-      const before = (await loadContent(client)).settings;
+    await withWriteDb(async (client) => {
+      const before = await loadSettings(client);
       await saveSettings(client, next);
       await recordChange(client, {
         actor: s.email, action: 'settings.save', entityType: 'settings', entityId: 'singleton',
@@ -41,7 +38,7 @@ export default async function SettingsPage() {
     revalidatePath('/settings');
   }
 
-  const readOnly = session?.role === 'viewer';
+  const readOnly = session.role === 'viewer';
   return (
     <div>
       <h1>Site Settings</h1>

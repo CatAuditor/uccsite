@@ -2,22 +2,19 @@
 // The featured statement is NOT here — it derives from the newest Statement
 // (docs/decisions/homepage-statement-links.md).
 import { revalidatePath } from 'next/cache';
-import { createRequire } from 'node:module';
-import { getSession, requireRole } from '../../lib/auth';
-import { withDb, recordChange } from '../../lib/data';
+import { loadHomepage, saveHomepage } from '@uccsite/db/content';
+import { requireSession, requireRole } from '../../lib/auth';
+import { withDb, withWriteDb, recordChange } from '../../lib/data';
 import { HOMEPAGE_GROUPS, HOMEPAGE_PRESS_FIELDS } from '../../lib/collections';
 import { sanitizeItems } from '../../lib/collection-save';
 import ListEditor from '../list-editor';
 
-const require = createRequire(import.meta.url);
-const { loadContent, saveHomepage } = require('@uccsite/db/content');
-
 export const dynamic = 'force-dynamic';
 
 export default async function HomepagePage() {
-  const session = await getSession();
-  const readOnly = session?.role === 'viewer';
-  const { homepage } = await withDb(loadContent);
+  const session = await requireSession();
+  const readOnly = session.role === 'viewer';
+  const homepage = await withDb(loadHomepage);
 
   async function save(formData) {
     'use server';
@@ -31,8 +28,8 @@ export default async function HomepagePage() {
       }
     }
     next.press = sanitizeItems(HOMEPAGE_PRESS_FIELDS, formData.get('press'));
-    await withDb(async (client) => {
-      const before = (await loadContent(client)).homepage;
+    await withWriteDb(async (client) => {
+      const before = await loadHomepage(client);
       await saveHomepage(client, next);
       await recordChange(client, {
         actor: s.email, action: 'homepage.save', entityType: 'homepage', entityId: 'singleton',

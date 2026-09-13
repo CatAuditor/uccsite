@@ -23,9 +23,32 @@ aws/publish/inputs.js       THE shared repo-input loader (COPY_FROM_ROOT,
                             render inputs, static files, git/mtime lastmod
                             providers) used by BOTH build.js and publish.mjs —
                             the file list can never diverge between them.
-aws/reconcile-drift/        hourly Lambda (see below).
+aws/publish/handler.mjs     PUBLISH LAMBDA (Phase 7): the admin's Publish
+                            button async-invokes it; content from DSQL
+                            (packages/db/content loadContent), site sources
+                            bundled into the asset via infra/cdk/
+                            copy-site-src.js (list = inputs.js SITE_SRC_*),
+                            sitemap lastmod from content updated_at
+                            (makeDbLastmod). Known limitation: template-only
+                            changes don't advance lastmod, and removing the
+                            newest row can lower it.
+aws/reconcile-drift/        hourly Lambda (see below). Also flips an
+                            abandoned 'publishing' run to failed so the
+                            admin's publish button unblocks.
+packages/db/content.js      content tables ⇄ renderer JSON (FIELD_MAPS,
+                            COLLECTION_TABLES, loadContent/contentMeta,
+                            transactional replaceCollectionRows, insertRow);
+                            content-schema.js holds the DDL;
+                            scripts/migrate-content.mjs migrates + verifies
+                            the round trip (deepStrictEqual).
 scripts/publish.mjs         CLI driver; resolves bucket/distribution/DSQL at
-                            RUN TIME from the UccStaging/UccProd stack outputs.
+                            RUN TIME from the UccStaging/UccProd stack
+                            outputs. --source git|db picks the content
+                            source (validated; PROD requires it explicitly —
+                            a git-source publish after cutover would revert
+                            admin edits). db mode uses the same DB lastmod
+                            as the Lambda, so the two paths produce
+                            identical sitemaps.
 scripts/staging-check.mjs   e2e verification of a deployed distribution.
 packages/db/index.js        DSQL connect (IAM presign w/ backdated signingDate
                             for skewed dev clocks), withConnection,
@@ -94,8 +117,13 @@ EventBridge hourly → `aws/reconcile-drift` (log group
   lifecycle rows (intent-first), failure rows, bulk-delete guard, empty-set
   refusal, invalidation path shaping (encoding, dir-index, wildcard).
 
+## Verified additionally (2026-09-13)
+
+- Content byte-parity: git-source and db-source publishes both noop against
+  the same bucket — the database provably reproduces content/*.json.
+- Publish Lambda end-to-end from the admin path: first invoke rewrote only
+  sitemap.xml (lastmod source switch, by design), second invoke noop.
+
 ## Not yet
 
 - Asset fingerprinting + `immutable` caching — Phase 8 (with per-page CSS).
-- Lambda-triggered publish from admin + DB content source — Phase 7 (core is
-  shaped for it: injected clients, injected store).

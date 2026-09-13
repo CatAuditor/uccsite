@@ -5,13 +5,20 @@
 // the golden-file tests stay meaningful because this mapping reproduces the
 // repo JSON byte-for-byte through the renderer.
 //
+// Single sources of truth in this file (everything else derives):
+//   FIELD_MAPS            column ⇄ JSON key per table
+//   HOMEPAGE_GROUP_COLS   homepage singleton's JSON-document columns
+//   COLLECTION_TABLES     content name → tables (lastmod, meta, callers)
+// The admin's editor specs are VALIDATED against FIELD_MAPS at boot
+// (apps/admin/lib/collections.js) — drift is a loud startup error, not a
+// silent wipe-on-save.
+//
 // Conventions:
-//   - snake_case columns ⇄ camelCase/original JSON keys (explicit maps below)
-//   - SQL NULL → key omitted from the JSON object (matches optional fields
-//     like lang_attr/url/more; the template engine treats both identically,
-//     and deep-equal parity tests demand omission)
+//   - SQL NULL → key omitted from the JSON object (optional fields; the
+//     template engine treats both identically, deep-equal parity demands it)
 //   - singletons (site_settings, homepage) use id='singleton'
 //   - every list is ordered by sort_order
+const { withRetry } = require('./index');
 
 const SINGLETON = 'singleton';
 
@@ -65,6 +72,25 @@ const FIELD_MAPS = {
   },
 };
 
+// homepage singleton: [column, jsonKey] (join is a SQL keyword → join_section)
+const HOMEPAGE_GROUP_COLS = [
+  ['hero', 'hero'], ['mission', 'mission'], ['about', 'about'],
+  ['join_section', 'join'], ['donate', 'donate'], ['modal', 'modal'],
+];
+
+// content name → the tables whose rows/updated_at constitute that collection.
+const COLLECTION_TABLES = {
+  settings: ['site_settings'],
+  homepage: ['homepage', 'homepage_press'],
+  team: ['team_members'],
+  statements: ['statements'],
+  issues: ['issues'],
+  blog: ['blog_articles', 'blog_videos'],
+  projects: ['projects', 'project_articles', 'project_videos'],
+  coverage: ['coverage_entries'],
+};
+const CONTENT_TABLES = [...new Set(Object.values(COLLECTION_TABLES).flat())];
+
 function rowToObject(table, row) {
   const out = {};
   for (const [col, key] of Object.entries(FIELD_MAPS[table])) {
@@ -73,39 +99,57 @@ function rowToObject(table, row) {
   return out;
 }
 
+// list(client, table, where?, params?) → ordered JSON objects. THE collection
+// read — the admin and the renderer must never disagree on order or mapping.
 async function list(client, table, where = '', params = []) {
   const res = await client.query(
     `SELECT * FROM ${table} ${where} ORDER BY sort_order`, params);
   return res.rows.map(row => rowToObject(table, row));
 }
 
-// loadContent(client) → { settings, homepage, team, statements, issues, blog,
-//                         projects, coverage } — the renderer's content map.
-async function loadContent(client) {
-  const settingsRow = (await client.query(
+async function loadSettings(client) {
+  const row = (await client.query(
     `SELECT * FROM site_settings WHERE id = $1`, [SINGLETON])).rows[0];
-  if (!settingsRow) throw new Error('site_settings singleton missing — run migrate-content');
-  const settings = rowToObject('site_settings', settingsRow);
+  if (!row) throw new Error('site_settings singleton missing — run migrate-content');
+  return rowToObject('site_settings', row);
+}
 
+async function loadHomepage(client) {
   const hp = (await client.query(
     `SELECT * FROM homepage WHERE id = $1`, [SINGLETON])).rows[0];
   if (!hp) throw new Error('homepage singleton missing — run migrate-content');
   const homepage = {};
-  for (const [col, key] of [
-    ['hero', 'hero'], ['mission', 'mission'], ['about', 'about'],
-    ['join_section', 'join'], ['donate', 'donate'], ['modal', 'modal'],
-  ]) {
+  for (const [col, key] of HOMEPAGE_GROUP_COLS) {
     if (hp[col] !== null && hp[col] !== undefined) homepage[key] = JSON.parse(hp[col]);
   }
   homepage.press = await list(client, 'homepage_press');
+  return homepage;
+}
 
-  const projects = [];
-  for (const row of (await client.query(`SELECT * FROM projects ORDER BY sort_order`)).rows) {
-    const project = rowToObject('projects', row);
-    project.articles = await list(client, 'project_articles', 'WHERE project_id = $1', [row.id]);
-    project.videos = await list(client, 'project_videos', 'WHERE project_id = $1', [row.id]);
-    projects.push(project);
-  }
+// loadContent(client) → the renderer's full content map. Project children are
+// fetched in two grouped queries (not 2 per project).
+async function loadContent(client) {
+  const settings = await loadSettings(client);
+  const homepage = await loadHomepage(client);
+
+  const projectRows = (await client.query(`SELECT * FROM projects ORDER BY sort_order`)).rows;
+  const groupByProject = (rows, table) => {
+    const map = new Map();
+    for (const row of rows) {
+      if (!map.has(row.project_id)) map.set(row.project_id, []);
+      map.get(row.project_id).push(rowToObject(table, row));
+    }
+    return map;
+  };
+  const articlesBy = groupByProject(
+    (await client.query(`SELECT * FROM project_articles ORDER BY project_id, sort_order`)).rows, 'project_articles');
+  const videosBy = groupByProject(
+    (await client.query(`SELECT * FROM project_videos ORDER BY project_id, sort_order`)).rows, 'project_videos');
+  const projects = projectRows.map(row => ({
+    ...rowToObject('projects', row),
+    articles: articlesBy.get(row.id) || [],
+    videos: videosBy.get(row.id) || [],
+  }));
 
   return {
     settings,
@@ -125,27 +169,82 @@ async function loadContent(client) {
   };
 }
 
+// contentMeta(client) → { tableName: newest updated_at ISO } in ONE query.
+async function contentMeta(client) {
+  const sql = CONTENT_TABLES
+    .map(t => `SELECT '${t}' AS t, MAX(updated_at)::text AS newest FROM ${t}`)
+    .join(' UNION ALL ');
+  const res = await client.query(sql);
+  const meta = {};
+  for (const row of res.rows) {
+    if (row.newest) meta[row.t] = new Date(row.newest).toISOString();
+  }
+  return meta;
+}
+
+// makeDbLastmod(meta) → (page) => 'YYYY-MM-DD' for the publish sitemap.
+// Known limitation (documented in publish-pipeline.md): template-only changes
+// don't advance lastmod, and deleting the newest row can lower it.
+function makeDbLastmod(meta) {
+  const today = new Date().toISOString().slice(0, 10);
+  return (page) => {
+    let best = '';
+    for (const name of page.content) {
+      for (const table of COLLECTION_TABLES[name] || []) {
+        const iso = meta[table];
+        if (iso && iso > best) best = iso;
+      }
+    }
+    return best ? best.slice(0, 10) : today;
+  };
+}
+
 // ── Write side (migration + admin) ──────────────────────────────────────────
 
 function objectToParams(table, obj) {
   return Object.entries(FIELD_MAPS[table]).map(([, key]) => obj[key] ?? null);
 }
 
-// replaceCollectionRows(client, table, items, extraCols?) — wipe-and-load a
-// list table in one pass (migration and full-list admin saves). extraCols:
-// { colName: (item, index) => value } appended per row.
-async function replaceCollectionRows(client, table, items, extraCols = {}) {
-  await client.query(`DELETE FROM ${table}`);
+// insertRow(client, table, item, extra) — one row from a JSON item plus fixed
+// extra columns ({sort_order: i, project_id: x, …}). THE insert everything
+// (migration, admin saves) goes through.
+async function insertRow(client, table, item, extra = {}) {
   const cols = Object.keys(FIELD_MAPS[table]);
-  const extra = Object.keys(extraCols);
-  for (let i = 0; i < items.length; i++) {
-    const params = [i, ...objectToParams(table, items[i]), ...extra.map(c => extraCols[c](items[i], i))];
-    const names = ['sort_order', ...cols, ...extra];
-    const placeholders = names.map((_, j) => `$${j + 1}`);
-    await client.query(
-      `INSERT INTO ${table} (id, ${names.join(', ')}) VALUES (gen_random_uuid(), ${placeholders.join(', ')})`,
-      params);
-  }
+  const extraCols = Object.keys(extra);
+  const names = [...extraCols, ...cols];
+  const params = [...extraCols.map(c => extra[c]), ...objectToParams(table, item)];
+  const res = await client.query(
+    `INSERT INTO ${table} (id, ${names.join(', ')})
+     VALUES (gen_random_uuid(), ${names.map((_, i) => `$${i + 1}`).join(', ')})
+     RETURNING id`,
+    params);
+  return res.rows[0].id;
+}
+
+// replaceCollectionRows(client, table, items, { where, extraCols } = {})
+// Wipe-and-load, ATOMIC: DELETE + inserts inside one transaction with a
+// 40001 retry of the whole transaction — an abort can no longer leave the
+// table empty/partial (which would silently publish blank pages).
+//   where: [col, val] scopes the delete AND stamps the column on each row.
+//   extraCols: { col: (item, i) => value } additional stamped columns.
+async function replaceCollectionRows(client, table, items, { where, extraCols = {} } = {}) {
+  await withRetry(async () => {
+    await client.query('BEGIN');
+    try {
+      if (where) await client.query(`DELETE FROM ${table} WHERE ${where[0]} = $1`, [where[1]]);
+      else await client.query(`DELETE FROM ${table}`);
+      for (let i = 0; i < items.length; i++) {
+        const extra = { sort_order: i };
+        if (where) extra[where[0]] = where[1];
+        for (const [col, fn] of Object.entries(extraCols)) extra[col] = fn(items[i], i);
+        await insertRow(client, table, items[i], extra);
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw err;
+    }
+  });
 }
 
 async function saveSettings(client, settings) {
@@ -160,37 +259,18 @@ async function saveSettings(client, settings) {
 }
 
 async function saveHomepage(client, homepage) {
-  const groups = [
-    ['hero', 'hero'], ['mission', 'mission'], ['about', 'about'],
-    ['join_section', 'join'], ['donate', 'donate'], ['modal', 'modal'],
-  ];
-  const params = [SINGLETON, ...groups.map(([, key]) => homepage[key] != null ? JSON.stringify(homepage[key]) : null)];
+  const params = [SINGLETON, ...HOMEPAGE_GROUP_COLS.map(([, key]) => homepage[key] != null ? JSON.stringify(homepage[key]) : null)];
   await client.query(
-    `INSERT INTO homepage (id, ${groups.map(([c]) => c).join(', ')})
-     VALUES ($1, ${groups.map((_, i) => `$${i + 2}`).join(', ')})
-     ON CONFLICT (id) DO UPDATE SET ${groups.map(([c], i) => `${c} = $${i + 2}`).join(', ')}, updated_at = now()`,
+    `INSERT INTO homepage (id, ${HOMEPAGE_GROUP_COLS.map(([c]) => c).join(', ')})
+     VALUES ($1, ${HOMEPAGE_GROUP_COLS.map((_, i) => `$${i + 2}`).join(', ')})
+     ON CONFLICT (id) DO UPDATE SET ${HOMEPAGE_GROUP_COLS.map(([c], i) => `${c} = $${i + 2}`).join(', ')}, updated_at = now()`,
     params);
   await replaceCollectionRows(client, 'homepage_press', homepage.press || []);
 }
 
-// contentMeta(client) → { tableName: newest updated_at ISO string } for every
-// content table — the publish Lambda's sitemap-lastmod source.
-const CONTENT_TABLES = [
-  'site_settings', 'homepage', 'homepage_press', 'team_members', 'statements',
-  'issues', 'blog_articles', 'blog_videos', 'projects', 'project_articles',
-  'project_videos', 'coverage_entries',
-];
-
-async function contentMeta(client) {
-  const meta = {};
-  for (const table of CONTENT_TABLES) {
-    const res = await client.query(`SELECT MAX(updated_at)::text AS newest FROM ${table}`);
-    if (res.rows[0]?.newest) meta[table] = new Date(res.rows[0].newest).toISOString();
-  }
-  return meta;
-}
-
 module.exports = {
-  SINGLETON, FIELD_MAPS, rowToObject, loadContent, contentMeta, CONTENT_TABLES,
+  SINGLETON, FIELD_MAPS, HOMEPAGE_GROUP_COLS, COLLECTION_TABLES, CONTENT_TABLES,
+  rowToObject, objectToParams, list, insertRow,
+  loadSettings, loadHomepage, loadContent, contentMeta, makeDbLastmod,
   replaceCollectionRows, saveSettings, saveHomepage,
 };

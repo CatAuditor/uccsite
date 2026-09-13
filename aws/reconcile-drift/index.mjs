@@ -78,6 +78,9 @@ async function reconcile() {
     }
     log(`publish ${latest.id} abandoned (${Math.round(age / 60000)}m old) — rolling partial write back to last good manifest`);
     await alert('uccsite: abandoned publish being rolled back', { runId: latest.id, startedAt: latest.started_at });
+    // Flip the row so the admin's Publish button unblocks and the history
+    // shows what happened (a crashed Lambda never reaches finishRun).
+    await store.finishRun({ runId: latest.id, status: 'failed', error: 'abandoned (no finish within 30m) — partial write rolled back by the reconciler' });
   }
 
   if (!good) {

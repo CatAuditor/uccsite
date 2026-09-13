@@ -23,7 +23,7 @@ const { buildSite } = require('../packages/render');
 const { publish } = require('../aws/publish/core.js');
 const { loadRenderInputs, collectStaticFiles, gitLastmodProvider } = require('../aws/publish/inputs.js');
 const { withConnection } = require('../packages/db');
-const { loadContent } = require('../packages/db/content');
+const { loadContent, contentMeta, makeDbLastmod } = require('../packages/db/content');
 
 const args = process.argv.slice(2);
 const envName = argValue(args, '--env', 'staging');
@@ -32,22 +32,37 @@ const allowBulkDelete = args.includes('--allow-bulk-delete');
 // --source db: content comes from the environment's DSQL content tables
 // (Phase 7 source of truth) instead of content/*.json. Templates, partials,
 // and static files always come from the repo.
-const source = argValue(args, '--source', 'git');
+const source = argValue(args, '--source', envName === 'prod' ? undefined : 'git');
+if (!['git', 'db'].includes(source)) {
+  console.error(source === undefined
+    ? 'Prod publishes must state their content source explicitly: --source git | --source db. '
+      + 'After the content cutover, git-source publishes would overwrite admin edits with stale repo JSON.'
+    : `Unknown --source "${source}" (use: git, db)`);
+  process.exit(2);
+}
 
 const ROOT = join(import.meta.dirname, '..');
 
 async function main() {
-  const { region, stackName, outputs: stack } = await resolveEnv(envName, ['SiteBucketName', 'DistributionId', 'DsqlEndpoint']);
-
+  // git source: render FIRST so build breakage reports without needing AWS
+  // credentials; db source inherently needs the stack resolved up front.
   const errors = [];
-  const inputs = loadRenderInputs(ROOT, (msg) => errors.push(msg));
+  const inputs = loadRenderInputs(ROOT, (msg) => errors.push(msg), { includeContent: source === 'git' });
+  let stack, region, stackName;
+  let lastmod = gitLastmodProvider(ROOT);
   if (source === 'db') {
-    inputs.content = await withConnection({ endpoint: stack.DsqlEndpoint, region }, loadContent);
+    ({ region, stackName, outputs: stack } = await resolveEnv(envName, ['SiteBucketName', 'DistributionId', 'DsqlEndpoint']));
+    const { content, meta } = await withConnection({ endpoint: stack.DsqlEndpoint, region }, async (client) => ({
+      content: await loadContent(client),
+      meta: await contentMeta(client),
+    }));
+    inputs.content = content;
+    lastmod = makeDbLastmod(meta); // same sitemap dates as the publish Lambda
     console.log('[publish] content source: database');
   }
   const { files, errors: renderErrors } = errors.length
     ? { files: {}, errors }
-    : buildSite({ ...inputs, lastmod: gitLastmodProvider(ROOT) });
+    : buildSite({ ...inputs, lastmod });
   const allErrors = [...errors, ...renderErrors];
   if (allErrors.length) {
     // Fail-fast (§7): abort before anything is written.
@@ -58,6 +73,10 @@ async function main() {
   const outputs = collectStaticFiles(ROOT);
   for (const [name, text] of Object.entries(files)) outputs.set(name, Buffer.from(text, 'utf8'));
   console.log(`Rendered ${Object.keys(files).length} files, ${outputs.size} total outputs`);
+
+  if (source === 'git') {
+    ({ region, stackName, outputs: stack } = await resolveEnv(envName, ['SiteBucketName', 'DistributionId', 'DsqlEndpoint']));
+  }
   console.log(`[publish] target ${stackName}: bucket=${stack.SiteBucketName} distribution=${stack.DistributionId}`);
 
   const result = await publish({
