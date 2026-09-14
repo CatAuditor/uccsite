@@ -203,11 +203,28 @@ function reportRemovals(rawTree, cleanTree, rawHtmlForUrls, report) {
 // an author id with one of these would borrow site behaviour/markup.
 const RESERVED_ID_RE = /^(main|site-header|nav(-.*)?|donate(-.*)?|modal(-.*)?|join-form|form-success|tracker(-.*)?|skip-link|site-footer)$/i;
 
+// Script escape hatch (spec §5): with allow_scripts (owner-only flag on the
+// document) a <script src="…"> whose host is on this list survives — NEVER
+// inline script, never other hosts. The list must stay a subset of the site
+// CSP's script-src (infra/cdk/lib/ucc-stack.js SITE_CSP); a host added here
+// without the CSP is simply blocked in the browser.
+const SCRIPT_SRC_ALLOWLIST = ['https://challenges.cloudflare.com'];
+function scriptSrcAllowed(src) {
+  try {
+    const u = new URL(String(src || ''));
+    return u.protocol === 'https:' && SCRIPT_SRC_ALLOWLIST.includes(`${u.protocol}//${u.host}`);
+  } catch { return false; }
+}
+
 // ── Step 3: sanitize ────────────────────────────────────────────────────────
-function sanitize(html) {
+function sanitize(html, { allowScripts = false } = {}) {
   return sanitizeHtml(html, {
-    allowedTags: ALLOWED_TAGS,
-    allowedAttributes: ALLOWED_ATTRIBUTES,
+    allowedTags: allowScripts ? [...ALLOWED_TAGS, 'script'] : ALLOWED_TAGS,
+    allowedAttributes: allowScripts ? { ...ALLOWED_ATTRIBUTES, script: ['src', 'async', 'defer'] } : ALLOWED_ATTRIBUTES,
+    // A kept <script> is always empty (its content vanishes with nonTextTags);
+    // one without an allowlisted https src is dropped entirely.
+    exclusiveFilter: allowScripts ? (frame => frame.tag === 'script' && !scriptSrcAllowed(frame.attribs.src)) : undefined,
+    allowVulnerableTags: allowScripts, // acknowledged: src-only, allowlisted hosts, content emptied below
     allowedSchemes: ALLOWED_SCHEMES,
     allowedSchemesAppliedToAttributes: ['href', 'src', 'srcset'],
     allowProtocolRelative: false,
@@ -385,7 +402,7 @@ function a11yGate(nodes, report) {
 // structure therefore repairs rather than rejects; the removal report and
 // warnings surface what changed.
 function ingest(rawHtml, opts = {}) {
-  const { knownClasses = new Set(), foreignClassMap = {}, previousNormalized = null } = opts;
+  const { knownClasses = new Set(), foreignClassMap = {}, previousNormalized = null, allowScripts = false } = opts;
   const report = { warnings: [], removed: [], foreignClasses: [], a11y: [], match: null };
 
   if (typeof rawHtml !== 'string' || !rawHtml.trim()) {
@@ -395,8 +412,14 @@ function ingest(rawHtml, opts = {}) {
 
   const bodyOnly = extractBody(rawHtml, report.warnings);
   const rawTree = parseFragmentTree(bodyOnly);
-  const clean = sanitize(bodyOnly);
+  const clean = sanitize(bodyOnly, { allowScripts });
   const tree = parseFragmentTree(clean);
+  if (allowScripts) {
+    // A kept script is src-only: whatever was inside the tag never survives.
+    for (const el of walkElements(tree)) {
+      if (el.name === 'script') { el.children = []; report.warnings.push(`External script kept (allow_scripts): ${el.attribs.src}`); }
+    }
+  }
   reportRemovals(rawTree, tree, bodyOnly, report);
   const nodes = assignNids(tree, previousNormalized, report);
   partitionClasses(nodes, knownClasses, foreignClassMap, report);
@@ -459,7 +482,7 @@ function stripNids(html) {
 }
 
 module.exports = {
-  ingest, stripNids, replaceTextTokens, ALLOWED_TAGS, ALLOWED_SCHEMES,
+  ingest, stripNids, replaceTextTokens, ALLOWED_TAGS, ALLOWED_SCHEMES, SCRIPT_SRC_ALLOWLIST,
   // shared tree/class primitives (used by @uccsite/style-apply)
   parseFragmentTree, walkElements, getClasses, setClasses,
 };

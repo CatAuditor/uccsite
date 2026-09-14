@@ -122,7 +122,7 @@ export default async function DocumentEditorPage({ params }) {
             <label><input type="checkbox" name="noindex" defaultChecked={!!doc.noindex} disabled={readOnly} /> noindex</label>
             <label><input type="checkbox" name="nofollow" defaultChecked={!!doc.nofollow} disabled={readOnly} /> nofollow</label>
             {session.role === 'owner' && (
-              <label title="Owner-only escape hatch (spec §5): reserved for allowlisted external scripts; the sanitizer does not admit any script yet.">
+              <label title="Owner-only escape hatch (spec §5): keeps <script src> tags whose host is on the allowlist (currently challenges.cloudflare.com). Inline scripts and other hosts are always stripped. Every toggle is audited.">
                 <input type="checkbox" name="allowScripts" defaultChecked={!!doc.allowScripts} /> allow_scripts (owner)
               </label>
             )}

@@ -187,6 +187,11 @@ input, textarea, select { font: inherit; }
    @group Buttons
    @desc Stretches the button to its container. Use with btn. */
 .btn-full { width: 100%; justify-content: center; }
+/* @class btn-donate
+   @label Btn Donate
+   @applies a button
+   @group Buttons
+   @desc Used on <a>, <button> in index. Sets: background: var(--navy); color: var(--white); border: 2px solid var(--navy); font-weight: … (auto) */
 .btn-donate {
   background: var(--navy);
   color: var(--white);
@@ -205,6 +210,11 @@ input, textarea, select { font: inherit; }
 /* ============================================
    NAVIGATION
    ============================================ */
+/* @class skip-link
+   @label Skip Link
+   @applies a
+   @group Navigation
+   @desc Used on <a> in partial:header. Sets: position: absolute; top: -100px; left: 16px; z-index: 200; padding: 10px 16px; background:… (auto) */
 .skip-link {
   position: absolute;
   top: -100px;
@@ -218,6 +228,11 @@ input, textarea, select { font: inherit; }
 }
 .skip-link:focus { top: 16px; }
 
+/* @class site-header
+   @label Site Header
+   @applies 
+   @group Navigation
+   @desc Not used by any template today (script- or state-toggled, or spare). Sets: position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: var(--nav-h); transition… (auto) */
 .site-header {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -238,6 +253,11 @@ input, textarea, select { font: inherit; }
 .site-header.scrolled .nav-links a:not(.nav-cta) { color: var(--navy-dark); }
 .site-header.scrolled .nav-toggle span { background: var(--navy-dark); }
 
+/* @class nav-inner
+   @label Nav Inner
+   @applies nav
+   @group Navigation
+   @desc Used on <nav> in partial:header. Sets: max-width: var(--max-w); margin: 0 auto; padding: 0 48px; height: 100%; display: flex; ali… (auto) */
 .nav-inner {
   max-width: var(--max-w);
   margin: 0 auto;
@@ -250,12 +270,22 @@ input, textarea, select { font: inherit; }
 }
 @media (max-width: 768px) { .nav-inner { padding: 0 24px; } }
 
+/* @class logo
+   @label Logo
+   @applies a
+   @group Navigation
+   @desc Used on <a> in partial:footer. Sets: display: flex; align-items: center; gap: 10px; flex-shrink: 0; (auto) */
 .logo {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
 }
+/* @class logo-mark
+   @label Logo Mark
+   @applies 
+   @group Navigation
+   @desc Not used by any template today (script- or state-toggled, or spare). Sets: width: 36px; height: 36px; background: var(--red); color: var(--white); font-weight: 900; … (auto) */
 .logo-mark {
   width: 36px; height: 36px;
   background: var(--red);
@@ -269,6 +299,11 @@ input, textarea, select { font: inherit; }
   border-radius: 4px;
   flex-shrink: 0;
 }
+/* @class logo-mark-img
+   @label Logo Mark Img
+   @applies img
+   @group Navigation
+   @desc Used on <img> in partial:footer. Sets: width: 36px; height: 36px; object-fit: contain; border-radius: 4px; flex-shrink: 0; (auto) */
 .logo-mark-img {
   width: 36px;
   height: 36px;
@@ -276,6 +311,11 @@ input, textarea, select { font: inherit; }
   border-radius: 4px;
   flex-shrink: 0;
 }
+/* @class logo-text
+   @label Logo Text
+   @applies span
+   @group Navigation
+   @desc Used on <span> in partial:footer. Sets: color: var(--navy-dark); (auto) */
 .logo-text {
   font-weight: 700;
   font-size: 17px;
@@ -284,6 +324,11 @@ input, textarea, select { font: inherit; }
   transition: color 0.3s;
 }
 
+/* @class nav-links
+   @label Nav Links
+   @applies ul
+   @group Navigation
+   @desc Used on <ul> in partial:header. Sets: color: var(--navy-dark); (auto) */
 .nav-links {
   display: flex;
   align-items: center;
@@ -301,7 +346,17 @@ input, textarea, select { font: inherit; }
 }
 .nav-links a:hover { color: var(--white); background: rgba(255,255,255,0.1); }
 .site-header.scrolled .nav-links a:hover { color: var(--navy-dark); background: var(--gray-100); }
+/* @class nav-cta
+   @label Nav Cta
+   @applies a
+   @group Navigation
+   @desc Used on <a> in partial:header. Sets: color: var(--navy-dark); (auto) */
 .nav-cta,
+/* @class nav-donate
+   @label Nav Donate
+   @applies a
+   @group Navigation
+   @desc Used on <a> in partial:header. Sets: background: var(--red) !important; color: var(--white) !important; font-weight: 700 !impor… (auto) */
 .nav-donate {
   background: var(--red) !important;
   color: var(--white) !important;
@@ -313,6 +368,11 @@ input, textarea, select { font: inherit; }
 .nav-cta:hover,
 .nav-donate:hover { background: var(--red-light) !important; }
 
+/* @class nav-logo-icon
+   @label Nav Logo Icon
+   @applies a
+   @group Navigation
+   @desc Used on <a> in partial:header. Sets: flex-shrink: 0; margin-left: 20px; display: flex; align-items: center; text-decoration: no… (auto) */
 .nav-logo-icon {
   flex-shrink: 0;
   margin-left: 20px;
@@ -320,15 +380,30 @@ input, textarea, select { font: inherit; }
   align-items: center;
   text-decoration: none;
 }
+/* @class nav-icon-img
+   @label Nav Icon Img
+   @applies img
+   @group Navigation
+   @desc Used on <img> in partial:header. Sets: height: 44px; width: auto; display: block; (auto) */
 .nav-icon-img {
   height: 44px;
   width: auto;
   display: block;
 }
+/* @class nav-icon-img-light
+   @label Nav Icon Img Light
+   @applies img
+   @group Navigation
+   @desc Used on <img> in partial:header. Sets: display: none; (auto) */
 .nav-icon-img-light { display: none; }
 .site-header.scrolled .nav-icon-img-dark { display: none; }
 .site-header.scrolled .nav-icon-img-light { display: block; }
 
+/* @class nav-toggle
+   @label Nav Toggle
+   @applies button
+   @group Navigation
+   @desc Used on <button> in partial:header. Sets: background: var(--navy-dark); (auto) */
 .nav-toggle {
   display: none;
   flex-direction: column;
@@ -345,8 +420,18 @@ input, textarea, select { font: inherit; }
 /* ============================================
    DROPDOWN NAV
    ============================================ */
+/* @class nav-dropdown
+   @label Nav Dropdown
+   @applies li
+   @group Navigation
+   @desc Used on <li> in partial:header. Sets: position: relative; (auto) */
 .nav-dropdown { position: relative; }
 
+/* @class nav-dropdown-toggle
+   @label Nav Dropdown Toggle
+   @applies button
+   @group Navigation
+   @desc Used on <button> in partial:header. Sets: display: inline-flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 500; co… (auto) */
 .nav-dropdown-toggle {
   display: inline-flex;
   align-items: center;
@@ -373,6 +458,11 @@ input, textarea, select { font: inherit; }
   color: var(--navy-dark);
 }
 
+/* @class chevron
+   @label Chevron
+   @applies svg
+   @group Navigation
+   @desc Used on <svg> in partial:header. Sets: transition: transform 0.2s var(--ease); flex-shrink: 0; opacity: 0.7; (auto) */
 .chevron {
   transition: transform 0.2s var(--ease);
   flex-shrink: 0;
@@ -380,6 +470,11 @@ input, textarea, select { font: inherit; }
 }
 
 /* Hidden by default — display:none keeps items out of layout entirely */
+/* @class nav-dropdown-menu
+   @label Nav Dropdown Menu
+   @applies ul
+   @group Navigation
+   @desc Used on <ul> in partial:header. Sets: display: none; position: absolute; top: calc(100% + 10px); left: 50%; background: var(--wh… (auto) */
 .nav-dropdown-menu {
   display: none;
   position: absolute;
@@ -439,6 +534,11 @@ input, textarea, select { font: inherit; }
 /* ============================================
    HERO
    ============================================ */
+/* @class hero
+   @label Hero
+   @applies section
+   @group Hero
+   @desc Used on <section> in index. Sets: position: relative; min-height: 100vh; display: flex; align-items: center; overflow: hidde… (auto) */
 .hero {
   position: relative;
   min-height: 100vh;
@@ -449,6 +549,11 @@ input, textarea, select { font: inherit; }
 }
 @media (max-width: 768px) { .hero { padding: 120px 24px 80px; } }
 
+/* @class hero-bg
+   @label Hero Bg
+   @applies div
+   @group Hero
+   @desc Used on <div> in index. Sets: position: absolute; inset: 0; background: url("/assets/hero-mountains.png") bottom center … (auto) */
 .hero-bg {
   position: absolute;
   inset: 0;
@@ -465,11 +570,21 @@ input, textarea, select { font: inherit; }
     radial-gradient(ellipse 80% 60% at 70% 50%, rgba(192,57,43,0.12) 0%, transparent 60%);
 }
 
+/* @class hero-content
+   @label Hero Content
+   @applies div
+   @group Hero
+   @desc Used on <div> in index. Sets: position: relative; z-index: 1; max-width: 720px; (auto) */
 .hero-content {
   position: relative;
   z-index: 1;
   max-width: 720px;
 }
+/* @class hero-logo
+   @label Hero Logo
+   @applies img
+   @group Hero
+   @desc Used on <img> in index. Sets: width: 180px; height: auto; margin-bottom: 32px; display: block; (auto) */
 .hero-logo {
   width: 180px;
   height: auto;
@@ -478,6 +593,11 @@ input, textarea, select { font: inherit; }
 }
 
 
+/* @class hero-headline
+   @label Hero Headline
+   @applies h1
+   @group Hero
+   @desc Used on <h1> in index. Sets: font-family: var(--font-sans); font-size: clamp(40px, 7vw, 80px); font-weight: 900; line-h… (auto) */
 .hero-headline {
   font-family: var(--font-sans);
   font-size: clamp(40px, 7vw, 80px);
@@ -493,6 +613,11 @@ input, textarea, select { font: inherit; }
   position: relative;
 }
 
+/* @class hero-sub
+   @label Hero Sub
+   @applies p
+   @group Hero
+   @desc Used on <p> in index. Sets: font-size: clamp(16px, 2vw, 20px); line-height: 1.65; color: rgba(255,255,255,0.72); max-w… (auto) */
 .hero-sub {
   font-size: clamp(16px, 2vw, 20px);
   line-height: 1.65;
@@ -501,12 +626,22 @@ input, textarea, select { font: inherit; }
   margin-bottom: 44px;
 }
 
+/* @class hero-actions
+   @label Hero Actions
+   @applies div
+   @group Hero
+   @desc Used on <div> in index. Sets: display: flex; gap: 14px; flex-wrap: wrap; (auto) */
 .hero-actions {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
 }
 
+/* @class hero-scroll-hint
+   @label Hero Scroll Hint
+   @applies div
+   @group Hero
+   @desc Used on <div> in index. Sets: position: absolute; bottom: 40px; left: 48px; display: flex; align-items: center; gap: 16p… (auto) */
 .hero-scroll-hint {
   position: absolute;
   bottom: 40px;
@@ -521,6 +656,11 @@ input, textarea, select { font: inherit; }
   text-transform: uppercase;
   z-index: 1;
 }
+/* @class scroll-line
+   @label Scroll Line
+   @applies div
+   @group Hero
+   @desc Used on <div> in index. Sets: width: 48px; height: 1px; background: rgba(255,255,255,0.25); position: relative; overflow… (auto) */
 .scroll-line {
   width: 48px; height: 1px;
   background: rgba(255,255,255,0.25);
@@ -543,12 +683,22 @@ input, textarea, select { font: inherit; }
 /* ============================================
    MISSION STRIP
    ============================================ */
+/* @class mission-strip
+   @label Mission Strip
+   @applies section
+   @group Mission & pillars
+   @desc Used on <section> in index. Sets: background: var(--cream); padding: 72px 0; border-top: 1px solid var(--gray-200); border-b… (auto) */
 .mission-strip {
   background: var(--cream);
   padding: 72px 0;
   border-top: 1px solid var(--gray-200);
   border-bottom: 1px solid var(--gray-200);
 }
+/* @class mission-text
+   @label Mission Text
+   @applies p
+   @group Mission & pillars
+   @desc Used on <p> in index. Sets: font-family: var(--font-serif); font-size: clamp(20px, 3vw, 30px); font-weight: 700; line-… (auto) */
 .mission-text {
   font-family: var(--font-serif);
   font-size: clamp(20px, 3vw, 30px);
@@ -575,8 +725,18 @@ input, textarea, select { font: inherit; }
 /* ============================================
    PILLARS
    ============================================ */
+/* @class pillars
+   @label Pillars
+   @applies section
+   @group Mission & pillars
+   @desc Used on <section> in index. Sets: background: var(--white); (auto) */
 .pillars { background: var(--white); }
 
+/* @class pillars-grid
+   @label Pillars Grid
+   @applies div
+   @group Mission & pillars
+   @desc Used on <div> in index. Sets: display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--gray-200… (auto) */
 .pillars-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -588,6 +748,11 @@ input, textarea, select { font: inherit; }
 }
 @media (max-width: 900px) { .pillars-grid { grid-template-columns: 1fr; } }
 
+/* @class pillar-card
+   @label Pillar Card
+   @applies div
+   @group Mission & pillars
+   @desc Used on <div> in index. Sets: background: var(--white); padding: 48px 40px; position: relative; transition: background 0… (auto) */
 .pillar-card {
   background: var(--white);
   padding: 48px 40px;
@@ -596,6 +761,11 @@ input, textarea, select { font: inherit; }
 }
 .pillar-card:hover { background: var(--gray-50); }
 
+/* @class pillar-number
+   @label Pillar Number
+   @applies div
+   @group Mission & pillars
+   @desc Used on <div> in index. Sets: font-size: 13px; font-weight: 800; letter-spacing: 0.08em; color: var(--red); margin-botto… (auto) */
 .pillar-number {
   font-size: 13px;
   font-weight: 800;
@@ -617,6 +787,11 @@ input, textarea, select { font: inherit; }
   line-height: 1.7;
   margin-bottom: 24px;
 }
+/* @class pillar-link
+   @label Pillar Link
+   @applies a
+   @group Mission & pillars
+   @desc Used on <a> in index. Sets: font-size: 13px; font-weight: 700; color: var(--red); letter-spacing: 0.01em; transition: … (auto) */
 .pillar-link {
   font-size: 13px;
   font-weight: 700;
@@ -629,8 +804,18 @@ input, textarea, select { font: inherit; }
 /* ============================================
    ISSUES
    ============================================ */
+/* @class issues
+   @label Issues
+   @applies section
+   @group Policy positions
+   @desc Used on <section> in index. Sets: background: var(--gray-50); (auto) */
 .issues { background: var(--gray-50); }
 
+/* @class issues-header
+   @label Issues Header
+   @applies div
+   @group Policy positions
+   @desc Used on <div> in index. Sets: display: flex; align-items: flex-start; justify-content: space-between; gap: 60px; margin-… (auto) */
 .issues-header {
   display: flex;
   align-items: flex-start;
@@ -640,6 +825,11 @@ input, textarea, select { font: inherit; }
 }
 @media (max-width: 768px) { .issues-header { flex-direction: column; gap: 20px; } }
 
+/* @class issues-intro
+   @label Issues Intro
+   @applies p
+   @group Policy positions
+   @desc Used on <p> in index. Sets: font-size: 17px; color: var(--gray-600); line-height: 1.7; max-width: 480px; padding-top: … (auto) */
 .issues-intro {
   font-size: 17px;
   color: var(--gray-600);
@@ -648,6 +838,11 @@ input, textarea, select { font: inherit; }
   padding-top: 24px;
 }
 
+/* @class issues-grid
+   @label Issues Grid
+   @applies div
+   @group Policy positions
+   @desc Used on <div> in index. Sets: display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; (auto) */
 .issues-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -660,6 +855,11 @@ input, textarea, select { font: inherit; }
 }
 @media (max-width: 600px) { .issues-grid { grid-template-columns: 1fr; } }
 
+/* @class issue-card
+   @label Issue Card
+   @applies a
+   @group Policy positions
+   @desc Used on <a> in index. Sets: grid-column: 2; (auto) */
 .issue-card {
   background: var(--white);
   border: 1px solid var(--gray-200);
@@ -675,6 +875,11 @@ input, textarea, select { font: inherit; }
   box-shadow: 0 8px 32px rgba(0,0,0,0.08);
   transform: translateY(-3px);
 }
+/* @class issue-icon
+   @label Issue Icon
+   @applies div
+   @group Policy positions
+   @desc Used on <div> in index. Sets: width: 52px; height: 52px; background: var(--cream); border-radius: 10px; display: flex; a… (auto) */
 .issue-icon {
   width: 52px; height: 52px;
   background: var(--cream);
@@ -703,10 +908,20 @@ input, textarea, select { font: inherit; }
 /* ============================================
    IMPACT STATS
    ============================================ */
+/* @class impact
+   @label Impact
+   @applies section
+   @group Impact stats
+   @desc Used on <section> in index. Sets: background: var(--navy-dark); padding: 80px 0; (auto) */
 .impact {
   background: var(--navy-dark);
   padding: 80px 0;
 }
+/* @class impact-grid
+   @label Impact Grid
+   @applies div
+   @group Impact stats
+   @desc Used on <div> in index. Sets: display: flex; align-items: center; justify-content: center; gap: 0; (auto) */
 .impact-grid {
   display: flex;
   align-items: center;
@@ -717,11 +932,21 @@ input, textarea, select { font: inherit; }
   .impact-grid { flex-direction: column; }
   .impact-divider { width: 60px; height: 1px !important; }
 }
+/* @class impact-stat
+   @label Impact Stat
+   @applies div
+   @group Impact stats
+   @desc Used on <div> in index. Sets: text-align: center; padding: 0 60px; flex: 1; (auto) */
 .impact-stat {
   text-align: center;
   padding: 0 60px;
   flex: 1;
 }
+/* @class impact-number
+   @label Impact Number
+   @applies div
+   @group Impact stats
+   @desc Used on <div> in index. Sets: font-size: clamp(28px, 4vw, 48px); font-weight: 900; color: var(--white); letter-spacing: … (auto) */
 .impact-number {
   font-size: clamp(28px, 4vw, 48px);
   font-weight: 900;
@@ -729,6 +954,11 @@ input, textarea, select { font: inherit; }
   letter-spacing: -0.03em;
   margin-bottom: 8px;
 }
+/* @class impact-label
+   @label Impact Label
+   @applies div
+   @group Impact stats
+   @desc Used on <div> in index. Sets: font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.5); letter-spacing: 0.05em; t… (auto) */
 .impact-label {
   font-size: 13px;
   font-weight: 600;
@@ -736,6 +966,11 @@ input, textarea, select { font: inherit; }
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
+/* @class impact-divider
+   @label Impact Divider
+   @applies div
+   @group Impact stats
+   @desc Used on <div> in index. Sets: width: 60px; height: 1px !important; (auto) */
 .impact-divider {
   width: 1px;
   height: 80px;
@@ -746,7 +981,17 @@ input, textarea, select { font: inherit; }
 /* ============================================
    ABOUT
    ============================================ */
+/* @class about
+   @label About
+   @applies section
+   @group About
+   @desc Used on <section> in index. Sets: background: var(--white); (auto) */
 .about { background: var(--white); }
+/* @class about-grid
+   @label About Grid
+   @applies div
+   @group About
+   @desc Used on <div> in index. Sets: display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; (auto) */
 .about-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -755,6 +1000,11 @@ input, textarea, select { font: inherit; }
 }
 @media (max-width: 900px) { .about-grid { grid-template-columns: 1fr; gap: 48px; } }
 
+/* @class about-text
+   @label About Text
+   @applies div
+   @group About
+   @desc Used on <div> in index. Sets: font-size: 16px; color: var(--gray-600); line-height: 1.75; margin-bottom: 20px; (auto) */
 .about-text p {
   font-size: 16px;
   color: var(--gray-600);
@@ -763,6 +1013,11 @@ input, textarea, select { font: inherit; }
 }
 .about-text .btn { margin-top: 12px; }
 
+/* @class about-card
+   @label About Card
+   @applies div
+   @group About
+   @desc Used on <div> in index. Sets: background: var(--navy-dark); border-radius: var(--radius-lg); padding: 40px; margin-botto… (auto) */
 .about-card {
   background: var(--navy-dark);
   border-radius: var(--radius-lg);
@@ -777,6 +1032,11 @@ input, textarea, select { font: inherit; }
   color: var(--white);
   position: relative;
 }
+/* @class about-card-footer
+   @label About Card Footer
+   @applies div
+   @group About
+   @desc Used on <div> in index. Sets: margin-top: 24px; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform… (auto) */
 .about-card-footer {
   margin-top: 24px;
   font-size: 12px;
@@ -786,11 +1046,21 @@ input, textarea, select { font: inherit; }
   color: var(--red);
 }
 
+/* @class about-detail-grid
+   @label About Detail Grid
+   @applies div
+   @group About
+   @desc Used on <div> in index. Sets: display: grid; grid-template-columns: 1fr 1fr; gap: 16px; (auto) */
 .about-detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
+/* @class about-detail
+   @label About Detail
+   @applies div
+   @group About
+   @desc Used on <div> in index. Sets: background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding… (auto) */
 .about-detail {
   background: var(--gray-50);
   border: 1px solid var(--gray-200);
@@ -816,10 +1086,20 @@ input, textarea, select { font: inherit; }
 /* ============================================
    JOIN / GET INVOLVED
    ============================================ */
+/* @class join
+   @label Join
+   @applies section
+   @group Forms
+   @desc Used on <section> in index. Sets: background: var(--navy); color: var(--white); (auto) */
 .join {
   background: var(--navy);
   color: var(--white);
 }
+/* @class join-inner
+   @label Join Inner
+   @applies div
+   @group Forms
+   @desc Used on <div> in index. Sets: display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; (auto) */
 .join-inner {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -828,12 +1108,22 @@ input, textarea, select { font: inherit; }
 }
 @media (max-width: 900px) { .join-inner { grid-template-columns: 1fr; gap: 48px; } }
 
+/* @class join-text
+   @label Join Text
+   @applies div
+   @group Forms
+   @desc Used on <div> in index. Sets: font-size: 17px; color: rgba(255,255,255,0.72); line-height: 1.7; margin-bottom: 32px; (auto) */
 .join-text p {
   font-size: 17px;
   color: rgba(255,255,255,0.72);
   line-height: 1.7;
   margin-bottom: 32px;
 }
+/* @class join-list
+   @label Join List
+   @applies ul
+   @group Forms
+   @desc Used on <ul> in index. Sets: display: flex; flex-direction: column; gap: 14px; (auto) */
 .join-list {
   display: flex;
   flex-direction: column;
@@ -849,6 +1139,11 @@ input, textarea, select { font: inherit; }
 }
 .join-list li svg { color: var(--red); flex-shrink: 0; }
 
+/* @class join-form-wrap
+   @label Join Form Wrap
+   @applies div
+   @group Forms
+   @desc Used on <div> in index. Sets: background: var(--white); border-radius: var(--radius-lg); padding: 44px 40px; color: var(… (auto) */
 .join-form-wrap {
   background: var(--white);
   border-radius: var(--radius-lg);
@@ -857,6 +1152,11 @@ input, textarea, select { font: inherit; }
 }
 @media (max-width: 480px) { .join-form-wrap { padding: 32px 24px; } }
 
+/* @class join-form
+   @label Join Form
+   @applies form
+   @group Forms
+   @desc Used on <form> in index. Sets: font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: var(--navy-dark); margi… (auto) */
 .join-form h3 {
   font-size: 22px;
   font-weight: 800;
@@ -864,6 +1164,11 @@ input, textarea, select { font: inherit; }
   color: var(--navy-dark);
   margin-bottom: 28px;
 }
+/* @class form-group
+   @label Form Group
+   @applies div
+   @group Forms
+   @desc Used on <div> in index. Sets: margin-bottom: 18px; (auto) */
 .form-group {
   margin-bottom: 18px;
 }
@@ -892,12 +1197,22 @@ input, textarea, select { font: inherit; }
 }
 .form-group input::placeholder { color: var(--gray-400); }
 
+/* @class form-optional
+   @label Form Optional
+   @applies span
+   @group Forms
+   @desc Used on <span> in index. Sets: font-size: 12px; color: var(--gray-400); font-weight: 400; (auto) */
 .form-optional {
   font-size: 12px;
   color: var(--gray-400);
   font-weight: 400;
 }
 
+/* @class form-note
+   @label Form Note
+   @applies p
+   @group Forms
+   @desc Used on <p> in index. Sets: font-size: 12px; color: var(--gray-400); text-align: center; margin-top: 14px; (auto) */
 .form-note {
   font-size: 12px;
   color: var(--gray-400);
@@ -905,10 +1220,20 @@ input, textarea, select { font: inherit; }
   margin-top: 14px;
 }
 
+/* @class form-success
+   @label Form Success
+   @applies div
+   @group Forms
+   @desc Used on <div> in index. Sets: text-align: center; padding: 40px 0; (auto) */
 .form-success {
   text-align: center;
   padding: 40px 0;
 }
+/* @class success-icon
+   @label Success Icon
+   @applies div
+   @group Forms
+   @desc Used on <div> in index, success. Sets: width: 60px; height: 60px; background: #22C55E; color: var(--white); border-radius: 50%; d… (auto) */
 .success-icon {
   width: 60px; height: 60px;
   background: #22C55E;
@@ -935,11 +1260,21 @@ input, textarea, select { font: inherit; }
 /* ============================================
    FOOTER
    ============================================ */
+/* @class site-footer
+   @label Site Footer
+   @applies footer
+   @group Footer
+   @desc Used on <footer> in partial:footer. Sets: background: var(--navy-dark); padding: 72px 0 0; color: rgba(255,255,255,0.6); (auto) */
 .site-footer {
   background: var(--navy-dark);
   padding: 72px 0 0;
   color: rgba(255,255,255,0.6);
 }
+/* @class footer-grid
+   @label Footer Grid
+   @applies div
+   @group Footer
+   @desc Used on <div> in partial:footer. Sets: display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; padding-bottom: 60px; bo… (auto) */
 .footer-grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
@@ -950,6 +1285,11 @@ input, textarea, select { font: inherit; }
 @media (max-width: 900px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 600px) { .footer-grid { grid-template-columns: 1fr; } }
 
+/* @class footer-brand
+   @label Footer Brand
+   @applies div
+   @group Footer
+   @desc Used on <div> in partial:footer. Sets: margin-bottom: 16px; (auto) */
 .footer-brand .logo { margin-bottom: 16px; }
 .footer-brand p {
   font-size: 14px;
@@ -958,12 +1298,22 @@ input, textarea, select { font: inherit; }
   max-width: 280px;
   margin-bottom: 12px;
 }
+/* @class footer-legal
+   @label Footer Legal
+   @applies p
+   @group Footer
+   @desc Used on <p> in partial:footer. Sets: font-size: 12px !important; color: rgba(255,255,255,0.35) !important; max-width: 300px !im… (auto) */
 .footer-legal {
   font-size: 12px !important;
   color: rgba(255,255,255,0.35) !important;
   max-width: 300px !important;
 }
 
+/* @class footer-col
+   @label Footer Col
+   @applies div
+   @group Footer
+   @desc Used on <div> in partial:footer. Sets: font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color… (auto) */
 .footer-col h2 {
   font-size: 12px;
   font-weight: 700;
@@ -980,6 +1330,11 @@ input, textarea, select { font: inherit; }
 }
 .footer-col ul a:hover { color: var(--white); }
 
+/* @class footer-bottom
+   @label Footer Bottom
+   @applies div
+   @group Footer
+   @desc Used on <div> in partial:footer. Sets: display: flex; align-items: center; justify-content: space-between; padding: 24px 0; gap: … (auto) */
 .footer-bottom {
   display: flex;
   align-items: center;
@@ -989,6 +1344,11 @@ input, textarea, select { font: inherit; }
   flex-wrap: wrap;
 }
 .footer-bottom p { font-size: 13px; color: rgba(255,255,255,0.3); }
+/* @class footer-links
+   @label Footer Links
+   @applies div
+   @group Footer
+   @desc Used on <div> in partial:footer. Sets: display: flex; gap: 24px; (auto) */
 .footer-links { display: flex; gap: 24px; }
 .footer-links a {
   font-size: 13px;
@@ -1122,6 +1482,11 @@ input, textarea, select { font: inherit; }
 /* ============================================
    FOOTER SOCIAL ICONS
    ============================================ */
+/* @class footer-social
+   @label Footer Social
+   @applies div
+   @group Footer
+   @desc Used on <div> in partial:footer. Sets: display: flex; gap: 10px; margin-top: 20px; (auto) */
 .footer-social {
   display: flex;
   gap: 10px;
@@ -1147,11 +1512,21 @@ input, textarea, select { font: inherit; }
 /* ============================================
    ABOUT LOGO
    ============================================ */
+/* @class about-logo-wrap
+   @label About Logo Wrap
+   @applies div
+   @group About
+   @desc Used on <div> in index. Sets: margin-bottom: 24px; display: flex; justify-content: center; (auto) */
 .about-logo-wrap {
   margin-bottom: 24px;
   display: flex;
   justify-content: center;
 }
+/* @class about-logo-img
+   @label About Logo Img
+   @applies img
+   @group About
+   @desc Used on <img> in index. Sets: max-width: 220px; width: 100%; height: auto; border-radius: var(--radius-lg); (auto) */
 .about-logo-img {
   max-width: 220px;
   width: 100%;
@@ -1162,8 +1537,18 @@ input, textarea, select { font: inherit; }
 /* ============================================
    DONATE SECTION
    ============================================ */
+/* @class donate
+   @label Donate
+   @applies section
+   @group Donations
+   @desc Used on <section> in index. Sets: background: var(--cream); (auto) */
 .donate { background: var(--cream); }
 
+/* @class donate-inner
+   @label Donate Inner
+   @applies div
+   @group Donations
+   @desc Used on <div> in index. Sets: display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; (auto) */
 .donate-inner {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1171,9 +1556,24 @@ input, textarea, select { font: inherit; }
   align-items: start;
 }
 
+/* @class donate-text
+   @label Donate Text
+   @applies div
+   @group Donations
+   @desc Used on <div> in index. Sets: color: var(--gray-600); margin-bottom: 16px; line-height: 1.7; (auto) */
 .donate-text p { color: var(--gray-600); margin-bottom: 16px; line-height: 1.7; }
+/* @class donate-legal
+   @label Donate Legal
+   @applies p
+   @group Donations
+   @desc Used on <p> in index. Sets: font-size: 0.82rem; color: var(--gray-400); margin-top: 24px; (auto) */
 .donate-legal { font-size: 0.82rem; color: var(--gray-400); margin-top: 24px; }
 
+/* @class donation-tracker
+   @label Donation Tracker
+   @applies div
+   @group Donations
+   @desc Used on <div> in index. Sets: margin: 28px 0 0; opacity: 0; transition: opacity 0.4s ease; (auto) */
 .donation-tracker {
   margin: 28px 0 0;
   opacity: 0;
@@ -1183,6 +1583,11 @@ input, textarea, select { font: inherit; }
 .donation-tracker[aria-hidden="true"] { display: none; }
 .donation-tracker.tracker-loaded { opacity: 1; }
 
+/* @class tracker-recent-heading
+   @label Tracker Recent Heading
+   @applies 
+   @group Donations
+   @desc Not used by any template today (script- or state-toggled, or spare). Sets: font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; c… (auto) */
 .tracker-recent-heading {
   font-size: 0.72rem;
   font-weight: 700;
@@ -1192,6 +1597,11 @@ input, textarea, select { font: inherit; }
   margin: 20px 0 0;
   padding: 14px 16px 0;
 }
+/* @class tracker-recent
+   @label Tracker Recent
+   @applies ul
+   @group Donations
+   @desc Used on <ul> in index. Sets: list-style: none; display: flex; flex-direction: column; gap: 0; background: var(--navy); … (auto) */
 .tracker-recent {
   list-style: none;
   display: flex;
@@ -1211,9 +1621,24 @@ input, textarea, select { font: inherit; }
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 .tracker-recent li:last-child { border-bottom: none; }
+/* @class tracker-donor-name
+   @label Tracker Donor Name
+   @applies 
+   @group Donations
+   @desc Not used by any template today (script- or state-toggled, or spare). Sets: font-weight: 600; color: var(--white); (auto) */
 .tracker-donor-name { font-weight: 600; color: var(--white); }
+/* @class tracker-donor-amount
+   @label Tracker Donor Amount
+   @applies 
+   @group Donations
+   @desc Not used by any template today (script- or state-toggled, or spare). Sets: font-weight: 500; color: rgba(255,255,255,0.55); (auto) */
 .tracker-donor-amount { font-weight: 500; color: rgba(255,255,255,0.55); }
 
+/* @class donate-form-wrap
+   @label Donate Form Wrap
+   @applies div
+   @group Donations
+   @desc Used on <div> in index. Sets: background: var(--white); border-radius: var(--radius-lg); padding: 40px; box-shadow: 0 4p… (auto) */
 .donate-form-wrap {
   background: var(--white);
   border-radius: var(--radius-lg);
@@ -1221,6 +1646,11 @@ input, textarea, select { font: inherit; }
   box-shadow: 0 4px 24px rgba(0,0,0,0.07);
 }
 
+/* @class donate-type-toggle
+   @label Donate Type Toggle
+   @applies div
+   @group Donations
+   @desc Used on <div> in index. Sets: display: flex; background: var(--gray-100); border-radius: 8px; padding: 4px; margin-botto… (auto) */
 .donate-type-toggle {
   display: flex;
   background: var(--gray-100);
@@ -1230,6 +1660,11 @@ input, textarea, select { font: inherit; }
   gap: 4px;
 }
 
+/* @class toggle-btn
+   @label Toggle Btn
+   @applies button
+   @group Donations
+   @desc Used on <button> in index. Sets: flex: 1; padding: 10px; border: none; background: transparent; border-radius: 6px; font-fa… (auto) */
 .toggle-btn {
   flex: 1;
   padding: 10px;
@@ -1249,6 +1684,11 @@ input, textarea, select { font: inherit; }
   box-shadow: 0 1px 6px rgba(0,0,0,0.1);
 }
 
+/* @class donate-tiers
+   @label Donate Tiers
+   @applies div
+   @group Donations
+   @desc Used on <div> in index. Sets: display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; (auto) */
 .donate-tiers {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -1256,6 +1696,11 @@ input, textarea, select { font: inherit; }
   margin-bottom: 20px;
 }
 
+/* @class tier-btn
+   @label Tier Btn
+   @applies button
+   @group Donations
+   @desc Used on <button> in index. Sets: padding: 14px 6px; border: 2px solid var(--gray-200); border-radius: var(--radius); backgr… (auto) */
 .tier-btn {
   padding: 14px 6px;
   border: 2px solid var(--gray-200);
@@ -1274,8 +1719,18 @@ input, textarea, select { font: inherit; }
 .tier-btn:hover { border-color: var(--navy); }
 .tier-btn.active { border-color: var(--navy); background: var(--navy); color: var(--white); }
 .tier-btn.active span { color: rgba(255,255,255,0.6); }
+/* @class tier-custom
+   @label Tier Custom
+   @applies button
+   @group Donations
+   @desc Used on <button> in index. Sets: font-size: 0.85rem; (auto) */
 .tier-custom { font-size: 0.85rem; }
 
+/* @class donate-custom-wrap
+   @label Donate Custom Wrap
+   @applies div
+   @group Donations
+   @desc Used on <div> in index. Sets: margin-bottom: 20px; (auto) */
 .donate-custom-wrap {
   margin-bottom: 20px;
 }
@@ -1298,10 +1753,30 @@ input, textarea, select { font: inherit; }
 }
 .donate-custom-wrap input:focus { outline: none; border-color: var(--navy); }
 
+/* @class donate-fields
+   @label Donate Fields
+   @applies div
+   @group Donations
+   @desc Used on <div> in index. Sets: margin-bottom: 20px; (auto) */
 .donate-fields { margin-bottom: 20px; }
+/* @class form-row
+   @label Form Row
+   @applies div
+   @group Forms
+   @desc Used on <div> in index. Sets: display: grid; grid-template-columns: 1fr 1fr; gap: 12px; (auto) */
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+/* @class form-group-check
+   @label Form Group Check
+   @applies div
+   @group Forms
+   @desc Used on <div> in index. Sets: margin-bottom: 16px; (auto) */
 .form-group-check { margin-bottom: 16px; }
+/* @class check-label
+   @label Check Label
+   @applies label
+   @group Forms
+   @desc Used on <label> in index. Sets: display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--gray-600);… (auto) */
 .check-label {
   display: flex;
   align-items: center;
@@ -1318,6 +1793,11 @@ input, textarea, select { font: inherit; }
   flex-shrink: 0;
 }
 
+/* @class donate-error
+   @label Donate Error
+   @applies p
+   @group Donations
+   @desc Used on <p> in index. Sets: color: var(--red); font-size: 0.85rem; margin-top: 10px; text-align: center; (auto) */
 .donate-error {
   color: var(--red);
   font-size: 0.85rem;
@@ -1337,6 +1817,11 @@ input, textarea, select { font: inherit; }
 /* ============================================
    DONATION MODAL
    ============================================ */
+/* @class modal-overlay
+   @label Modal Overlay
+   @applies div
+   @group Modal
+   @desc Used on <div> in index. Sets: position: fixed; inset: 0; background: rgba(15, 30, 51, 0.75); backdrop-filter: blur(4px);… (auto) */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1358,6 +1843,11 @@ input, textarea, select { font: inherit; }
   pointer-events: all;
   transition: opacity 0.35s var(--ease);
 }
+/* @class modal-card
+   @label Modal Card
+   @applies div
+   @group Modal
+   @desc Used on <div> in index. Sets: background: var(--white); border-radius: var(--radius-lg); padding: 48px 40px 40px; max-wi… (auto) */
 .modal-card {
   background: var(--white);
   border-radius: var(--radius-lg);
@@ -1372,6 +1862,11 @@ input, textarea, select { font: inherit; }
 .modal-overlay.modal-visible .modal-card {
   transform: translateY(0);
 }
+/* @class modal-close
+   @label Modal Close
+   @applies button
+   @group Modal
+   @desc Used on <button> in index. Sets: position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border-radius: 50%;… (auto) */
 .modal-close {
   position: absolute;
   top: 14px;
@@ -1388,6 +1883,11 @@ input, textarea, select { font: inherit; }
   transition: background 0.15s;
 }
 .modal-close:hover { background: var(--gray-200); }
+/* @class modal-badge
+   @label Modal Badge
+   @applies div
+   @group Modal
+   @desc Used on <div> in index. Sets: display: inline-block; background: var(--red); color: var(--white); font-size: 11px; font-… (auto) */
 .modal-badge {
   display: inline-block;
   background: var(--red);
@@ -1400,6 +1900,11 @@ input, textarea, select { font: inherit; }
   border-radius: 100px;
   margin-bottom: 20px;
 }
+/* @class modal-title
+   @label Modal Title
+   @applies h2
+   @group Modal
+   @desc Used on <h2> in index. Sets: font-family: var(--font-serif); font-size: clamp(24px, 4vw, 32px); font-weight: 800; color… (auto) */
 .modal-title {
   font-family: var(--font-serif);
   font-size: clamp(24px, 4vw, 32px);
@@ -1409,18 +1914,38 @@ input, textarea, select { font: inherit; }
   line-height: 1.15;
   margin-bottom: 14px;
 }
+/* @class modal-body
+   @label Modal Body
+   @applies p
+   @group Modal
+   @desc Used on <p> in index. Sets: font-size: 16px; color: var(--gray-600); line-height: 1.7; margin-bottom: 32px; (auto) */
 .modal-body {
   font-size: 16px;
   color: var(--gray-600);
   line-height: 1.7;
   margin-bottom: 32px;
 }
+/* @class modal-actions
+   @label Modal Actions
+   @applies div
+   @group Modal
+   @desc Used on <div> in index. Sets: display: flex; flex-direction: column; gap: 10px; (auto) */
 .modal-actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+/* @class modal-cta-btn
+   @label Modal Cta Btn
+   @applies a
+   @group Modal
+   @desc Used on <a> in index. Sets: justify-content: center; (auto) */
 .modal-cta-btn { justify-content: center; }
+/* @class modal-dismiss
+   @label Modal Dismiss
+   @applies button
+   @group Modal
+   @desc Used on <button> in index. Sets: font-size: 14px; color: var(--gray-400); padding: 8px; text-align: center; transition: col… (auto) */
 .modal-dismiss {
   font-size: 14px;
   color: var(--gray-400);
@@ -1482,10 +2007,20 @@ input, textarea, select { font: inherit; }
 /* ============================================
    NEWS & MEDIA CARDS (blog.html + projects.html)
    ============================================ */
+/* @class news-section
+   @label News Section
+   @applies div
+   @group News & coverage
+   @desc Used on <div> in blog. Sets: padding: 80px 48px 100px; background: var(--cream); (auto) */
 .news-section {
   padding: 80px 48px 100px;
   background: var(--cream);
 }
+/* @class news-inner
+   @label News Inner
+   @applies div
+   @group News & coverage
+   @desc Used on <div> in blog. Sets: max-width: 860px; margin: 0 auto; (auto) */
 .news-inner {
   max-width: 860px;
   margin: 0 auto;
@@ -1503,6 +2038,11 @@ input, textarea, select { font: inherit; }
   color: var(--red);
   margin-bottom: 32px;
 }
+/* @class news-card
+   @label News Card
+   @applies a
+   @group News & coverage
+   @desc Used on <a> in blog, projects. Sets: display: flex; gap: 32px; background: var(--white); border-radius: var(--radius-lg); paddi… (auto) */
 .news-card {
   display: flex;
   gap: 32px;
@@ -1518,6 +2058,11 @@ input, textarea, select { font: inherit; }
   box-shadow: 0 6px 24px rgba(0,0,0,0.1);
   transform: translateY(-2px);
 }
+/* @class news-outlet
+   @label News Outlet
+   @applies div
+   @group News & coverage
+   @desc Used on <div> in blog, projects. Sets: flex-shrink: 0; width: 80px; display: flex; align-items: flex-start; padding-top: 4px; (auto) */
 .news-outlet {
   flex-shrink: 0;
   width: 80px;
@@ -1541,7 +2086,17 @@ input, textarea, select { font: inherit; }
   border-radius: 4px;
   line-height: 1;
 }
+/* @class news-content
+   @label News Content
+   @applies div
+   @group News & coverage
+   @desc Used on <div> in blog, projects. Sets: flex: 1; (auto) */
 .news-content { flex: 1; }
+/* @class news-meta
+   @label News Meta
+   @applies div
+   @group News & coverage
+   @desc Used on <div> in blog, projects. Sets: font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; colo… (auto) */
 .news-meta {
   font-size: 12px;
   font-weight: 600;
@@ -1550,6 +2105,11 @@ input, textarea, select { font: inherit; }
   color: var(--gray-400);
   margin-bottom: 10px;
 }
+/* @class news-headline
+   @label News Headline
+   @applies h2 h3
+   @group News & coverage
+   @desc Used on <h2>, <h3> in blog, projects. Sets: font-size: 18px; font-weight: 700; color: var(--navy-dark); line-height: 1.4; letter-spaci… (auto) */
 .news-headline {
   font-size: 18px;
   font-weight: 700;
@@ -1558,18 +2118,33 @@ input, textarea, select { font: inherit; }
   letter-spacing: -0.01em;
   margin-bottom: 12px;
 }
+/* @class news-excerpt
+   @label News Excerpt
+   @applies div
+   @group News & coverage
+   @desc Used on <div> in blog, projects. Sets: font-size: 15px; color: var(--gray-600); line-height: 1.7; margin-bottom: 16px; (auto) */
 .news-excerpt {
   font-size: 15px;
   color: var(--gray-600);
   line-height: 1.7;
   margin-bottom: 16px;
 }
+/* @class news-read-more
+   @label News Read More
+   @applies div
+   @group News & coverage
+   @desc Used on <div> in blog, projects. Sets: font-size: 13px; font-weight: 700; color: var(--red); letter-spacing: 0.02em; (auto) */
 .news-read-more {
   font-size: 13px;
   font-weight: 700;
   color: var(--red);
   letter-spacing: 0.02em;
 }
+/* @class news-more-cta
+   @label News More Cta
+   @applies div
+   @group News & coverage
+   @desc Used on <div> in blog. Sets: margin-top: 48px; padding: 36px 40px; background: var(--navy-dark); border-radius: var(--r… (auto) */
 .news-more-cta {
   margin-top: 48px;
   padding: 36px 40px;
@@ -1586,6 +2161,11 @@ input, textarea, select { font: inherit; }
   color: rgba(255,255,255,0.7);
   margin: 0;
 }
+/* @class video-card
+   @label Video Card
+   @applies div
+   @group News & coverage
+   @desc Used on <div> in blog, projects. Sets: background: var(--white); border-radius: var(--radius-lg); padding: 32px 36px; margin-bott… (auto) */
 .video-card {
   background: var(--white);
   border-radius: var(--radius-lg);
@@ -1593,6 +2173,11 @@ input, textarea, select { font: inherit; }
   margin-bottom: 20px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.07);
 }
+/* @class video-card-header
+   @label Video Card Header
+   @applies div
+   @group News & coverage
+   @desc Used on <div> in blog, projects. Sets: display: flex; align-items: center; gap: 16px; margin-bottom: 20px; (auto) */
 .video-card-header {
   display: flex;
   align-items: center;
@@ -1618,6 +2203,11 @@ input, textarea, select { font: inherit; }
   width: 100%; height: 100%;
   border: 0;
 }
+/* @class video-meta
+   @label Video Meta
+   @applies div
+   @group News & coverage
+   @desc Used on <div> in blog, projects. Sets: font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; colo… (auto) */
 .video-meta {
   font-size: 12px;
   font-weight: 600;
@@ -1626,6 +2216,11 @@ input, textarea, select { font: inherit; }
   color: var(--gray-400);
   margin-bottom: 8px;
 }
+/* @class video-headline
+   @label Video Headline
+   @applies h2 h3
+   @group News & coverage
+   @desc Used on <h2>, <h3> in blog, projects. Sets: font-size: 17px; font-weight: 700; color: var(--navy-dark); line-height: 1.4; letter-spaci… (auto) */
 .video-headline {
   font-size: 17px;
   font-weight: 700;

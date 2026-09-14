@@ -85,10 +85,12 @@ scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
    not yet rendered — `templates/team.html` emits `alt="{{name}}"` (correct
    for a headshot). Rendering `media_assets.alt` for arbitrary images is
    Phase 8 (Documents ingest, spec §5 step 6).
-6. Delete removes the row first (retried on 40001), then the original + all
-   variants (`DeleteObjects` — delete markers on this versioned bucket; bytes
-   expire after 90 days); audited as `media.delete`. Pages still referencing
-   the path 404 that image on next publish — no usage count yet.
+6. Delete first checks usage (`assetUsage`: team headshots, document
+   bodies / og:image / page CSS containing `/media/<id>/`) and REFUSES while
+   anything references the asset (the card shows "Used by …" and the button
+   is disabled); then removes the row (retried on 40001), then the original +
+   all variants (`DeleteObjects` — delete markers on this versioned bucket;
+   bytes expire after 90 days); audited as `media.delete`.
 
 ## media_assets (DSQL)
 

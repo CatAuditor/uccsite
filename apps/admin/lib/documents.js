@@ -70,6 +70,7 @@ export function runIngest(doc, { siteCss, foreignClassMap }) {
     knownClasses: styleKitFor(siteCss, doc.pageCss).known,
     foreignClassMap,
     previousNormalized: doc.bodyHtmlNormalized || null,
+    allowScripts: Boolean(doc.allowScripts),
   });
 }
 

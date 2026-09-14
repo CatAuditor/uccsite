@@ -128,6 +128,7 @@ function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss
     knownClasses: knownClassesFor(siteCss, doc.pageCss),
     foreignClassMap,
     previousNormalized: doc.bodyHtmlNormalized || null,
+    allowScripts: Boolean(doc.allowScripts), // owner-only flag; src-only, allowlisted hosts (html-ingest)
   });
   for (const a of ingestResult.report.a11y) fail(`accessibility gate: ${a.message || a.rule || JSON.stringify(a)}`);
 

@@ -122,6 +122,10 @@ export async function saveDocument(prevState, formData) {
       if (status === 'published' && !current.publishedAt) next.publishedAt = new Date().toISOString();
       await upsertDocument(client, next);
       if (next.publishedAt && !current.publishedAt) await client.query('UPDATE documents SET published_at = now() WHERE id = $1', [id]);
+      // Every use of the script escape hatch is audited separately (spec §5).
+      if (Number(next.allowScripts) !== Number(current.allowScripts)) {
+        await recordChange(client, { actor: s.email, action: next.allowScripts ? 'document.allow_scripts.on' : 'document.allow_scripts.off', entityType: 'document', entityId: id });
+      }
       await recordChange(client, {
         actor: s.email, action: 'document.save', entityType: 'document', entityId: id,
         snapshot: before,

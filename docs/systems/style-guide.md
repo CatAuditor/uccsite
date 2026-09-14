@@ -94,6 +94,15 @@ Every template loads it before `styles.css`:
 ```
 Add a family by editing `FAMILIES` in `scripts/fetch-fonts.mjs` and re-running
 it. Never link fonts.googleapis.com — the AWS CSP is `font-src 'self'`.
+
+### Style Kit annotations
+Every class rule in `css/styles.css` carries a `/* @class … @label … @applies …
+@group … @desc … */` comment the admin's class picker reads (spec §6.1).
+`node scripts/annotate-style-kit.mjs` adds a generated comment (marked
+"(auto)") for any class without one, deriving `@applies` from the tags the
+class is used on in `templates/`. Refine the auto text by hand when a class
+needs a better explanation; 9 state/modifier classes (`open`, `active`,
+`visible`, `scrolled`, …) have no bare rule and stay undocumented on purpose.
 - **Inter** (400/500/600/700/800/900) — all UI, headlines, body, buttons, labels.
 - **Playfair Display** (700/800) — *only* for emotional/editorial moments: mission quote, blockquotes, modal titles. Signals "this is a human voice / a promise."
 

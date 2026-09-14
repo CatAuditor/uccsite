@@ -43,6 +43,7 @@ export async function listAssets(client) {
     const thumb = pickVariant(a.variants, 1, 'webp');
     a.thumbUrl = thumb ? await presignGet(thumb.path.slice(1)) : null;
     a.stalled = isStalled(a);
+    a.usedBy = await assetUsage(client, a.id);
   }));
   return assets;
 }
@@ -77,13 +78,25 @@ export async function createUpload(client, { filename, mime, bytes, actor }) {
   return { id, key, url };
 }
 
-// deleteAsset(client, id) → asset. Row FIRST (retried on 40001 — the Lambda
-// may be updating it), then the S3 objects: a failed object delete leaves
-// orphaned bytes, never a live row whose variants are gone.
+// assetUsage(client, id) → ['team: Jarom Gillins', 'document: alpr', …] — every
+// place a /media/<id>/ path is referenced (team headshots, document bodies).
+export async function assetUsage(client, id) {
+  const needle = `/media/${id}/`;
+  const team = await client.query(`SELECT name FROM team_members WHERE photo LIKE $1`, [`%${needle}%`]);
+  const docs = await client.query(`SELECT slug FROM documents WHERE body_html_raw LIKE $1 OR og_image LIKE $1 OR page_css LIKE $1`, [`%${needle}%`]);
+  return [...team.rows.map(r => `team: ${r.name}`), ...docs.rows.map(r => `document: ${r.slug}`)];
+}
+
+// deleteAsset(client, id) → asset. Refuses while anything references the
+// asset (a deleted image would 404 on the next publish). Row FIRST (retried
+// on 40001 — the Lambda may be updating it), then the S3 objects: a failed
+// object delete leaves orphaned bytes, never a live row whose variants are gone.
 export async function deleteAsset(client, id) {
   const row = (await client.query(`SELECT ${ASSET_COLUMNS} FROM media_assets WHERE id = $1`, [id])).rows[0];
   if (!row) throw new Error('Asset not found');
   const asset = rowToAsset(row);
+  const used = await assetUsage(client, id);
+  if (used.length) throw new Error(`Still used by ${used.join(', ')} — remove it there first.`);
   await withRetry(() => client.query('DELETE FROM media_assets WHERE id = $1', [id]));
   const keys = [asset.s3Key, ...asset.variants.map(v => v.path.slice(1))].filter(Boolean);
   if (keys.length) {

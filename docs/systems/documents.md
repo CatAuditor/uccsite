@@ -120,8 +120,14 @@ cannot wedge publishing.
   counts per document, delete), rule form with count preview, foreign class
   map (from → to | drop, per template or global), Style Kit catalog with the
   undocumented count.
-- **allow_scripts**: owner-only checkbox, stored; the sanitizer admits no
-  script yet (reserved, spec §5 escape hatch).
+- **allow_scripts** (spec §5 escape hatch): owner-only checkbox. When on,
+  ingest keeps `<script src="https://<host>/…">` tags whose host is in
+  `SCRIPT_SRC_ALLOWLIST` (html-ingest; currently only
+  `challenges.cloudflare.com`, a subset of the site CSP's `script-src`) with
+  `src`/`async`/`defer` only; inline script content and other hosts are
+  always dropped; the ingest report lists every kept script; every toggle
+  writes a `document.allow_scripts.on/off` audit row. Adding a host means
+  editing BOTH the allowlist and `SITE_CSP`.
 
 ## Env vars (admin)
 

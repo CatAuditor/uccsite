@@ -4,6 +4,15 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.9.1 — 2026-09-13 (branch `refactor`)
+
+Follow-ups that needed no operator input:
+- `allow_scripts` escape hatch implemented in the sanitizer (src-only,
+  allowlisted host, content emptied, every toggle audited).
+- Media library refuses to delete an asset still referenced by a team
+  headshot or a document; cards show "Used by …".
+- Style Kit: 142 of 151 classes annotated (`scripts/annotate-style-kit.mjs`).
+
 ## v0.9.0 — 2026-09-13 (branch `refactor`, not yet pushed)
 
 Phase 9 — Projects and cleanup (`docs/systems/projects.md`).

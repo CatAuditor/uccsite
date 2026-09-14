@@ -46,6 +46,7 @@ export default async function MediaPage() {
                 {a.variants.length ? ` · ${a.variants.length} variants` : ''}
               </div>
               {a.error && <div className="error">{a.error}</div>}
+              {a.usedBy?.length > 0 && <div className="hint">Used by: {a.usedBy.join(', ')}</div>}
               {a.stalled && <div className="error">No progress for 15+ minutes — the upload never arrived or processing crashed. Delete and re-upload.</div>}
               {a.status === 'ready' && (
                 <details>
@@ -66,7 +67,7 @@ export default async function MediaPage() {
               {!readOnly && (
                 <ActionForm action={removeAsset}>
                   <input type="hidden" name="id" value={a.id} />
-                  <button type="submit" className="danger">Delete</button>
+                  <button type="submit" className="danger" disabled={a.usedBy?.length > 0} title={a.usedBy?.length ? 'Remove it from the pages that use it first' : ''}>Delete</button>
                 </ActionForm>
               )}
               <div className="hint">by {a.uploadedBy} · {a.createdAt?.slice(0, 16).replace('T', ' ')}</div>
