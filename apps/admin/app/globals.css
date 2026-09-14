@@ -10,6 +10,10 @@ body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: #1c2733; backgrou
 .nav-link:hover { background: #1f3a2b; }
 button.linkish { background: none; border: 0; margin: 0; width: 100%; text-align: left; font: inherit; }
 .session { margin-top: auto; padding: 14px 0 0; border-top: 1px solid #2b4636; }
+.session-top { margin: 0 0 14px; padding: 0 0 14px; border-top: 0; border-bottom: 1px solid #2b4636; }
+.signout { margin: 8px 20px 0; padding: 6px 14px; font-size: 12px; background: #c8a84b; color: #16281e; font-weight: 700; }
+.signout:hover { background: #dcc06a; }
+.sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .session-user { padding: 0 20px; font-size: 12px; word-break: break-all; }
 .session-role { padding: 0 20px 6px; font-size: 11px; color: #c8a84b; text-transform: uppercase; }
 .content { flex: 1; padding: 32px 40px; max-width: 900px; }

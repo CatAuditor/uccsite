@@ -69,6 +69,11 @@ export default async function RootLayout({ children }) {
         <div className="shell">
           <aside className="sidebar">
             <div className="brand">UCC Admin</div>
+            <div className="session session-top">
+              <div className="session-user">{session.email}</div>
+              <div className="session-role">{session.role}</div>
+              <form action="/logout" method="post"><button type="submit" className="signout">Sign out</button></form>
+            </div>
             {nav.map(({ group, items }) => (
               <div key={group} className="nav-group">
                 <div className="nav-group-title">{group}</div>
@@ -78,8 +83,6 @@ export default async function RootLayout({ children }) {
               </div>
             ))}
             <div className="session">
-              <div className="session-user">{session.email}</div>
-              <div className="session-role">{session.role}</div>
               <form action="/logout" method="post"><button type="submit" className="nav-link linkish">Sign out</button></form>
             </div>
           </aside>
