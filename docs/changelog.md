@@ -4,6 +4,34 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.10.1 — 2026-09-13 (branch `refactor`)
+
+Admin: project files (`docs/systems/files.md`).
+- **Files** page (`/files`): signed-in file store organised by project
+  (soft link on `projects.slug`) then a free-text folder path, with a note
+  per file. Any role downloads (presigned GET, attachment); editor+ uploads,
+  moves, publishes, unpublishes, deletes. Every mutation audited
+  (`files.*`).
+- Uploads: type derived from the extension against an allow-list (no
+  html/svg/js), signed into the presigned PUT with the length; the server
+  verifies the object (HeadObject) before the row becomes ready. 250 MB cap.
+- **Publish to the live site**: server-side CopyObject `private-files/` →
+  `files/<id>/<name>` in the media bucket, served by a new CloudFront
+  `/files/*` behavior on the shared media origin; the bucket policy grants
+  `media/*` + `files/*` only, so uploads and private files stay unreachable
+  from the edge. Public copies carry Content-Disposition and a 5-minute
+  cache (unpublish lag).
+- Schema: `project_files` table (+ index). Applied to staging; UccStaging
+  deployed; 18-check e2e on staging passed (signed-type PUT 403/200,
+  private prefix 404 via CloudFront, public copy 200 with type/disposition/
+  cache/nosniff, basic auth still gates, presigned download).
+- Docs: files.md, debug/files.md, admin/media/site-structure code maps,
+  data-handling rows.
+
+Open: Amplify Hosting deploy still blocked on repo access (SSR role needs
+the same media-bucket object grants for files). Project pages do not list
+published files yet; paste the `/files/…` path into a CTA or Document.
+
 ## v0.10.0 — 2026-09-13 (branch `refactor`)
 
 Admin completeness pass (`docs/systems/admin.md` "What the admin covers").
