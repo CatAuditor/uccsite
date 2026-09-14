@@ -33,6 +33,26 @@ Open: Amplify Hosting deploy (repo access); OpsAlerts email subscription
 (for-conner.md); nav/footer "Donate" labels and the donate form button stay
 template-owned.
 
+## v0.11.1 — 2026-09-13 (branch `refactor`)
+
+Docs and repo hygiene (no code).
+- **`docs/for-conner.md`** rewritten as an operator runbook that Conner's
+  own Claude Code agent can execute, with `[hand]` steps where a console
+  click or a secret is needed: agent setup (mandatory `uccsite` profile),
+  secrets with a write-only verification pattern, GitHub App for the
+  export, admin roster + the two-person publish requirement (two accounts
+  minimum), prod stack redeploy / content / donor migration commands,
+  cutover sequence (custom domain + ACM not yet in the stack — flagged),
+  Amplify hosting, open dev items.
+- **.gitignore**: `docs/migration/documents/*.document.json` were ignored,
+  leaving the docs tree incomplete in git; now tracked (8 files, one-time
+  migration output).
+- CLAUDE.md docs structure matches the real tree; admin.md and
+  publish-pipeline.md no longer mention restore-and-republish / a publish
+  button; README lists files.md.
+
+Open P1 unchanged: project files publish is one-person (v0.11.0).
+
 ## v0.11.0 — 2026-09-13 (branch `refactor`)
 
 Admin: two-person publishing (`docs/systems/admin.md` "Publishing", ADR
