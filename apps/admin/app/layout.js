@@ -52,6 +52,17 @@ export default async function RootLayout({ children }) {
     if (g.owner) return { ...g, items: [...g.items, ...(session?.role === 'owner' ? g.owner : [])] };
     return g;
   });
+  // Signed out (or ungrouped): nothing but the page itself — no sidebar,
+  // no section names. The tabs exist only for a verified session.
+  if (!session) {
+    return (
+      <html lang="en">
+        <body>
+          <main className="content login-only">{children}</main>
+        </body>
+      </html>
+    );
+  }
   return (
     <html lang="en">
       <body>
@@ -67,15 +78,9 @@ export default async function RootLayout({ children }) {
               </div>
             ))}
             <div className="session">
-              {session ? (
-                <>
-                  <div className="session-user">{session.email}</div>
-                  <div className="session-role">{session.role}</div>
-                  <form action="/logout" method="post"><button type="submit" className="nav-link linkish">Sign out</button></form>
-                </>
-              ) : (
-                <Link href="/login" className="nav-link">Sign in</Link>
-              )}
+              <div className="session-user">{session.email}</div>
+              <div className="session-role">{session.role}</div>
+              <form action="/logout" method="post"><button type="submit" className="nav-link linkish">Sign out</button></form>
             </div>
           </aside>
           <main className="content">{children}</main>

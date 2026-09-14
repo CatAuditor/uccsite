@@ -115,3 +115,4 @@ select { padding: 8px; border: 1px solid #c9cdc6; font: inherit; width: 100%; ba
 .promote label { display: block; margin: 8px 0 4px; }
 .promote input { width: 100%; padding: 6px 8px; border: 1px solid #c9cdc6; font: inherit; }
 .rule-form { margin-top: 12px; }
+.login-only { max-width: 520px; margin: 12vh auto 0; }
