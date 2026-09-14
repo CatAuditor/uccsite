@@ -23,6 +23,7 @@ apps/admin/app/tips           ← staff triage (editor+): list, detail, status, 
 aws/export-operational        ← nightly snapshot to the RESTRICTED bucket (tips.json)
 scripts/restore-operational.mjs ← restores it (ON CONFLICT (id) DO NOTHING)
 scripts/migrate-tips.mjs      ← one-time Airtable → tips import (cutover + delta)
+scripts/tip-smoke.mjs         ← deployed-env verifier: POST → row → log search (no bodies) → cleanup
 ```
 
 ## `tips` table
@@ -65,8 +66,11 @@ This is a confidential tipline. `tip()` never logs request bodies or database
 error messages — pg error text can echo parameter values. On insert failure
 it logs `[api] tip insert failed: <ErrorName>` (the error **name** only).
 The unit test `tip: insert failure 500s and logs the error name only` spies
-on the console and fails if the tip text or email appears in any line. Keep
-it that way. Admin page reads are not logged either.
+on the console and fails if the tip text or email appears in any line, and
+`node scripts/tip-smoke.mjs --env staging` repeats the check against the real
+CloudWatch log group after every deploy (7 checks; uses one rate-limit slot).
+Keep it that way. Admin page reads are not logged either; admin mutations
+log `[admin] <actor> tip.status tip/<id>` — the id only.
 
 ## Admin (`/tips`, editor+)
 

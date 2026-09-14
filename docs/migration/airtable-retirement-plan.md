@@ -1,6 +1,6 @@
 # Airtable retirement plan (tipline → DSQL)
 
-Status: PLANNED 2026-09-14, not started. Org decision: Airtable is the only
+Status: BUILT 2026-09-14 (commits 4e292ce..). Staging verified: tip-smoke 7/7, staging-check 26/26, admin headless (status/role-refusal/owner delete/audit) OK, export+restore drill incl. tips. Remaining = the Conner/cutover steps in docs/for-conner.md. Org decision: Airtable is the only
 non-AWS dependency retired in this pass. Stripe, Resend, Mailgun, GitHub,
 Cloudflare DNS + Turnstile all stay (see the 2026-09-14 dependency audit in
 the session; Resend/Mailgun → SES and Cloudflare DNS → Route 53 are possible
