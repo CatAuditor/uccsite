@@ -102,6 +102,15 @@ has yours) — and then exercise the feature that uses it.
   a token (My Profile → API Tokens) with **D1 read** on the `ucc-members`
   database (or `npx wrangler login` on the agent's machine). Give it to the
   agent as `CLOUDFLARE_API_TOKEN`. Used in §6.
+- [ ] **Airtable read token for the tips copy** `[hand]` — Airtable →
+  Developer hub → personal access tokens → new token, scope
+  **`data.records:read` only**, access **Tip Intake base only**. Give it to
+  the agent as `AIRTABLE_TOKEN` (env var for one command, never stored in
+  AWS). The AWS site writes tips to its own database
+  (`docs/systems/tipline.md`); Airtable only has to be read out once at
+  cutover (§6.6b, §7.5b) and then goes away (§7.8). Revoke the token at
+  §7.8. Confirm the base's `status` options — the admin assumes
+  `New` / `In review` / `Closed`; other values are kept as-is.
 
 ## 3. Secrets Manager (us-west-2), staging and prod
 
@@ -120,7 +129,6 @@ aws secretsmanager put-secret-value --profile uccsite --region us-west-2 --secre
 |---|---|
 | [ ] `STRIPE_SECRET_KEY` | Stripe → Developers → API keys. **Staging gets the TEST key**, prod the live key. |
 | [ ] `STRIPE_WEBHOOK_SECRET` | carries over UNCHANGED for prod (webhook URL does not change at cutover): Stripe → Developers → Webhooks → the endpoint → Signing secret. Staging: create a test-mode endpoint pointing at `https://d3heb9s058a59m.cloudfront.net/api/webhook` and use its secret. |
-| [ ] `AIRTABLE_TOKEN` | Airtable → Developer hub → personal access tokens; scope `data.records:write` on the Tip Intake base only. |
 | [ ] `RESEND_API_KEY` | Resend → API keys. |
 | [ ] `TOKEN_SECRET` | §1 — the ORIGINAL value. |
 | [ ] `TURNSTILE_SECRET_KEY` | Cloudflare → Turnstile → create a widget for utahciviccompact.org (add the staging CloudFront hostname too). **ORDER MATTERS** — see below. |
@@ -232,7 +240,18 @@ function yet.
    ```
    Idempotent — it is re-run at cutover for the delta (step §7.5). Record
    the donation SUM it prints; it must equal Cloudflare's figure.
+6b. **Tips copy** (needs §2's Airtable read token). `[agent]`:
+   ```
+   $env:AIRTABLE_TOKEN='pat…'
+   node scripts/migrate-tips.mjs --env prod --dry-run     # prints record counts only
+   node scripts/migrate-tips.mjs --env prod
+   ```
+   Idempotent — re-run at cutover for the delta (§7.5b). Check the count
+   against the Airtable base's record count; the script never prints tip
+   contents.
 7. `[agent]` prod secrets (§3, the `ucc/prod/…` set) before any real traffic.
+   (`ucc/prod/AIRTABLE_TOKEN` may exist from an earlier deploy — it is
+   unused and can be deleted, §7.8.)
 
 ## 7. Cutover (Phase 6) — needs a `[go]` for each starred step
 
@@ -258,15 +277,26 @@ Prerequisites: §1, §3 (prod), §5, §6 complete; §4 committing; admin hosted
    scripts/migrate-d1.mjs --env prod` again (idempotent; picks up donations
    that landed on Cloudflare during propagation). Then compare
    `/api/donations/stats` old vs new.
+5b. ★ `[agent]` tips delta, same moment: `node scripts/migrate-tips.mjs
+   --env prod` again (tips submitted on Cloudflare during propagation went
+   to Airtable). Then admin → Tips shows them.
 6. `[agent]` watch for 72 h: CloudWatch log groups `/aws/lambda/UccProd-*`
    (errors), Stripe → Webhooks → delivery attempts (all 2xx), Search
    Console coverage. Ops emails from §1 arrive on anything the reconciler
    rolls back.
 7. `[hand]` keep the Cloudflare Pages project **deployable but idle for 30
-   days** (rollback = flip DNS back). Do not delete D1 until then.
+   days** (rollback = flip DNS back). Do not delete D1 **or the Airtable
+   base** until then — a rollback sends tips to Airtable again; run
+   §7.5b once more when AWS comes back.
 8. After 30 days `[dev]`: retire `functions/`, `workers/auth/`,
    `static/admin/` (Decap), `wrangler.toml`, `build.js`'s Cloudflare path;
    move `refactor` to `main`. Only after §4 is committing nightly.
+   **Airtable retirement, same day `[hand]`:** run §7.5b one last time,
+   revoke the read token, delete the Tip Intake base, and delete the
+   leftover secret: `aws secretsmanager delete-secret --profile uccsite
+   --region us-west-2 --secret-id ucc/prod/AIRTABLE_TOKEN
+   --recovery-window-in-days 7` (it is retained by the prod stack's policy
+   after the code stopped using it). Airtable is then gone.
 
 ## 8. Admin hosting — Amplify (needs the GitHub repo owner)
 
