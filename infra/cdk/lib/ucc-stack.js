@@ -267,6 +267,9 @@ class UccStack extends Stack {
       bucketRegionalDomainName: mediaBucket.bucketRegionalDomainName,
       region: this.region,
     });
+    const mediaOrigin = origins.S3BucketOrigin.withOriginAccessControl(mediaBucketRef, {
+      originAccessControl: mediaOac,
+    });
     const siteBehaviorBase = {
       origin: siteOrigin,
       viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -296,13 +299,14 @@ class UccStack extends Stack {
         // Media library variants: fingerprinted keys, immutable cache. The
         // viewer function stays attached for the staging basic-auth gate
         // (keys carry extensions, so its clean-URL logic passes them through).
-        '/media/*': {
-          ...siteBehaviorBase,
-          origin: origins.S3BucketOrigin.withOriginAccessControl(mediaBucketRef, {
-            originAccessControl: mediaOac,
-          }),
-          responseHeadersPolicy: siteHeaders,
-        },
+        '/media/*': { ...siteBehaviorBase, origin: mediaOrigin, responseHeadersPolicy: siteHeaders },
+        // Project files published from the admin (docs/systems/files.md):
+        // files/<id>/<name> in the media bucket (the key IS the URL path — no
+        // originPath, CloudFront would prepend it to the whole URI), short
+        // max-age on the copy so an unpublish takes effect within minutes.
+        // The policy below grants this prefix; private-files/ originals stay
+        // private, downloadable by signed-in admins through presigned GETs.
+        '/files/*': { ...siteBehaviorBase, origin: mediaOrigin, responseHeadersPolicy: siteHeaders },
         '/api/*': {
           origin: new origins.FunctionUrlOrigin(apiUrl, {
             customHeaders: { 'x-origin-verify': originVerifyValue },
@@ -330,7 +334,7 @@ class UccStack extends Stack {
       sid: 'AllowCloudFrontMediaPrefixOnly',
       principals: [new iam.ServicePrincipal('cloudfront.amazonaws.com')],
       actions: ['s3:GetObject'],
-      resources: [mediaBucket.arnForObjects('media/*')],
+      resources: [mediaBucket.arnForObjects('media/*'), mediaBucket.arnForObjects('files/*')],
       conditions: {
         StringEquals: { 'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}` },
       },

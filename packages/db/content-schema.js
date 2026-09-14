@@ -12,6 +12,7 @@
 // per transaction; CREATE INDEX must be ASYNC.
 
 const { DDL: REDIRECTS_DDL } = require('./redirects');
+const { DDL: PUBLISH_REQUESTS_DDL } = require('./publish-requests');
 
 const STATEMENTS = [
   // ── singletons ────────────────────────────────────────────────────────────
@@ -159,8 +160,34 @@ const STATEMENTS = [
   )`,
   `CREATE INDEX ASYNC IF NOT EXISTS idx_media_assets_created ON media_assets(created_at)`,
 
+  // ── project files (docs/systems/files.md, packages/db/files.js) ───────────
+  // project_slug is a soft link (projects are wiped and re-inserted with new
+  // ids on every save, so no FK); '' or NULL = "General" (no project).
+  // public_key is set while a published copy exists under files/ (served at /files/*).
+  `CREATE TABLE IF NOT EXISTS project_files (
+    id UUID PRIMARY KEY,
+    project_slug TEXT,
+    folder TEXT NOT NULL DEFAULT '',
+    original_filename TEXT NOT NULL,
+    mime TEXT NOT NULL,
+    bytes BIGINT NOT NULL,
+    note TEXT,
+    s3_key TEXT NOT NULL,
+    public_key TEXT,
+    published_at TIMESTAMPTZ,
+    published_by TEXT,
+    uploaded_by TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`,
+  `CREATE INDEX ASYNC IF NOT EXISTS idx_project_files_project ON project_files(project_slug, folder, created_at)`,
+
   // ── redirects (spec §9; packages/db/redirects.js) ─────────────────────────
   ...REDIRECTS_DDL,
+
+  // ── two-person publishing (docs/systems/admin.md, packages/db/publish-requests.js)
+  ...PUBLISH_REQUESTS_DDL,
 
   // ── Documents + styling (spec §3.2, §5, §6, §9; packages/db/documents.js) ─
   // body_html_raw is exactly what was pasted and is never mutated; normalized

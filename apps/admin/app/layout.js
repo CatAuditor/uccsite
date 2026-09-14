@@ -18,6 +18,7 @@ const NAV = [
     ['/projects', 'Projects'],
     ['/coverage', 'Report Coverage'],
     ['/media', 'Media Library'],
+    ['/files', 'Files'],
   ]},
   // Documents are grouped by their category field (planning addendum 3);
   // the categories are read live in RootLayout and appended after this group.
