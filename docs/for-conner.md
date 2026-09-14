@@ -36,6 +36,19 @@ aws sts get-caller-identity --profile uccsite   # must print account 01711036576
 node scripts/staging-check.mjs --auth preview:wasatch-front-2026   # 25 checks, all ok
 ```
 
+**Work from the `refactor` branch, never `main`.** `CLAUDE.md`,
+`.claude/settings.json`, `.claude/aws-agent-rules.md` and the hooks in
+`.claude/hooks/` are committed on `refactor` and are the project's agent
+instructions — they replace any CLAUDE.md or `.claude/` you have locally
+(do not merge yours in; `main` still has the pre-migration CLAUDE.md and a
+tracked `settings.local.json` that must not be used). Only
+`.claude/settings.local.json` is gitignored, on purpose.
+
+The AWS profile guard hook is PowerShell (`aws-profile-guard.ps1`), so it
+only enforces on Windows. On macOS/Linux it silently does nothing: set
+`AWS_PROFILE=uccsite` in the shell, do not configure a `default` profile
+on that machine, and still pass `--profile uccsite` on every command.
+
 Rules the agent must follow (they are in CLAUDE.md too): every `aws`/`cdk`
 command gets `--profile uccsite`; **never** run `secretsmanager
 get-secret-value` (secrets are written, never read back into a chat); do
