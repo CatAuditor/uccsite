@@ -14,7 +14,7 @@ Log group: `/aws/lambda/UccStaging-ApiFunction*` (or UccProd). Prefix: `[api]`.
 | `welcome email dispatch failed / portal link dispatch failed` | routes.js | async self-invoke failed; user response unaffected |
 | `welcome email failed / portal link send failed` | routes.js jobs | Resend send failed inside the async job |
 | `Resend error: <status>` | routes.js resendSend | non-2xx from Resend |
-| `AIRTABLE_TOKEN is not set` / `Airtable error <status>` | routes.js tip | tipline degraded / upstream reject — STATUS ONLY, never bodies |
+| `tip insert failed: <ErrorName>` | routes.js tip | 500 returned; `tips` insert threw — error NAME only, never the message (pg errors echo parameter values) |
 | `secret <NAME> is unset (placeholder)` | secrets.js | operator hasn't filled `ucc/<env>/<NAME>` yet |
 | `failed to load secret <NAME>: <err>` | secrets.js | transient — retried next invocation (never cached) |
 | `PUBLIC_ORIGIN is not set — …` | index.mjs | config error; CDK should have refused to synth |
@@ -24,5 +24,5 @@ Log group: `/aws/lambda/UccStaging-ApiFunction*` (or UccProd). Prefix: `[api]`.
 indicate degradation. `[db] 40001 … retry` warnings (packages/db) mean DSQL
 contention; occasional is fine, constant is not.
 
-The tipline confidentiality rule applies to ALL of this: request and upstream
-response bodies are never logged, status codes only.
+The tipline confidentiality rule applies to ALL of this: request bodies and
+database error messages are never logged — status codes and error names only.

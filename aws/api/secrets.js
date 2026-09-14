@@ -8,7 +8,7 @@ const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client
 
 const PLACEHOLDER = 'REPLACE_ME';
 const NAMES = [
-  'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'AIRTABLE_TOKEN',
+  'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET',
   'RESEND_API_KEY', 'TOKEN_SECRET', 'TURNSTILE_SECRET_KEY',
 ];
 

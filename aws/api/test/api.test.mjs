@@ -271,10 +271,53 @@ test('portal POST 503s without secrets; with secrets always 202 + constant self-
   assert.deepEqual(Object.keys(invocations[0]).sort(), ['email', 'job', 'origin']);
 });
 
-test('tip 503s without AIRTABLE_TOKEN and never logs bodies', async () => {
+// ── Tipline → tips table ────────────────────────────────────────────────────
+
+function spyConsole(fn) {
+  const lines = [];
+  const orig = { error: console.error, warn: console.warn, log: console.log };
+  for (const k of Object.keys(orig)) console[k] = (...a) => lines.push(a.map(String).join(' '));
+  return fn().finally(() => Object.assign(console, orig)).then(r => ({ result: r, lines }));
+}
+
+test('tip inserts a row and returns 200', async () => {
   const db = fakeDb();
-  const res = await routes.tip(baseCtx(db, { body: { email: 'a@b.co', tip_summary: 'secret tip' } }));
-  assert.equal(res.statusCode, 503);
+  const res = await routes.tip(baseCtx(db, { body: {
+    name: 'Pat', email: 'Tipster@Example.org', subject_of_tip: 'ALPR', tip_summary: 'secret tip',
+  } }));
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(JSON.parse(res.body), { ok: true });
+  const ins = db.calls.find(c => c.text.startsWith('INSERT INTO tips'));
+  assert.ok(ins, 'insert ran');
+  assert.deepEqual(ins.params, ['Pat', 0, 'tipster@example.org', 'ALPR', 'secret tip']);
+  assert.ok(ins.text.includes("'New'"));
+});
+
+test('tip: anonymous replaces the name with the literal', async () => {
+  const db = fakeDb();
+  await routes.tip(baseCtx(db, { body: { name: 'Pat', anonymous: true, email: 'a@b.co', tip_summary: 'x' } }));
+  const ins = db.calls.find(c => c.text.startsWith('INSERT INTO tips'));
+  assert.deepEqual(ins.params.slice(0, 2), ['Anonymous', 1]);
+});
+
+test('tip: invalid email / empty summary 400 without touching the table', async () => {
+  const db = fakeDb();
+  assert.equal((await routes.tip(baseCtx(db, { body: { email: 'nope', tip_summary: 'x' } }))).statusCode, 400);
+  assert.equal((await routes.tip(baseCtx(db, { body: { email: 'a@b.co', tip_summary: '   ' } }))).statusCode, 400);
+  assert.ok(!db.calls.some(c => c.text.startsWith('INSERT INTO tips')));
+});
+
+test('tip: insert failure 500s and logs the error name only — never the body', async () => {
+  const err = new Error('duplicate key value violates: secret tip a@b.co');
+  err.name = 'DatabaseError';
+  const db = fakeDb({ 'INSERT INTO tips': () => { throw err; } });
+  const { result: res, lines } = await spyConsole(() =>
+    routes.tip(baseCtx(db, { body: { email: 'a@b.co', tip_summary: 'secret tip' } })));
+  assert.equal(res.statusCode, 500);
+  assert.ok(lines.some(l => l.includes('tip insert failed: DatabaseError')));
+  for (const l of lines) {
+    assert.ok(!l.includes('secret tip') && !l.includes('a@b.co'), `body leaked into log: ${l}`);
+  }
 });
 
 test('stats returns recent list only — no total, no goal', async () => {

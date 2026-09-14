@@ -21,8 +21,6 @@ const MIN_AMOUNT_CENTS = 100;
 const MAX_AMOUNT_CENTS = 10_000_000; // $100k sanity ceiling
 const RECENT_LIMIT = 3;
 
-const AIRTABLE_URL = 'https://api.airtable.com/v0/appgd3KnYil6zQgHp/tblRLdlEgvV1KqqiL';
-
 // ── POST /api/subscribe ─────────────────────────────────────────────────────
 async function subscribe(ctx) {
   const { event, db, secrets, body, origin } = ctx;
@@ -215,16 +213,13 @@ function unsubPage(message, status = 200) {
 }
 
 // ── POST /api/tip ───────────────────────────────────────────────────────────
-// Confidential tipline. NEVER log request bodies or upstream response bodies
-// — they may contain the tip text or tipster email. Status codes only.
+// Confidential tipline → the `tips` table (Airtable retired,
+// docs/migration/airtable-retirement-plan.md). NEVER log request bodies or
+// database error messages — pg errors can echo parameter values. Status
+// codes and error NAMES only.
 async function tip({ event, db, secrets, body }) {
   const limited = await rateLimitOr429(db, event, 'tip', 5);
   if (limited) return limited;
-
-  if (!secrets.AIRTABLE_TOKEN) {
-    console.error('[api] AIRTABLE_TOKEN is not set');
-    return json({ error: 'Submission is temporarily unavailable.' }, 503);
-  }
 
   if (body === undefined) return json({ error: 'Invalid request body' }, 400);
 
@@ -241,35 +236,22 @@ async function tip({ event, db, secrets, body }) {
     return json({ error: 'Tip details are required.' }, 400);
   }
 
-  // Field names must match the Airtable base exactly.
-  const fields = {
-    name: body.anonymous ? 'Anonymous' : str(body.name, 200),
-    anonymous: Boolean(body.anonymous),
-    email,
-    tip_summary: tipSummary,
-    subject_of_tip: str(body.subject_of_tip, 200),
-    status: 'New',
-  };
-
-  let airtableRes;
+  const anonymous = Boolean(body.anonymous);
   try {
-    airtableRes = await fetch(AIRTABLE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${secrets.AIRTABLE_TOKEN}`,
-      },
-      body: JSON.stringify({ fields }),
-    });
+    await db.query(
+      `INSERT INTO tips (id, name, anonymous, email, subject_of_tip, tip_summary, status)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, 'New')`,
+      [
+        anonymous ? 'Anonymous' : str(body.name, 200),
+        anonymous ? 1 : 0,
+        email,
+        str(body.subject_of_tip, 200),
+        tipSummary,
+      ],
+    );
   } catch (err) {
-    console.error('[api] Airtable fetch failed:', err?.message);
-    return json({ error: 'Submission failed. Please try again.' }, 502);
-  }
-
-  if (!airtableRes.ok) {
-    // Status only — Airtable error bodies echo field values.
-    console.error(`[api] Airtable error ${airtableRes.status}`);
-    return json({ error: 'Submission failed. Please try again.' }, 502);
+    console.error(`[api] tip insert failed: ${err?.name || 'Error'}`);
+    return json({ error: 'Submission failed. Please try again.' }, 500);
   }
 
   return json({ ok: true }, 200);
