@@ -1,5 +1,5 @@
 // Operational data export (build-spec-aws.md §14.3): nightly snapshot of the
-// donor/newsletter tables to a RESTRICTED private bucket. Never to git, never
+// donor/newsletter/tipline tables to a RESTRICTED private bucket. Never to git, never
 // to the site or media buckets — donor PII stays inside AWS. The bucket
 // lifecycle expires exports after 90 days (holding donor PII longer than the
 // org can justify is a liability, not a safety margin).
@@ -14,7 +14,7 @@ const region = process.env.AWS_REGION;
 const s3 = new S3Client({ region });
 const sns = new SNSClient({ region });
 
-const TABLES = ['members', 'subscriptions', 'donations', 'subscribers'];
+const TABLES = ['members', 'subscriptions', 'donations', 'subscribers', 'tips'];
 
 export async function handler() {
   const date = new Date().toISOString().slice(0, 10);

@@ -37,7 +37,7 @@ console.log(`Restoring export ${date}: ${JSON.stringify(manifest.counts)}`);
 
 await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) => {
   // members first — subscriptions/donations reference members.id.
-  for (const table of ['members', 'subscriptions', 'donations', 'subscribers']) {
+  for (const table of ['members', 'subscriptions', 'donations', 'subscribers', 'tips']) {
     const rows = await readJson(`${date}/${table}.json`);
     if (!rows.length) { console.log(`${table}: empty`); continue; }
     const cols = Object.keys(rows[0]);

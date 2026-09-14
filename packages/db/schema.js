@@ -63,6 +63,23 @@ const STATEMENTS = [
     created_at TIMESTAMPTZ DEFAULT now()
   )`,
 
+  // Tipline (docs/migration/airtable-retirement-plan.md): replaces the
+  // Airtable base. Column names mirror the old Airtable fields exactly.
+  // legacy_airtable_id = Airtable record id, import idempotency only.
+  `CREATE TABLE IF NOT EXISTS tips (
+    id UUID PRIMARY KEY,
+    legacy_airtable_id TEXT UNIQUE,
+    name TEXT,
+    anonymous INTEGER NOT NULL DEFAULT 0,
+    email TEXT NOT NULL,
+    subject_of_tip TEXT,
+    tip_summary TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'New',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`,
+  `CREATE INDEX ASYNC IF NOT EXISTS idx_tips_status_created ON tips(status, created_at)`,
+
   `CREATE TABLE IF NOT EXISTS rate_limits (
     id UUID PRIMARY KEY,
     ip TEXT,
