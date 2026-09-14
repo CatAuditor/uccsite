@@ -29,7 +29,8 @@ export default async function FilesPage({ searchParams }) {
   const session = await requireSession();
   const readOnly = session.role === 'viewer';
   const { project: projectParam = '', folder: folderParam = '' } = await searchParams;
-  const [files, projects] = await withDb((client) => Promise.all([listFiles(client), listProjects(client)]));
+  // Sequential: a pg Client cannot run two queries at once (see lib/documents.js editorData).
+  const { files, projects } = await withDb(async (client) => ({ files: await listFiles(client), projects: await listProjects(client) }));
 
   const names = new Map(projects.map(p => [p.slug, p.name]));
   const projectLabel = (slug) => (!slug ? 'General' : names.get(slug) || `${slug} (project no longer exists)`);

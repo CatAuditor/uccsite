@@ -78,10 +78,13 @@ export function runIngest(doc, { siteCss, foreignClassMap }) {
 export async function editorData(client, id) {
   const doc = await getDocument(client, { id });
   if (!doc) return null;
-  const [rules, overrides, foreignClassMap, settings, sources] = await Promise.all([
-    listStyleRules(client), listOverrides(client, id), loadForeignClassMap(client, doc.templateKey),
-    loadSettings(client), loadSiteSources(),
-  ]);
+  // Sequential on purpose: one pg Client cannot run queries concurrently
+  // (pg 8 queues them with a deprecation warning; pg 9 removes the queue).
+  const rules = await listStyleRules(client);
+  const overrides = await listOverrides(client, id);
+  const foreignClassMap = await loadForeignClassMap(client, doc.templateKey);
+  const settings = await loadSettings(client);
+  const sources = await loadSiteSources();
   const kit = styleKitFor(sources.siteCss, doc.pageCss);
   const docRules = compose.rulesFor(doc, rules);
   const normalized = doc.bodyHtmlNormalized || '';
