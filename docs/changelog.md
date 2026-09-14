@@ -4,6 +4,39 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.11.0 — 2026-09-13 (branch `refactor`)
+
+Admin: two-person publishing (`docs/systems/admin.md` "Publishing", ADR
+`docs/decisions/two-person-publish.md`). The direct Publish button is gone;
+the code landed in the v0.10.1 push (3cd00bb), the docs and review fixes in
+this one.
+- **Request → approve/decline**: Publish & Status lists every content save
+  since the site last went live; an editor/owner requests a publish with a
+  note; any OTHER editor/owner approves (the only admin path that invokes
+  PublishFn) or declines with a required note; the requester can withdraw,
+  an owner can clear a stale request. Requester ≠ reviewer enforced by
+  `cognito:username` and email; one pending request at a time; conditional
+  UPDATE so two reviewers can't both publish; in-flight publish refused.
+- **Review fixes** (one agent, 4 findings): approve carries `seenThrough`
+  and is refused if saves landed after the reviewer's page was rendered;
+  "unpublished" measured from the last good run's `started_at`; a one-row
+  `publish_request_gate` makes racing requests conflict on DSQL; trigger
+  `approve:<id>:<email>` joins each approval to its run in the requests
+  table (live / publishing / failed / refused / not started), and a failed
+  invoke reopens the request with a `publish.invoke_failed` audit row.
+- **Revisions**: restore is a draft (no automatic republish).
+- Schema: `publish_requests`, `publish_request_gate` (wired into
+  `content-schema.js`; applied to staging).
+- Docs: admin.md, publish-pipeline.md, editor guide §2, README, ADR,
+  debug/admin.md, data-handling rows.
+- Verified headlessly on staging with the editor/owner test users:
+  self-approve, self-decline, decline-without-note, duplicate request,
+  stale-page approve all refused; owner approve → run `approve:<id>:…`.
+
+Open P1: **project files** (`/files` Publish, v0.10.1) copies a file to the
+public `/files/*` on one editor's action — an exception to the two-person
+rule, recorded in admin.md; route it through the publish request.
+
 ## v0.10.1 — 2026-09-13 (branch `refactor`)
 
 Admin: project files (`docs/systems/files.md`).
