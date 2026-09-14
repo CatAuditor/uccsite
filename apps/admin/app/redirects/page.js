@@ -19,7 +19,7 @@ export default async function RedirectsPage() {
       <h1>Redirects</h1>
       <p className="notice">
         Use these when a page moves (a document slug change, a retired URL). Paths are matched exactly at the edge before
-        the page is served. Changes take effect on the next <strong>Publish</strong>. 301/308 = permanent (search engines
+        the page is served. Changes take effect when a publish request is approved on Publish &amp; Status. 301/308 = permanent (search engines
         move the ranking), 302/307 = temporary.
       </p>
       <table>
@@ -60,7 +60,7 @@ export default async function RedirectsPage() {
       {!readOnly && (
         <>
           <h2>Add or update a redirect</h2>
-          <ActionForm className="editor" action={saveRedirect} successMessage="Saved. Publish to make it live.">
+          <ActionForm className="editor" action={saveRedirect} successMessage="Saved. Request a publish on Publish & Status to make it live.">
             <label htmlFor="rd-from">From (site path)</label>
             <input type="text" id="rd-from" name="fromPath" placeholder="/old-report" required />
             <div className="hint">Saving an existing path updates that redirect.</div>

@@ -50,7 +50,7 @@ export default async function FilesPage({ searchParams }) {
       <h1>Files</h1>
       <p className="notice">
         Files are private to signed-in admins until <strong>Publish</strong> copies one to the live site at
-        <code> /files/…</code> and lists it on the project's block on /projects (after the next site Publish).
+        <code> /files/…</code> and lists it on the project's block on /projects (the listing appears once a publish request is approved on Publish &amp; Status).
         Unpublish or delete takes the public copy down (cached copies expire within 5 minutes).
         Files over {MAX_PUBLIC_BYTES / 1024 / 1024} MB stay private — host those on archive.org or YouTube and link to them.
         Organise by project, then by folder.

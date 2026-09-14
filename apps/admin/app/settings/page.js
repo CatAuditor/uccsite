@@ -58,7 +58,7 @@ export default async function SettingsPage() {
         ))}
         {!readOnly && <button type="submit">Save</button>}
       </ActionForm>
-      <p className="notice">Saves change the database only — the live site updates on the next Publish. Donation copy (including the download modal) is under Donation appeals.</p>
+      <p className="notice">Save keeps this as a draft in the database. It goes live when a publish request is approved on Publish &amp; Status — nothing to rebuild by hand. Donation copy (including the download modal) is under Donation appeals.</p>
     </div>
   );
 }

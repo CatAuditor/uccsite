@@ -60,7 +60,7 @@ export function makeCollectionPage(...keys) {
             </div>
           );
         })}
-        <p className="notice">Saves change the database only — the live site updates on the next Publish.</p>
+        <p className="notice">Save keeps this as a draft in the database. It goes live when a publish request is approved on Publish &amp; Status — nothing to rebuild by hand.</p>
       </div>
     );
   };

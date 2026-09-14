@@ -92,7 +92,7 @@ export default async function DocumentEditorPage({ params }) {
               <input type="text" id="sitemapPriority" name="sitemapPriority" defaultValue={doc.sitemapPriority} placeholder="0.7" disabled={readOnly} />
             </div>
           </div>
-          <div className="hint">Published documents go live on the next Publish. A published page needs a meta description and a clean accessibility gate.
+          <div className="hint">Published documents go live when a publish request is approved on Publish &amp; Status. A published page needs a meta description and a clean accessibility gate.
             {rows.length > 0 && <> Pre-publish check: <strong>{unstyledCount}</strong> unstyled block{unstyledCount === 1 ? '' : 's'} (see Styling below).</>}</div>
         </fieldset>
 

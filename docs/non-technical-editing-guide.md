@@ -6,8 +6,8 @@ developer. No code knowledge needed.
 
 The admin lives at **admin.utahciviccompact.org** (once hosting is switched
 on; until then a developer runs it for you). It is separate from the public
-site — nothing you do in the admin is visible to the public until you press
-**Publish**.
+site — nothing you do in the admin is visible to the public until a publish
+request is approved (section 2). Nobody rebuilds anything by hand.
 
 ---
 
@@ -100,13 +100,13 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
   right is the real page. Click an element in either, then pick classes
   from the site's Style Kit. "Promote to template rule" makes that styling
   apply to every future document automatically.
-- Set **Status: published** and save; the page goes live on the next
-  Publish. Set it back to draft to take it down.
+- Set **Status: published** and save; the page goes live with the next
+  approved publish (section 2). Set it back to draft to take it down.
 - Re-pasting a revised version keeps the styling you applied.
 
 ### Operations
 - **Redirects** — when a page moves or is retired, send the old address to
-  the new one. Takes effect on the next Publish.
+  the new one. Takes effect with the next approved publish (section 2).
 - **Donations** — every donation with donor contact info. **Subscribers** —
   newsletter list, with a CSV download for the periodical. Both are
   personal data: don't paste them anywhere public.

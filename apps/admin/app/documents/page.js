@@ -22,7 +22,7 @@ export default async function DocumentsPage({ searchParams }) {
       <h1>{category ? category : 'Long-form Documents'}</h1>
       <p className="notice">
         A Document is pasted HTML plus its own page CSS and SEO fields. Saving runs the ingest
-        report; the site changes on the next Publish. Categories: {categories.map((c, i) => (
+        report; the site changes when a publish request is approved on Publish &amp; Status. Categories: {categories.map((c, i) => (
           <span key={c}>{i ? ' · ' : ''}<Link href={`/documents?category=${encodeURIComponent(c)}`}>{c}</Link></span>
         ))}{category && <> · <Link href="/documents">all</Link></>}
       </p>
