@@ -4,6 +4,24 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.11.2 — 2026-09-13 (branch `refactor`)
+
+Staging basic auth + admin DB client hygiene.
+- **Infra (staging CloudFront Function):** `/css/*`, `/assets/*`, `/media/*`
+  bypass the basic-auth gate; pages, `/files/*`, `/api/*` still 401 without
+  the credential; prod unchanged. Fixes the native browser sign-in dialog that
+  appeared over the admin document editor (preview iframe loads those
+  subresources from `PUBLIC_ORIGIN`). `scripts/staging-check.mjs` gains a
+  no-auth `/css/styles.css` 200 check (26 checks).
+  `docs/decisions/staging-basic-auth-asset-exemption.md`,
+  `docs/error-handling/client-side-error/2026-09-13-admin-preview-basic-auth-dialog.md`.
+- **Admin:** `editorData` and the Files page run their queries sequentially on
+  the shared `pg.Client` (was `Promise.all` → pg DeprecationWarning, throws in
+  pg 9). `docs/error-handling/client-side-error/2026-09-13-pg-concurrent-query-deprecation.md`.
+- Docs: `documents.md`, `media.md`, build-spec §16 note the exemption.
+
+Open P1 unchanged: project files publish is one-person (v0.11.0).
+
 ## v0.11.1 — 2026-09-13 (branch `refactor`)
 
 Project files on the site + donation asks (`docs/systems/files.md`,
