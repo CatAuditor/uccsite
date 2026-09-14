@@ -45,7 +45,7 @@ aws/publish/handler.mjs     PUBLISH LAMBDA (Phase 7): the admin's Publish
                             newest row can lower it.
 aws/reconcile-drift/        hourly Lambda (see below). Also flips an
                             abandoned 'publishing' run to failed so the
-                            admin's publish button unblocks.
+                            admin's Approve & publish unblocks.
 packages/db/content.js      content tables ⇄ renderer JSON (FIELD_MAPS,
                             COLLECTION_TABLES, loadContent/contentMeta,
                             transactional replaceCollectionRows, insertRow);

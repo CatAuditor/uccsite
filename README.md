@@ -103,8 +103,8 @@ D1), `scripts/export-content.mjs` / `restore-from-export.mjs`,
 ## Where to read next
 
 - Non-technical editors: `docs/non-technical-editing-guide.md`
-- How each system works: `docs/systems/` (admin, documents, media, projects,
-  publish-pipeline, content-export, api-security, site-structure)
+- How each system works: `docs/systems/` (admin, documents, media, files,
+  projects, publish-pipeline, content-export, api-security, site-structure)
 - Why: `docs/decisions/`
 - What changed: `docs/changelog.md`
 - What needs a human with keys: `docs/for-conner.md`

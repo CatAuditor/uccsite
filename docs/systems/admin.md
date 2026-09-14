@@ -281,6 +281,7 @@ unchanged); second approve → "no longer pending".
 
 Amplify Hosting deployment, THEN Decap + workers/auth retirement (only once
 the export is actually committing — needs the GitHub App secrets from
-docs/for-conner.md). Done 2026-09-13: media library, revisions
-restore-and-republish, content export Lambda + restore script + staging
-restore drill (docs/systems/content-export.md).
+docs/for-conner.md §4). Done 2026-09-13: media library, revisions restore
+(draft; publish through a request), two-person publishing, project files,
+content export Lambda + restore script + staging restore drill
+(docs/systems/content-export.md).

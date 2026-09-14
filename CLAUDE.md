@@ -61,12 +61,15 @@ After every `git push`, update `docs/changelog.md` before the session ends:
 docs/
   systems/        — HOW features are built (Code Maps, data flow, file paths, API routes, DB tables)
   decisions/      — WHY non-obvious choices were made (ADRs)
-  branding/       — Brand identity assets and guidance
-  security/       — Security notes and review material
-  legal/          — Terms & Conditions, Privacy Policy (do not modify without explicit instruction)
-  error-handling/ — Debugging logs, build failures, client-side errors (write here whenever relevant)
+  legal/          — data-handling.md (PII inventory; auto-updated) — do not modify otherwise without explicit instruction
+  error-handling/ — debug/ (instrumentation reference per feature), build-failures/, client-side-error/
+  migration/      — url inventory, parity exceptions, Document migration artefacts (tracked, not regenerated)
+  emails/         — sent newsletter issues (reference)
   changelog.md    — One entry per push (see checklist above)
   build-spec-aws.md — The AWS migration build spec (governing document for the rebuild)
+  for-conner.md   — operator runbook: every step needing the account owner's keys/hand (update every phase)
+  non-technical-editing-guide.md — for editors; keep in step with docs/systems/admin.md
+  state-of-the-site.md — pre-migration Cloudflare snapshot (historical)
 ```
 
 ---
