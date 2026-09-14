@@ -89,7 +89,15 @@ export async function getSession() {
     const payload = await verifier.verify(token);
     const role = roleFromGroups(payload['cognito:groups']);
     if (!role) return null; // authenticated but ungrouped = no access
-    return { email: payload.email, groups: payload['cognito:groups'] || [], role, raw: payload };
+    // The email claim is the admin's identity (audit actor, team-bio link,
+    // owner self-guards). Users can change their own email through the
+    // self-service scope, so only a VERIFIED email counts (and the pool keeps
+    // the original until the new one is verified — CDK keepOriginal).
+    if (payload.email_verified !== true && payload.email_verified !== 'true') {
+      console.warn('[admin] session rejected: email not verified');
+      return null;
+    }
+    return { email: String(payload.email).toLowerCase(), username: payload['cognito:username'] || payload.sub, groups: payload['cognito:groups'] || [], role, raw: payload };
   } catch (err) {
     // A JWKS outage must look different from a forged token in the logs.
     console.warn(`[admin] session token rejected: ${err?.name || 'Error'}: ${err?.message || ''}`);
@@ -111,6 +119,15 @@ export async function requireSession() {
 }
 
 const ROLE_RANK = { viewer: 0, editor: 1, owner: 2 };
+
+// requireRecentAuth(session, maxAgeMinutes) — sensitive account changes
+// (removing a second factor) need a fresh sign-in, not just a live cookie.
+export function requireRecentAuth(session, maxAgeMinutes = 15) {
+  const authTime = Number(session?.raw?.auth_time || 0) * 1000;
+  if (!authTime || Date.now() - authTime > maxAgeMinutes * 60_000) {
+    throw new Error(`For this change, sign out and back in first (sign-in must be less than ${maxAgeMinutes} minutes old).`);
+  }
+}
 
 // requireRole('editor') → session (throws if unauthenticated/underprivileged).
 // Every server action calls this — UI hiding is not authorization.

@@ -96,9 +96,15 @@ const attr = (u, name) => (u.Attributes || u.UserAttributes || []).find(a => a.N
 
 // listUsers() → [{ username, email, name, enabled, status, mfa, groups: [], role, created }]
 export async function listUsers() {
-  const res = await run(new ListUsersCommand({ UserPoolId: config.poolId, Limit: 60 }));
+  const all = [];
+  let PaginationToken;
+  do {
+    const page = await run(new ListUsersCommand({ UserPoolId: config.poolId, Limit: 60, PaginationToken }));
+    all.push(...(page.Users || []));
+    PaginationToken = page.PaginationToken;
+  } while (PaginationToken && all.length < 1000);
   const users = [];
-  for (const u of res.Users || []) {
+  for (const u of all) {
     const groups = (await run(new AdminListGroupsForUserCommand({ UserPoolId: config.poolId, Username: u.Username }))).Groups?.map(g => g.GroupName) || [];
     const detail = await run(new AdminGetUserCommand({ UserPoolId: config.poolId, Username: u.Username }));
     users.push({

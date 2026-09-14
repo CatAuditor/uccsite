@@ -3,8 +3,6 @@
 // is the source of truth; every publish syncs the ACTIVE rows into the
 // CloudFront KeyValueStore the viewer-request function reads
 // (aws/publish/redirects-sync.js). Export writes redirects.json (§14.2).
-const { withRetry } = require('./index');
-
 const DDL = [
   `CREATE TABLE IF NOT EXISTS redirects (
     id UUID PRIMARY KEY,
@@ -28,7 +26,8 @@ function validateRedirect({ fromPath, toUrl, statusCode, note, active }) {
   const code = Number(statusCode || 301);
   if (!FROM_RE.test(from) || from.includes('//') || from.includes('..')) throw new Error('From must be a site path like /old-page (no query string)');
   if (from === '/') throw new Error('Cannot redirect the homepage');
-  if (!(/^https?:\/\/[^\s"<>]+$/.test(to) || (to.startsWith('/') && !to.startsWith('//')))) throw new Error('To must be an absolute https URL or a site path like /new-page');
+  const sitePath = to.startsWith('/') && !to.startsWith('//') && !to.startsWith('/\\') && /^\/[A-Za-z0-9._~!$&'()*+,;=:@%/?-]*$/.test(to) && !to.includes('..');
+  if (!(/^https:\/\/[A-Za-z0-9.-]+(?::\d+)?(?:\/[^\s"<>\\]*)?$/.test(to) || sitePath)) throw new Error('To must be an absolute https URL or a site path like /new-page (no spaces or control characters)');
   if (!STATUSES.includes(code)) throw new Error(`Status must be one of ${STATUSES.join(', ')}`);
   if (to === from) throw new Error('A redirect to itself would loop');
   return { fromPath: from, toUrl: to, statusCode: code, note: String(note || '').slice(0, 300), active: active ? 1 : 0 };
@@ -48,6 +47,11 @@ async function listRedirects(client, { activeOnly = false } = {}) {
 
 async function upsertRedirect(client, redirect) {
   const v = validateRedirect(redirect);
+  // Two-hop loop guard: A → B while B → A already exists.
+  if (v.toUrl.startsWith('/')) {
+    const back = (await client.query('SELECT to_url FROM redirects WHERE from_path = $1 AND active = 1', [v.toUrl])).rows[0];
+    if (back && back.to_url === v.fromPath) throw new Error(`${v.toUrl} already redirects back to ${v.fromPath} — that would loop`);
+  }
   if (redirect.id) {
     await client.query(
       `UPDATE redirects SET from_path=$2, to_url=$3, status_code=$4, active=$5, note=$6, updated_at=now() WHERE id=$1`,
@@ -62,7 +66,7 @@ async function upsertRedirect(client, redirect) {
 }
 
 async function deleteRedirect(client, id) {
-  await withRetry(() => client.query('DELETE FROM redirects WHERE id = $1', [id]));
+  await client.query('DELETE FROM redirects WHERE id = $1', [id]); // caller owns the transaction/retry
 }
 
 // replaceRedirects(client, list) — restore path (wipe-and-load).

@@ -84,8 +84,15 @@ async function recordDocumentPublish(client, { documentIds, documentHashes, erro
 // does not un-publish the pages (the previous redirect set stays in force).
 async function publishRedirects({ client, kvsArn, region, log }) {
   if (!kvsArn) { log('redirects: no KeyValueStore configured — skipped'); return null; }
-  const entries = kvsEntries(await listRedirects(client, { activeOnly: true }));
-  return syncRedirects({ kvsArn, entries, region, log });
+  const rows = await listRedirects(client);
+  if (!rows.length) {
+    // An empty table on an environment whose store was seeded from
+    // infra/cdk/kvs/redirects.json means migrate-redirects.mjs never ran —
+    // deleting the seeded keys would silently drop live redirects.
+    log('redirects: table is empty — store left untouched (run scripts/migrate-redirects.mjs first)');
+    return { put: 0, deleted: 0, skipped: 'empty table' };
+  }
+  return syncRedirects({ kvsArn, entries: kvsEntries(rows.filter(r => r.active)), region, log });
 }
 
 module.exports = { loadSiteFromDb, renderSiteFromDb, recordDocumentPublish, publishRedirects };

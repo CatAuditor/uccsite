@@ -76,6 +76,12 @@ pages (developer-owned, spec §3.3), sending the periodical
 - The OAuth scope `aws.cognito.signin.user.admin` is requested so the access
   token (second httpOnly cookie, `ucc_admin_access_token`) can call the
   user's own ChangePassword / TOTP / WebAuthn APIs. Both cookies expire in 1 h.
+  Because that scope also lets a user change their own email attribute, the
+  session only accepts a **verified** email claim and the pool keeps the
+  original email until a new one is verified (`keepOriginal`); owner
+  self-guards compare `cognito:username`, not email. Turning MFA off or
+  removing a security key requires a sign-in less than 15 minutes old
+  (`auth_time`).
 - Everyone can edit their **own** bio, title and headshot on `/profile` when a
   team member carries their email (`team_members.email`, set by an editor in
   the Team editor; never published). Other people's entries: the Team page.

@@ -5,7 +5,7 @@
 import { requireSession, getAccessToken } from '../../lib/auth';
 import { withDb } from '../../lib/data';
 import { accountStatus, passkeyAddUrl } from '../../lib/account';
-import { loadCollectionItems } from '../../lib/collection-save';
+import { loadCollectionItems, loadCollectionBaseline } from '../../lib/collection-save';
 import { mediaOptionsFor } from '../../lib/media';
 import { COLLECTIONS } from '../../lib/collections';
 import ActionForm from '../action-form';
@@ -23,11 +23,11 @@ export default async function ProfilePage() {
   } else {
     accountError = 'Your session predates the security features — sign out and back in to manage your password, MFA and security keys.';
   }
-  const { me, photoOptions } = await withDb(async (client) => {
+  const { me, photoOptions, baseline } = await withDb(async (client) => {
     const items = await loadCollectionItems(client, 'team');
     const me = items.find(m => (m.email || '').toLowerCase() === session.email.toLowerCase()) || null;
     const photoField = COLLECTIONS.team.fields.find(f => f.name === 'photo');
-    return { me, photoOptions: await mediaOptionsFor(client, photoField.targetWidth || 400) };
+    return { me, photoOptions: await mediaOptionsFor(client, photoField.targetWidth || 400), baseline: await loadCollectionBaseline(client, 'team') };
   });
 
   return (
@@ -53,6 +53,7 @@ export default async function ProfilePage() {
         <div className="editor">
           <p className="ok">Enabled — a code from your authenticator app is required at sign-in.</p>
           <ActionForm action={turnOffTotp}><button type="submit" className="danger">Turn off authenticator MFA</button></ActionForm>
+          <p className="hint">Turning MFA off or removing a security key needs a sign-in less than 15 minutes old.</p>
         </div>
       ) : (
         <div className="editor">
@@ -91,6 +92,7 @@ export default async function ProfilePage() {
       <h2>My bio &amp; headshot</h2>
       {me ? (
         <ActionForm className="editor" action={saveOwnProfile} successMessage="Saved. Publish to make it live.">
+          <input type="hidden" name="baseline" value={baseline} />
           <p className="hint">This is your entry on the Team page ({me.name}). Name changes go through the Team editor.</p>
           <label htmlFor="title">Title / role</label>
           <input type="text" id="title" name="title" defaultValue={me.title || ''} />

@@ -79,6 +79,11 @@ function makeDsqlStore(dbConfig) {
         [runId, trigger, manifest ? JSON.stringify(manifest) : null, startedAt],
       ));
     },
+    // annotateRun(runId, note) — a post-publish problem (redirect sync) on an
+    // otherwise successful run; the dashboard shows the error column.
+    async annotateRun({ runId, note }) {
+      await run((c) => c.query(`UPDATE publish_runs SET error = $2 WHERE id = $1`, [runId, note]));
+    },
     async finishRun({ runId, status, changed = [], invalidationId = null, error = null }) {
       await run((c) => c.query(
         `UPDATE publish_runs
@@ -135,6 +140,10 @@ function makeMemoryStore() {
     async finishRun({ runId, ...rest }) {
       const row = rows.find(r => r.runId === runId);
       if (row) Object.assign(row, rest);
+    },
+    async annotateRun({ runId, note }) {
+      const row = rows.find(r => r.runId === runId);
+      if (row) row.error = note;
     },
     async latestState() {
       const inFlight = [...rows].reverse().find(r => r.status === 'publishing');

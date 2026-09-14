@@ -19,6 +19,15 @@ Admin completeness pass (`docs/systems/admin.md` "What the admin covers").
   `redirects.json`.
 - **Subscribers**: list + audited CSV export (editor+).
 - Cognito user jarom.gillins@utahciviccompact.org created as owner (staging).
+- Review fixes: session requires a verified email claim and the pool keeps
+  the original email until a new one is verified (identity cannot be
+  spoofed through the self-service scope); owner self-guards by username;
+  removing MFA or a security key needs a sign-in under 15 minutes old; edge
+  redirects preserve query strings and use correct status text; redirect
+  validation tightened + two-hop loop guard; KVS sync never wipes a seeded
+  store on an empty table and failures show on the run row; user list
+  paginated; own-profile save carries the lost-update stamp; CSV export
+  is POST-only.
 
 ## v0.9.1 — 2026-09-13 (branch `refactor`, pushed 2026-09-13)
 

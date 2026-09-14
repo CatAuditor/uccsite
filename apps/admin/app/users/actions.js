@@ -11,6 +11,9 @@ const str = (fd, k, n = 200) => String(fd.get(k) ?? '').trim().slice(0, n);
 async function audited(action, entityId, diff, fn) {
   const s = await requireRole('owner');
   await fn(s);
+  // Cognito change is done at this point; log before the audit write so a
+  // DB failure can never hide it.
+  console.log(`[admin] ${s.email} ${action} ${entityId} (cognito ok)`);
   await withWriteTx((client) => recordChange(client, { actor: s.email, action, entityType: 'user', entityId, diff }));
   revalidatePath('/users');
 }
@@ -31,10 +34,10 @@ export async function changeRole(prevState, formData) {
     const username = str(formData, 'username');
     const role = str(formData, 'role', 20);
     await audited('user.role', username, { role }, async (s) => {
-      if (username.toLowerCase() === s.email.toLowerCase() && role !== 'owner') throw new Error('You cannot remove your own owner role.');
+      if (username === s.username && role !== 'owner') throw new Error('You cannot remove your own owner role.');
       await setRole(username, role);
     });
-    return { ok: true, message: `${username} is now ${role}. Their existing session keeps the old role until it expires (1 h) — sign them out below to apply it now.` };
+    return { ok: true, message: `${username} is now ${role}. Their current admin session keeps the old role until it expires (up to 1 h); it applies at their next sign-in.` };
   });
 }
 
@@ -43,7 +46,7 @@ export async function toggleEnabled(prevState, formData) {
     const username = str(formData, 'username');
     const enable = str(formData, 'enable', 5) === '1';
     await audited(enable ? 'user.enable' : 'user.disable', username, null, async (s) => {
-      if (!enable && username.toLowerCase() === s.email.toLowerCase()) throw new Error('You cannot disable yourself.');
+      if (!enable && username === s.username) throw new Error('You cannot disable yourself.');
       await setEnabled(username, enable);
     });
     return { ok: true, message: enable ? `${username} enabled.` : `${username} disabled and signed out everywhere.` };

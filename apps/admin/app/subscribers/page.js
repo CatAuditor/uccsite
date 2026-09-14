@@ -18,7 +18,8 @@ export default async function SubscribersPage() {
   return (
     <div>
       <h1>Subscribers <span className="hint">{total} total</span></h1>
-      <p className="notice">Newsletter sign-ups from the site. <a href="/subscribers/export">Download CSV</a> (all rows) for the periodical. Removing someone: they use the unsubscribe link in any email.</p>
+      <p className="notice">Newsletter sign-ups from the site. Removing someone: they use the unsubscribe link in any email.</p>
+      <form action="/subscribers/export" method="post"><button type="submit">Download CSV (all rows)</button></form>
       <table>
         <thead><tr><th>Email</th><th>Name</th><th>ZIP</th><th>Joined</th></tr></thead>
         <tbody>

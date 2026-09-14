@@ -98,7 +98,10 @@ export async function handler(event = {}) {
       .catch((err) => log(`[publish] WARNING: could not record document live state: ${err.message}`));
     // Redirects follow the pages (never point at a page that isn't live yet).
     await withConnection(dbConfig, (client) => publishRedirects({ client, kvsArn: REDIRECT_KVS_ARN, region, log: (m) => log(`[publish] ${m}`) }))
-      .catch((err) => log(`[publish] WARNING: redirects sync failed: ${err.message}`));
+      .catch(async (err) => {
+        log(`[publish] WARNING: redirects sync failed: ${err.message}`);
+        await store.annotateRun({ runId, note: `pages live; redirects sync failed: ${err.message}` }).catch(() => {});
+      });
     return { status: result.status, changed: result.changed.length, removed: result.removed.length, invalidationId: result.invalidationId };
   } finally {
     await store.releaseLock(runId).catch((err) => log(`[publish] WARNING: lock release failed: ${err.message}`));

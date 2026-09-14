@@ -28,7 +28,7 @@ export default async function UsersPage() {
         <thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Status</th><th>MFA</th><th>Actions</th></tr></thead>
         <tbody>
           {users.map((u) => {
-            const isMe = u.email.toLowerCase() === session.email.toLowerCase();
+            const isMe = u.username === session.username;
             return (
               <tr key={u.username} className={u.enabled ? '' : 'status-noop'}>
                 <td>{u.email}{isMe && <span className="hint"> (you)</span>}</td>

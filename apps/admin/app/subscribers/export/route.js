@@ -12,7 +12,9 @@ const cell = (v) => {
   return `"${safe.replace(/"/g, '""')}"`;
 };
 
-export async function GET() {
+// POST only: a cross-site GET link could trigger a full PII download (and
+// an audit row) in an editor's browser.
+export async function POST() {
   let session;
   try { session = await requireRole('editor'); } catch { return new Response('Forbidden', { status: 403 }); }
   const rows = await withDb(async (client) => (await client.query(

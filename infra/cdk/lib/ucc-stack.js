@@ -611,6 +611,9 @@ class UccStack extends Stack {
       mfaSecondFactor: { otp: true, sms: false },
       passwordPolicy: { minLength: 12 },
       featurePlan: cognito.FeaturePlan.ESSENTIALS, // passkeys + managed login need Essentials
+      // A self-service email change must not replace the verified email until
+      // the new one is verified — the admin keys identity on the email claim.
+      keepOriginal: { email: true },
       passkeyRelyingPartyId: authDomainName,
       passkeyUserVerification: cognito.PasskeyUserVerification.PREFERRED,
       signInPolicy: { allowedFirstAuthFactors: { password: true, passkey: true } },
@@ -656,11 +659,12 @@ class UccStack extends Stack {
 
     // Managed login branding (Cognito-provided defaults) — required for the
     // newer managed login pages to render for this client.
-    new cognito.CfnManagedLoginBranding(this, 'AdminManagedLoginBranding', {
+    const branding = new cognito.CfnManagedLoginBranding(this, 'AdminManagedLoginBranding', {
       userPoolId: userPool.userPoolId,
       clientId: adminClient.userPoolClientId,
       useCognitoProvidedValues: true,
     });
+    branding.addDependency(userPoolDomain.node.defaultChild); // branding needs the managed-login domain first
 
     new CfnOutput(this, 'PublishFunctionName', { value: publishFn.functionName });
     new CfnOutput(this, 'MediaBucketName', { value: mediaBucket.bucketName });

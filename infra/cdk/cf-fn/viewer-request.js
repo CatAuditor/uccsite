@@ -30,11 +30,16 @@ function qs(request) {
   return parts.length ? '?' + parts.join('&') : '';
 }
 
+var STATUS_TEXT = { 301: 'Moved Permanently', 302: 'Found', 307: 'Temporary Redirect', 308: 'Permanent Redirect' };
 function redirect(to, status, request) {
+  var q = qs(request);
+  // Preserve the viewer's query string; a target that already carries one
+  // gets it appended with '&', never a second '?'.
+  var location = q ? (to.indexOf('?') === -1 ? to + q : to + '&' + q.slice(1)) : to;
   return {
     statusCode: status,
-    statusDescription: status === 308 ? 'Permanent Redirect' : 'Found',
-    headers: { location: { value: to + qs(request) } },
+    statusDescription: STATUS_TEXT[status] || 'Found',
+    headers: { location: { value: location } },
   };
 }
 

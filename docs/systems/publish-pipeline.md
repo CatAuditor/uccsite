@@ -104,9 +104,12 @@ viewer-request function consults: puts changed keys, deletes keys not in the
 table, optimistic ETag with one retry. The KVS data plane is SigV4A-signed —
 `@aws-sdk/signature-v4a` is required explicitly to register the pure-JS
 signer. Propagation to the edge takes ~10–30 s. A sync failure is logged as a
-warning (pages stay live; the previous redirect set stays in force). Seed:
-`scripts/migrate-redirects.mjs` loads infra/cdk/kvs/redirects.json once; the
-admin's Redirects page is the source of truth afterwards.
+warning, written into the run's `error` column so the dashboard shows it
+(pages stay live; the previous redirect set stays in force). An EMPTY table
+never touches the store (protects the deploy-time seed). **Pre-cutover step
+for prod:** `node scripts/migrate-redirects.mjs --env prod` once, so the
+seeded `/auth` key is in the table; the admin's Redirects page is the source
+of truth afterwards.
 
 ## Publish mutex (review fix 2026-09-13)
 

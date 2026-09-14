@@ -3,14 +3,14 @@
 // passkeys) and their own team bio/headshot. Every action re-verifies the
 // session; self-service Cognito calls carry the user's access token.
 import { revalidatePath } from 'next/cache';
-import { requireSession, getAccessToken } from '../../lib/auth';
+import { requireSession, getAccessToken, requireRecentAuth } from '../../lib/auth';
 import { withWriteTx, recordChange, withDb } from '../../lib/data';
 import { runAction } from '../../lib/actions';
 import {
   changePassword, beginTotp, confirmTotp, disableTotp, deletePasskey,
 } from '../../lib/account';
 import { COLLECTIONS } from '../../lib/collections';
-import { loadCollectionItems, mediaAssetIds } from '../../lib/collection-save';
+import { loadCollectionItems, loadCollectionBaseline, mediaAssetIds, CONFLICT_MESSAGE } from '../../lib/collection-save';
 import { assertAltText } from '../../lib/media';
 import { replaceCollectionRows } from '@uccsite/db/content';
 
@@ -52,6 +52,7 @@ export async function finishTotp(prevState, formData) {
 export async function turnOffTotp(prevState, formData) {
   return runAction(async () => {
     const { session, token } = await selfToken();
+    requireRecentAuth(session); // a hijacked hour-old cookie must not strip MFA
     await disableTotp(token);
     await withWriteTx((client) => recordChange(client, { actor: session.email, action: 'account.mfa.totp_disabled', entityType: 'user', entityId: session.email }));
     revalidatePath('/profile');
@@ -61,6 +62,7 @@ export async function turnOffTotp(prevState, formData) {
 export async function removePasskey(prevState, formData) {
   return runAction(async () => {
     const { session, token } = await selfToken();
+    requireRecentAuth(session);
     const id = String(formData.get('credentialId') || '');
     await deletePasskey(token, id);
     await withWriteTx((client) => recordChange(client, { actor: session.email, action: 'account.passkey_removed', entityType: 'user', entityId: session.email, diff: { credentialId: id.slice(0, 12) + '…' } }));
@@ -79,7 +81,12 @@ export async function saveOwnProfile(prevState, formData) {
     const bio = String(formData.get('bio') || '').trim();
     const photo = String(formData.get('photo') || '').trim();
     const title = String(formData.get('title') || '').trim();
+    const baseline = String(formData.get('baseline') || '');
     await withWriteTx(async (client) => {
+      // Same lost-update stamp as the Team editor (a title changed by an
+      // editor after this page rendered must not be silently overwritten).
+      const current = await loadCollectionBaseline(client, 'team');
+      if (baseline && current !== baseline) throw new Error(CONFLICT_MESSAGE);
       const items = await loadCollectionItems(client, 'team');
       const i = items.findIndex(m => (m.email || '').toLowerCase() === session.email.toLowerCase());
       if (i < 0) throw new Error('No team bio is linked to your email — an editor can set your admin email on the Team page.');
