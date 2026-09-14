@@ -5,7 +5,10 @@
 //   - trailing slashes stripped:         /alpr/     -> 308 /alpr
 //   - /admin serves the Decap shell:     /admin     -> fetch /admin/index.html
 //   - redirect map from the KeyValueStore (replaces static/_redirects)
-//   - staging only: HTTP basic auth gate (BASIC_AUTH baked at synth; '' = off)
+//   - staging only: HTTP basic auth gate (BASIC_AUTH baked at synth; '' = off).
+//     Static assets (/css, /assets, /media) are exempt: the admin's document
+//     preview iframe loads them via <base href=PUBLIC_ORIGIN>, and a 401 on
+//     any subresource pops a browser sign-in dialog. Pages stay gated.
 // Unknown extensionless paths rewrite to <path>.html, miss S3, and land on the
 // custom 404 response. Everything with a file extension passes through.
 import cf from 'cloudfront';
@@ -13,6 +16,14 @@ import cf from 'cloudfront';
 const kvs = cf.kvs();
 
 const BASIC_AUTH = '__BASIC_AUTH__';
+const AUTH_EXEMPT_PREFIXES = ['/css/', '/assets/', '/media/'];
+
+function authExempt(uri) {
+  for (let i = 0; i < AUTH_EXEMPT_PREFIXES.length; i++) {
+    if (uri.startsWith(AUTH_EXEMPT_PREFIXES[i])) return true;
+  }
+  return false;
+}
 
 function qs(request) {
   // Note: cloudfront-js-2.0 has no for...of — index loops only.
@@ -47,7 +58,7 @@ async function handler(event) {
   const request = event.request;
   const uri = request.uri;
 
-  if (BASIC_AUTH) {
+  if (BASIC_AUTH && !authExempt(uri)) {
     const auth = request.headers.authorization && request.headers.authorization.value;
     if (auth !== BASIC_AUTH) {
       return {

@@ -107,7 +107,11 @@ cannot wedge publishing.
   inert tags such as li/td/strong never count) ↔ live preview (`iframe srcdoc`
   with `sandbox="allow-scripts"` only — an OPAQUE origin, never the admin's;
   composed page with nids kept, stylesheets inlined with `</style` neutralised,
-  `<base href=PUBLIC_ORIGIN>`, links inert; click → selects the row, hover /
+  `<base href=PUBLIC_ORIGIN>` — on staging the CloudFront basic-auth gate
+  exempts `/css/*`, `/assets/*`, `/media/*` so those subresources load
+  without a browser sign-in dialog (`docs/decisions/staging-basic-auth-asset-exemption.md`);
+  `/css/fonts.css` is fetched from the origin, the two other stylesheets are
+  inlined —, links inert; click → selects the row, hover /
   focus → outline; messages accepted only from that frame). Class toggle:
   a class ON via a rule/paste turns off through a replace-mode override; the
   replace↔append switch is visually neutral. Bulk append merges with each

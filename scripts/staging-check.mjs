@@ -30,6 +30,8 @@ async function get(path, opts = {}) {
 if (AUTH) {
   const r0 = await fetch(BASE + '/', { redirect: 'manual' });
   check('no-auth request gets 401', r0.status === 401, String(r0.status));
+  const r1 = await fetch(BASE + '/css/styles.css', { redirect: 'manual' });
+  check('no-auth /css/* is exempt (admin preview assets)', r1.status === 200, String(r1.status));
 }
 
 let r = await get('/alpr');

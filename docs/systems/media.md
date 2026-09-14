@@ -25,7 +25,8 @@ infra/cdk/lib/ucc-stack.js   MediaBucket (private, versioned, CORS PUT from
                              (OAC with a HAND-WRITTEN bucket policy scoped to
                              media/* — originals under uploads/ are never
                              readable by CloudFront; CACHING_OPTIMIZED, site headers policy,
-                             viewer fn for staging basic auth), MediaProcessFn
+                             viewer fn attached but /media/* is exempt from the
+                             staging basic-auth gate), MediaProcessFn
                              (x86_64, 1536 MB, 2 min; sharp cross-installed
                              for linux-x64 in an afterBundling hook, external
                              to esbuild), ObjectCreated(uploads/) notification,
@@ -73,9 +74,11 @@ scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
    write cannot flip a finished asset to failed.
 4. `/media` polls (Refresher) while any asset is pending/processing and not
    stalled (no update for 15 min → shown as stalled, polling stops).
-   Thumbnails are presigned GETs of the smallest WebP (the bucket is private
-   and staging CloudFront is behind basic auth, so public URLs would not
-   render inside the admin).
+   Thumbnails are presigned GETs of the smallest WebP (the bucket is private;
+   they were chosen when staging CloudFront gated `/media/*` behind basic
+   auth — that prefix is exempt since 2026-09-13 for the document preview,
+   see `docs/decisions/staging-basic-auth-asset-exemption.md` — and stay
+   presigned because they work against any environment, including local).
 5. Placing an image: the Team editor's Headshot field offers a picker built
    from READY assets WITH alt text; picking sets the field to the WebP variant
    nearest ≥ `targetWidth` (400 for headshots, rendered at 160 CSS px).
@@ -153,7 +156,8 @@ scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
 Built and deployed to staging 2026-09-13. E2E verified the same day (scripted:
 row insert → presigned PUT 200 → Lambda ready in ~12 s → 8 variants for a
 2048px JPEG (2400 skipped) → `/media/*` through CloudFront 200 with
-`image/webp` + immutable cache, 401 without staging basic auth; mismatched
+`image/webp` + immutable cache, 401 without staging basic auth — since
+2026-09-13 `/media/*` is exempt from that gate and returns 200 unauthenticated; mismatched
 Content-Type PUT → 403). Review pass done (2026-09-13): size check before
 body read, retried row writes, stalled detection, row-first delete, scoped
 OAC policy, signed Content-Type, variants JSON guard. Not yet: usage counts / delete

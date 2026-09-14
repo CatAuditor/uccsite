@@ -563,7 +563,7 @@ repo/
 | | Public | Admin | Database |
 |---|---|---|---|
 | prod | CloudFront + S3, `utahciviccompact.org` | Amplify `main`, `admin.utahciviccompact.org` | prod cluster |
-| staging | separate distribution and bucket, `Disallow: /`, basic auth via CF Function | Amplify `develop` | staging cluster |
+| staging | separate distribution and bucket, `Disallow: /`, basic auth via CF Function (pages only; `/css`, `/assets`, `/media` exempt so the admin preview renders) | Amplify `develop` | staging cluster |
 | local | render to a local dir and serve | `next dev` | local Postgres |
 
 CI on every PR: type check, lint, unit tests (the sanitizer suite must pass), golden-file render tests (§4.1), snapshot tests on `style-apply`, `seo-parity-check` against staging.
