@@ -38,6 +38,7 @@ aws/export-operational/  nightly donor-data export to the restricted bucket (§1
 packages/db/             DSQL connection helper (IAM auth, retry on 40001)
 packages/tokens/         THE HMAC token impl (unsubscribe/portal), byte-compatible
                          with functions/api/_lib.js; used by aws/api + periodical
+packages/db/files.js     project files key layout + type allow-list (see files.md)
 packages/db/schema.js    DSQL DDL for the operational tables (successor to
                          schema.sql's D1 dialect; applied via migrate-schema.mjs)
 scripts/lib/stack.mjs    env → deployed stack outputs, shared by every script

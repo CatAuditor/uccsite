@@ -16,6 +16,8 @@ user data, or a third-party integration changes (CLAUDE.md rule).
 | `revisions.author` | **admin** email | admin saves | pruned with revisions (last 20/entity) |
 | `publish_runs.trigger_source` | **admin** email (`admin:<email>`) | publish button | indefinite |
 | `media_assets.uploaded_by` | **admin** email | media library uploads | until the asset is deleted |
+| `project_files.uploaded_by`, `published_by` | **admin** email | admin /files uploads and publishes | until the file is deleted |
+| `project_files` (the files themselves, in the media bucket) | whatever staff upload — may include records-request responses and other documents with third-party personal data; private to signed-in admins unless an editor publishes the file | admin /files | until deleted (+90 days noncurrent versions) |
 | `team_members.email` | **staff** email (links a bio to an admin account; never published, exported to the private content repo) | Team editor | until removed |
 | `subscribers` CSV export | full subscriber list downloaded by an editor/owner (audited as `subscribers.export`) | admin /subscribers | on the downloader's machine — handle as PII |
 
@@ -25,7 +27,7 @@ user data, or a third-party integration changes (CLAUDE.md rule).
 |---|---|---|
 | operational export (restricted, per env) | nightly JSON of members/subscriptions/donations/subscribers | 90 days (current) + 7 days (noncurrent versions) |
 | site bucket | none (published site content only) | n/a |
-| media bucket (per env) | none intended — uploaded images + derived variants; originals may carry EXIF metadata (variants are stripped by sharp) | until deleted in the admin (+90 days noncurrent versions) |
+| media bucket (per env) | none intended — uploaded images + derived variants; originals may carry EXIF metadata (variants are stripped by sharp). Also project files under `private-files/` (admin-only) and `files/` (public once published) — see the `project_files` row above | until deleted in the admin (+90 days noncurrent versions) |
 
 ## Third parties
 

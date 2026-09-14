@@ -23,6 +23,7 @@ apps/admin/
   app/action-form.js       client form wrapper rendering that result
   app/error.js             backstop error boundary
   lib/media.js             media library server helpers (docs/systems/media.md)
+  lib/files.js             project files server helpers (docs/systems/files.md)
   lib/account.js           Cognito self-service (password, TOTP, passkeys) +
                            owner user administration
   app/profile              My profile & security: change password, authenticator
@@ -39,6 +40,8 @@ apps/admin/
   app/media                media library: presigned-PUT uploads, sharp variants
                            via the MediaProcessFn Lambda, alt text, delete
                            (docs/systems/media.md)
+  app/files                project files: upload, project/folder organisation,
+                           download, publish to /files/* (docs/systems/files.md)
   app/revisions            revisions browser + restore-and-republish
   app/donations            staff view: every donation + contact info (addendum 2)
   app/audit                audit trail
@@ -55,6 +58,7 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Every collection the templates render (settings, homepage, team, statements, policy positions, news articles/videos, projects + press/videos, report coverage) | Site Main editors |
 | Long-form pages, their styling, SEO, JSON-LD | Documents + Styles |
 | Images | Media Library |
+| Files (PDFs, spreadsheets, records…) shared between staff, optionally published at `/files/…` | Files |
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
 | Publish, rollback, history | Publish & Status, Revisions, Audit Log |
 | Donors, newsletter list (+ CSV for the periodical) | Donations, Subscribers |

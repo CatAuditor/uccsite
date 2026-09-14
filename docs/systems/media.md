@@ -134,6 +134,9 @@ scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
 ## Hard constraints
 
 - Key layout is shared through `packages/db/media.js` — change it there only.
+  The same bucket also holds the project files prefixes `private-files/`
+  and `files/` (docs/systems/files.md); the CloudFront policy statement
+  grants `media/*` + `files/*`.
 - The media origin passes `originAccessLevels: []` and adds its own
   `media/*` GetObject statement; restoring CDK's default grant would expose
   `uploads/` originals (with EXIF) to anyone who guesses a key.
