@@ -23,6 +23,14 @@ apps/admin/
   app/action-form.js       client form wrapper rendering that result
   app/error.js             backstop error boundary
   lib/media.js             media library server helpers (docs/systems/media.md)
+  lib/account.js           Cognito self-service (password, TOTP, passkeys) +
+                           owner user administration
+  app/profile              My profile & security: change password, authenticator
+                           MFA, security keys / passkeys, own bio + headshot
+  app/users                owner-only: invite, role, disable, reset password,
+                           remove MFA, sign out everywhere
+  app/redirects            redirects table → CloudFront KeyValueStore on publish
+  app/subscribers          newsletter list (editor+) + CSV export (audited)
   app/page.js              Publish button (async PublishFn invoke, audit-logged)
                            + publish_runs history (Publishing…/Live hh:mm/failed)
   app/settings, /homepage, /team, /statements, /issues, /blog, /coverage,
@@ -39,6 +47,47 @@ apps/admin/
   lib/documents.js         editor data, Style Kit, preview, match counts
 scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 ```
+
+## What the admin covers (site-management audit, 2026-09-13)
+
+| Site need | Where |
+|---|---|
+| Every collection the templates render (settings, homepage, team, statements, policy positions, news articles/videos, projects + press/videos, report coverage) | Site Main editors |
+| Long-form pages, their styling, SEO, JSON-LD | Documents + Styles |
+| Images | Media Library |
+| Moved / retired URLs | Redirects (synced to the edge on publish) |
+| Publish, rollback, history | Publish & Status, Revisions, Audit Log |
+| Donors, newsletter list (+ CSV for the periodical) | Donations, Subscribers |
+| Accounts, roles, MFA, security keys | Users (owners), My profile (everyone) |
+
+Not in the admin by design: secrets (Secrets Manager), templates for fixed
+pages (developer-owned, spec §3.3), sending the periodical
+(`scripts/send-periodical.js`), tip submissions (Airtable).
+
+## Account & security (spec §11)
+
+- Sign-in: Cognito **managed login** (newer hosted pages). First factor is a
+  password or a **passkey / security key** (`allowedFirstAuthFactors:
+  password + passkey`); optional **authenticator-app (TOTP) MFA**.
+- The pool's passkey relying-party ID is the pool domain, so security keys
+  are registered on the pool's `/passkeys/add` page (the profile page links
+  there and it returns to `/profile`, which is a registered callback URL).
+  Listing and removing keys happens in the admin via the user's access token.
+- The OAuth scope `aws.cognito.signin.user.admin` is requested so the access
+  token (second httpOnly cookie, `ucc_admin_access_token`) can call the
+  user's own ChangePassword / TOTP / WebAuthn APIs. Both cookies expire in 1 h.
+- Everyone can edit their **own** bio, title and headshot on `/profile` when a
+  team member carries their email (`team_members.email`, set by an editor in
+  the Team editor; never published). Other people's entries: the Team page.
+- Owners manage users on `/users`: invite (Cognito emails a temporary
+  password), role (owner/editor/viewer group), disable/enable (+ global
+  sign-out), force password reset, remove authenticator MFA, sign out
+  everywhere. Admin cookies last an hour: a role change or sign-out takes
+  effect at the next sign-in unless the user is signed out everywhere and
+  their cookie has expired. Every action writes an `audit_log` row
+  (`user.*`, `account.*`).
+- CLI equivalent for the first owner: `node scripts/admin-user.mjs --env
+  staging --email … --name "…" --group owner`.
 
 ## Auth
 
@@ -129,7 +178,11 @@ manual pass pending.
 3. SSR compute role (App settings → IAM roles, trust `amplify.amazonaws.com`):
    `dsql:DbConnectAdmin` on the cluster, `lambda:InvokeFunction` on
    PublishFn, `s3:PutObject/GetObject/DeleteObject` on `<MediaBucketName>/*`,
-   `s3:GetObject` on `<SiteBucketName>/css/styles.css` (Style Kit).
+   `s3:GetObject` on `<SiteBucketName>/css/styles.css` (Style Kit), and on
+   the user pool: `cognito-idp:ListUsers, AdminGetUser, AdminListGroupsForUser,
+   AdminCreateUser, AdminAddUserToGroup, AdminRemoveUserFromGroup,
+   AdminDisableUser, AdminEnableUser, AdminResetUserPassword,
+   AdminSetUserMFAPreference, AdminUserGlobalSignOut` (Users page).
 4. Put the branch URL in `infra/cdk/cdk.json` as `stagingAdminOrigin` and
    `cdk deploy UccStaging` — that registers the Cognito callback/logout
    URLs and the S3 CORS origin. Without it: `redirect_mismatch` on sign-in

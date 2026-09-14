@@ -204,11 +204,13 @@ async function deleteForeignClassMapping(client, id) {
 // loadExportBundle(client) → every document (drafts included — the export is
 // the source of truth, not the published site), overrides, rules, map.
 async function loadExportBundle(client) {
+  const { listRedirects } = require('./redirects');
   return {
     documents: await listDocuments(client),
     overrides: await listOverrides(client),
     rules: await listStyleRules(client),
     foreignClassMap: await listForeignClassMap(client),
+    redirects: await listRedirects(client),
   };
 }
 

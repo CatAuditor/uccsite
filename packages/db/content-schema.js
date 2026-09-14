@@ -11,6 +11,8 @@
 // Ordering: every list table carries sort_order (ascending). DSQL: one DDL
 // per transaction; CREATE INDEX must be ASYNC.
 
+const { DDL: REDIRECTS_DDL } = require('./redirects');
+
 const STATEMENTS = [
   // ── singletons ────────────────────────────────────────────────────────────
   `CREATE TABLE IF NOT EXISTS site_settings (
@@ -47,9 +49,12 @@ const STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS team_members (
     id UUID PRIMARY KEY,
     sort_order INTEGER NOT NULL,
-    name TEXT, title TEXT, photo TEXT, bio TEXT,
+    name TEXT, title TEXT, photo TEXT, bio TEXT, email TEXT,
     updated_at TIMESTAMPTZ DEFAULT now()
   )`,
+  // email links a team member to their admin account (self-service bio/
+  // headshot on /profile). Never rendered. Existing clusters: ADD COLUMN.
+  `ALTER TABLE team_members ADD COLUMN IF NOT EXISTS email TEXT`,
   `CREATE TABLE IF NOT EXISTS statements (
     id UUID PRIMARY KEY,
     sort_order INTEGER NOT NULL,
@@ -153,6 +158,9 @@ const STATEMENTS = [
     updated_at TIMESTAMPTZ DEFAULT now()
   )`,
   `CREATE INDEX ASYNC IF NOT EXISTS idx_media_assets_created ON media_assets(created_at)`,
+
+  // ── redirects (spec §9; packages/db/redirects.js) ─────────────────────────
+  ...REDIRECTS_DDL,
 
   // ── Documents + styling (spec §3.2, §5, §6, §9; packages/db/documents.js) ─
   // body_html_raw is exactly what was pasted and is never mutated; normalized

@@ -98,6 +98,17 @@ minutes (next Lambda cold start), no deploy needed. Sources:
 
 - [x] 2026-09-12 — nothing yet
 
+## Accounts (2026-09-13)
+
+- [x] Cognito user **jarom.gillins@utahciviccompact.org** created in the
+  STAGING pool as `owner` (invite email with a temporary password sent by
+  Cognito; first sign-in sets a real password, then /profile offers an
+  authenticator app and security keys). The PROD pool does not exist until
+  the UccProd stack is redeployed with the Phase 7+ template — re-run
+  `node scripts/admin-user.mjs --env prod --email jarom.gillins@utahciviccompact.org --name "Jarom Gillins" --group owner`
+  after that deploy.
+- [ ] Invite the rest of the team from the admin's Users page (owner only).
+
 ## Phase 7 — admin hosting (needs the GitHub repo owner)
 
 - [ ] **Amplify Hosting app for the admin**: AWS Console (017110365763,

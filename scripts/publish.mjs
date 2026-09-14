@@ -23,7 +23,7 @@ const { buildSite } = require('../packages/render');
 const { publish } = require('../aws/publish/core.js');
 const { loadRenderInputs, collectStaticFiles, gitLastmodProvider } = require('../aws/publish/inputs.js');
 const { withConnection } = require('../packages/db');
-const { loadSiteFromDb, renderSiteFromDb, recordDocumentPublish } = require('../aws/publish/render-db.js');
+const { loadSiteFromDb, renderSiteFromDb, recordDocumentPublish, publishRedirects } = require('../aws/publish/render-db.js');
 const { SITE_URL } = require('../packages/render/site');
 
 const args = process.argv.slice(2);
@@ -55,7 +55,7 @@ async function main() {
   if (source === 'db') {
     // Same code path as the publish Lambda (aws/publish/render-db.js):
     // collections + Documents, Documents replacing same-slug templates.
-    ({ region, stackName, outputs: stack } = await resolveEnv(envName, ['SiteBucketName', 'DistributionId', 'DsqlEndpoint']));
+    ({ region, stackName, outputs: stack } = await resolveEnv(envName, ['SiteBucketName', 'DistributionId', 'DsqlEndpoint', 'RedirectStoreArn']));
     dbConfig = { endpoint: stack.DsqlEndpoint, region };
     const db = await withConnection(dbConfig, loadSiteFromDb);
     const siteCss = outputs.get('css/styles.css')?.toString('utf8') || '';
@@ -92,7 +92,12 @@ async function main() {
     allowBulkDelete,
     log: (m) => console.log(m),
   });
-  if (rendered && dbConfig) await withConnection(dbConfig, (client) => recordDocumentPublish(client, rendered));
+  if (rendered && dbConfig) {
+    await withConnection(dbConfig, (client) => recordDocumentPublish(client, rendered));
+    // Pages are live at this point; a redirect-sync failure is reported, not fatal.
+    await withConnection(dbConfig, (client) => publishRedirects({ client, kvsArn: stack.RedirectStoreArn, region, log: (m) => console.log(`[publish] ${m}`) }))
+      .catch((err) => console.error(`[publish] WARNING: redirects sync failed: ${err.message}`));
+  }
   console.log(JSON.stringify({ status: result.status, changed: result.changed.length, removed: result.removed.length, invalidationId: result.invalidationId }));
 }
 

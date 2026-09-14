@@ -34,6 +34,7 @@ export const COLLECTIONS = {
       { name: 'photo', label: 'Headshot', widget: 'media', targetWidth: 400,
         hint: 'Pick from the Media Library (only assets with alt text are offered) or type a path such as /assets/team/name.jpg' },
       { name: 'bio', label: 'Bio', widget: 'textarea', hint: MD_HINT },
+      { name: 'email', label: 'Admin email', hint: 'Links this bio to an admin account so they can edit their own bio and headshot from My profile. Not published.' },
     ],
   },
   statements: {

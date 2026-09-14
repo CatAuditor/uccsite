@@ -33,7 +33,7 @@ const FIELD_MAPS = {
     outlet: 'outlet', badge_color: 'badge_color', date: 'date', headline: 'headline',
     url: 'url', read_more: 'read_more', lang_attr: 'lang_attr',
   },
-  team_members: { name: 'name', title: 'title', photo: 'photo', bio: 'bio' },
+  team_members: { name: 'name', title: 'title', photo: 'photo', bio: 'bio', email: 'email' }, // email: admin link, not rendered
   statements: {
     slug: 'slug', date: 'date', topic: 'topic', author: 'author', title: 'title',
     snippet: 'snippet', body: 'body', signoff: 'signoff', url: 'url', more: 'more',

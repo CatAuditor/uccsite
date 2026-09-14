@@ -52,6 +52,7 @@ documents/<slug>.normalized.html  derived but LOAD-BEARING: override nids are
                          re-paste, so a restore into an empty database needs it
 styles/rules.json        { rules: [scope, templateKey, documentSlug, selector,
                            classes, priority, note], foreignClassMap: [...] }
+redirects.json           [{ from, to, status, active, note }] (restore replaces the table)
 manifest.json            { schema_version: 2, exported_at, counts }
 ```
 Derived document state (normalized body, ingest report, hashes, live_at) is

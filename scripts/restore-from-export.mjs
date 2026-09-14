@@ -24,6 +24,7 @@ const {
   listForeignClassMap, deleteForeignClassMapping, setForeignClassMapping, loadForeignClassMap, setPublishedAt,
 } = require('../packages/db/documents');
 const { ingest } = require('@uccsite/html-ingest');
+const { replaceRedirects } = require('../packages/db/redirects');
 const { orphanedOverrides } = require('@uccsite/style-apply');
 const { documents: compose } = require('@uccsite/render');
 
@@ -126,6 +127,12 @@ await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) 
       for (const k of DOC_JSON_KEYS) deepStrictEqual(back[k] ?? '', doc[k] ?? '', `document ${doc.slug}.${k}`);
     }
     console.log(`Restored ${documents.length} documents, ${(styles?.rules || []).length} rules, ${(styles?.foreignClassMap || []).length} class mappings.`);
+  }
+  const redirectsPath = join(fromDir, 'redirects.json');
+  if (existsSync(redirectsPath)) {
+    const list = JSON.parse(readFileSync(redirectsPath, 'utf8')).map(r => ({ fromPath: r.from, toUrl: r.to, statusCode: r.status, active: r.active, note: r.note }));
+    await replaceRedirects(client, list);
+    console.log(`Restored ${list.length} redirects.`);
   }
   console.log(`Restored ${fromDir} into ${stackName} and round-trip verified. Publish to make it live.`);
 });

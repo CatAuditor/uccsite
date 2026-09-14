@@ -17,11 +17,11 @@ import { PAGES } from '@uccsite/render';
 import { publish } from '@uccsite/publish';
 import { makeDsqlStore } from '@uccsite/publish/store';
 import { loadRenderInputs, collectStaticFiles } from '@uccsite/publish/inputs';
-import { loadSiteFromDb, renderSiteFromDb, recordDocumentPublish } from '@uccsite/publish/render-db';
+import { loadSiteFromDb, renderSiteFromDb, recordDocumentPublish, publishRedirects } from '@uccsite/publish/render-db';
 import { withConnection } from '@uccsite/db';
 import { SITE_URL } from '@uccsite/render/site';
 
-const { SITE_BUCKET, DISTRIBUTION_ID, DSQL_ENDPOINT } = process.env;
+const { SITE_BUCKET, DISTRIBUTION_ID, DSQL_ENDPOINT, REDIRECT_KVS_ARN } = process.env;
 const region = process.env.AWS_REGION;
 
 // esbuild emits CJS: __dirname survives bundling (import.meta does not).
@@ -96,6 +96,9 @@ export async function handler(event = {}) {
     // Documents went live with this run (or were unchanged): record it.
     await withConnection(dbConfig, (client) => recordDocumentPublish(client, rendered))
       .catch((err) => log(`[publish] WARNING: could not record document live state: ${err.message}`));
+    // Redirects follow the pages (never point at a page that isn't live yet).
+    await withConnection(dbConfig, (client) => publishRedirects({ client, kvsArn: REDIRECT_KVS_ARN, region, log: (m) => log(`[publish] ${m}`) }))
+      .catch((err) => log(`[publish] WARNING: redirects sync failed: ${err.message}`));
     return { status: result.status, changed: result.changed.length, removed: result.removed.length, invalidationId: result.invalidationId };
   } finally {
     await store.releaseLock(runId).catch((err) => log(`[publish] WARNING: lock release failed: ${err.message}`));

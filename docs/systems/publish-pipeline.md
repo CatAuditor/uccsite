@@ -95,6 +95,19 @@ everything under `functions/` as live routes.
 6. The row flips to `succeeded` (or `failed` with the error — every throw
    between first PUT and completion records `failed`).
 
+## Redirects → KeyValueStore (2026-09-13)
+
+After the site files are live (Lambda and CLI alike), `publishRedirects`
+(aws/publish/render-db.js → redirects-sync.js) reads the ACTIVE rows of the
+`redirects` table and reconciles the CloudFront KeyValueStore the
+viewer-request function consults: puts changed keys, deletes keys not in the
+table, optimistic ETag with one retry. The KVS data plane is SigV4A-signed —
+`@aws-sdk/signature-v4a` is required explicitly to register the pure-JS
+signer. Propagation to the edge takes ~10–30 s. A sync failure is logged as a
+warning (pages stay live; the previous redirect set stays in force). Seed:
+`scripts/migrate-redirects.mjs` loads infra/cdk/kvs/redirects.json once; the
+admin's Redirects page is the source of truth afterwards.
+
 ## Publish mutex (review fix 2026-09-13)
 
 The admin's in-flight check (`inFlightPublish`: freshest 'publishing' row

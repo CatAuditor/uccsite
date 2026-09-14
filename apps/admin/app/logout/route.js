@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { logoutUrl, SESSION_COOKIE } from '../../lib/auth';
+import { logoutUrl, SESSION_COOKIE, ACCESS_COOKIE } from '../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,5 +8,6 @@ export const dynamic = 'force-dynamic';
 export async function POST() {
   const res = NextResponse.redirect(logoutUrl(), 303);
   res.cookies.delete(SESSION_COOKIE);
+  res.cookies.delete(ACCESS_COOKIE);
   return res;
 }

@@ -11,6 +11,8 @@
 const { buildSite, PAGES, withColorClasses, documents: docs } = require('@uccsite/render');
 const { loadContent, contentMeta, makeDbLastmod } = require('@uccsite/db/content');
 const { loadPublishBundle, markDocumentLive, markDocumentPublishError } = require('@uccsite/db/documents');
+const { listRedirects, kvsEntries } = require('@uccsite/db/redirects');
+const { syncRedirects } = require('./redirects-sync');
 
 // loadSiteFromDb(client) → everything renderSiteFromDb needs, in one connection.
 async function loadSiteFromDb(client) {
@@ -77,4 +79,13 @@ async function recordDocumentPublish(client, { documentIds, documentHashes, erro
   }
 }
 
-module.exports = { loadSiteFromDb, renderSiteFromDb, recordDocumentPublish };
+// publishRedirects({ client, kvsArn, region, log }) — DB rows → KeyValueStore.
+// Called after the site files are live; a failure here is reported but
+// does not un-publish the pages (the previous redirect set stays in force).
+async function publishRedirects({ client, kvsArn, region, log }) {
+  if (!kvsArn) { log('redirects: no KeyValueStore configured — skipped'); return null; }
+  const entries = kvsEntries(await listRedirects(client, { activeOnly: true }));
+  return syncRedirects({ kvsArn, entries, region, log });
+}
+
+module.exports = { loadSiteFromDb, renderSiteFromDb, recordDocumentPublish, publishRedirects };

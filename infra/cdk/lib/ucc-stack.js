@@ -508,6 +508,7 @@ class UccStack extends Stack {
         SITE_BUCKET: siteBucket.bucketName,
         DISTRIBUTION_ID: distribution.distributionId,
         DSQL_ENDPOINT: dsqlEndpoint,
+        REDIRECT_KVS_ARN: redirectStore.keyValueStoreArn, // redirects table → edge (aws/publish/redirects-sync.js)
       },
       bundling: {
         externalModules: ['pg-native'],
@@ -536,6 +537,10 @@ class UccStack extends Stack {
     publishFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['dsql:DbConnectAdmin'],
       resources: [cluster.attrResourceArn],
+    }));
+    publishFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['cloudfront-keyvaluestore:DescribeKeyValueStore', 'cloudfront-keyvaluestore:ListKeys', 'cloudfront-keyvaluestore:UpdateKeys'],
+      resources: [redirectStore.keyValueStoreArn],
     }));
 
     // ── media-process Lambda (spec §13): S3 ObjectCreated under uploads/ →
@@ -593,6 +598,11 @@ class UccStack extends Stack {
     // ── Cognito (spec §11): email login, invite-only (no self-signup —
     // operators use AdminCreateUser), optional TOTP, owner/editor/viewer.
     const { aws_cognito: cognito } = require('aws-cdk-lib');
+    // Sign-in factors: password OR passkey (security key / platform
+    // authenticator) as the first factor, TOTP as optional MFA. Passkeys are
+    // registered and used on the managed login pages of the pool domain, so
+    // the relying-party ID is that domain (spec §11; docs/systems/admin.md).
+    const authDomainName = `ucc-admin-${envName}.auth.${this.region}.amazoncognito.com`;
     const userPool = new cognito.UserPool(this, 'AdminUserPool', {
       selfSignUpEnabled: false,
       signInAliases: { email: true },
@@ -600,6 +610,10 @@ class UccStack extends Stack {
       mfa: cognito.Mfa.OPTIONAL,
       mfaSecondFactor: { otp: true, sms: false },
       passwordPolicy: { minLength: 12 },
+      featurePlan: cognito.FeaturePlan.ESSENTIALS, // passkeys + managed login need Essentials
+      passkeyRelyingPartyId: authDomainName,
+      passkeyUserVerification: cognito.PasskeyUserVerification.PREFERRED,
+      signInPolicy: { allowedFirstAuthFactors: { password: true, passkey: true } },
       removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
     });
     for (const group of ['owner', 'editor', 'viewer']) {
@@ -610,27 +624,42 @@ class UccStack extends Stack {
     }
     const userPoolDomain = userPool.addDomain('AdminAuthDomain', {
       cognitoDomain: { domainPrefix: `ucc-admin-${envName}` },
+      managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN, // passkey + TOTP prompts live here
     });
     const adminClient = userPool.addClient('AdminAppClient', {
       generateSecret: false, // public client + PKCE; the Next.js server does the code exchange
-      // userPassword: scripted smoke tests on STAGING ONLY — on prod a
-      // secret-less public client with password auth is a stuffing target
-      // that bypasses the hosted UI.
-      authFlows: { userSrp: true, userPassword: !isProd },
+      // user: choice-based sign-in (USER_AUTH) — password or passkey, the flow
+      // managed login uses. userPassword: scripted smoke tests on STAGING
+      // ONLY — on prod a secret-less public client with password auth is a
+      // stuffing target that bypasses the hosted UI.
+      authFlows: { user: true, userSrp: true, userPassword: !isProd },
       preventUserExistenceErrors: true, // no account enumeration via error text
 
       oAuth: {
         flows: { authorizationCodeGrant: true },
-        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
+        // COGNITO_ADMIN (aws.cognito.signin.user.admin): the access token may
+        // call the user's OWN self-service APIs (change password, TOTP setup,
+        // list/delete passkeys) — the admin's /profile page.
+        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE, cognito.OAuthScope.COGNITO_ADMIN],
         // A deployed staging admin origin (Amplify Hosting) registers here via
         // cdk.json context once it exists — Cognito rejects any redirect_uri
         // not on this list.
         // ONE origin list (adminOrigins, defined with the media bucket CORS):
         // localhost only off prod, the Amplify staging origin from cdk.json
         // context, the custom domain on prod.
-        callbackUrls: adminOrigins.map(o => `${o}/auth/callback`),
+        // /profile is also registered: the pool's /passkeys/add page redirects
+        // there after a security key is registered.
+        callbackUrls: adminOrigins.flatMap(o => [`${o}/auth/callback`, `${o}/profile`]),
         logoutUrls: adminOrigins.map(o => `${o}/login`),
       },
+    });
+
+    // Managed login branding (Cognito-provided defaults) — required for the
+    // newer managed login pages to render for this client.
+    new cognito.CfnManagedLoginBranding(this, 'AdminManagedLoginBranding', {
+      userPoolId: userPool.userPoolId,
+      clientId: adminClient.userPoolClientId,
+      useCognitoProvidedValues: true,
     });
 
     new CfnOutput(this, 'PublishFunctionName', { value: publishFn.functionName });

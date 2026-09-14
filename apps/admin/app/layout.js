@@ -24,10 +24,13 @@ const NAV = [
   { group: 'Documents', items: [['/documents', 'All documents'], ['/styles', 'Styles & rules']] },
   { group: 'Operations', items: [
     ['/', 'Publish & Status'],
+    ['/redirects', 'Redirects'],
     ['/donations', 'Donations'],
+    ['/subscribers', 'Subscribers'],
     ['/revisions', 'Revisions'],
     ['/audit', 'Audit Log'],
   ]},
+  { group: 'Account', items: [['/profile', 'My profile & security']], owner: [['/users', 'Users & roles']] },
 ];
 
 async function documentCategories() {
@@ -44,7 +47,11 @@ async function documentCategories() {
 export default async function RootLayout({ children }) {
   const session = await getSession();
   const categories = session ? await documentCategories() : [];
-  const nav = NAV.map(g => (g.group === 'Documents' ? { ...g, items: [...g.items, ...categories] } : g));
+  const nav = NAV.map(g => {
+    if (g.group === 'Documents') return { ...g, items: [...g.items, ...categories] };
+    if (g.owner) return { ...g, items: [...g.items, ...(session?.role === 'owner' ? g.owner : [])] };
+    return g;
+  });
   return (
     <html lang="en">
       <body>

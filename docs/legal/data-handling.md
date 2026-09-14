@@ -16,6 +16,8 @@ user data, or a third-party integration changes (CLAUDE.md rule).
 | `revisions.author` | **admin** email | admin saves | pruned with revisions (last 20/entity) |
 | `publish_runs.trigger_source` | **admin** email (`admin:<email>`) | publish button | indefinite |
 | `media_assets.uploaded_by` | **admin** email | media library uploads | until the asset is deleted |
+| `team_members.email` | **staff** email (links a bio to an admin account; never published, exported to the private content repo) | Team editor | until removed |
+| `subscribers` CSV export | full subscriber list downloaded by an editor/owner (audited as `subscribers.export`) | admin /subscribers | on the downloader's machine — handle as PII |
 
 ## Buckets
 

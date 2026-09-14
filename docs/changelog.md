@@ -4,6 +4,22 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.10.0 — 2026-09-13 (branch `refactor`)
+
+Admin completeness pass (`docs/systems/admin.md` "What the admin covers").
+- **Account & security**: `/profile` — change password, authenticator-app
+  MFA (TOTP), security keys / passkeys (registered on Cognito managed login,
+  listed/removed in the admin), own bio + headshot (`team_members.email`
+  link). Cognito: managed login v2, passkey first factor, `aws.cognito.
+  signin.user.admin` scope, access-token cookie.
+- **Users & roles** (owner): invite, role, disable/enable, password reset,
+  remove MFA, sign out everywhere; `scripts/admin-user.mjs` for the CLI.
+- **Redirects**: `redirects` table + admin page; every publish syncs the
+  CloudFront KeyValueStore (verified end to end at the edge); exported as
+  `redirects.json`.
+- **Subscribers**: list + audited CSV export (editor+).
+- Cognito user jarom.gillins@utahciviccompact.org created as owner (staging).
+
 ## v0.9.1 — 2026-09-13 (branch `refactor`, pushed 2026-09-13)
 
 Follow-ups that needed no operator input:

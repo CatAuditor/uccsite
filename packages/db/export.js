@@ -49,9 +49,9 @@ function documentJson(doc, overrides) {
   return out;
 }
 
-// buildContentExport(content, { exportedAt, documents, overrides, rules, foreignClassMap })
+// buildContentExport(content, { exportedAt, documents, overrides, rules, foreignClassMap, redirects })
 //   → Map<path, string>
-function buildContentExport(content, { exportedAt = new Date().toISOString(), documents = [], overrides = [], rules = [], foreignClassMap = [] } = {}) {
+function buildContentExport(content, { exportedAt = new Date().toISOString(), documents = [], overrides = [], rules = [], foreignClassMap = [], redirects = [] } = {}) {
   const files = new Map();
   for (const name of COLLECTIONS) {
     if (!(name in content)) throw new Error(`export: content is missing "${name}"`);
@@ -71,10 +71,12 @@ function buildContentExport(content, { exportedAt = new Date().toISOString(), do
     foreignClassMap: [...foreignClassMap].sort((a, b) => a.fromClass.localeCompare(b.fromClass))
       .map(m => ({ templateKey: m.templateKey || null, fromClass: m.fromClass, toClass: m.toClass || '' })),
   }));
+  files.set('redirects.json', stableJson([...redirects].sort((a, b) => a.fromPath.localeCompare(b.fromPath))
+    .map(r => ({ from: r.fromPath, to: r.toUrl, status: r.statusCode, active: Boolean(r.active), note: r.note || '' }))));
   files.set('manifest.json', stableJson({
     schema_version: SCHEMA_VERSION,
     exported_at: exportedAt,
-    counts: { ...rowCounts(content), documents: documents.length, style_rules: rules.length },
+    counts: { ...rowCounts(content), documents: documents.length, style_rules: rules.length, redirects: redirects.length },
   }));
   return files;
 }
@@ -100,7 +102,7 @@ function changedPaths(files, remoteShaByPath) {
 // removedPaths(files, remotePaths) → export-owned paths on the branch that the
 // export no longer produces (a deleted document, a dropped file) — committed
 // as deletions so a restore cannot resurrect them.
-const EXPORT_PREFIXES = ['content/', 'documents/', 'styles/'];
+const EXPORT_PREFIXES = ['content/', 'documents/', 'styles/', 'redirects.json'];
 function removedPaths(files, remotePaths) {
   return [...remotePaths].filter(p => EXPORT_PREFIXES.some(pre => p.startsWith(pre)) && !files.has(p)).sort();
 }

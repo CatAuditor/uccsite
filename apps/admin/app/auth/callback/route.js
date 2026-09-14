@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { exchangeCode, SESSION_COOKIE, PKCE_COOKIE } from '../../../lib/auth';
+import { exchangeCode, SESSION_COOKIE, PKCE_COOKIE, ACCESS_COOKIE } from '../../../lib/auth';
 import { config } from '../../../lib/config';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +12,7 @@ export async function GET(request) {
   // Redirects are built from APP_ORIGIN, not the request Host — behind
   // Amplify's proxy the Host header is not necessarily the public origin.
   try {
-    const { idToken, role } = await exchangeCode(code, state, pkce);
+    const { idToken, accessToken, role } = await exchangeCode(code, state, pkce);
     if (!role) {
       // Authenticated but in no group: don't set the cookie (it would only
       // bounce between / and /login with no message).
@@ -22,9 +22,9 @@ export async function GET(request) {
       return res;
     }
     const res = NextResponse.redirect(new URL('/', config.appOrigin));
-    res.cookies.set(SESSION_COOKIE, idToken, {
-      httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 3600, path: '/',
-    });
+    const flags = { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 3600, path: '/' };
+    res.cookies.set(SESSION_COOKIE, idToken, flags);
+    if (accessToken) res.cookies.set(ACCESS_COOKIE, accessToken, flags);
     res.cookies.delete(PKCE_COOKIE);
     return res;
   } catch (err) {

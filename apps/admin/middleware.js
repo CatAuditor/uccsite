@@ -4,6 +4,8 @@ import { NextResponse } from 'next/server';
 import { SESSION_COOKIE } from './lib/cookies';
 
 const PUBLIC_PATHS = ['/login', '/auth/callback', '/favicon.ico'];
+// /profile is a registered Cognito callback (passkeys/add returns there); it
+// is still session-gated by requireSession in the page.
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;

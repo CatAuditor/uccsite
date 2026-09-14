@@ -13,6 +13,9 @@ server console locally; CloudWatch for the Amplify SSR compute once hosted.
 | lib/data.js `recordChange` | `<actor> <action> <entity>/<id>` | one per mutation | a save with no line = it threw before commit (nothing landed) |
 | app/page.js | `<email> publish not sent: run <id> in flight` | double click | — |
 | media (see media.md) | `[media] …` | | |
+| lib/account.js | `[account] ListWebAuthnCredentials failed: <message>` | never | pool lacks passkey config or the access token lacks the cognito admin scope (sign out/in after a scope change) |
+| lib/actions.js via /profile, /users | `action failed: NotAuthorizedException…` mapped to friendly text | wrong current password | `LimitExceededException` = Cognito throttling; wait |
+| aws/publish (CloudWatch) | `[publish] redirects: KeyValueStore updated (N put, M deleted)` / `already in sync` / `WARNING: redirects sync failed: …` | per publish | `Neither CRT nor JS SigV4a` = signature-v4a not bundled; AccessDenied = missing cloudfront-keyvaluestore grant |
 
 Config errors (`COGNITO_POOL_ID is not set (run: node scripts/admin-env.mjs …)`)
 are thrown, not logged: they surface as a 500 through app/error.js, never

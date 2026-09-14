@@ -7,9 +7,9 @@ import { redirect } from 'next/navigation';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import { createHash, randomBytes } from 'node:crypto';
 import { config } from './config';
-import { SESSION_COOKIE, PKCE_COOKIE } from './cookies';
+import { SESSION_COOKIE, PKCE_COOKIE, ACCESS_COOKIE } from './cookies';
 
-export { SESSION_COOKIE, PKCE_COOKIE };
+export { SESSION_COOKIE, PKCE_COOKIE, ACCESS_COOKIE };
 
 const b64url = (buf) => buf.toString('base64url');
 
@@ -33,7 +33,7 @@ export function beginLogin() {
     response_type: 'code',
     client_id: config.clientId,
     redirect_uri: `${config.appOrigin}/auth/callback`,
-    scope: 'openid email profile',
+    scope: 'openid email profile aws.cognito.signin.user.admin',
     state,
     code_challenge: challenge,
     code_challenge_method: 'S256',
@@ -41,8 +41,8 @@ export function beginLogin() {
   return { authorizeUrl: url.toString(), pkceCookieValue: JSON.stringify({ v: verifierValue, s: state }) };
 }
 
-// exchangeCode(code, state, pkceCookieValue) → { idToken, role } (throws on
-// any mismatch; role null = authenticated but in no group)
+// exchangeCode(code, state, pkceCookieValue) → { idToken, accessToken, role }
+// (throws on any mismatch; role null = authenticated but in no group)
 export async function exchangeCode(code, state, pkceCookieValue) {
   const pkce = JSON.parse(pkceCookieValue || '{}');
   if (!pkce.v || pkce.s !== state) throw new Error('PKCE state mismatch');
@@ -60,7 +60,15 @@ export async function exchangeCode(code, state, pkceCookieValue) {
   const data = await res.json();
   if (!res.ok || !data.id_token) throw new Error(`token exchange failed (${res.status})`);
   const payload = await getVerifier().verify(data.id_token); // reject before we ever store it
-  return { idToken: data.id_token, role: roleFromGroups(payload['cognito:groups']) };
+  return { idToken: data.id_token, accessToken: data.access_token, role: roleFromGroups(payload['cognito:groups']) };
+}
+
+// getAccessToken() → the signed-in user's access token (for their OWN
+// Cognito self-service calls) or null. Only returned alongside a verified
+// session so a stale/forged pair can't be used.
+export async function getAccessToken() {
+  if (!(await getSession())) return null;
+  return (await cookies()).get(ACCESS_COOKIE)?.value || null;
 }
 
 // roleFromGroups(groups) → 'owner' | 'editor' | 'viewer' | null
