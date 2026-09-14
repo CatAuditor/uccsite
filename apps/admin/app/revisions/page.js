@@ -1,11 +1,10 @@
-// Revisions browser + one-click restore-and-republish (spec §9: "the
-// recovery path when someone pastes the wrong file"). Restoring writes the
-// snapshot back as the current content (itself recorded as a new revision +
-// audit row, all in ONE transaction) and triggers a publish. The publish
-// Lambda holds the real mutex — if another publish is running the run shows
-// as "Refused" on the dashboard and the editor republishes afterwards.
+// Revisions browser + restore (spec §9: "the recovery path when someone
+// pastes the wrong file"). Restoring writes the snapshot back as the
+// current content (itself recorded as a new revision + audit row, all in
+// ONE transaction). It does NOT publish: like every other save it is a
+// draft until a publish request is approved by a second admin
+// (lib/publish.js) — the restore shows up in the request's change list.
 import { revalidatePath } from 'next/cache';
-import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import {
   saveSettings, saveHomepage, replaceCollectionRows, replaceProjects, loadSettings, loadHomepage,
 } from '@uccsite/db/content';
@@ -17,7 +16,6 @@ import { assertAltText } from '../../lib/media';
 import { getDocument, upsertDocument, listOverrides, replaceOverrides, loadForeignClassMap } from '@uccsite/db/documents';
 import { runIngest, loadSiteSources } from '../../lib/documents';
 import { runAction } from '../../lib/actions';
-import { config } from '../../lib/config';
 import ActionForm from '../action-form';
 
 export const dynamic = 'force-dynamic';
@@ -106,22 +104,15 @@ export default async function RevisionsPage() {
         });
         return rev;
       });
-      // Republish so the restored content goes live (the "one-click" part).
-      const lambda = new LambdaClient({ region: config.region });
-      await lambda.send(new InvokeCommand({
-        FunctionName: config.publishFunctionName,
-        InvocationType: 'Event',
-        Payload: Buffer.from(JSON.stringify({ trigger: `restore:${s.email}` })),
-      }));
       revalidatePath('/revisions');
-      return { ok: true, message: `Restored ${restored.entity_type} from ${restored.created_at.slice(0, 19).replace('T', ' ')} and started a publish — watch Publish & Status.` };
+      return { ok: true, message: `Restored ${restored.entity_type} from ${restored.created_at.slice(0, 19).replace('T', ' ')}. It is a draft until a publish request is approved on Publish & Status.` };
     });
   }
 
   return (
     <div>
       <h1>Revisions</h1>
-      <p className="notice">Restore writes the snapshot back as current content and republishes the site. The pre-restore state is snapshotted too, so a restore is itself reversible.</p>
+      <p className="notice">Restore writes the snapshot back as current content (a draft — request a publish on Publish &amp; Status to take it live). The pre-restore state is snapshotted too, so a restore is itself reversible.</p>
       <ActionForm action={restore}>
         <table>
           <thead><tr><th>When</th><th>Entity</th><th>Author</th><th>Size</th><th></th></tr></thead>
@@ -133,7 +124,7 @@ export default async function RevisionsPage() {
                 <td>{r.author}</td>
                 <td>{r.bytes}B</td>
                 <td>
-                  <button type="submit" name="revisionId" value={r.id}>Restore &amp; republish</button>
+                  <button type="submit" name="revisionId" value={r.id}>Restore</button>
                 </td>
               </tr>
             ))}
