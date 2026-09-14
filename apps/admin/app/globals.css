@@ -40,7 +40,7 @@ section.request { background: #fff; border: 1px solid #e4e6e2; padding: 16px 20p
 section.request.pending { border-color: #c8a84b; }
 section.request h2 { margin-top: 0; }
 section.request h3 { font-size: 13px; margin: 14px 0 6px; }
-section.request blockquote { margin: 8px 0; padding: 8px 12px; border-left: 3px solid #c8a84b; background: #fdf6e3; white-space: pre-wrap; }
+section.request blockquote, blockquote.tip-text { margin: 8px 0; padding: 8px 12px; border-left: 3px solid #c8a84b; background: #fdf6e3; white-space: pre-wrap; }
 .changes { margin: 0; padding-left: 18px; font-size: 13px; max-height: 240px; overflow: auto; }
 button.secondary { background: #eceee9; color: #1c2733; }
 .notice { background: #fdf6e3; border: 1px solid #e6d9a8; padding: 10px 14px; margin: 12px 0; }

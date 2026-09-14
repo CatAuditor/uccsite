@@ -6,18 +6,20 @@ import { requireRole } from '../../../lib/auth';
 import { withDb } from '../../../lib/data';
 import ActionForm from '../../action-form';
 import { setTipStatus, deleteTip } from '../actions';
-import { STATUSES } from '../statuses';
+import { STATUSES, isUuid } from '../statuses';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TipPage({ params }) {
   const session = await requireRole('editor');
   const { id } = await params;
-  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  if (!isUuid(id)) notFound();
   const tip = await withDb(async (client) => (await client.query(
     `SELECT id, name, anonymous, email, subject_of_tip, tip_summary, status,
-            legacy_airtable_id, created_at::text AS created_at, updated_at::text AS updated_at
+            legacy_airtable_id, created_at::text AS created_at, updated_at::text AS updated_at,
+            (updated_at > created_at) AS edited
      FROM tips WHERE id = $1`, [id])).rows[0]);
+  const ts = (t) => (t || '').slice(0, 16).replace('T', ' ');
   if (!tip) notFound();
   const statuses = STATUSES.includes(tip.status) ? STATUSES : [...STATUSES, tip.status];
 
@@ -27,16 +29,14 @@ export default async function TipPage({ params }) {
       <h1>{tip.subject_of_tip || '(no subject)'}</h1>
       <table>
         <tbody>
-          <tr><th>Received</th><td>{tip.created_at}{tip.legacy_airtable_id ? ' (imported from Airtable)' : ''}</td></tr>
+          <tr><th>Received</th><td>{ts(tip.created_at)}{tip.legacy_airtable_id ? ' (imported from Airtable)' : ''}</td></tr>
           <tr><th>From</th><td>{tip.anonymous ? 'Anonymous (name withheld by the tipster)' : (tip.name || '—')}</td></tr>
           <tr><th>Email</th><td>{tip.email || '(none)'}</td></tr>
-          <tr><th>Status</th><td>{tip.status}{tip.updated_at !== tip.created_at ? <span className="hint"> · updated {tip.updated_at}</span> : null}</td></tr>
+          <tr><th>Status</th><td>{tip.status}{tip.edited ? <span className="hint"> · updated {ts(tip.updated_at)}</span> : null}</td></tr>
         </tbody>
       </table>
       <h2>Tip</h2>
-      <blockquote style={{ whiteSpace: 'pre-wrap', margin: '8px 0', padding: '8px 12px', borderLeft: '3px solid #c8a84b', background: '#fdf6e3' }}>
-        {tip.tip_summary}
-      </blockquote>
+      <blockquote className="tip-text">{tip.tip_summary}</blockquote>
 
       <h2>Status</h2>
       <ActionForm action={setTipStatus} className="inline">

@@ -110,7 +110,9 @@ has yours) — and then exercise the feature that uses it.
   (`docs/systems/tipline.md`); Airtable only has to be read out once at
   cutover (§6.6b, §7.5b) and then goes away (§7.8). Revoke the token at
   §7.8. Confirm the base's `status` options — the admin assumes
-  `New` / `In review` / `Closed`; other values are kept as-is.
+  `New` / `In review` / `Closed`; other values are kept as-is. Also confirm
+  `date_received` is Airtable's built-in "Created time" (the import uses the
+  record's `createdTime`; a hand-set or formula field would be lost).
 
 ## 3. Secrets Manager (us-west-2), staging and prod
 
@@ -242,7 +244,7 @@ function yet.
    the donation SUM it prints; it must equal Cloudflare's figure.
 6b. **Tips copy** (needs §2's Airtable read token). `[agent]`:
    ```
-   $env:AIRTABLE_TOKEN='pat…'
+   $env:AIRTABLE_TOKEN = Read-Host 'Airtable read token'   # not typed inline: keeps it out of shell history
    node scripts/migrate-tips.mjs --env prod --dry-run     # prints record counts only
    node scripts/migrate-tips.mjs --env prod
    ```

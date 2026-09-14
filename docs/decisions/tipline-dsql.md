@@ -26,9 +26,16 @@ the Airtable REST call are gone from `aws/`. The Cloudflare stack
   free: encryption at rest, editor-only reads, owner-only deletes, audit rows.
 - The org decided (2026-09-14) that Airtable is the only non-AWS dependency
   retired in this pass, so the change is small and self-contained.
-- Confidentiality guarantees get stronger, not weaker: the API logs the pg
-  error *name* only (Airtable error bodies used to echo field values), and
-  the unit tests spy on the console for leaks.
+- Logging gets stricter: the API logs the pg error *name* only (Airtable
+  error bodies used to echo field values), and the unit tests spy on the
+  console for leaks.
+- **Accepted risk:** the API Lambda connects as the DSQL `admin` role, so a
+  compromised public route could now read tips, where the Airtable token was
+  write-only. That Lambda already had the same access to all donor PII, so
+  this widens an existing blast radius. Follow-up (not yet scheduled): a
+  least-privilege DSQL role for the API (`INSERT` on `tips`, the grants the
+  other routes need, `AWS IAM GRANT`, `dsql:DbConnect`), see
+  `docs/systems/tipline.md` "Database access".
 
 ## Consequences / what breaks if reversed
 

@@ -26,16 +26,18 @@ export default async function TipsPage({ searchParams }) {
   const seen = new Set(STATUSES);
   const statuses = [...STATUSES, ...counts.map(c => c.status).filter(s => !seen.has(s))];
   const n = (s) => counts.find(c => c.status === s)?.n || 0;
+  const open = total - n('Closed');
+  const shown = filter === 'all' ? total : filter === 'open' ? open : n(filter);
 
   return (
     <div>
-      <h1>Tips <span className="hint">{total} total</span></h1>
+      <h1>Tips <span className="hint">{total} total · {open} open</span></h1>
       <p className="notice">
         Confidential tipline submissions. Do not copy tip contents anywhere outside this admin. Open a tip to change
         its status; owners can delete one.
       </p>
       <p>
-        Show: <Link href="/tips">open</Link> · <Link href="/tips?status=all">all</Link>
+        Show: <Link href="/tips">open ({open})</Link> · <Link href="/tips?status=all">all ({total})</Link>
         {statuses.map(s => <span key={s}> · <Link href={`/tips?status=${encodeURIComponent(s)}`}>{s} ({n(s)})</Link></span>)}
       </p>
       <table>
@@ -50,10 +52,10 @@ export default async function TipsPage({ searchParams }) {
               <td>{r.excerpt}{r.len > 80 ? '…' : ''}</td>
             </tr>
           ))}
-          {!rows.length && <tr><td colSpan="5">No tips{filter === 'open' ? ' open' : ''}.</td></tr>}
+          {!rows.length && <tr><td colSpan="5">No tips{filter === 'all' ? '' : filter === 'open' ? ' open' : ` with status ${filter}`}.</td></tr>}
         </tbody>
       </table>
-      {rows.length === 500 && <p className="hint">Showing the newest 500. Narrow by status to see older ones.</p>}
+      {shown > rows.length && <p className="hint">Showing the newest {rows.length} of {shown}. Narrow by status to see older ones.</p>}
     </div>
   );
 }

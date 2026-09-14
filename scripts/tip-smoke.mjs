@@ -52,17 +52,22 @@ if (res.status === 403) {
   inserted = res.status === 200;
 }
 
-// 2. Row shape + cleanup.
+// 2. Row shape + cleanup. INVARIANT: every query here keys on the random
+// smoke email, so the row printed below can only ever be the synthetic one.
+// Never widen the WHERE clause; this script must never print a real tip.
 if (inserted) {
   await withConnection({ endpoint: outputs.DsqlEndpoint, region: REGION }, async (client) => {
-    const rows = (await client.query(
-      `SELECT id, name, anonymous, email, subject_of_tip, status, legacy_airtable_id FROM tips WHERE email = $1`, [email])).rows;
-    check('exactly one tips row for the smoke email', rows.length === 1, String(rows.length));
-    const r = rows[0] || {};
-    check('row shape: name/anonymous/subject/status/legacy id', r.name === 'Smoke Test' && r.anonymous === 0
-      && r.subject_of_tip === 'smoke' && r.status === 'New' && r.legacy_airtable_id === null, JSON.stringify({ ...r, id: undefined }));
-    const del = await client.query('DELETE FROM tips WHERE email = $1', [email]);
-    check('smoke row deleted', del.rowCount === rows.length, String(del.rowCount));
+    try {
+      const rows = (await client.query(
+        `SELECT id, name, anonymous, email, subject_of_tip, status, legacy_airtable_id FROM tips WHERE email = $1`, [email])).rows;
+      check('exactly one tips row for the smoke email', rows.length === 1, String(rows.length));
+      const r = rows[0] || {};
+      check('row shape: name/anonymous/subject/status/legacy id', r.name === 'Smoke Test' && r.anonymous === 0
+        && r.subject_of_tip === 'smoke' && r.status === 'New' && r.legacy_airtable_id === null, JSON.stringify({ ...r, id: undefined }));
+    } finally {
+      const del = await client.query('DELETE FROM tips WHERE email = $1', [email]);
+      check('smoke row deleted', del.rowCount === 1, String(del.rowCount));
+    }
   });
 }
 

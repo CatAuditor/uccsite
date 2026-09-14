@@ -76,8 +76,21 @@ log `[admin] <actor> tip.status tip/<id>` — the id only.
 
 Viewer role is refused — tips are contact PII plus confidential content, the
 same rule as `/donations`. Staff can change `status` and (owner only) delete
-a tip; both write `audit_log` (`tip.status`, `tip.delete`). Nobody can edit
+a tip; both write `audit_log` (`tip.status` with from/to, `tip.delete` with the
+legacy Airtable id if any, never contents). Nobody can edit
 what the tipster wrote. No CSV export by design.
+
+## Database access (accepted risk, 2026-09-14 review)
+
+The API Lambda connects to DSQL as the `admin` role (`packages/db/index.js`,
+`dsql:DbConnectAdmin` in the stack), so any compromise of a public route could
+read tips back, where the old Airtable token was write-only. The Lambda
+already held the same access to every donor table, so this widens an existing
+blast radius rather than opening a new one. Fix path when prioritised: a
+DSQL role with `INSERT` on `tips` plus the grants the other routes need,
+`AWS IAM GRANT` to the API role, `dsql:DbConnect` instead of `DbConnectAdmin`,
+and a `user` option on `connect()`. Recorded in
+`docs/decisions/tipline-dsql.md`.
 
 ## Export / backup
 
@@ -90,8 +103,13 @@ NEVER in the content export to GitHub (spec §14.2).
 `scripts/migrate-tips.mjs --env staging|prod [--dry-run]` reads every record
 from the Airtable table with a **read-scoped** PAT passed as the
 `AIRTABLE_TOKEN` env var (never stored in Secrets Manager), maps the fields
-1:1, and inserts `ON CONFLICT (legacy_airtable_id) DO NOTHING`. Prints
-counts only. Run before the cutover flip, again after propagation (delta),
+1:1, and inserts `ON CONFLICT (legacy_airtable_id) DO NOTHING`. Row ids are
+derived from the Airtable record id (sha1 → uuid), so re-runs mint the same
+uuid and a later `restore-operational.mjs` (`ON CONFLICT (id)`) cannot
+collide on `legacy_airtable_id`. Tips an owner deleted are not re-imported:
+`deleteTip` writes the legacy id (only that) into the `tip.delete` audit
+row and the script skips those. Airtable 429s are retried (Retry-After).
+Prints counts only. Run before the cutover flip, again after propagation (delta),
 and again after any rollback. Runbook: docs/for-conner.md.
 
 ## "Anonymous"

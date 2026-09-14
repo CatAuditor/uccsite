@@ -8,7 +8,7 @@ import { redirect } from 'next/navigation';
 import { requireRole } from '../../lib/auth';
 import { withWriteTx, recordChange } from '../../lib/data';
 import { runAction } from '../../lib/actions';
-import { STATUSES } from './statuses';
+import { STATUSES, isUuid } from './statuses';
 
 const str = (fd, k, n = 80) => String(fd.get(k) ?? '').trim().slice(0, n);
 
@@ -16,6 +16,7 @@ export async function setTipStatus(prevState, formData) {
   return runAction(async () => {
     const s = await requireRole('editor');
     const id = str(formData, 'id');
+    if (!isUuid(id)) throw new Error('Tip not found');
     const status = str(formData, 'status', 40);
     await withWriteTx(async (client) => {
       const before = (await client.query('SELECT status FROM tips WHERE id = $1', [id])).rows[0];
@@ -38,11 +39,18 @@ export async function deleteTip(prevState, formData) {
   return runAction(async () => {
     const s = await requireRole('owner');
     const id = str(formData, 'id');
+    if (!isUuid(id)) throw new Error('Tip not found');
     await withWriteTx(async (client) => {
-      const res = await client.query('DELETE FROM tips WHERE id = $1', [id]);
-      if (!res.rowCount) throw new Error('Tip not found');
+      const before = (await client.query('SELECT legacy_airtable_id FROM tips WHERE id = $1', [id])).rows[0];
+      if (!before) throw new Error('Tip not found');
+      await client.query('DELETE FROM tips WHERE id = $1', [id]);
       // No snapshot: a deleted tip's contents must not live on in audit_log.
-      await recordChange(client, { actor: s.email, action: 'tip.delete', entityType: 'tip', entityId: id });
+      // The legacy Airtable record id (opaque, no content) IS kept so a later
+      // scripts/migrate-tips.mjs run does not resurrect the tip.
+      await recordChange(client, {
+        actor: s.email, action: 'tip.delete', entityType: 'tip', entityId: id,
+        diff: before.legacy_airtable_id ? { legacy_airtable_id: before.legacy_airtable_id } : undefined,
+      });
     });
     revalidatePath('/tips');
     redirect('/tips');
