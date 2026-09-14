@@ -107,6 +107,23 @@ function deriveProjectFilters(content) {
   };
 }
 
+// deriveProjectFiles(content) → every project gets `files`: the published
+// project files for its slug from content.project_files ({ slug → [file] },
+// supplied by the DB render path — aws/publish/render-db.js; the git/local
+// build has none, so files is [] and the template emits nothing).
+function deriveProjectFiles(content) {
+  const projects = content.projects?.projects;
+  if (!Array.isArray(projects)) return content;
+  const bySlug = content.project_files || {};
+  return {
+    ...content,
+    projects: {
+      ...content.projects,
+      projects: projects.map(p => ({ ...p, files: bySlug[(p.slug || '').trim()] || [] })),
+    },
+  };
+}
+
 // buildSite({ templates, partials, content, lastmod, pages?, siteUrl? })
 //   templates: { 'index.html' → template string } — must cover every PAGES entry
 //   partials:  { 'header' → string, ... }
@@ -129,7 +146,7 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
   if (errors.length) return { files: {}, errors };
 
   const colored = withColorClasses(content);
-  const derived = deriveProjectFilters(deriveHomepage(colored.content));
+  const derived = deriveProjectFiles(deriveProjectFilters(deriveHomepage(colored.content)));
 
   const files = { 'css/colors.css': colored.colorsCss };
   for (const { template, content: names } of pages) {
@@ -167,4 +184,4 @@ ${pages.filter(p => p.sitemap !== false).map(p => {
 `;
 }
 
-module.exports = { PAGES, MARKDOWN_FIELDS, SITE_URL, deriveHomepage, deriveProjectFilters, withColorClasses, buildSite, makeSitemap };
+module.exports = { PAGES, MARKDOWN_FIELDS, SITE_URL, deriveHomepage, deriveProjectFilters, deriveProjectFiles, withColorClasses, buildSite, makeSitemap };

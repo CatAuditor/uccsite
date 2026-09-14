@@ -5,5 +5,9 @@
   "email": "info@utahciviccompact.org",
   "instagram": "https://www.instagram.com/utahciviccompact/",
   "footerTagline": "Defending the compact between Utah communities and their government.",
-  "copyright": "© 2026 Utah Civic Compact. All rights reserved."
+  "copyright": "© 2026 Utah Civic Compact. All rights reserved.",
+  "downloadModalTitle": "Your download has started.",
+  "downloadModalBody": "Records requests, hosting, and investigation all cost money. If this file is useful to you, a donation of any size keeps it free for everyone.",
+  "downloadModalCta": "Chip in",
+  "downloadModalDismiss": "Not now"
 }

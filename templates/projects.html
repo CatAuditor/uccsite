@@ -78,6 +78,17 @@
           <a href="{{cta_url}}" class="btn btn-primary">{{cta_text}}</a>
         </div>
 
+        {{#files.length}}<div class="project-media-label">Files</div>
+        <ul class="project-files">
+          {{#files}}
+          <li class="project-file">
+            <a href="{{url}}" download data-download-ask>{{name}}</a>
+            <span class="project-file-meta">{{#folder}}{{folder}} · {{/folder}}{{size}}</span>
+            {{#note}}<div class="project-file-note">{{note}}</div>{{/note}}
+          </li>
+          {{/files}}
+        </ul>{{/files.length}}
+
         {{#articles.length}}<div class="project-media-label">In the Press</div>{{/articles.length}}
         {{#articles}}
         <a class="news-card" href="{{url}}" target="_blank" rel="noopener">

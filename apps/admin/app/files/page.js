@@ -6,7 +6,7 @@ import { requireSession } from '../../lib/auth';
 import { withDb } from '../../lib/data';
 import { config } from '../../lib/config';
 import { listFiles, listProjects } from '../../lib/files';
-import { ACCEPTED_EXTENSIONS, MAX_FILE_BYTES } from '@uccsite/db/files';
+import { ACCEPTED_EXTENSIONS, MAX_FILE_BYTES, MAX_PUBLIC_BYTES } from '@uccsite/db/files';
 import ActionForm from '../action-form';
 import FileUploader from './uploader';
 import { saveFileDetails, publish, unpublish, remove } from './actions';
@@ -49,7 +49,9 @@ export default async function FilesPage({ searchParams }) {
       <h1>Files</h1>
       <p className="notice">
         Files are private to signed-in admins until <strong>Publish</strong> copies one to the live site at
-        <code> /files/…</code>. Unpublish or delete takes the public copy down (cached copies expire within 5 minutes).
+        <code> /files/…</code> and lists it on the project's block on /projects (after the next site Publish).
+        Unpublish or delete takes the public copy down (cached copies expire within 5 minutes).
+        Files over {MAX_PUBLIC_BYTES / 1024 / 1024} MB stay private — host those on archive.org or YouTube and link to them.
         Organise by project, then by folder.
       </p>
 
@@ -100,7 +102,10 @@ export default async function FilesPage({ searchParams }) {
                   {f.status === 'ready' && (
                     <ActionForm action={f.publicPath ? unpublish : publish} className="inline">
                       <input type="hidden" name="id" value={f.id} />
-                      <button type="submit">{f.publicPath ? 'Unpublish' : 'Publish'}</button>
+                      <button type="submit" disabled={!f.publicPath && f.bytes > MAX_PUBLIC_BYTES}
+                        title={!f.publicPath && f.bytes > MAX_PUBLIC_BYTES ? `Over the ${MAX_PUBLIC_BYTES / 1024 / 1024} MB publish cap` : ''}>
+                        {f.publicPath ? 'Unpublish' : 'Publish'}
+                      </button>
                     </ActionForm>
                   )}
                   <ActionForm action={remove} className="inline">

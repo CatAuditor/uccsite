@@ -11,6 +11,7 @@ const NAV = [
   { group: 'Site Main', items: [
     ['/settings', 'Site Settings'],
     ['/homepage', 'Homepage'],
+    ['/appeals', 'Donation appeals'],
     ['/team', 'Team & Bios'],
     ['/statements', 'Statements'],
     ['/issues', 'Policy Positions'],

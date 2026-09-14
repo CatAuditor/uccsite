@@ -31,10 +31,12 @@ export default async function SettingsPage() {
         const current = await singletonStamp(client, 'site_settings');
         if (expected && current !== expected) throw new Error(CONFLICT_MESSAGE);
         const before = await loadSettings(client);
-        await saveSettings(client, next);
+        // Fields owned by the Donation appeals page (APPEAL_SETTINGS_FIELDS) ride through untouched.
+        const merged = { ...before, ...next };
+        await saveSettings(client, merged);
         await recordChange(client, {
           actor: s.email, action: 'settings.save', entityType: 'settings', entityId: 'singleton',
-          snapshot: before, diff: { before, after: next },
+          snapshot: before, diff: { before, after: merged },
         });
       });
       revalidatePath('/settings');
@@ -56,7 +58,7 @@ export default async function SettingsPage() {
         ))}
         {!readOnly && <button type="submit">Save</button>}
       </ActionForm>
-      <p className="notice">Saves change the database only — the live site updates on the next Publish.</p>
+      <p className="notice">Saves change the database only — the live site updates on the next Publish. Donation copy (including the download modal) is under Donation appeals.</p>
     </div>
   );
 }

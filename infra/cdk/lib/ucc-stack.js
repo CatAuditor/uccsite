@@ -17,6 +17,7 @@ const {
   aws_secretsmanager: secretsmanager,
   aws_dsql: dsql,
   aws_sns: sns,
+  aws_budgets: budgets,
   aws_events: events,
   aws_events_targets: targets,
   aws_cloudwatch: cloudwatch,
@@ -346,6 +347,42 @@ class UccStack extends Stack {
     const alertTopic = new sns.Topic(this, 'OpsAlerts', {
       displayName: `uccsite ${isProd ? 'prod' : 'staging'} ops alerts`,
     });
+
+    // ── CloudFront spend guard (docs/systems/files.md): public file downloads
+    // are the one thing on this site whose egress scales with the public's
+    // behaviour. CloudFront's own metrics live in us-east-1 (no in-region
+    // alarm), so the guard is an account-level cost budget on the CloudFront
+    // service — prod stack only (budgets are account-wide; two stacks would
+    // alert twice). Threshold from context `cloudfrontBudgetUsd` (default 20).
+    if (isProd) {
+      const budgetUsd = Number(this.node.tryGetContext('cloudfrontBudgetUsd') || 20);
+      alertTopic.addToResourcePolicy(new iam.PolicyStatement({
+        sid: 'AllowBudgetsPublish',
+        principals: [new iam.ServicePrincipal('budgets.amazonaws.com')],
+        actions: ['sns:Publish'],
+        resources: [alertTopic.topicArn],
+        conditions: { StringEquals: { 'aws:SourceAccount': this.account } },
+      }));
+      new budgets.CfnBudget(this, 'CloudFrontBudget', {
+        budget: {
+          budgetName: 'uccsite-cloudfront-monthly',
+          budgetType: 'COST',
+          timeUnit: 'MONTHLY',
+          budgetLimit: { amount: budgetUsd, unit: 'USD' },
+          costFilters: { Service: ['Amazon CloudFront'] },
+        },
+        notificationsWithSubscribers: [
+          {
+            notification: { notificationType: 'ACTUAL', comparisonOperator: 'GREATER_THAN', threshold: 80, thresholdType: 'PERCENTAGE' },
+            subscribers: [{ subscriptionType: 'SNS', address: alertTopic.topicArn }],
+          },
+          {
+            notification: { notificationType: 'FORECASTED', comparisonOperator: 'GREATER_THAN', threshold: 100, thresholdType: 'PERCENTAGE' },
+            subscribers: [{ subscriptionType: 'SNS', address: alertTopic.topicArn }],
+          },
+        ],
+      });
+    }
     const reconcileFn = new nodejs.NodejsFunction(this, 'ReconcileDriftFn', {
       entry: path.join(__dirname, '..', '..', '..', 'aws', 'reconcile-drift', 'index.mjs'),
       handler: 'handler',

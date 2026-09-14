@@ -327,16 +327,11 @@ const sectionObserver = new IntersectionObserver(
 );
 sections.forEach(s => sectionObserver.observe(s));
 
-// Donation modal — shows after 7.5s, dismissed per session
-(function () {
-  const overlay = document.getElementById('donate-modal');
-  if (!overlay) return;
-
-  let dismissed = false;
-  try { dismissed = !!sessionStorage.getItem('modal-dismissed'); } catch (_) {}
-  if (dismissed) return;
-
-  // Hidden state: out of the tab order and the accessibility tree.
+// Modal dialogs — one open/close + focus-trap implementation for the timed
+// donation modal (index) and the download modal (footer partial, every page).
+// Hidden state: inert + aria-hidden, out of the tab order and the
+// accessibility tree; aria-modal only while open; focus restored on close.
+function createModal(overlay, onHide) {
   overlay.setAttribute('inert', '');
   overlay.setAttribute('aria-hidden', 'true');
   overlay.removeAttribute('aria-modal');
@@ -351,7 +346,7 @@ sections.forEach(s => sectionObserver.observe(s));
     overlay.removeAttribute('aria-hidden');
     overlay.setAttribute('aria-modal', 'true');
     overlay.classList.add('modal-visible');
-    (overlay.querySelector('#modal-close') || overlay).focus();
+    (overlay.querySelector('.modal-close') || overlay).focus();
   }
 
   function hide() {
@@ -360,15 +355,12 @@ sections.forEach(s => sectionObserver.observe(s));
     overlay.setAttribute('inert', '');
     overlay.setAttribute('aria-hidden', 'true');
     overlay.removeAttribute('aria-modal');
-    try { sessionStorage.setItem('modal-dismissed', '1'); } catch (_) {}
+    if (onHide) onHide();
     if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
   }
 
-  setTimeout(show, 7500);
-
-  ['modal-close', 'modal-dismiss', 'modal-cta'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('click', hide);
+  overlay.querySelectorAll('.modal-close, .modal-dismiss, .modal-cta-btn').forEach(el => {
+    el.addEventListener('click', hide);
   });
   overlay.addEventListener('click', function (e) {
     if (e.target === overlay) hide();
@@ -384,6 +376,38 @@ sections.forEach(s => sectionObserver.observe(s));
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
+  });
+
+  return { show, hide, isOpen };
+}
+
+// Donation modal — shows after 7.5s, dismissed per session
+(function () {
+  const overlay = document.getElementById('donate-modal');
+  if (!overlay) return;
+
+  let dismissed = false;
+  try { dismissed = !!sessionStorage.getItem('modal-dismissed'); } catch (_) {}
+  if (dismissed) return;
+
+  const modal = createModal(overlay, function () {
+    try { sessionStorage.setItem('modal-dismissed', '1'); } catch (_) {}
+  });
+  setTimeout(modal.show, 7500);
+}());
+
+// Download modal — "your download has started" + donation ask after every
+// [data-download-ask] link (published project files). The click is not
+// intercepted: the link carries `download`, so the file saves while the
+// page stays put; the dialog follows a beat later.
+(function () {
+  const overlay = document.getElementById('download-modal');
+  if (!overlay) return;
+  const modal = createModal(overlay);
+  document.addEventListener('click', function (e) {
+    const link = e.target && e.target.closest ? e.target.closest('a[data-download-ask]') : null;
+    if (!link || e.defaultPrevented) return;
+    setTimeout(modal.show, 400);
   });
 }());
 

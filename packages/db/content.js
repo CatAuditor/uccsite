@@ -28,6 +28,8 @@ const FIELD_MAPS = {
     org_name: 'orgName', org_name_short: 'orgNameShort', email: 'email',
     instagram: 'instagram', footer_tagline: 'footerTagline', copyright: 'copyright',
     turnstile_site_key: 'turnstileSiteKey',
+    download_modal_title: 'downloadModalTitle', download_modal_body: 'downloadModalBody',
+    download_modal_cta: 'downloadModalCta', download_modal_dismiss: 'downloadModalDismiss',
   },
   homepage_press: {
     outlet: 'outlet', badge_color: 'badge_color', date: 'date', headline: 'headline',

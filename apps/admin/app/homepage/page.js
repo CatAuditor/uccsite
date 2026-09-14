@@ -29,6 +29,7 @@ export default async function HomepagePage() {
       const s = await requireRole('editor');
       const next = {};
       for (const group of HOMEPAGE_GROUPS) {
+        if (group.appeals) continue; // owned by /appeals; merged from `before` below
         next[group.key] = {};
         for (const [field] of group.fields) {
           const v = String(formData.get(`${group.key}.${field}`) ?? '').trim();
@@ -41,6 +42,7 @@ export default async function HomepagePage() {
         const current = await singletonStamp(client, 'homepage');
         if (expected && current !== expected) throw new Error(CONFLICT_MESSAGE);
         const before = await loadHomepage(client);
+        for (const group of HOMEPAGE_GROUPS) if (group.appeals) next[group.key] = before[group.key];
         await saveHomepage(client, next, { tx: false });
         await recordChange(client, {
           actor: s.email, action: 'homepage.save', entityType: 'homepage', entityId: 'singleton',
@@ -54,11 +56,11 @@ export default async function HomepagePage() {
   return (
     <div>
       <h1>Homepage</h1>
-      <p className="notice">The featured statement card comes from the newest entry in Statements — edit it there.</p>
+      <p className="notice">The featured statement card comes from the newest entry in Statements — edit it there. The donate section and the timed donation modal are under Donation appeals.</p>
       {readOnly && <p className="notice">Viewer role — read-only.</p>}
       <ActionForm className="editor" action={save} successMessage="Homepage saved. Publish to make it live.">
         <input type="hidden" name="baseline" value={baseline} />
-        {HOMEPAGE_GROUPS.map((group) => (
+        {HOMEPAGE_GROUPS.filter(g => !g.appeals).map((group) => (
           <fieldset key={group.key} className="item">
             <legend>{group.title}</legend>
             {group.fields.map(([field, label, widget, hint]) => {

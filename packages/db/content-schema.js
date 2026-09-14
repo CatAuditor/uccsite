@@ -27,6 +27,12 @@ const STATEMENTS = [
     turnstile_site_key TEXT,
     updated_at TIMESTAMPTZ DEFAULT now()
   )`,
+  // Download modal copy (templates/partials/footer.html; edited on the admin's
+  // Donation appeals page). Additive: ALTER so existing clusters gain them.
+  `ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS download_modal_title TEXT`,
+  `ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS download_modal_body TEXT`,
+  `ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS download_modal_cta TEXT`,
+  `ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS download_modal_dismiss TEXT`,
   // homepage.json's six object groups as JSON documents; press is a child list.
   `CREATE TABLE IF NOT EXISTS homepage (
     id TEXT PRIMARY KEY,

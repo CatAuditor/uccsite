@@ -18,6 +18,9 @@ const PUBLIC_FILE_PREFIX = 'files/';
 const PUBLIC_URL_PREFIX = '/files/';
 
 const MAX_FILE_BYTES = 250 * 1024 * 1024;
+// Publish cap (CDN egress control, docs/systems/files.md): a public file
+// larger than this must go to archive.org / YouTube instead.
+const MAX_PUBLIC_BYTES = 50 * 1024 * 1024;
 
 // Extension → content type. The browser's declared type is IGNORED: the
 // type is derived here, signed into the presigned PUT and written on the
@@ -113,6 +116,12 @@ function normalizeFolder(value) {
     .join('/');
 }
 
+// formatBytes(1536) → '2 KB'; (5*1024*1024) → '5.0 MB'
+function formatBytes(n) {
+  n = Number(n) || 0;
+  return n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
+}
+
 function rowToFile(row) {
   return {
     id: row.id,
@@ -139,8 +148,8 @@ const FILE_COLUMNS = `id, project_slug, folder, original_filename, mime, bytes, 
   created_at::text AS created_at, updated_at::text AS updated_at`;
 
 module.exports = {
-  FILE_PREFIX, PUBLIC_FILE_PREFIX, PUBLIC_URL_PREFIX, MAX_FILE_BYTES, FILE_TYPES, ACCEPTED_EXTENSIONS,
+  FILE_PREFIX, PUBLIC_FILE_PREFIX, PUBLIC_URL_PREFIX, MAX_FILE_BYTES, MAX_PUBLIC_BYTES, FILE_TYPES, ACCEPTED_EXTENSIONS,
   INLINE_TYPES, STATUSES, FOLDER_MAX_DEPTH,
   safeFilename, mimeForFilename, fileKey, publicFileKey, publicFilePath, contentDisposition, normalizeFolder,
-  rowToFile, FILE_COLUMNS,
+  formatBytes, rowToFile, FILE_COLUMNS,
 };

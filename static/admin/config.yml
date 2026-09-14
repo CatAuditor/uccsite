@@ -31,6 +31,10 @@ collections:
           - { label: Footer Tagline, name: footerTagline, widget: string }
           - { label: Copyright Line, name: copyright, widget: string }
           - { label: Turnstile Site Key, name: turnstileSiteKey, widget: string, required: false, hint: "Cloudflare Turnstile PUBLIC site key. Blank = no CAPTCHA widget on the join/tip forms. Set this BEFORE the secret key goes into AWS." }
+          - { label: Download modal title, name: downloadModalTitle, widget: string, required: false, hint: "Shown after any file download from a project page. Blank = no modal." }
+          - { label: Download modal body, name: downloadModalBody, widget: text, required: false }
+          - { label: Download modal button, name: downloadModalCta, widget: string, required: false }
+          - { label: Download modal dismiss, name: downloadModalDismiss, widget: string, required: false }
 
   # ── Homepage ──────────────────────────────────────────────────────────────
   - name: homepage

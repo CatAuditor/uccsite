@@ -11,7 +11,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
 import { withRetry } from '@uccsite/db';
 import {
-  MAX_FILE_BYTES, mimeForFilename, fileKey, publicFileKey, contentDisposition, normalizeFolder,
+  MAX_FILE_BYTES, MAX_PUBLIC_BYTES, mimeForFilename, fileKey, publicFileKey, contentDisposition, normalizeFolder,
   rowToFile, FILE_COLUMNS,
 } from '@uccsite/db/files';
 import { config } from './config';
@@ -138,6 +138,10 @@ export async function updateFile(client, id, { projectSlug, folder, note }) {
 export async function publishFile(client, id, actor) {
   const file = await getFile(client, id);
   if (file.status !== 'ready') throw new Error('Upload is not complete');
+  // CDN egress cap (docs/systems/files.md): big files belong on archive.org / YouTube.
+  if (file.bytes > MAX_PUBLIC_BYTES) {
+    throw new Error(`Files over ${MAX_PUBLIC_BYTES / 1024 / 1024} MB are not published from the site (CDN cost). Host it on archive.org (documents/data) or YouTube (video) and link to it instead.`);
+  }
   const key = publicFileKey(file.id, file.s3Key.split('/').pop());
   await getS3().send(new CopyObjectCommand({
     Bucket: config.mediaBucket,

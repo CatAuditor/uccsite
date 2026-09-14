@@ -193,7 +193,9 @@ for (const [key, spec] of Object.entries(COLLECTIONS)) {
 
 // Site settings singleton fields (the settings editor). Guarded against
 // FIELD_MAPS.site_settings below like the list editors: a column not
-// declared here would be NULLed on the next save.
+// declared here (or in APPEAL_SETTINGS_FIELDS) would be NULLed on the next
+// save. Each editor saves { ...current, ...itsOwnFields } so the other's
+// fields survive.
 export const SETTINGS_FIELDS = [
   ['orgName', 'Organization Name'],
   ['orgNameShort', 'Short Name'],
@@ -203,14 +205,25 @@ export const SETTINGS_FIELDS = [
   ['copyright', 'Copyright Line'],
   ['turnstileSiteKey', 'Turnstile Site Key (blank = no CAPTCHA widget)'],
 ];
+// Download modal copy (templates/partials/footer.html) — edited on the
+// Donation appeals page, not Site Settings. [key, label, widget?, hint?]
+export const APPEAL_SETTINGS_FIELDS = [
+  ['downloadModalTitle', 'Title', 'text', 'e.g. "Your download has started." Blank = no modal on the site.'],
+  ['downloadModalBody', 'Body', 'textarea'],
+  ['downloadModalCta', 'Button label', 'text', 'Links to the homepage donate section'],
+  ['downloadModalDismiss', 'Dismiss label', 'text', 'e.g. "Not now"'],
+];
 {
   const mapped = new Set(Object.values(FIELD_MAPS.site_settings));
-  const declared = new Set(SETTINGS_FIELDS.map(([k]) => k));
+  const declared = new Set([...SETTINGS_FIELDS, ...APPEAL_SETTINGS_FIELDS].map(([k]) => k));
   for (const k of declared) if (!mapped.has(k)) throw new Error(`SETTINGS_FIELDS: "${k}" not in FIELD_MAPS.site_settings`);
   for (const k of mapped) if (!declared.has(k)) throw new Error(`SETTINGS_FIELDS: FIELD_MAPS.site_settings key "${k}" missing — saves would wipe it`);
+  for (const [k] of SETTINGS_FIELDS) if (APPEAL_SETTINGS_FIELDS.some(([a]) => a === k)) throw new Error(`"${k}" is in both SETTINGS_FIELDS and APPEAL_SETTINGS_FIELDS`);
 }
 
 // Homepage singleton groups (flat string fields inside each group) + press list.
+// appeals: true — edited on the Donation appeals page (app/appeals), which
+// the Homepage editor skips and preserves on save.
 export const HOMEPAGE_GROUPS = [
   { key: 'hero', title: 'Hero', fields: [
     ['headline', 'Headline', 'textarea', 'HTML allowed (line breaks with <br />)'],
@@ -228,10 +241,10 @@ export const HOMEPAGE_GROUPS = [
     ['title', 'Title'], ['body', 'Body', 'textarea'],
     ['item1', 'Item 1'], ['item2', 'Item 2'], ['item3', 'Item 3'], ['item4', 'Item 4'],
   ]},
-  { key: 'donate', title: 'Donate section', fields: [
+  { key: 'donate', title: 'Homepage donate section', appeals: true, fields: [
     ['label', 'Label'], ['title', 'Title'], ['body', 'Body', 'textarea'],
   ]},
-  { key: 'modal', title: 'Donation modal', fields: [
+  { key: 'modal', title: 'Homepage timed modal (7.5 s after arrival)', appeals: true, fields: [
     ['badge', 'Badge'], ['title', 'Title'], ['body', 'Body', 'textarea'], ['cta', 'CTA label'],
   ]},
 ];
