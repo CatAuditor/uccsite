@@ -31,24 +31,35 @@ site — nothing you do in the admin is visible to the public until you press
 | Role | Can |
 |---|---|
 | **viewer** | look at everything, change nothing |
-| **editor** | edit all content, upload images, publish, see donors and subscribers |
+| **editor** | edit all content, upload images, request and approve publishes, see donors and subscribers |
 | **owner** | everything, plus invite people, change roles, reset passwords |
 
 ---
 
-## 2. Save vs Publish — the one thing to understand
+## 2. Save, request, approve — the one thing to understand
 
-Every editor page has a **Save** button. Saving changes the database only.
-The public site changes when someone presses **Publish site** on the
-**Publish & Status** page. Publish renders every page from the database and
-pushes only what changed; it takes about a minute and the page shows
-"Publishing…" then "Live".
+Every editor page has a **Save** button. Saving changes the database only;
+it is a draft. **Nobody can put something on the public site alone.**
+Going live takes two people:
 
-So the normal loop is: edit → save (as many times as you like) → publish
-once. Nothing goes public by accident.
+1. The writer opens **Publish & Status**. It lists every save since the
+   site last went live. They add a short note for the reviewer and press
+   **Request publish**.
+2. **Any other editor or owner** opens the same page, reads the list and
+   the note, and presses **Approve & publish** — or **Decline with notes**
+   (a note is required, so the writer knows what to fix). You cannot
+   approve your own request, owners included.
+3. Approving renders every page from the database and pushes what changed;
+   it takes about a minute and the page shows "Publishing…" then "Live".
+
+Only one request can wait at a time. If you change your mind, **Withdraw**
+it. Saves made after the request but before the approval go live with it —
+the page shows them separately, so the reviewer sees exactly what they are
+approving. Declined and approved requests, with their notes, stay listed
+under "Recent publish requests".
 
 Every save is kept in **Revisions** (last 20 per section). Restoring one
-puts that version back and republishes in one click.
+puts that version back as a draft; request a publish to take it live.
 
 ---
 
@@ -118,8 +129,9 @@ visual; a developer changes the code and publishes.
 
 ## 5. Safety notes
 
-- Publishing is fast and public. Read the Publish & Status page after a
-  publish — it tells you if anything failed.
+- Publishing is fast and public. Read the Publish & Status page after an
+  approval — it tells you if anything failed. Reviewers: you are the second
+  pair of eyes; open the changed pages before approving.
 - If a publish shows an error naming a document, open that document: the
   same message is on its page, and the fix is usually alt text or a
   heading level.

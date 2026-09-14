@@ -11,7 +11,9 @@ server console locally; CloudWatch for the Amplify SSR compute once hosted.
 | app/auth/callback | `auth callback failed: <message>` | — | `PKCE state mismatch` = cookie lost between /login and callback (APP_ORIGIN ≠ real origin, or a second tab); `token exchange failed (400)` = redirect_uri not registered on the Cognito client |
 | lib/actions.js `runAction` | `action failed: <message>` | validation refusals (alt text, conflict) — the same text the editor sees | `Requires editor role` from a viewer = UI let a viewer submit |
 | lib/data.js `recordChange` | `<actor> <action> <entity>/<id>` | one per mutation | a save with no line = it threw before commit (nothing landed) |
-| app/page.js | `<email> publish not sent: run <id> in flight` | double click | — |
+| lib/publish.js `approvePublish` | `<email> approve not sent: run <id> in flight` | approve while a run is still publishing | — |
+| lib/publish.js `approvePublish` | `<email> tried to approve their own publish request <id>` | never (the UI hides the button from the requester) | someone crafted the action call; the guard refused it |
+| lib/data.js via lib/publish.js | `<actor> publish.request/approve/decline/withdraw publish_request/<id>` | one per decision | an `approve` line with no `publish_runs` row after it = the Lambda invoke failed (the request stays `approved`; re-request) |
 | media (see media.md) | `[media] …` | | |
 | lib/account.js | `[account] ListWebAuthnCredentials failed: <message>` | never | pool lacks passkey config or the access token lacks the cognito admin scope (sign out/in after a scope change) |
 | lib/actions.js via /profile, /users | `action failed: NotAuthorizedException…` mapped to friendly text | wrong current password | `LimitExceededException` = Cognito throttling; wait |

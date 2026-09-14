@@ -20,6 +20,8 @@ apps/admin/
   lib/collection-save.js   sanitize → baseline (lost-update) check → alt-text
                            gate → scoped wipe-and-load → revision + audit, ONE txn
   lib/actions.js           runAction: { ok } | { error } result convention
+  lib/publish.js           two-person publishing: request / approve / decline /
+                           withdraw; the ONLY admin code that invokes PublishFn
   app/action-form.js       client form wrapper rendering that result
   app/error.js             backstop error boundary
   lib/media.js             media library server helpers (docs/systems/media.md)
@@ -32,8 +34,10 @@ apps/admin/
                            remove MFA, sign out everywhere
   app/redirects            redirects table → CloudFront KeyValueStore on publish
   app/subscribers          newsletter list (editor+) + CSV export (audited)
-  app/page.js              Publish button (async PublishFn invoke, audit-logged)
-                           + publish_runs history (Publishing…/Live hh:mm/failed)
+  app/page.js              Publish & Status: unpublished saves → publish request
+                           → a different admin approves (async PublishFn invoke)
+                           or declines with notes; request history + publish_runs
+                           history (Publishing…/Live hh:mm/failed)
   app/settings, /homepage, /team, /statements, /issues, /blog, /coverage,
   /projects                collection editors (generic ListEditor client component;
                            projects is nested — docs/systems/projects.md)
@@ -42,7 +46,8 @@ apps/admin/
                            (docs/systems/media.md)
   app/files                project files: upload, project/folder organisation,
                            download, publish to /files/* (docs/systems/files.md)
-  app/revisions            revisions browser + restore-and-republish
+  app/revisions            revisions browser + restore (a draft — goes live
+                           through a publish request like any save)
   app/donations            staff view: every donation + contact info (addendum 2)
   app/audit                audit trail
   app/documents            Documents list/create + [id] editor (Phase 8,
@@ -60,7 +65,7 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Images | Media Library |
 | Files (PDFs, spreadsheets, records…) shared between staff, optionally published at `/files/…` | Files |
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
-| Publish, rollback, history | Publish & Status, Revisions, Audit Log |
+| Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |
 | Donors, newsletter list (+ CSV for the periodical) | Donations, Subscribers |
 | Accounts, roles, MFA, security keys | Users (owners), My profile (everyone) |
 
@@ -125,9 +130,41 @@ pages (developer-owned, spec §3.3), sending the periodical
 
 Saves write the DATABASE only (with a `revisions` snapshot pruned to the
 last 20 per entity, and an `audit_log` row); the live site changes on the
-next Publish. Publish invokes the PublishFn Lambda asynchronously; the
-dashboard polls `publish_runs` for Draft/Publishing…/Live/Failed/Refused
-(the Lambda holds the real mutex — docs/systems/publish-pipeline.md).
+next approved publish (see "Publishing" below). An approval invokes the
+PublishFn Lambda asynchronously; the dashboard polls `publish_runs` for
+Draft/Publishing…/Live/Failed/Refused (the Lambda holds the real mutex —
+docs/systems/publish-pipeline.md).
+
+## Publishing (two-person rule, 2026-09-13)
+
+No post or update goes live on one person's say-so. `lib/publish.js` +
+`packages/db/publish-requests.js` (table `publish_requests`, DDL wired into
+`content-schema.js`; ADR docs/decisions/two-person-publish.md):
+
+1. **Request** (editor+): the dashboard lists the content audit rows since
+   the last `succeeded`/`noop` publish run ("unpublished saves"); the
+   writer adds an optional note and submits. Refused if a request is
+   already pending or there is nothing to publish. Audit `publish.request`.
+2. **Review** (a DIFFERENT editor/owner — compared by `cognito:username`
+   AND email, so an owner cannot approve their own request either):
+   - **Approve** → row set `approved` by a conditional `UPDATE … WHERE
+     status = 'pending'` (two reviewers racing: one wins, the other sees
+     "just reviewed by someone else"), audit `publish.approve`, THEN the
+     Lambda is invoked with `trigger = approve:<reviewer email>`. Refused
+     while a publish is in flight.
+   - **Decline** → note REQUIRED; row `declined`; audit `publish.decline`.
+     The writer sees the note on the dashboard's request history.
+   - **Withdraw** → the requester (or an owner clearing a stale request);
+     audit `publish.withdraw`.
+3. A publish renders the whole database, so saves made AFTER the request
+   go live too; the pending panel lists them separately ("Also saved after
+   the request") so the reviewer knows what they are approving.
+
+The request stores its change list (`changes` JSON = the audit rows it
+covered) for the record. Viewers see everything read-only. Developer CLI
+publishes (`scripts/publish.mjs`) and the Lambda's own redirect-verify
+runs are outside the rule by design — they are operator actions, not
+content edits.
 
 Review fixes 2026-09-13 (the rules every editor page follows):
 
@@ -147,8 +184,9 @@ Review fixes 2026-09-13 (the rules every editor page follows):
   failures.
 - **Restore** runs in the same transaction shape, refuses unknown entity
   types before touching anything, applies the alt-text gate to snapshots,
-  and reports "started a publish" (the Lambda may refuse it if one is
-  running — visible on the dashboard).
+  and does NOT publish: the restored content is a draft that goes live
+  through a publish request like any save (it appears in the request's
+  change list as `<type>.restore`).
 - **Singleton drift guards** at boot: `SETTINGS_FIELDS` ≡
   `FIELD_MAPS.site_settings`; `HOMEPAGE_GROUPS` keys ≡ homepage JSON
   columns (field keys inside a group follow templates/index.html).
@@ -171,6 +209,14 @@ pre-filled from DSQL, and all six collection editors show live content
 (team names, statement slug, blog articles, coverage strips, homepage
 groups + press). Form-submit round trip needs a browser session — first
 manual pass pending.
+
+Two-person publishing (2026-09-13, dev server against staging, server
+actions invoked headlessly with `Next-Action`): requester approve → "You
+requested this publish — a different admin has to approve it"; requester
+decline → "withdraw it instead"; owner decline without note → refused;
+owner approve → `publish_requests.status = approved`, audit
+`publish.approve`, publish run `approve:test-owner@…` (noop — content
+unchanged); second approve → "no longer pending".
 
 ## Amplify Hosting (deploy checklist — blocked on repo access, see for-conner.md)
 

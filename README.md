@@ -93,6 +93,9 @@ D1), `scripts/export-content.mjs` / `restore-from-export.mjs`,
 - Nav and footer live only in `templates/partials/`.
 - Publish AWS from the database (`--source db`); a git-source publish would
   render the old inline styles the CSP blocks.
+- In the admin, nobody publishes alone: a writer requests a publish and a
+  different editor/owner approves or declines it with notes
+  (`docs/systems/admin.md` "Publishing"). The CLI publish is an operator tool.
 - `main` deploys Cloudflare production instantly; `refactor` is the AWS
   branch. The nightly export commits to `content-export` branches, not `main`.
 - The tipline handler never logs request or response bodies.

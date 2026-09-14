@@ -122,6 +122,12 @@ holder's lock is taken over after 30 min (> the 10-min Lambda timeout).
 
 ## publish_runs (DSQL)
 
+`trigger_source` values: `approve:<email>` (an admin approving a publish
+request — the only admin path, docs/systems/admin.md "Publishing"),
+whatever `scripts/publish.mjs` passes for operator runs, and the Lambda's
+own `lambda-redirects-verify`. The admin's request / approve / decline
+records live in `publish_requests`, not here.
+
 `id UUID PK, trigger_source, status(publishing|noop|succeeded|failed),
 changed_paths TEXT(json), manifest TEXT(json), invalidation_id, error,
 started_at, finished_at`. DDL is applied once per process via the store's
