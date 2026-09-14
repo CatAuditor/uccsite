@@ -574,7 +574,7 @@ This introduces a staging environment, which does not exist today — `main` aut
 
 ## 17. Secrets
 
-Migrate from `wrangler pages secret` to AWS Secrets Manager: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `AIRTABLE_TOKEN`, `RESEND_API_KEY`, `TOKEN_SECRET`, plus new `TURNSTILE_SECRET_KEY`, `MAILGUN_API_KEY`, and `GITHUB_APP_PRIVATE_KEY` (§14.2). `DONATION_GOAL_CENTS` stays plain config.
+Migrate from `wrangler pages secret` to AWS Secrets Manager: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, `TOKEN_SECRET` (`AIRTABLE_TOKEN` retired — addendum 13), plus new `TURNSTILE_SECRET_KEY`, `MAILGUN_API_KEY`, and `GITHUB_APP_PRIVATE_KEY` (§14.2). `DONATION_GOAL_CENTS` stays plain config.
 
 **`TOKEN_SECRET` must carry over unchanged.** Unsubscribe tokens are 1-year links already in the wild; rotating the secret invalidates every one of them and silently breaks RFC 8058 one-click unsubscribe in mail clients. Preserve the existing degradation behavior too: if `TOKEN_SECRET` is unset, subscribe degrades the unsubscribe link to `/#join` and portal POST returns 503.
 
@@ -726,3 +726,13 @@ session plan; key items:
 12. **The live sitemap.xml is stale**: lists `.html` URLs and omits
     `/projects`, `/privacy`, `/weber-county`. The regenerated sitemap uses
     clean URLs and includes all pages; this is an allowed parity exception.
+13. **Airtable retired (2026-09-14).** `/api/tip` on the AWS stack writes a
+    `tips` table in DSQL (§9 gains it; it is in the §14.3 operational export,
+    never the §14.2 content export). The admin gets a Tips page (editor+
+    read/triage, owner delete, audited). `AIRTABLE_TOKEN` leaves §17. The
+    Cloudflare stack keeps writing Airtable until the DNS flip; a one-time
+    import (`scripts/migrate-tips.mjs`) runs before and after the flip and
+    the base is deleted after the 30-day rollback window. Stripe, Resend,
+    Mailgun, GitHub, Cloudflare DNS and Turnstile stay (org decision:
+    Airtable is the only non-AWS dependency retired in this pass).
+    Plan: `docs/migration/airtable-retirement-plan.md`.
