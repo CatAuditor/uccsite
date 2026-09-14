@@ -4,6 +4,43 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.12.0 — 2026-09-14 (branch `refactor`)
+
+Airtable retired from the AWS stack: the tipline lives in DSQL.
+Plan: `docs/migration/airtable-retirement-plan.md`; ADR
+`docs/decisions/tipline-dsql.md`; spec addendum 13.
+- **DB:** `tips` table (mirrors the Airtable fields + `legacy_airtable_id`,
+  `status`, timestamps) in `packages/db/schema.js`; applied to staging.
+  Added to the nightly operational export and `restore-operational.mjs`.
+- **API:** `/api/tip` inserts into `tips`; `AIRTABLE_TOKEN` removed from
+  `aws/api/secrets.js` (CDK dropped `ucc/staging/AIRTABLE_TOKEN`; prod copy is
+  RETAIN, deleted by hand at day 30). Responses 200/400/403/429/500; insert
+  failure logs the pg error NAME only. Tests: 26/26 incl. a console spy for
+  body leakage.
+- **Admin:** `/tips` inbox (editor+, status filter with counts) and
+  `/tips/[id]` (full text as text, status change, owner-only delete). Both
+  audited (`tip.status` from/to; `tip.delete` keeps only the legacy Airtable
+  id as a re-import tombstone). Nav: Operations → Tips.
+- **Scripts:** `migrate-tips.mjs` (Airtable → tips, read-scoped token via
+  env var, deterministic ids, skips owner-deleted, 429 retry, counts only);
+  `tip-smoke.mjs` (deployed-env verifier incl. CloudWatch search for tip
+  text — must be zero hits).
+- **Docs:** tipline.md rewrite, admin.md, api-security, debug/api,
+  data-handling (tips row, Airtable marked legacy), for-conner (read token,
+  cutover 6b/5b tips copy + delta, day-30 Airtable retirement, Read-Host),
+  editing guide, plan doc.
+- **Review (security / data-integrity / Next.js ops) + fixes:** stable
+  import ids, delete tombstones, `updated_at` on import, strict uuid guard,
+  SQL `edited` flag, `.tip-text` class, list counts/wording, smoke cleanup.
+- **Verified on staging:** tip-smoke 7/7, staging-check 26/26, admin headless
+  (viewer refused, editor status, editor delete refused, owner delete,
+  audit rows, 404 on bad id), export drill (tips.json) + restore drill.
+
+Open P1 unchanged: project files publish is one-person (v0.11.0).
+**Accepted risk (new):** the API Lambda connects to DSQL as `admin`, so a
+compromised public route could read tips (the Airtable token was
+write-only). Fix path in `docs/systems/tipline.md` "Database access".
+
 ## v0.11.3 — 2026-09-13 (branch `refactor`)
 
 Admin copy: what "next Publish" means.
