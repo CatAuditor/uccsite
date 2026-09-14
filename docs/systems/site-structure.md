@@ -11,13 +11,15 @@ packages/render/         THE template engine + site assembly (pure, golden-file 
 package.json             `npm run build` / `npm run dev` (wrangler pages dev); npm workspaces root
 templates/*.html         one per page (17)
 templates/partials/      header.html, footer.html  ← THE nav/footer; edit here only
+                         (footer.html also carries the download modal, files.md)
 content/*.json           CMS-managed content (see cms.md)
 css/styles.css           site stylesheet (+ Style Kit @class annotations for the admin picker)
 css/fonts.css            self-hosted @font-face (scripts/fetch-fonts.mjs) → assets/fonts/
 css/pages/<page>.css     the fixed pages' page-specific styles (formerly inline <style>)
 css/colors.css           GENERATED at render (packages/render/site.js withColorClasses):
                          .c-<hex> classes for content badge/status colours
-js/main.js               nav, animations, join form, donate form, donation tracker, modal
+js/main.js               nav, animations, join form, donate form, donation tracker,
+                         createModal() (timed donation modal + download modal)
 js/tip.js                tipline form controller
 static/                  copied verbatim into dist/: admin/, _headers, _redirects
 assets/, UCC.png, favicon.svg, robots.txt, llms.txt   copied verbatim (COPY_FROM_ROOT in build.js)

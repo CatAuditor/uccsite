@@ -38,6 +38,8 @@ apps/admin/
                            → a different admin approves (async PublishFn invoke)
                            or declines with notes; request history + publish_runs
                            history (Publishing…/Live hh:mm/failed)
+  app/appeals              Donation appeals: homepage donate section + timed modal +
+                           download modal, one save (docs/decisions/donation-appeals-page.md)
   app/settings, /homepage, /team, /statements, /issues, /blog, /coverage,
   /projects                collection editors (generic ListEditor client component;
                            projects is nested — docs/systems/projects.md)
@@ -63,7 +65,8 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Every collection the templates render (settings, homepage, team, statements, policy positions, news articles/videos, projects + press/videos, report coverage) | Site Main editors |
 | Long-form pages, their styling, SEO, JSON-LD | Documents + Styles |
 | Images | Media Library |
-| Files (PDFs, spreadsheets, records…) shared between staff, optionally published at `/files/…` | Files |
+| Files (PDFs, spreadsheets, records…) shared between staff, optionally published at `/files/…` and listed on /projects | Files |
+| Every donation ask (homepage section, timed modal, download modal) | Donation appeals |
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
 | Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |
 | Donors, newsletter list (+ CSV for the periodical) | Donations, Subscribers |
@@ -209,9 +212,13 @@ Review fixes 2026-09-13 (the rules every editor page follows):
   and does NOT publish: the restored content is a draft that goes live
   through a publish request like any save (it appears in the request's
   change list as `<type>.restore`).
-- **Singleton drift guards** at boot: `SETTINGS_FIELDS` ≡
-  `FIELD_MAPS.site_settings`; `HOMEPAGE_GROUPS` keys ≡ homepage JSON
-  columns (field keys inside a group follow templates/index.html).
+- **Singleton drift guards** at boot: `SETTINGS_FIELDS` ∪
+  `APPEAL_SETTINGS_FIELDS` ≡ `FIELD_MAPS.site_settings` (disjoint);
+  `HOMEPAGE_GROUPS` keys ≡ homepage JSON columns (field keys inside a group
+  follow templates/index.html). Groups flagged `appeals: true` and the
+  appeal settings fields are edited on `/appeals` only; Site Settings and
+  Homepage save `{ ...current, ...ownFields }` so neither page nulls the
+  other's columns.
 
 ## Env vars (lib/config.js)
 

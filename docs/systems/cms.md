@@ -34,6 +34,8 @@ dist/                    ← Cloudflare Pages serves this (.gitignored)
 
 Pillars, the issues grid, stats, and nav links are hardcoded in templates/partials.
 
+`settings.json` carries the download-modal copy (`downloadModalTitle/Body/Cta/Dismiss`, docs/systems/files.md) — declared in the `settings` collection.
+
 **Hard constraint:** Decap rewrites a JSON file with only the fields declared in `config.yml`. Adding a key to a content file without adding it to the matching collection means the next CMS save deletes it. `config.yml` is validated against the content files by hand — keep them in sync.
 
 ## Text formatting in bios / statements / issues

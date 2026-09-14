@@ -10,6 +10,7 @@ Prefix: `[files]`. Feature doc: docs/systems/files.md.
 | same `unpublishFile` | copy removed | `[files] <actor> unpublished <id> (<key>)` | | a DeleteObjects failure AFTER the row update leaves a stray public object — re-publish then unpublish, or delete the key by hand |
 | apps/admin/app/files/uploader.js (browser console) | PUT or action failed | `[files] upload failed <Error>` | none | see "begun"/"ready" above |
 | apps/admin (server) | every mutation | `[admin] <actor> files.upload/update/publish/unpublish/delete file/<id>` | audit trail | — |
+| apps/admin (server) | Donation appeals save | `[admin] <actor> appeals.save settings/singleton` + `… appeals.save homepage/singleton` | two rows per save | one row only = the transaction rolled back (conflict message shown to the editor) |
 
 Row state first: `SELECT id, status, project_slug, folder, public_key,
 updated_at FROM project_files ORDER BY created_at DESC`. `pending` = the

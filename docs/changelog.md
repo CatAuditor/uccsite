@@ -37,6 +37,35 @@ Open P1: **project files** (`/files` Publish, v0.10.1) copies a file to the
 public `/files/*` on one editor's action — an exception to the two-person
 rule, recorded in admin.md; route it through the publish request.
 
+## v0.10.2 — 2026-09-13 (branch `refactor`)
+
+Project files on the site + donation asks (`docs/systems/files.md`,
+`docs/decisions/donation-appeals-page.md`).
+- **/projects lists published files** under each project block (name,
+  folder · size, note; `download` links). The DB render path supplies
+  `content.project_files` (`packages/db/project-files.js`,
+  `deriveProjectFiles`); the git/local build renders none.
+- **Download modal** on every page (footer partial): "Your download has
+  started." + donation ask after any published-file download; copy in four
+  new `site_settings` columns (`downloadModal*`, ALTER TABLE; defaults in
+  content/settings.json; declared in config.yml). `js/main.js` now has one
+  `createModal()` for both dialogs.
+- **Admin /appeals (Donation appeals)**: homepage donate section, homepage
+  timed modal and the download modal edited together; Homepage and Site
+  Settings editors skip and preserve those fields.
+- **CDN cost controls**: 50 MB publish cap (`MAX_PUBLIC_BYTES`); prod-only
+  AWS Budget on CloudFront → OpsAlerts (80 % actual / 100 % forecast);
+  compression confirmed on `/files/*`.
+- Staging: schema applied + settings seeded; e2e through a real
+  `--source db` publish passed (11 checks), test file removed, republished.
+- Error log: `docs/error-handling/build-failures/2026-09-13-publish-refused-git-source.md`
+  (`scripts/publish.mjs` without `--source db` would drop Documents; the
+  guard refused — three `failed` manual rows on the staging dashboard).
+
+Open: Amplify Hosting deploy (repo access); OpsAlerts email subscription
+(for-conner.md); nav/footer "Donate" labels and the donate form button stay
+template-owned.
+
 ## v0.10.1 — 2026-09-13 (branch `refactor`)
 
 Admin: project files (`docs/systems/files.md`).

@@ -28,7 +28,9 @@ packages/render/site.js         deriveProjectFilters: project_statuses,
                                 date_ts per project (Date.parse of the free-text
                                 date; '' when unparseable)
 templates/projects.html         filter/sort controls (hidden until JS runs),
-                                data-name/status/region/date on each block
+                                data-name/status/region/date on each block;
+                                {{#files}} list of published project files
+                                (docs/systems/files.md — DB render only)
 js/projects.js                  client-side filter (status, region) + sort
                                 (featured order = admin order, newest, A–Z)
 css/pages/projects.css          control styling
@@ -67,5 +69,7 @@ state serialized into the `payload` hidden input, and saves log through
 
 ## Status
 
-Built 2026-09-13; staging published, parity OK. Not yet: per-project
-detail pages (projects link to their report Document via `cta_url`).
+Built 2026-09-13; staging published, parity OK. Published project files
+(admin Files page) list under each block since 2026-09-13. Not yet:
+per-project detail pages (projects link to their report Document via
+`cta_url`).

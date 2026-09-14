@@ -33,7 +33,8 @@ as they're done. Context: `docs/build-spec-aws.md`.
 - [ ] Cloudflare Pages env vars: `DONATION_GOAL_CENTS` can be deleted (the
   stats endpoint no longer shows a total or goal, org decision 2026-09-12).
 
-- [ ] **Subscribe your email to the ops alert topic** so drift/corruption
+- [ ] **Subscribe your email to the ops alert topic** (also where the prod
+  CloudFront spend budget alerts go — docs/systems/files.md) so drift/corruption
   incidents reach a human: AWS Console (account 017110365763, us-west-2) →
   SNS → Topics → the `UccStaging-OpsAlerts...` topic → Create subscription →
   Email → confirm the email it sends you. Repeat for the prod topic when the

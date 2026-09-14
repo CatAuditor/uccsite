@@ -3,18 +3,39 @@
 A signed-in file store inside the admin, organised by **project** (the
 Projects collection) and then by a free-text **folder** path, with a
 per-file **Publish** that copies the file to the live site at
-`/files/<id>/<filename>`. Built 2026-09-13 on the media library's
-plumbing (same bucket, same presigned-PUT upload, same audit trail).
+`/files/<id>/<filename>` and lists it on the project's block on
+`/projects` (next site Publish). Every download from the site opens the
+**download modal** (a donation ask) whose copy — with every other donation
+ask — is edited on the admin's **Donation appeals** page. Built 2026-09-13
+on the media library's plumbing (same bucket, same presigned-PUT upload,
+same audit trail).
 
 ## Code Map
 
 ```
 packages/db/files.js            SHARED, pure: key layout (private-files/<id>/<name>,
                                 files/<id>/<name>), FILE_TYPES allow-list (ext → mime),
-                                MAX_FILE_BYTES (250 MB), INLINE_TYPES, safeFilename,
-                                mimeForFilename, normalizeFolder, contentDisposition,
+                                MAX_FILE_BYTES (250 MB upload), MAX_PUBLIC_BYTES (50 MB
+                                publish cap), INLINE_TYPES, safeFilename, mimeForFilename,
+                                normalizeFolder, contentDisposition, formatBytes,
                                 rowToFile / FILE_COLUMNS
-packages/db/content-schema.js   project_files DDL (+ idx_project_files_project)
+packages/db/project-files.js    listPublishedFiles(client) → { slug → [{name,url,size,
+                                folder,note}] } for the site render
+packages/db/content-schema.js   project_files DDL (+ idx_project_files_project);
+                                site_settings download_modal_* columns (ALTER)
+packages/render/site.js         deriveProjectFiles: content.project_files → each
+                                project's `files` ([] on the git/local build)
+aws/publish/render-db.js        loadSiteFromDb adds projectFiles; renderSiteFromDb
+                                passes it as content.project_files (NOT via
+                                loadContent — the content export must not carry it)
+templates/projects.html         {{#files}} list per project: <a download data-download-ask>
+templates/partials/footer.html  the download modal (every page with the footer),
+                                wrapped in {{#downloadModalTitle}}
+js/main.js                      createModal() shared focus trap; download modal opens
+                                400 ms after any [data-download-ask] click
+css/pages/projects.css          .project-files / .project-file* styles
+apps/admin/app/appeals/page.js  Donation appeals editor (docs/decisions/
+                                donation-appeals-page.md)
 apps/admin/lib/files.js         listProjects, listFiles (+ presigned GET per row),
                                 createUpload (presign → pending row), confirmUpload
                                 (HeadObject size check → ready), updateFile,
@@ -66,17 +87,28 @@ prepends an origin path to the whole URI, it does not strip the pattern).
    no project (renamed/deleted project) still gets a tab marked `slug?` so
    the files can be moved. Folder chips are the distinct folders in the
    selected project; selecting one also shows its subfolders.
-4. **Publish** (editor+): `publishFile` → `CopyObject` `private-files/…` →
+4. **Publish** (editor+): `publishFile` refuses files over
+   `MAX_PUBLIC_BYTES` (50 MB — the message points at archive.org / YouTube;
+   the button is disabled too) → `CopyObject` `private-files/…` →
    `files/<id>/<name>` with `MetadataDirective: REPLACE`, the row's mime,
    `Content-Disposition` (`inline` for `INLINE_TYPES`, else `attachment`)
    and `Cache-Control: public, max-age=300` → `public_key`, `published_at`,
    `published_by` → audit `files.publish`. The page shows the live link
-   (`PUBLIC_ORIGIN` + path) and the path to paste into a Document or a
-   project's CTA.
-5. **Unpublish**: row first (`public_key` NULL), then `DeleteObjects` on
+   (`PUBLIC_ORIGIN` + path) and the path to paste into a Document.
+5. **On the site**: the next site Publish lists every published file with a
+   project slug under its project block on `/projects` ("Files": name,
+   folder · size, note), ordered by folder then name. Links carry
+   `download` (same-origin → the browser saves the file and the page stays)
+   and `data-download-ask`; `js/main.js` opens the download modal after the
+   click. Files in "General" (no project) get a URL but no listing.
+6. **Download modal**: `templates/partials/footer.html` renders it on every
+   page from `settings.downloadModal{Title,Body,Cta,Dismiss}` (blank title =
+   no modal). CTA → `/#donate`. Copy is edited on `/appeals`.
+7. **Unpublish**: row first (`public_key` NULL), then `DeleteObjects` on
    the public key (delete marker on the versioned bucket). Cached edge copies
-   can serve for up to 5 minutes (no invalidation from the admin).
-6. **Delete**: row first, then original + public copy. Bytes are
+   can serve for up to 5 minutes (no invalidation from the admin). The
+   listing on `/projects` goes away at the next site Publish.
+8. **Delete**: row first, then original + public copy. Bytes are
    recoverable for 90 days (noncurrent-version lifecycle).
 
 ## project_files (DSQL)
@@ -107,6 +139,26 @@ principal (local profile / Amplify SSR role) needs `s3:PutObject`,
 on the source + PUT on the destination. Same grant the media library
 already documents (`<MediaBucketName>/*`).
 
+## CDN cost controls
+
+CloudFront's permanent free tier is 1 TB egress + 10 M requests a month;
+S3 → CloudFront origin fetches are free, so cost is viewer egress only
+(~$0.085/GB past the tier). Controls, cheapest first:
+
+- **Publish cap** `MAX_PUBLIC_BYTES` = 50 MB. Bigger documents/data go to
+  archive.org (the ALPR records already do), video to YouTube; link to them.
+- **Spend guard**: prod stack only, an AWS Budget on the CloudFront service
+  (`infra/cdk/lib/ucc-stack.js` `CloudFrontBudget`, context
+  `cloudfrontBudgetUsd`, default $20/month) alerting the OpsAlerts topic at
+  80 % actual and 100 % forecast. Budgets are account-wide, hence one stack.
+  CloudFront metrics live in us-east-1, so there is no in-region
+  BytesDownloaded alarm. Subscribe an email to OpsAlerts
+  (docs/for-conner.md).
+- **Compression** on `/files/*` is the CDK behavior default (helps
+  CSV/JSON/text; PDFs are already compressed).
+- Not done: hotlink guard in the viewer function, WAF rate rule (~$6/month
+  baseline) — add if a spike alarm ever fires.
+
 ## Security notes
 
 - Type allow-list by extension, signed into the PUT and rewritten on the
@@ -131,7 +183,8 @@ already documents (`<MediaBucketName>/*`).
 
 ## Status
 
-Built 2026-09-13. Staging: schema applied, stack deployed, e2e verified
-(see changelog). Not built: listing published files on the project pages
-(paste the `/files/…` path into a project's CTA or a Document), share links
-for people without an admin login, malware scanning.
+Built 2026-09-13. Staging: schema applied (incl. the settings columns,
+seeded with the content/settings.json defaults), stack deployed, two e2e
+passes (bucket/CloudFront isolation; project-page listing + download modal
+through a real `--source db` publish, then cleaned up). Not built: share
+links for people without an admin login, malware scanning, hotlink guard.
