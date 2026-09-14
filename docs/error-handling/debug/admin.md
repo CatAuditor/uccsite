@@ -13,7 +13,8 @@ server console locally; CloudWatch for the Amplify SSR compute once hosted.
 | lib/data.js `recordChange` | `<actor> <action> <entity>/<id>` | one per mutation | a save with no line = it threw before commit (nothing landed) |
 | lib/publish.js `approvePublish` | `<email> approve not sent: run <id> in flight` | approve while a run is still publishing | — |
 | lib/publish.js `approvePublish` | `<email> tried to approve their own publish request <id>` | never (the UI hides the button from the requester) | someone crafted the action call; the guard refused it |
-| lib/data.js via lib/publish.js | `<actor> publish.request/approve/decline/withdraw publish_request/<id>` | one per decision | an `approve` line with no `publish_runs` row after it = the Lambda invoke failed (the request stays `approved`; re-request) |
+| lib/publish.js `approvePublish` | `<email> publish invoke failed for request <id>: <message>` | never | IAM (`lambda:InvokeFunction` on PublishFn missing from the SSR role) or throttling; the request was reopened as pending, audit `publish.invoke_failed` |
+| lib/data.js via lib/publish.js | `<actor> publish.request/approve/decline/withdraw/invoke_failed publish_request/<id>` | one per decision | an `approve` line with no `publish_runs` row `approve:<id>:…` within a minute = the async invoke was accepted but the Lambda never ran (check its CloudWatch log group) |
 | media (see media.md) | `[media] …` | | |
 | lib/account.js | `[account] ListWebAuthnCredentials failed: <message>` | never | pool lacks passkey config or the access token lacks the cognito admin scope (sign out/in after a scope change) |
 | lib/actions.js via /profile, /users | `action failed: NotAuthorizedException…` mapped to friendly text | wrong current password | `LimitExceededException` = Cognito throttling; wait |

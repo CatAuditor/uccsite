@@ -21,6 +21,11 @@ const DDL = [
     publish_trigger TEXT
   )`,
   `CREATE INDEX ASYNC IF NOT EXISTS idx_publish_requests_created ON publish_requests(created_at)`,
+  // One-row gate every request transaction writes (bumpGate): DSQL only
+  // detects write-write conflicts, so two "is anything pending? no → insert"
+  // transactions racing would otherwise both commit a pending row.
+  `CREATE TABLE IF NOT EXISTS publish_request_gate (id TEXT PRIMARY KEY, n BIGINT NOT NULL DEFAULT 0)`,
+  `INSERT INTO publish_request_gate (id, n) VALUES ('singleton', 0) ON CONFLICT (id) DO NOTHING`,
 ];
 
 const COLS = `id, status, requested_by, requested_by_user, request_note, changes, created_at::text AS created_at,
@@ -48,11 +53,39 @@ async function changesSince(client, sinceIso) {
     .map(r => ({ actor: r.actor, action: r.action, entityType: r.entity_type || '', entityId: r.entity_id || '', at: r.at }));
 }
 
-// lastLiveAt(client) → ISO of the last succeeded/noop publish run, or null.
+// lastLiveAt(client) → when the live site's content was last read from the
+// database: the STARTED_AT of the newest succeeded/noop run (the Lambda
+// snapshots the DB right after it starts, so a save committed while that
+// run rendered is not live and must still count as unpublished).
 async function lastLiveAt(client) {
   const res = await client.query(
-    `SELECT finished_at::text AS f FROM publish_runs WHERE status IN ('succeeded', 'noop') ORDER BY finished_at DESC LIMIT 1`);
-  return res.rows[0]?.f || null;
+    `SELECT started_at::text AS s FROM publish_runs WHERE status IN ('succeeded', 'noop') ORDER BY started_at DESC LIMIT 1`);
+  return res.rows[0]?.s || null;
+}
+
+// bumpGate(client) — call inside the request transaction before inserting.
+async function bumpGate(client) {
+  await client.query(`UPDATE publish_request_gate SET n = n + 1 WHERE id = 'singleton'`);
+}
+
+// runsFor(client, triggers) → { [trigger_source]: status } for the publish
+// runs an approval started (trigger carries the request id, so it's unique).
+async function runsFor(client, triggers) {
+  const list = triggers.filter(Boolean);
+  if (!list.length) return {};
+  const res = await client.query(
+    `SELECT trigger_source, status FROM publish_runs WHERE trigger_source IN (${list.map((_, i) => `$${i + 1}`).join(', ')})
+     ORDER BY started_at`, list);
+  return Object.fromEntries(res.rows.map(r => [r.trigger_source, r.status]));
+}
+
+// reopen(client, id) — an approved request whose Lambda invoke failed goes
+// back to pending so a reviewer can try again (nothing was published).
+async function reopen(client, id) {
+  const res = await client.query(
+    `UPDATE publish_requests SET status = 'pending', reviewed_by = NULL, review_note = NULL, reviewed_at = NULL, publish_trigger = NULL
+     WHERE id = $1 AND status = 'approved'`, [id]);
+  return res.rowCount === 1;
 }
 
 async function pendingRequest(client) {
@@ -85,4 +118,4 @@ async function review(client, { id, status, reviewedBy, reviewNote, publishTrigg
   return res.rowCount === 1;
 }
 
-module.exports = { DDL, CONTENT_ACTION_RE, changesSince, lastLiveAt, pendingRequest, listRequests, createRequest, review, rowToRequest };
+module.exports = { DDL, CONTENT_ACTION_RE, changesSince, lastLiveAt, bumpGate, runsFor, reopen, pendingRequest, listRequests, createRequest, review, rowToRequest };

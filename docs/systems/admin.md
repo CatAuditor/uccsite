@@ -147,24 +147,46 @@ No post or update goes live on one person's say-so. `lib/publish.js` +
    already pending or there is nothing to publish. Audit `publish.request`.
 2. **Review** (a DIFFERENT editor/owner — compared by `cognito:username`
    AND email, so an owner cannot approve their own request either):
-   - **Approve** → row set `approved` by a conditional `UPDATE … WHERE
-     status = 'pending'` (two reviewers racing: one wins, the other sees
-     "just reviewed by someone else"), audit `publish.approve`, THEN the
-     Lambda is invoked with `trigger = approve:<reviewer email>`. Refused
-     while a publish is in flight.
+   - **Approve** → the form carries `seenThrough` (the newest save the
+     reviewer's page listed); inside the transaction any content audit row
+     after it refuses the approval ("more saves landed since you opened
+     this page — reload") so nobody approves what they have not seen. Then
+     row set `approved` by a conditional `UPDATE … WHERE status =
+     'pending'` (two reviewers racing: one wins, the other sees "just
+     reviewed by someone else"), audit `publish.approve`, THEN the Lambda
+     is invoked with `trigger = approve:<request id>:<reviewer email>`
+     (outside the transaction, so a 40001 replay can't invoke twice).
+     Refused while a publish is in flight. If the invoke itself fails the
+     request is reopened (`pending`, audit `publish.invoke_failed`) and the
+     reviewer is told nothing started. The request table joins each
+     approval to its run by that trigger: "Approved — live / publishing… /
+     FAILED / refused / not started".
    - **Decline** → note REQUIRED; row `declined`; audit `publish.decline`.
      The writer sees the note on the dashboard's request history.
    - **Withdraw** → the requester (or an owner clearing a stale request);
      audit `publish.withdraw`.
 3. A publish renders the whole database, so saves made AFTER the request
    go live too; the pending panel lists them separately ("Also saved after
-   the request") so the reviewer knows what they are approving.
+   the request") so the reviewer knows what they are approving (and the
+   `seenThrough` check above guarantees the list was complete).
+
+"Unpublished" = content audit rows after the `started_at` of the newest
+succeeded/noop run (the Lambda snapshots the database right after it
+starts, so a save committed during a render is still unpublished).
+`requestPublish` bumps a one-row `publish_request_gate` inside its
+transaction so two racing requests conflict (DSQL only detects write-write
+conflicts) and the loser sees the winner's pending row.
 
 The request stores its change list (`changes` JSON = the audit rows it
-covered) for the record. Viewers see everything read-only. Developer CLI
-publishes (`scripts/publish.mjs`) and the Lambda's own redirect-verify
-runs are outside the rule by design — they are operator actions, not
-content edits.
+covered) for the record. Viewers see everything read-only.
+
+**Explicit exceptions** (paths that change the public site without a
+second admin): developer CLI publishes (`scripts/publish.mjs`) and the
+Lambda's own redirect-verify runs — operator actions, not content edits;
+and **project files** (`app/files` "Publish" copies a file to `/files/*`
+immediately, editor role, docs/systems/files.md). The files exception is
+an open gap against the rule, not a design choice — see for-conner.md /
+changelog; routing it through the request is the intended fix.
 
 Review fixes 2026-09-13 (the rules every editor page follows):
 

@@ -37,7 +37,15 @@ docs/systems/admin.md "Publishing".
 - Saves made between request and approval go live with the approval (the
   publish renders the whole database). The pending panel lists them
   separately rather than blocking — blocking would let one editor's stray
-  save freeze the queue.
+  save freeze the queue. The approval carries the newest save the reviewer
+  saw (`seenThrough`) and is refused if more landed since, so the list the
+  reviewer read was complete. Residual window: a save that commits after
+  the approval but before the Lambda reads the database (seconds) goes live
+  unreviewed; closing it would need the Lambda to check the same stamp.
+- Project files (`/files`, added the same day) publish to `/files/*` on one
+  editor's action. That contradicts this rule and is recorded in
+  docs/systems/admin.md as an open exception to be routed through the
+  request.
 - A sole admin cannot publish from the admin. That is the point; the
   operator CLI (`scripts/publish.mjs --source db`) stays available to a
   developer with AWS keys for emergencies and is outside the rule.

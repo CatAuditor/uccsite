@@ -21,7 +21,11 @@ function isFreshPublishing(run) {
 
 const when = (iso) => (iso ? iso.slice(0, 16).replace('T', ' ') : '');
 
-const STATUS_LABEL = { pending: 'Waiting for review', approved: 'Approved & published', declined: 'Declined', withdrawn: 'Withdrawn' };
+const STATUS_LABEL = { pending: 'Waiting for review', declined: 'Declined', withdrawn: 'Withdrawn' };
+const RUN_LABEL = { succeeded: 'Approved — live', noop: 'Approved — nothing to change', publishing: 'Approved — publishing…', failed: 'Approved — publish FAILED', refused: 'Approved — publish refused (another was running)' };
+// An approved request is only as good as the run it started.
+const requestLabel = (r) => (r.status === 'approved' ? RUN_LABEL[r.runStatus] || `Approved — publish ${r.runStatus}` : STATUS_LABEL[r.status] || r.status);
+const requestClass = (r) => (r.status === 'approved' ? `status-${r.runStatus === 'noop' ? 'succeeded' : r.runStatus}` : `status-${r.status}`);
 
 function ChangeList({ changes }) {
   if (!changes.length) return <p className="hint">No saves recorded.</p>;
@@ -37,7 +41,7 @@ function ChangeList({ changes }) {
 export default async function Dashboard() {
   const session = await requireSession();
   const runs = await withDb((client) => latestPublishRuns(client));
-  const { pending, liveAt, unpublished, sinceRequest, requests, inFlight } = await publishState();
+  const { pending, liveAt, unpublished, sinceRequest, seenThrough, requests, inFlight } = await publishState();
   const canAct = session.role !== 'viewer';
   const isRequester = pending && (pending.requestedByUser === session.username || pending.requestedBy === session.email);
 
@@ -55,8 +59,9 @@ export default async function Dashboard() {
       const id = String(formData.get('id'));
       const note = String(formData.get('note') || '').trim().slice(0, 2000);
       const decision = String(formData.get('decision'));
+      const seen = String(formData.get('seenThrough') || '');
       let message;
-      if (decision === 'approve') { await approvePublish(id, note); message = 'Approved — publish started.'; }
+      if (decision === 'approve') { await approvePublish(id, note, seen); message = 'Approved — publish started.'; }
       else if (decision === 'decline') { await declinePublish(id, note); message = 'Declined; the writer will see your note here.'; }
       else if (decision === 'withdraw') { await withdrawPublish(id); message = 'Request withdrawn.'; }
       else throw new Error('Unknown decision');
@@ -98,6 +103,7 @@ export default async function Dashboard() {
           ) : (
             <ActionForm action={decide}>
               <input type="hidden" name="id" value={pending.id} />
+              <input type="hidden" name="seenThrough" value={seenThrough || ''} />
               <label htmlFor="review-note">Notes to the writer (required to decline)</label>
               <textarea id="review-note" name="note" placeholder="What's wrong, or what you checked." />
               <button type="submit" name="decision" value="approve" disabled={Boolean(inFlight)}>
@@ -132,7 +138,7 @@ export default async function Dashboard() {
             <tr key={r.id}>
               <td>{when(r.createdAt)}</td>
               <td>{r.requestedBy}</td>
-              <td className={`status-${r.status}`}>{STATUS_LABEL[r.status] || r.status}</td>
+              <td className={requestClass(r)}>{requestLabel(r)}</td>
               <td>{r.reviewedBy}{r.reviewedAt ? ` (${when(r.reviewedAt)})` : ''}</td>
               <td>{[r.requestNote && `Writer: ${r.requestNote}`, r.reviewNote && `Reviewer: ${r.reviewNote}`].filter(Boolean).join(' · ')}</td>
             </tr>
