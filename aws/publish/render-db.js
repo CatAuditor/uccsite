@@ -12,6 +12,7 @@ const { buildSite, PAGES, withColorClasses, documents: docs } = require('@uccsit
 const { loadContent, contentMeta, makeDbLastmod } = require('@uccsite/db/content');
 const { loadPublishBundle, markDocumentLive, markDocumentPublishError } = require('@uccsite/db/documents');
 const { listRedirects, kvsEntries } = require('@uccsite/db/redirects');
+const { listPublishedFiles } = require('@uccsite/db/project-files');
 const { syncRedirects } = require('./redirects-sync');
 
 // loadSiteFromDb(client) → everything renderSiteFromDb needs, in one connection.
@@ -20,13 +21,14 @@ async function loadSiteFromDb(client) {
     content: await loadContent(client),
     meta: await contentMeta(client),
     bundle: await loadPublishBundle(client),
+    projectFiles: await listPublishedFiles(client),
   };
 }
 
 // renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl })
 //   → { files: { key → string }, errors: [], documentHashes: { slug → hash },
 //       documentIds: { slug → id } }
-function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl }) {
+function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl, projectFiles = {} }) {
   const foreignClassMaps = {};
   for (const row of bundle.foreignClassMapRows) {
     const key = row.templateKey || '*';
@@ -58,7 +60,9 @@ function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl }) {
   const dbLastmod = makeDbLastmod(meta);
   const lastmod = (page) => (page.lastmodAt ? new Date(page.lastmodAt).toISOString().slice(0, 10) : dbLastmod(page));
 
-  const site = buildSite({ ...inputs, content, lastmod, pages, siteUrl, sitemapExtra: built.pages });
+  // Published project files ride along as content.project_files (not part of
+  // loadContent — the content export must not carry derived data).
+  const site = buildSite({ ...inputs, content: { ...content, project_files: projectFiles }, lastmod, pages, siteUrl, sitemapExtra: built.pages });
   const errors = [...site.errors, ...built.errors];
   const files = errors.length ? {} : { ...site.files, ...built.files };
   return {
