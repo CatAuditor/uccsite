@@ -252,7 +252,7 @@ test('stripNids removes every data-nid and nothing else', () => {
 });
 
 test('allow_scripts keeps only allowlisted-host <script src>, always empty; off strips all', () => {
-  const raw = '<p>a</p><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async></script><script src="https://evil.example/x.js"></script><script>alert(1)</script><script src="https://challenges.cloudflare.com/x.js">inline()</script><script src="http://challenges.cloudflare.com/y.js"></script>';
+  const raw = '<p>a</p><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async data-x="1" id="k" class="c"></script><script src="https://evil.example/x.js"></script><script>alert(1)</script><script src="https://challenges.cloudflare.com/x.js">inline()</script><script src="http://challenges.cloudflare.com/y.js"></script>';
   const on = stripNids(ingest(raw, { allowScripts: true }).bodyHtmlNormalized);
   assert.equal(on, '<p>a</p><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async></script><script src="https://challenges.cloudflare.com/x.js"></script>');
   assert.doesNotMatch(on, /alert|inline\(|evil|http:/);

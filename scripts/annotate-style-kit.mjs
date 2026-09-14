@@ -59,7 +59,15 @@ let added = 0;
 for (const cls of kit.undocumented) {
   const m = css.match(new RegExp(`^(\\.${cls.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})(?=[\\s,{:])`, 'm'));
   if (!m) { console.log('  no bare rule for', cls); continue; }
-  const idx = m.index;
+  let idx = m.index;
+  // Part of a selector list (".a,\n.b {")? Walk back to the start of the list
+  // so the comment lands before the first selector, where parseStyleKit reads it.
+  for (;;) {
+    const before = css.slice(0, idx).replace(/\s+$/, '');
+    if (!before.endsWith(',')) break;
+    const prevLine = before.lastIndexOf('\n');
+    idx = prevLine + 1;
+  }
   if (/\/\*[^*]*@class\s+\S+[^*]*\*\/\s*$/.test(css.slice(Math.max(0, idx - 500), idx))) continue;
   const u = usage.get(cls);
   const tags = u ? [...u.tags].sort() : [];

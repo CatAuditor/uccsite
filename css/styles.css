@@ -351,12 +351,12 @@ input, textarea, select { font: inherit; }
    @applies a
    @group Navigation
    @desc Used on <a> in partial:header. Sets: color: var(--navy-dark); (auto) */
-.nav-cta,
 /* @class nav-donate
    @label Nav Donate
    @applies a
    @group Navigation
    @desc Used on <a> in partial:header. Sets: background: var(--red) !important; color: var(--white) !important; font-weight: 700 !impor… (auto) */
+.nav-cta,
 .nav-donate {
   background: var(--red) !important;
   color: var(--white) !important;

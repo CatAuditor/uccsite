@@ -75,7 +75,9 @@ function* rules(css) {
     if (css.startsWith('/*', i)) {
       const end = css.indexOf('*/', i + 2);
       const comment = css.slice(i + 2, end === -1 ? css.length : end);
-      if (comment.includes('@class')) pendingComment = comment;
+      // Several @class comments may stack before one rule that names several
+      // classes (".a, .b { … }") — keep them all.
+      if (comment.includes('@class')) pendingComment = (pendingComment ? pendingComment + '\n' : '') + comment;
       i = end === -1 ? css.length : end + 2;
       continue;
     }
@@ -115,10 +117,13 @@ function parseStyleKit(cssText) {
   const seenBodies = new Map();  // className -> Set of exact rule bodies (dedupe)
   const documented = new Set();
   for (const rule of rules(cssText)) {
-    const ann = rule.annotation ? parseAnnotation(rule.annotation) : null;
+    // One annotation block per @class comment stacked before the rule.
+    const anns = rule.annotation
+      ? rule.annotation.split(/(?=@class\s)/).map(parseAnnotation).filter(Boolean)
+      : [];
     const classes = [...rule.selector.matchAll(CLASS_IN_SELECTOR)].map((m) => m[1]);
     for (const className of new Set(classes)) {
-      const annotated = ann && ann.className === className ? ann : null;
+      const annotated = anns.find((a) => a.className === className) || null;
       if (annotated) documented.add(className);
       let entry = byClass.get(className);
       if (!entry) {

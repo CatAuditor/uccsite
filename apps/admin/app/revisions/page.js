@@ -42,7 +42,7 @@ async function loadCurrent(client, entityType, entityId) {
 }
 
 // Inside the caller's transaction (tx: false).
-async function applySnapshot(client, entityType, snapshot, entityId) {
+async function applySnapshot(client, entityType, snapshot, entityId, session) {
   if (entityType === 'settings') return saveSettings(client, snapshot);
   if (entityType === 'homepage') return saveHomepage(client, snapshot, { tx: false });
   if (entityType === 'document') {
@@ -50,6 +50,13 @@ async function applySnapshot(client, entityType, snapshot, entityId) {
     const current = await getDocument(client, { id: entityId });
     const { overrides = [], ...fields } = snapshot;
     const next = { ...(current || {}), ...fields, id: entityId };
+    // allow_scripts is owner-only on every path: a restored snapshot cannot
+    // re-enable it for an editor, and an owner's change through restore is
+    // audited like a save.
+    if (session.role !== 'owner') next.allowScripts = current?.allowScripts || 0;
+    if (Number(next.allowScripts) !== Number(current?.allowScripts || 0)) {
+      await recordChange(client, { actor: session.email, action: next.allowScripts ? 'document.allow_scripts.on' : 'document.allow_scripts.off', entityType: 'document', entityId, diff: { via: 'restore' } });
+    }
     const sources = await loadSiteSources();
     const result = runIngest(next, { siteCss: sources.siteCss, foreignClassMap: await loadForeignClassMap(client, next.templateKey) });
     next.bodyHtmlNormalized = result.bodyHtmlNormalized;
@@ -88,7 +95,7 @@ export default async function RevisionsPage() {
         // Snapshot the CURRENT state first so the restore itself is reversible.
         const current = await loadCurrent(client, rev.entity_type, rev.entity_id);
         if (rev.entity_type === 'document' && !current) throw new Error('That document was deleted; recreate it before restoring.');
-        await applySnapshot(client, rev.entity_type, JSON.parse(rev.snapshot), rev.entity_id);
+        await applySnapshot(client, rev.entity_type, JSON.parse(rev.snapshot), rev.entity_id, s);
         await recordChange(client, {
           actor: s.email,
           action: `${rev.entity_type}.restore`,

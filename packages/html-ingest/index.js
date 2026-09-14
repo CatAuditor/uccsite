@@ -415,9 +415,19 @@ function ingest(rawHtml, opts = {}) {
   const clean = sanitize(bodyOnly, { allowScripts });
   const tree = parseFragmentTree(clean);
   if (allowScripts) {
-    // A kept script is src-only: whatever was inside the tag never survives.
+    // A kept script is src-only (+ async/defer): whatever was inside the tag
+    // never survives, and the global attribute allowlist does not apply.
     for (const el of walkElements(tree)) {
-      if (el.name === 'script') { el.children = []; report.warnings.push(`External script kept (allow_scripts): ${el.attribs.src}`); }
+      if (el.name !== 'script') continue;
+      el.children = [];
+      for (const attr of Object.keys(el.attribs)) if (!['src', 'async', 'defer'].includes(attr)) delete el.attribs[attr];
+      report.warnings.push(`External script kept (allow_scripts): ${el.attribs.src}`);
+    }
+    // Explain every script that did NOT survive (host not allowlisted / no src).
+    for (const el of walkElements(rawTree)) {
+      if (el.name === 'script' && !scriptSrcAllowed(el.attribs.src)) {
+        report.warnings.push(el.attribs.src ? `Script dropped: ${el.attribs.src} — host is not on the script allowlist (${SCRIPT_SRC_ALLOWLIST.join(', ')})` : 'Inline script dropped — only <script src> from an allowlisted host is kept');
+      }
     }
   }
   reportRemovals(rawTree, tree, bodyOnly, report);

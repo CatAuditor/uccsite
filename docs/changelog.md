@@ -4,16 +4,21 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
-## v0.9.1 — 2026-09-13 (branch `refactor`)
+## v0.9.1 — 2026-09-13 (branch `refactor`, pushed 2026-09-13)
 
 Follow-ups that needed no operator input:
 - `allow_scripts` escape hatch implemented in the sanitizer (src-only,
   allowlisted host, content emptied, every toggle audited).
 - Media library refuses to delete an asset still referenced by a team
   headshot or a document; cards show "Used by …".
-- Style Kit: 142 of 151 classes annotated (`scripts/annotate-style-kit.mjs`).
+- Style Kit: 143 of 151 classes annotated (`scripts/annotate-style-kit.mjs`);
+  the parser now accepts stacked `@class` comments on a shared rule.
+- Review fixes: `allow_scripts` cannot be re-enabled by an editor through a
+  revision restore (owner-only on every path, audited); kept scripts carry
+  src/async/defer only; dropped scripts are explained in the ingest report;
+  media usage computed in a few queries and also covers markdown links.
 
-## v0.9.0 — 2026-09-13 (branch `refactor`, not yet pushed)
+## v0.9.0 — 2026-09-13 (branch `refactor`; first pushed with v0.9.1)
 
 Phase 9 — Projects and cleanup (`docs/systems/projects.md`).
 
@@ -30,7 +35,7 @@ Phase 9 — Projects and cleanup (`docs/systems/projects.md`).
   read/write and the drift guard, trimmed data attributes, blank nested
   entries dropped, article `lang` rendered on /projects.
 
-## v0.8.0 — 2026-09-13 (branch `refactor`, not yet pushed)
+## v0.8.0 — 2026-09-13 (branch `refactor`; first pushed with v0.9.1)
 
 Phase 8 — Documents & styling (`docs/systems/documents.md`).
 
@@ -64,7 +69,7 @@ Phase 8 — Documents & styling (`docs/systems/documents.md`).
 ### Open items at this point
 - Same operator blockers as v0.7.0 (secrets, GitHub App, Amplify install).
 
-## v0.7.0 — 2026-09-13 (branch `refactor`, not yet pushed)
+## v0.7.0 — 2026-09-13 (branch `refactor`; first pushed with v0.9.1)
 
 State of the AWS rebuild (`docs/build-spec-aws.md`) at the end of Phase 7.
 Everything below is on `refactor`; `main` still deploys the Cloudflare site.

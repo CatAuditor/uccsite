@@ -39,11 +39,12 @@ const LIST_LIMIT = 500;
 export async function listAssets(client) {
   const res = await client.query(`SELECT ${ASSET_COLUMNS} FROM media_assets ORDER BY created_at DESC LIMIT ${LIST_LIMIT}`);
   const assets = res.rows.map(rowToAsset);
+  const used = await usageMap(client);
   await Promise.all(assets.map(async (a) => {
     const thumb = pickVariant(a.variants, 1, 'webp');
     a.thumbUrl = thumb ? await presignGet(thumb.path.slice(1)) : null;
     a.stalled = isStalled(a);
-    a.usedBy = await assetUsage(client, a.id);
+    a.usedBy = used.get(a.id) || [];
   }));
   return assets;
 }
@@ -78,13 +79,32 @@ export async function createUpload(client, { filename, mime, bytes, actor }) {
   return { id, key, url };
 }
 
-// assetUsage(client, id) → ['team: Jarom Gillins', 'document: alpr', …] — every
-// place a /media/<id>/ path is referenced (team headshots, document bodies).
+// usageMap(client) → Map<assetId, ['team: …', 'document: …', …]> for EVERY
+// referenced asset in a handful of queries (the library page needs all of
+// them; per-asset LIKE scans were N×2 sequential scans per render). Covers
+// team headshots + bios, statement/issue bodies (markdown links), document
+// bodies / og:image / page CSS.
+const MEDIA_ID_RE = /\/media\/([0-9a-f-]{36})\//g;
+export async function usageMap(client) {
+  const map = new Map();
+  const add = (id, label) => { const arr = map.get(id) || []; if (!arr.includes(label)) arr.push(label); map.set(id, arr); };
+  const scan = (text, label) => { for (const m of String(text || '').matchAll(MEDIA_ID_RE)) add(m[1], label); };
+  const sources = [
+    [`SELECT name AS label, photo, bio FROM team_members WHERE photo LIKE '%/media/%' OR bio LIKE '%/media/%'`, 'team', ['photo', 'bio']],
+    [`SELECT title AS label, body FROM statements WHERE body LIKE '%/media/%'`, 'statement', ['body']],
+    [`SELECT title AS label, body FROM issues WHERE body LIKE '%/media/%'`, 'policy position', ['body']],
+    [`SELECT slug AS label, body_html_raw, og_image, page_css FROM documents WHERE body_html_raw LIKE '%/media/%' OR og_image LIKE '%/media/%' OR page_css LIKE '%/media/%'`, 'document', ['body_html_raw', 'og_image', 'page_css']],
+  ];
+  for (const [sql, kind, cols] of sources) {
+    for (const row of (await client.query(sql)).rows) for (const c of cols) scan(row[c], `${kind}: ${row.label}`);
+  }
+  return map;
+}
+
+// assetUsage(client, id) → every place a /media/<id>/ path is referenced.
 export async function assetUsage(client, id) {
-  const needle = `/media/${id}/`;
-  const team = await client.query(`SELECT name FROM team_members WHERE photo LIKE $1`, [`%${needle}%`]);
-  const docs = await client.query(`SELECT slug FROM documents WHERE body_html_raw LIKE $1 OR og_image LIKE $1 OR page_css LIKE $1`, [`%${needle}%`]);
-  return [...team.rows.map(r => `team: ${r.name}`), ...docs.rows.map(r => `document: ${r.slug}`)];
+  if (!/^[0-9a-f-]{36}$/.test(String(id))) throw new Error('Bad asset id');
+  return (await usageMap(client)).get(id) || [];
 }
 
 // deleteAsset(client, id) → asset. Refuses while anything references the

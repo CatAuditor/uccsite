@@ -97,6 +97,7 @@ await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) 
         knownClasses: compose.knownClassesFor(siteCss, next.pageCss),
         foreignClassMap: await loadForeignClassMap(client, next.templateKey),
         previousNormalized: doc.exportedNormalized || current?.bodyHtmlNormalized || null,
+        allowScripts: Boolean(next.allowScripts),
       });
       next.bodyHtmlNormalized = result.bodyHtmlNormalized;
       next.ingestReport = result.report;
