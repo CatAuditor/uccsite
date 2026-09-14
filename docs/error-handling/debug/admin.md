@@ -5,6 +5,7 @@ server console locally; CloudWatch for the Amplify SSR compute once hosted.
 
 | Where | Log | Normal | Broken |
 |---|---|---|---|
+| lib/aws-account.js (boot via instrumentation.js, and first DB use) | `AWS credentials OK: account <id> (<arn>)` / `AWS credentials resolve to account <X> (<arn>) but UCC_ENV=<env> lives in <Y>. Restart with AWS_PROFILE=uccsite.` | one OK line at startup | the mismatch line at startup, then every gated page 500s with the same message; no line at all = `UCC_ACCOUNT_ID` unset (rerun scripts/admin-env.mjs) |
 | lib/auth.js `getSession` | `session token rejected: <ErrorName>: <message>` | occasional `JwtExpiredError` after 1 h | a burst of `JwksError`/fetch failures = Cognito JWKS unreachable (everyone looks logged out); `JwtInvalidClaimError` = wrong pool/client id in env |
 | lib/auth.js `requireSession` | `request with invalid/ungrouped session token — redirecting to login` | after expiry | constant = see line above |
 | app/auth/callback | `sign-in by a user in no Cognito group — refused` | new account not yet grouped (login page shows the nogroup message) | — |

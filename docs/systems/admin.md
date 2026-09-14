@@ -10,6 +10,10 @@ Amplify Hosting at `admin.utahciviccompact.org` at rollout.
 apps/admin/
   middleware.js            cookieless requests → /login (verification is NOT here)
   lib/config.js            env-driven config (scripts/admin-env.mjs writes .env.local)
+  lib/aws-account.js       wrong-account guard: STS GetCallerIdentity vs UCC_ACCOUNT_ID,
+                           once per process, before any DB use (no-op when unset)
+  instrumentation.js       Next boot hook: runs the account guard so a wrong profile
+                           is loud in the terminal at startup
   lib/auth.js              hosted-UI authorization-code + PKCE (server-side),
                            ID token in httpOnly cookie, aws-jwt-verify on EVERY
                            read, roles from cognito:groups, requireRole()
@@ -225,7 +229,12 @@ Review fixes 2026-09-13 (the rules every editor page follows):
 `UCC_ENV, UCC_REGION, COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_DOMAIN,
 DSQL_ENDPOINT, PUBLISH_FUNCTION_NAME, MEDIA_BUCKET, SITE_BUCKET, PUBLIC_ORIGIN,
 APP_ORIGIN` (+ `SITE_SRC_ROOT` on Amplify). Missing →
-loud throw at first use. AWS credentials: local = `AWS_PROFILE=uccsite`;
+loud throw at first use. `UCC_ACCOUNT_ID` (local only, from the stack ARN):
+when set, `lib/aws-account.js` calls STS once per process and refuses every
+DB use — and logs at boot via `instrumentation.js` — if the resolved
+credentials belong to another account (the "forgot AWS_PROFILE" failure,
+docs/error-handling/client-side-error/2026-09-13-admin-dev-wrong-aws-profile.md).
+Leave it unset on Amplify. AWS credentials: local = `AWS_PROFILE=uccsite`;
 Amplify Hosting = the app's SSR compute role (wire-up pending; it needs
 `dsql:DbConnectAdmin`, `lambda:InvokeFunction` on PublishFn, and
 `s3:PutObject/GetObject/DeleteObject` on the media bucket).

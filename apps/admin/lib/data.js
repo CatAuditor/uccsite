@@ -8,6 +8,7 @@
 // BEGIN/COMMIT semantics, not per-statement retry.
 import { makeCachedClient, withConnection, withRetry } from '@uccsite/db';
 import { config } from './config';
+import { assertAwsAccount } from './aws-account';
 
 let readClient = null;
 function getReadClient() {
@@ -15,11 +16,13 @@ function getReadClient() {
   return readClient;
 }
 
-export function withDb(fn) {
+export async function withDb(fn) {
+  await assertAwsAccount();
   return fn(getReadClient());
 }
 
-export function withWriteDb(fn) {
+export async function withWriteDb(fn) {
+  await assertAwsAccount();
   return withConnection({ endpoint: config.dsqlEndpoint, region: config.region }, fn);
 }
 

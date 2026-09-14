@@ -8,12 +8,13 @@ import { resolveEnv, argValue } from './lib/stack.mjs';
 
 const args = process.argv.slice(2);
 const envName = argValue(args, '--env', 'staging');
-const { region, outputs } = await resolveEnv(envName,
+const { region, accountId, outputs } = await resolveEnv(envName,
   ['AdminUserPoolId', 'AdminUserPoolClientId', 'AdminAuthDomain', 'DsqlEndpoint', 'PublishFunctionName', 'MediaBucketName', 'SiteBucketName', 'PublicOrigin']);
 
 const envFile = [
   `UCC_ENV=${envName}`,
   `UCC_REGION=${region}`,
+  `UCC_ACCOUNT_ID=${accountId}`, // lib/aws-account.js refuses to touch the DB from any other account
   `COGNITO_POOL_ID=${outputs.AdminUserPoolId}`,
   `COGNITO_CLIENT_ID=${outputs.AdminUserPoolClientId}`,
   `COGNITO_DOMAIN=${outputs.AdminAuthDomain}`,

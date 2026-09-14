@@ -55,6 +55,16 @@ Quick check before starting the server:
 aws sts get-caller-identity --query Account --output text   # must print 017110365763
 ```
 
-A startup assertion in `apps/admin/lib/config.js` comparing the resolved account
-to the expected one would make this fail loud in one line; not added (out of
-scope for this fix).
+Added (same day): `scripts/admin-env.mjs` now writes `UCC_ACCOUNT_ID` from the
+stack ARN, and `apps/admin/lib/aws-account.js` checks STS GetCallerIdentity
+against it once per process — at boot via `instrumentation.js` (terminal line)
+and before every DB use in `lib/data.js` (clear error instead of DSQL's
+"access denied"). Verified: wrong profile → boot prints
+`[admin] AWS credentials resolve to account 507024406243 (...) but UCC_ENV=staging lives in 017110365763. Restart with AWS_PROFILE=uccsite.`;
+right profile → `[admin] AWS credentials OK: account 017110365763 (...)`.
+Rerun `node scripts/admin-env.mjs --env staging` once to pick up the new var.
+
+Gotcha hit while adding it: `instrumentation.js` is bundled by webpack, and
+`lib/config.js`'s `require('node:path')` fails there (`UnhandledSchemeError:
+Reading from "node:path"`), which also broke `/login`. `aws-account.js`
+therefore reads `process.env` directly and must not import `config.js`.

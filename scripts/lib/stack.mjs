@@ -7,7 +7,8 @@ import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-clo
 export const REGION = 'us-west-2';
 const STACKS = { staging: 'UccStaging', prod: 'UccProd' };
 
-// resolveEnv('staging'|'prod', requiredOutputs?) → { region, stackName, outputs }
+// resolveEnv('staging'|'prod', requiredOutputs?) → { region, stackName, accountId, outputs }
+// accountId comes from the stack ARN (arn:aws:cloudformation:<region>:<account>:stack/…).
 export async function resolveEnv(envName, required = []) {
   const stackName = STACKS[envName];
   if (!stackName) throw new Error(`Unknown env "${envName}" (use: ${Object.keys(STACKS).join(', ')})`);
@@ -17,7 +18,8 @@ export async function resolveEnv(envName, required = []) {
   for (const key of required) {
     if (!outputs[key]) throw new Error(`Stack ${stackName} is missing output ${key}`);
   }
-  return { region: REGION, stackName, outputs };
+  const accountId = res.Stacks[0].StackId.split(':')[4];
+  return { region: REGION, stackName, accountId, outputs };
 }
 
 // argValue(args, '--name', default?) — safe against absent flags (indexOf -1).
