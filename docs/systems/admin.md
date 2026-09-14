@@ -38,6 +38,9 @@ apps/admin/
                            remove MFA, sign out everywhere
   app/redirects            redirects table → CloudFront KeyValueStore on publish
   app/subscribers          newsletter list (editor+) + CSV export (audited)
+  app/tips                 tipline inbox (editor+): list w/ status filter, [id] detail,
+                           status change (audited tip.status), owner-only delete
+                           (audited tip.delete, no snapshot) — docs/systems/tipline.md
   app/page.js              Publish & Status: unpublished saves → publish request
                            → a different admin approves (async PublishFn invoke)
                            or declines with notes; request history + publish_runs
@@ -74,11 +77,12 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
 | Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |
 | Donors, newsletter list (+ CSV for the periodical) | Donations, Subscribers |
+| Confidential tips: read, triage status, delete | Tips (editor+; delete is owner) |
 | Accounts, roles, MFA, security keys | Users (owners), My profile (everyone) |
 
 Not in the admin by design: secrets (Secrets Manager), templates for fixed
 pages (developer-owned, spec §3.3), sending the periodical
-(`scripts/send-periodical.js`), tip submissions (Airtable).
+(`scripts/send-periodical.js`).
 
 ## Account & security (spec §11)
 

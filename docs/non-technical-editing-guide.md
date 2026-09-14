@@ -31,8 +31,8 @@ request is approved (section 2). Nobody rebuilds anything by hand.
 | Role | Can |
 |---|---|
 | **viewer** | look at everything, change nothing |
-| **editor** | edit all content, upload images, request and approve publishes, see donors and subscribers |
-| **owner** | everything, plus invite people, change roles, reset passwords |
+| **editor** | edit all content, upload images, request and approve publishes, see donors, subscribers and tips |
+| **owner** | everything, plus invite people, change roles, reset passwords, delete tips |
 
 ---
 
@@ -110,6 +110,9 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
 - **Donations** — every donation with donor contact info. **Subscribers** —
   newsletter list, with a CSV download for the periodical. Both are
   personal data: don't paste them anywhere public.
+- **Tips** — confidential tipline submissions. Open one to read it and mark
+  it *In review* or *Closed*; owners can delete a tip. Nobody can edit what
+  the tipster wrote. Never copy tip contents out of the admin.
 - **Audit Log** — who changed what, when.
 
 ---

@@ -29,6 +29,7 @@ const NAV = [
     ['/redirects', 'Redirects'],
     ['/donations', 'Donations'],
     ['/subscribers', 'Subscribers'],
+    ['/tips', 'Tips'],
     ['/revisions', 'Revisions'],
     ['/audit', 'Audit Log'],
   ]},
