@@ -4,6 +4,19 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.11.3 — 2026-09-13 (branch `refactor`)
+
+Admin copy: what "next Publish" means.
+- **Admin:** every save notice (collection pages, Site Settings, Documents
+  list and editor, Files, Redirects) now says a draft goes live "when a
+  publish request is approved on Publish & Status" instead of "on the next
+  Publish", and that nothing is rebuilt by hand. Redirects save toast says
+  the same. Wording only, no logic.
+- **Docs:** `docs/non-technical-editing-guide.md` intro, Documents status
+  and Redirects lines point at the section 2 request/approve flow.
+
+Open P1 unchanged: project files publish is one-person (v0.11.0).
+
 ## v0.11.2 — 2026-09-13 (branch `refactor`)
 
 Staging basic auth + admin DB client hygiene.
