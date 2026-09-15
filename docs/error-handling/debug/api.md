@@ -18,7 +18,9 @@ Log group: `/aws/lambda/UccStaging-ApiFunction*` (or UccProd). Prefix: `[api]`.
 | `secret <NAME> is unset (placeholder)` | secrets.js | operator hasn't filled `ucc/<env>/<NAME>` yet |
 | `failed to load secret <NAME>: <err>` | secrets.js | transient — retried next invocation (never cached) |
 | `PUBLIC_ORIGIN is not set — …` | index.mjs | config error; CDK should have refused to synth |
-| `health db check failed: …` | index.mjs | /api/health 503 |
+| `health db check failed: …` | index.mjs | /api/health 503. On a fresh cluster this means `scripts/migrate-schema.mjs` has not created/mapped the `api` role yet |
+| `… unable to accept connection, access denied` in any route error | packages/db connect | the `api` role's IAM mapping is missing or (for ~2-3 min after `AWS IAM GRANT`) not yet propagated; seen on staging 2026-09-14 right after migrate-schema, self-healed |
+| pg `permission denied for table <t>` (42501) in any route error | packages/db via the route | the route touches a table/privilege missing from `API_GRANTS` (packages/db/schema.js) — extend and re-run migrate-schema |
 
 **Normal:** production traffic logs almost nothing — only warnings above
 indicate degradation. `[db] 40001 … retry` warnings (packages/db) mean DSQL

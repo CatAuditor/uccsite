@@ -43,13 +43,15 @@ export async function handler() {
     console.log(`[export-ops] ${date}: ${JSON.stringify(counts)}`);
     return { date, counts };
   } catch (err) {
-    console.error(`[export-ops] FAILED: ${err.message}`);
+    // Name only, no message: this handler holds whole donor/tip rows in
+    // memory and the alert goes to email subscribers off-box.
+    console.error(`[export-ops] FAILED: ${err.name || 'Error'} (${err.code || err.$metadata?.httpStatusCode || 'no code'})`);
     if (ALERT_TOPIC_ARN) {
       try {
         await sns.send(new PublishCommand({
           TopicArn: ALERT_TOPIC_ARN,
           Subject: 'uccsite operational export FAILED',
-          Message: String(err.message || err),
+          Message: `Operational export failed: ${err.name || 'Error'} (${err.code || err.$metadata?.httpStatusCode || 'no code'}). See the ExportOperationalFn log group.`,
         }));
       } catch {}
     }

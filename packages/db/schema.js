@@ -95,4 +95,26 @@ const STATEMENTS = [
   `CREATE INDEX ASYNC IF NOT EXISTS idx_processed_events_created ON processed_events(created_at)`,
 ];
 
-module.exports = { STATEMENTS };
+// Least-privilege role for the public API Lambda (docs/systems/api-security.md
+// "DSQL access"). It connects as API_ROLE with a dsql:DbConnect token, never as
+// admin, so a compromised public route cannot read what it has no grant for —
+// notably `tips` (INSERT only: the tipline is write-only from the internet,
+// as it was under Airtable's write-scoped token). UPDATE/DELETE with a WHERE
+// clause needs SELECT on the table in Postgres, hence SELECT on those.
+// scripts/migrate-schema.mjs creates the role, maps it to the Lambda's IAM
+// role (AWS IAM GRANT) and applies these — re-run it whenever a route needs a
+// new table or privilege; GRANT is idempotent. Content tables get nothing.
+// (No GRANT USAGE ON SCHEMA public: DSQL rejects it, 0A000 "feature not
+// supported on system entity"; usage on public is implicit.)
+const API_ROLE = 'api';
+const API_GRANTS = [
+  `GRANT SELECT, INSERT, DELETE ON rate_limits TO ${API_ROLE}`,
+  `GRANT SELECT, INSERT, UPDATE, DELETE ON subscribers TO ${API_ROLE}`,
+  `GRANT SELECT, INSERT, UPDATE ON members TO ${API_ROLE}`,
+  `GRANT SELECT, INSERT, UPDATE ON subscriptions TO ${API_ROLE}`,
+  `GRANT SELECT, INSERT ON donations TO ${API_ROLE}`,
+  `GRANT SELECT, INSERT, DELETE ON processed_events TO ${API_ROLE}`,
+  `GRANT INSERT ON tips TO ${API_ROLE}`,
+];
+
+module.exports = { STATEMENTS, API_ROLE, API_GRANTS };

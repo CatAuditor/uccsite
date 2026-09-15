@@ -20,9 +20,12 @@ import {
 } from './routes.js';
 
 const { DSQL_ENDPOINT, ORIGIN_VERIFY_SECRET, PUBLIC_ORIGIN } = process.env;
+// Least-privilege database role (packages/db/schema.js API_ROLE); the stack
+// sets it and grants dsql:DbConnect (not DbConnectAdmin) — see api-security.md.
+const DSQL_USER = process.env.DSQL_USER || 'api';
 const region = process.env.AWS_REGION;
 
-const db = makeCachedClient({ endpoint: DSQL_ENDPOINT, region });
+const db = makeCachedClient({ endpoint: DSQL_ENDPOINT, region, user: DSQL_USER });
 const lambda = new LambdaClient({ region });
 
 // Fire-and-forget async self-invocation (the portal magic-link job). The

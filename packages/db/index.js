@@ -15,17 +15,21 @@ const pg = require('pg');
 
 // Some dev machines run ahead of AWS clocks; a future-dated SigV4 presign is
 // rejected ("Signature not yet current"). @aws-sdk/dsql-signer doesn't expose
-// signingDate, so presign the DbConnectAdmin request directly (same
+// signingDate, so presign the DbConnect(Admin) request directly (same
 // construction as its Signer.js) with a 60s-backdated signingDate — the token
 // stays valid for its full expiry from that date. Lambda clocks don't need
 // this but it's harmless there.
-async function authToken(endpoint, region) {
+//
+// The `admin` role needs a DbConnectAdmin token (IAM dsql:DbConnectAdmin);
+// every custom role (e.g. the API Lambda's least-privilege `api` role,
+// schema.js API_ROLE) needs a DbConnect token (IAM dsql:DbConnect).
+async function authToken(endpoint, region, user = 'admin') {
   const signer = new SignatureV4({
     service: 'dsql', region, credentials: defaultProvider(), sha256: Sha256,
   });
   const request = new HttpRequest({
     method: 'GET', protocol: 'https:', hostname: endpoint,
-    query: { Action: 'DbConnectAdmin' },
+    query: { Action: user === 'admin' ? 'DbConnectAdmin' : 'DbConnect' },
     headers: { host: endpoint },
   });
   const presigned = await signer.presign(request, {
@@ -34,14 +38,16 @@ async function authToken(endpoint, region) {
   return formatUrl(presigned).replace('https://', '');
 }
 
-// connect({ endpoint, region }) → connected pg.Client. Caller must end() it.
-async function connect({ endpoint, region = process.env.AWS_REGION || 'us-west-2' }) {
+// connect({ endpoint, region, user }) → connected pg.Client. Caller must end() it.
+// user defaults to 'admin' (scripts, publish, export, admin app); the API
+// Lambda passes its custom role.
+async function connect({ endpoint, region = process.env.AWS_REGION || 'us-west-2', user = 'admin' }) {
   const client = new pg.Client({
     host: endpoint,
     port: 5432,
-    user: 'admin',
+    user,
     database: 'postgres',
-    password: await authToken(endpoint, region),
+    password: await authToken(endpoint, region, user),
     ssl: { rejectUnauthorized: true },
     connectionTimeoutMillis: 10_000,
   });

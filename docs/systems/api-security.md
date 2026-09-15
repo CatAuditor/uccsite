@@ -85,5 +85,29 @@ Requires `STRIPE_SECRET_KEY`, `RESEND_API_KEY`, `TOKEN_SECRET`.
 ## Secrets / vars (Cloudflare Pages)
 See the comment block in `wrangler.toml` for the full inventory: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `AIRTABLE_TOKEN`, `RESEND_API_KEY`, `TOKEN_SECRET` (secrets). The AWS stack (`aws/api/secrets.js`) has no `AIRTABLE_TOKEN` — tips go to DSQL. Missing `TOKEN_SECRET` → portal returns 503, unsubscribe links fall back to the homepage. (`DONATION_GOAL_CENTS` removed 2026-09-12 — no total/goal in the stats endpoint.)
 
+## DSQL access (AWS stack)
+
+The API Lambda is the only internet-facing DB client and connects as the
+custom role **`api`** with a `dsql:DbConnect` token (`DSQL_USER` env,
+`packages/db` `connect({ user })`). It never holds `admin`. Grants
+(`packages/db/schema.js` `API_GRANTS`, applied by `scripts/migrate-schema.mjs`,
+which also creates the role and maps it to the Lambda's IAM role via
+`AWS IAM GRANT … TO '<ApiRoleArn>'`):
+
+| Table | api may | Used by |
+|---|---|---|
+| `rate_limits` | SELECT, INSERT, DELETE | every rate-limited route |
+| `subscribers` | SELECT, INSERT, UPDATE, DELETE | subscribe (upsert), unsubscribe |
+| `members` | SELECT, INSERT, UPDATE | webhook, portal magic link, unsubscribe opt-out |
+| `subscriptions` | SELECT, INSERT, UPDATE | webhook |
+| `donations` | SELECT, INSERT | webhook, `/api/donations/stats` |
+| `processed_events` | SELECT, INSERT, DELETE | webhook idempotency |
+| `tips` | **INSERT only** | `/api/tip` (write-only from the internet, docs/systems/tipline.md) |
+| content tables, `audit_log`, `revisions`, … | nothing | — |
+
+A route that needs more fails with SQLSTATE 42501 `permission denied for
+table …`: extend `API_GRANTS`, re-run `migrate-schema.mjs`. Never grant the
+API `DbConnectAdmin` again (`docs/decisions/api-dsql-least-privilege.md`).
+
 ## Schema
 `schema.sql` is the source of truth. Apply new tables to the live DB with `wrangler d1 execute ucc-members --remote --file schema.sql` (all statements are `IF NOT EXISTS`). Added 2026-08-23: `processed_events`.

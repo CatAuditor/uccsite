@@ -80,17 +80,16 @@ a tip; both write `audit_log` (`tip.status` with from/to, `tip.delete` with the
 legacy Airtable id if any, never contents). Nobody can edit
 what the tipster wrote. No CSV export by design.
 
-## Database access (accepted risk, 2026-09-14 review)
+## Database access
 
-The API Lambda connects to DSQL as the `admin` role (`packages/db/index.js`,
-`dsql:DbConnectAdmin` in the stack), so any compromise of a public route could
-read tips back, where the old Airtable token was write-only. The Lambda
-already held the same access to every donor table, so this widens an existing
-blast radius rather than opening a new one. Fix path when prioritised: a
-DSQL role with `INSERT` on `tips` plus the grants the other routes need,
-`AWS IAM GRANT` to the API role, `dsql:DbConnect` instead of `DbConnectAdmin`,
-and a `user` option on `connect()`. Recorded in
-`docs/decisions/tipline-dsql.md`.
+The API Lambda connects as the custom DSQL role `api` (`packages/db/schema.js`
+`API_ROLE`/`API_GRANTS`, provisioned by `scripts/migrate-schema.mjs`) with a
+`dsql:DbConnect` token, never as `admin`. Its only privilege on `tips` is
+`INSERT`: the tipline is write-only from the internet, exactly as it was
+under Airtable's write-scoped token. Reads happen only in the admin app,
+which connects as `admin` behind Cognito. Details and the grant table:
+`docs/systems/api-security.md` "DSQL access". ADR:
+`docs/decisions/api-dsql-least-privilege.md`.
 
 ## Export / backup
 

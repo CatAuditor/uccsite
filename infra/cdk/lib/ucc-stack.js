@@ -149,6 +149,7 @@ class UccStack extends Stack {
     // Single source: the Lambda's own secret list drives what CDK creates,
     // so a name added in one place can't silently miss the other.
     const { NAMES: API_SECRET_NAMES, PLACEHOLDER } = require('../../../aws/api/secrets.js');
+    const { API_ROLE } = require('../../../packages/db/schema.js');
     const envName = isProd ? 'prod' : 'staging';
     const publicOrigin = isProd
       ? 'https://utahciviccompact.org'
@@ -179,6 +180,11 @@ class UccStack extends Stack {
       timeout: Duration.seconds(20),
       environment: {
         DSQL_ENDPOINT: dsqlEndpoint,
+        // Custom DSQL role, NOT admin: created + granted by
+        // scripts/migrate-schema.mjs (packages/db/schema.js API_ROLE/API_GRANTS).
+        // Until that script has run against a fresh cluster the API cannot
+        // connect — run it right after the first deploy (docs/for-conner.md §6).
+        DSQL_USER: API_ROLE,
         ORIGIN_VERIFY_SECRET: originVerifyValue,
         // Public site origin for links in emails and Stripe redirects. The
         // staging value is the distribution's stable *.cloudfront.net domain,
@@ -194,8 +200,10 @@ class UccStack extends Stack {
       },
       depsLockFilePath: path.join(__dirname, '..', '..', '..', 'package-lock.json'),
     });
+    // dsql:DbConnect only — the API is the one internet-facing DB client and
+    // must not hold the admin role (it could read the confidential tipline).
     apiFn.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['dsql:DbConnectAdmin'],
+      actions: ['dsql:DbConnect'],
       resources: [cluster.attrResourceArn],
     }));
     for (const name of API_SECRET_NAMES) apiSecrets[name].grantRead(apiFn);
@@ -720,6 +728,7 @@ class UccStack extends Stack {
     new CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
     new CfnOutput(this, 'SiteBucketName', { value: siteBucket.bucketName });
     new CfnOutput(this, 'DsqlEndpoint', { value: dsqlEndpoint });
+    new CfnOutput(this, 'ApiRoleArn', { value: apiFn.role.roleArn });
     new CfnOutput(this, 'RedirectStoreArn', { value: redirectStore.keyValueStoreArn });
   }
 }

@@ -29,13 +29,11 @@ the Airtable REST call are gone from `aws/`. The Cloudflare stack
 - Logging gets stricter: the API logs the pg error *name* only (Airtable
   error bodies used to echo field values), and the unit tests spy on the
   console for leaks.
-- **Accepted risk:** the API Lambda connects as the DSQL `admin` role, so a
-  compromised public route could now read tips, where the Airtable token was
-  write-only. That Lambda already had the same access to all donor PII, so
-  this widens an existing blast radius. Follow-up (not yet scheduled): a
-  least-privilege DSQL role for the API (`INSERT` on `tips`, the grants the
-  other routes need, `AWS IAM GRANT`, `dsql:DbConnect`), see
-  `docs/systems/tipline.md` "Database access".
+- The API Lambda connects as a least-privilege DSQL role with `INSERT` only
+  on `tips` (`docs/decisions/api-dsql-least-privilege.md`, same day), so the
+  tipline stays write-only from the internet as it was under Airtable's
+  write-scoped token. (The review of this change first recorded that as an
+  accepted risk; it was fixed before the change shipped to prod.)
 
 ## Consequences / what breaks if reversed
 

@@ -215,6 +215,12 @@ function yet.
    `AdminUserPoolId`, `MediaBucketName`, `PublishFunctionName`:
    `aws cloudformation describe-stacks --profile uccsite --region us-west-2 --stack-name UccProd --query 'Stacks[0].Outputs[].OutputKey'`.
 2. `[agent]` schema: `node scripts/migrate-schema.mjs --env prod` (idempotent).
+   This also creates the API's least-privilege database role and maps it to
+   the Lambda's IAM role (`ApiRoleArn` output from step 1) — until it has
+   run, `/api/health` on prod returns 503 (the API cannot connect). Normal,
+   just do step 2 right after step 1. The IAM mapping takes ~2-3 minutes to
+   propagate: `access denied` on `/api/health` right after the script is
+   expected; wait, then re-check.
 3. `[agent]` content — from the repo's `content/*.json` + templates (what
    Cloudflare serves today), run in this order:
    ```
