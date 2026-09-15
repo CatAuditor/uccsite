@@ -4,6 +4,30 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.12.1 — 2026-09-14 (branch `refactor`)
+
+API Lambda no longer connects to DSQL as `admin` (closes the v0.12.0 accepted
+risk). ADR `docs/decisions/api-dsql-least-privilege.md`.
+- **DB:** `packages/db` `connect()` takes a `user`; non-admin users get a
+  `DbConnect` token. `schema.js` declares `API_ROLE = 'api'` and
+  `API_GRANTS` (INSERT only on `tips`; SELECT/INSERT/UPDATE/DELETE per
+  route on the operational tables; nothing on content tables).
+- **Scripts:** `migrate-schema.mjs` also provisions the role: `CREATE ROLE
+  api WITH LOGIN`, `AWS IAM GRANT api TO '<ApiRoleArn>'`, grants; all
+  idempotent. DSQL rejects `GRANT USAGE ON SCHEMA public` (0A000), so it is
+  omitted.
+- **Infra:** API function gets `dsql:DbConnect` (was `DbConnectAdmin`),
+  `DSQL_USER=api`, new `ApiRoleArn` output. Export Lambda's alert/log carry
+  the error name + code, not the message.
+- **Docs:** api-security "DSQL access" grant table; tipline, for-conner §6
+  (role provisioning + ~2-3 min IAM-mapping propagation), debug/api rows.
+- **Verified on staging:** role + mapping present, health 200, tip-smoke
+  7/7, staging-check 26/26, stats/subscribe/unsubscribe routes OK,
+  `role_table_grants` shows exactly the intended privileges. Webhook not
+  replayed (needs the Stripe secret); its tables are covered by the grants.
+
+Open P1 unchanged: project files publish is one-person (v0.11.0).
+
 ## v0.12.0 — 2026-09-14 (branch `refactor`)
 
 Airtable retired from the AWS stack: the tipline lives in DSQL.
@@ -37,9 +61,8 @@ Plan: `docs/migration/airtable-retirement-plan.md`; ADR
   audit rows, 404 on bad id), export drill (tips.json) + restore drill.
 
 Open P1 unchanged: project files publish is one-person (v0.11.0).
-**Accepted risk (new):** the API Lambda connects to DSQL as `admin`, so a
-compromised public route could read tips (the Airtable token was
-write-only). Fix path in `docs/systems/tipline.md` "Database access".
+Accepted risk recorded at push time (API Lambda connected to DSQL as
+`admin`, so a compromised public route could read tips): fixed in v0.12.1.
 
 ## v0.11.3 — 2026-09-13 (branch `refactor`)
 
