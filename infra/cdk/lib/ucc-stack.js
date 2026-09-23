@@ -11,6 +11,7 @@ const {
   aws_s3_notifications: s3n,
   aws_cloudfront: cloudfront,
   aws_cloudfront_origins: origins,
+  aws_certificatemanager: acm,
   aws_lambda: lambda,
   aws_lambda_nodejs: nodejs,
   aws_iam: iam,
@@ -293,8 +294,22 @@ class UccStack extends Stack {
       responseHeadersPolicy: adminHeaders,
       cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
     };
+    // Custom domain (for-conner §7.1). Inert until `prodCertificateArn` is set
+    // in cdk.json: the certificate must already be ISSUED before it is named
+    // here, or the deploy blocks waiting on DNS validation it cannot perform.
+    // Request it by hand in us-east-1 (CloudFront only reads certificates from
+    // that region), add the validation CNAMEs to DNS, wait for ISSUED, then
+    // set the ARN and deploy. The aliases are what let CloudFront answer on the
+    // real hostnames — DNS pointing here without them returns 403.
+    const prodCertificateArn = isProd ? this.node.tryGetContext('prodCertificateArn') : undefined;
+    const customDomain = prodCertificateArn ? {
+      certificate: acm.Certificate.fromCertificateArn(this, 'SiteCertificate', prodCertificateArn),
+      domainNames: ['utahciviccompact.org', 'www.utahciviccompact.org'],
+    } : {};
+
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
       comment: `uccsite ${isProd ? 'prod' : 'staging'}`,
+      ...customDomain,
       defaultBehavior: { ...siteBehaviorBase, responseHeadersPolicy: siteHeaders },
       additionalBehaviors: {
         // Exact '/admin' (matching is on the ORIGINAL URI, before the viewer
