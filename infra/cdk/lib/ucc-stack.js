@@ -648,10 +648,17 @@ class UccStack extends Stack {
     // operators use AdminCreateUser), optional TOTP, owner/editor/viewer.
     const { aws_cognito: cognito } = require('aws-cdk-lib');
     // Sign-in factors: password OR passkey (security key / platform
-    // authenticator) as the first factor, TOTP as optional MFA. Passkeys are
-    // registered and used on the managed login pages of the pool domain, so
-    // the relying-party ID is that domain (spec §11; docs/systems/admin.md).
-    const authDomainName = `ucc-admin-${envName}.auth.${this.region}.amazoncognito.com`;
+    // authenticator) as the first factor, TOTP as optional MFA (spec §11;
+    // docs/systems/admin.md).
+    //
+    // The passkey relying party is deliberately left unset. Naming the pool's
+    // own `*.auth.<region>.amazoncognito.com` domain here fails pool CREATE
+    // with "RelyingPartyId cannot be reserved domain other than User Pool's
+    // prefix domain" — that domain is a separate resource that does not exist
+    // yet at this point. Unset, the relying party is the domain serving the
+    // login page, which is what the staging pool has always run with.
+    // Revisit when admin.utahciviccompact.org exists (for-conner §7.1):
+    // moving the relying party invalidates already-registered passkeys.
     const userPool = new cognito.UserPool(this, 'AdminUserPool', {
       selfSignUpEnabled: false,
       signInAliases: { email: true },
@@ -663,8 +670,6 @@ class UccStack extends Stack {
       // A self-service email change must not replace the verified email until
       // the new one is verified — the admin keys identity on the email claim.
       keepOriginal: { email: true },
-      passkeyRelyingPartyId: authDomainName,
-      passkeyUserVerification: cognito.PasskeyUserVerification.PREFERRED,
       signInPolicy: { allowedFirstAuthFactors: { password: true, passkey: true } },
       removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
     });

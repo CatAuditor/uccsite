@@ -36,13 +36,30 @@ function d1(sql) {
   return results;
 }
 
+// processed_events was declared in schema.sql but never applied to the live D1
+// (verified 2026-09-23: the database has 5 tables, not 6), and main's
+// webhook.js never referenced it — Stripe idempotency is a refactor-only
+// concept. Reading it must not abort the donor migration.
+function d1Optional(sql, table) {
+  try {
+    return d1(sql);
+  } catch (err) {
+    const text = String(err.stderr || err.stdout || err.message || '');
+    if (text.includes(`no such table: ${table}`)) {
+      console.log(`D1 has no ${table} table — migrating 0 rows.`);
+      return [];
+    }
+    throw err;
+  }
+}
+
 async function main() {
   console.log('Reading D1…');
   const members = d1('SELECT * FROM members ORDER BY id');
   const subscriptions = d1('SELECT * FROM subscriptions ORDER BY id');
   const donations = d1('SELECT * FROM donations ORDER BY id');
   const subscribers = d1('SELECT * FROM subscribers ORDER BY id');
-  const processedEvents = d1('SELECT * FROM processed_events ORDER BY id');
+  const processedEvents = d1Optional('SELECT * FROM processed_events ORDER BY id', 'processed_events');
   const d1TotalCents = donations.reduce((s, d) => s + (d.amount_cents || 0), 0);
 
   console.log(`D1: members=${members.length} subscriptions=${subscriptions.length} donations=${donations.length} subscribers=${subscribers.length} processed_events=${processedEvents.length} donations SUM=${d1TotalCents}`);

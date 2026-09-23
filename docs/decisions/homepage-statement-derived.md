@@ -2,6 +2,17 @@
 
 **Status (2026-09-13):** still in force — `deriveHomepage` in `packages/render/site.js`; see also homepage-statement-links.md.
 
+> **Amended 2026-09-23:** the homepage features the newest **three** statements,
+> not one (`HOMEPAGE_FEATURED` in `packages/render/site.js`). Derivation itself
+> is unchanged. The live Cloudflare site had diverged to three hand-curated
+> cards, two of them pointing at standalone report pages. Matching it through
+> the existing `url`/`more` overrides keeps the homepage editable in the admin,
+> which a stored `homepage.statements` array would not be — the admin's homepage
+> editor has no list widget for it (`apps/admin/app/homepage/page.js` handles
+> "six flat-string groups + the hand-curated press list"). Consequence: the two
+> report pages now also appear on `/statements.html`, where the Cloudflare site
+> did not list them. Recorded as a deliberate difference.
+
 > **Partially superseded 2026-09-12** by
 > [homepage-statement-links.md](homepage-statement-links.md): derivation stays,
 > but the mapping now also supplies `url`/`more` (with optional per-entry

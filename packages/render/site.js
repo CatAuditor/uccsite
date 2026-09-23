@@ -32,14 +32,17 @@ const PAGES = [
 // Array → field containing markdown that must be converted to HTML before render
 const MARKDOWN_FIELDS = { members: 'bio', statements: 'body', issues: 'body' };
 
-// The homepage's featured statement is always the newest in statements.json
-// (not stored twice). Returns a NEW homepage object — inputs are not mutated.
-// `url`/`more` feed the card's link and read-more line (templates/index.html);
-// optional per-statement overrides let a card point at a standalone page
-// (e.g. the Dignity Index statement) — see docs/decisions/homepage-statement-links.md.
+// The homepage's featured statements are the newest HOMEPAGE_FEATURED entries
+// of statements.json (not stored twice). Returns a NEW homepage object — inputs
+// are not mutated. `url`/`more` feed each card's link and read-more line
+// (templates/index.html); optional per-statement overrides let a card point at a
+// standalone page (e.g. the Dignity Index statement) — see
+// docs/decisions/homepage-statement-links.md.
+const HOMEPAGE_FEATURED = 3;
+
 function deriveHomepage(content) {
   if (!content.homepage) return content;
-  const statements = (content.statements?.statements || []).slice(0, 1)
+  const statements = (content.statements?.statements || []).slice(0, HOMEPAGE_FEATURED)
     .map(({ slug, date, title, snippet, url, more }) => ({
       slug, date, title, snippet,
       url: url || `/statements.html#${slug}`,
