@@ -131,47 +131,106 @@ export async function updateFile(client, id, { projectSlug, folder, note }) {
   return { before, after: { ...before, projectSlug: slug, folder: dir, note: text } };
 }
 
-// publishFile(client, id, actor) → file. Server-side copy into files/
-// with the type, disposition and a short cache written on the copy (the
-// original's metadata is replaced, never trusted). The bucket policy grants
-// CloudFront media/* and files/* only; the original under private-files/ stays private.
-export async function publishFile(client, id, actor) {
+// requestFilePublish(client, id, actor) → file. Records the ASK. Nothing is
+// copied and nothing is reachable from the site until a second admin approves
+// a site publish (docs/decisions/project-files-two-person-publish.md) — one
+// editor must never be able to put a document on the internet alone.
+// Validation runs here so the writer is told now, not at approval time.
+export async function requestFilePublish(client, id, actor) {
   const file = await getFile(client, id);
   if (file.status !== 'ready') throw new Error('Upload is not complete');
   // CDN egress cap (docs/systems/files.md): big files belong on archive.org / YouTube.
   if (file.bytes > MAX_PUBLIC_BYTES) {
     throw new Error(`Files over ${MAX_PUBLIC_BYTES / 1024 / 1024} MB are not published from the site (CDN cost). Host it on archive.org (documents/data) or YouTube (video) and link to it instead.`);
   }
-  const key = publicFileKey(file.id, file.s3Key.split('/').pop());
-  await getS3().send(new CopyObjectCommand({
-    Bucket: config.mediaBucket,
-    CopySource: `${config.mediaBucket}/${encodeURIComponent(file.s3Key).replace(/%2F/g, '/')}`,
-    Key: key,
-    MetadataDirective: 'REPLACE',
-    ContentType: file.mime,
-    ContentDisposition: contentDisposition(file.mime, file.originalFilename),
-    CacheControl: PUBLIC_CACHE_CONTROL,
-  }));
+  if (file.publicKey) return file;
   await withRetry(() => client.query(
-    `UPDATE project_files SET public_key = $2, published_at = now(), published_by = $3, updated_at = now() WHERE id = $1`,
-    [file.id, key, actor]));
-  console.log(`[files] ${actor} published ${file.id} → ${key}`);
-  return { ...file, publicKey: key };
+    `UPDATE project_files SET publish_requested_at = now(), publish_requested_by = $2, updated_at = now() WHERE id = $1`,
+    [file.id, actor]));
+  console.log(`[files] ${actor} requested publish of ${file.id}`);
+  return { ...file, publishRequestedBy: actor };
+}
+
+// cancelFilePublish(client, id, actor) → file. Withdraws a request that has not
+// been approved yet. Nothing was ever public, so there is no object to remove.
+export async function cancelFilePublish(client, id, actor) {
+  const file = await getFile(client, id);
+  if (!file.publishRequestedAt) return file;
+  await withRetry(() => client.query(
+    `UPDATE project_files SET publish_requested_at = NULL, publish_requested_by = NULL, updated_at = now() WHERE id = $1`,
+    [file.id]));
+  console.log(`[files] ${actor} cancelled the publish request for ${file.id}`);
+  return { ...file, publishRequestedAt: null, publishRequestedBy: null };
+}
+
+// promoteRequestedFiles(client, approver) → [{ id, key }]. Called by
+// approvePublish once a DIFFERENT admin has approved, BEFORE the render runs —
+// listPublishedFiles selects on public_key, so the copy has to land first or
+// the site would list a URL that 404s.
+//
+// Per-file failures are collected, not thrown: one unreadable object must not
+// block a whole site publish. A file that fails keeps its request and is
+// retried on the next approval.
+export async function promoteRequestedFiles(client, approver) {
+  const res = await client.query(
+    `SELECT ${FILE_COLUMNS} FROM project_files
+     WHERE publish_requested_at IS NOT NULL AND public_key IS NULL AND status = 'ready'
+     ORDER BY created_at`);
+  const promoted = [];
+  const failed = [];
+  for (const row of res.rows) {
+    const file = rowToFile(row);
+    if (file.bytes > MAX_PUBLIC_BYTES) {
+      failed.push({ id: file.id, reason: 'over the publish size cap' });
+      continue;
+    }
+    const key = publicFileKey(file.id, file.s3Key.split('/').pop());
+    try {
+      await getS3().send(new CopyObjectCommand({
+        Bucket: config.mediaBucket,
+        CopySource: `${config.mediaBucket}/${encodeURIComponent(file.s3Key).replace(/%2F/g, '/')}`,
+        Key: key,
+        MetadataDirective: 'REPLACE',
+        ContentType: file.mime,
+        ContentDisposition: contentDisposition(file.mime, file.originalFilename),
+        CacheControl: PUBLIC_CACHE_CONTROL,
+      }));
+    } catch (err) {
+      console.error(`[files] promote failed for ${file.id}: ${err.name || 'error'}`);
+      failed.push({ id: file.id, reason: err.name || 'copy failed' });
+      continue;
+    }
+    await withRetry(() => client.query(
+      `UPDATE project_files SET public_key = $2, published_at = now(), published_by = $3,
+         publish_requested_at = NULL, publish_requested_by = NULL, updated_at = now()
+       WHERE id = $1`,
+      [file.id, key, approver]));
+    console.log(`[files] ${approver} approved ${file.id} → ${key} (requested by ${file.publishRequestedBy})`);
+    promoted.push({ id: file.id, key, requestedBy: file.publishRequestedBy });
+  }
+  return { promoted, failed };
 }
 
 // unpublishFile(client, id, actor) → file. Row first (a failed object delete
 // leaves a stray public copy for a retry, never a row that claims a URL that
 // is gone). The bucket is versioned: a delete marker; CloudFront may serve a
 // cached copy for up to the 5 minute max-age.
+//
+// Deliberately ONE person: taking something down fast is a safety valve, and
+// the two-person rule exists to stop things going up, not coming down. Also
+// clears any outstanding request so an unpublish is not undone by the next
+// approval.
 export async function unpublishFile(client, id, actor) {
   const file = await getFile(client, id);
-  if (!file.publicKey) return file;
+  if (!file.publicKey && !file.publishRequestedAt) return file;
   await withRetry(() => client.query(
-    `UPDATE project_files SET public_key = NULL, published_at = NULL, published_by = NULL, updated_at = now() WHERE id = $1`,
+    `UPDATE project_files SET public_key = NULL, published_at = NULL, published_by = NULL,
+       publish_requested_at = NULL, publish_requested_by = NULL, updated_at = now()
+     WHERE id = $1`,
     [file.id]));
-  await deleteKeys([file.publicKey]);
-  console.log(`[files] ${actor} unpublished ${file.id} (${file.publicKey})`);
-  return { ...file, publicKey: null };
+  if (file.publicKey) await deleteKeys([file.publicKey]);
+  console.log(`[files] ${actor} unpublished ${file.id} (${file.publicKey || 'request only'})`);
+  return { ...file, publicKey: null, publishRequestedAt: null, publishRequestedBy: null };
 }
 
 // deleteFile(client, id) → file. Row first, then the original + public copy.

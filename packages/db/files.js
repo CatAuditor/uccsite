@@ -136,6 +136,8 @@ function rowToFile(row) {
     publicPath: row.public_key ? `/${row.public_key}` : null,
     publishedAt: row.published_at || null,
     publishedBy: row.published_by || null,
+    publishRequestedAt: row.publish_requested_at || null,
+    publishRequestedBy: row.publish_requested_by || null,
     uploadedBy: row.uploaded_by,
     status: row.status,
     createdAt: row.created_at,
@@ -144,7 +146,9 @@ function rowToFile(row) {
 }
 
 const FILE_COLUMNS = `id, project_slug, folder, original_filename, mime, bytes, note, s3_key, public_key,
-  published_at::text AS published_at, published_by, uploaded_by, status,
+  published_at::text AS published_at, published_by,
+  publish_requested_at::text AS publish_requested_at, publish_requested_by,
+  uploaded_by, status,
   created_at::text AS created_at, updated_at::text AS updated_at`;
 
 module.exports = {

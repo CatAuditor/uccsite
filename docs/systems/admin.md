@@ -194,10 +194,14 @@ covered) for the record. Viewers see everything read-only.
 **Explicit exceptions** (paths that change the public site without a
 second admin): developer CLI publishes (`scripts/publish.mjs`) and the
 Lambda's own redirect-verify runs — operator actions, not content edits;
-and **project files** (`app/files` "Publish" copies a file to `/files/*`
-immediately, editor role, docs/systems/files.md). The files exception is
-an open gap against the rule, not a design choice — see for-conner.md /
-changelog; routing it through the request is the intended fix.
+and **unpublishing** (any editor can take a public file down at once —
+the rule stops things going up, not coming down).
+
+**Project files no longer bypass the rule (2026-09-24).** `app/files`
+"Publish" records a request; `promoteRequestedFiles` does the S3 copy in
+`approvePublish`, after a second admin approves — before the Lambda
+invoke, since the render selects on `public_key`. ADR
+docs/decisions/project-files-two-person-publish.md.
 
 Review fixes 2026-09-13 (the rules every editor page follows):
 

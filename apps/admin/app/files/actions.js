@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { requireRole } from '../../lib/auth';
 import { withWriteDb, withWriteTx, recordChange } from '../../lib/data';
 import {
-  createUpload, confirmUpload, updateFile, publishFile, unpublishFile, deleteFile,
+  createUpload, confirmUpload, updateFile, requestFilePublish, cancelFilePublish, unpublishFile, deleteFile,
 } from '../../lib/files';
 import { runAction } from '../../lib/actions';
 
@@ -59,19 +59,37 @@ export async function saveFileDetails(prevState, formData) {
   });
 }
 
+// A file publish is a REQUEST. It goes live when a DIFFERENT admin approves a
+// site publish (docs/decisions/project-files-two-person-publish.md).
 export async function publish(prevState, formData) {
   return runAction(async () => {
     const s = await requireRole('editor');
     const id = String(formData.get('id'));
     await withWriteDb(async (client) => {
-      const file = await publishFile(client, id, s.email);
+      const file = await requestFilePublish(client, id, s.email);
       await recordChange(client, {
-        actor: s.email, action: 'files.publish', entityType: 'file', entityId: id,
-        diff: { filename: file.originalFilename, publicKey: file.publicKey },
+        actor: s.email, action: 'files.publish_request', entityType: 'file', entityId: id,
+        diff: { filename: file.originalFilename },
       });
     });
     revalidatePath('/files');
-    return { ok: true, message: 'Published.' };
+    return { ok: true, message: 'Requested. It goes live when another admin approves a publish.' };
+  });
+}
+
+export async function cancelPublish(prevState, formData) {
+  return runAction(async () => {
+    const s = await requireRole('editor');
+    const id = String(formData.get('id'));
+    await withWriteDb(async (client) => {
+      const file = await cancelFilePublish(client, id, s.email);
+      await recordChange(client, {
+        actor: s.email, action: 'files.publish_cancel', entityType: 'file', entityId: id,
+        diff: { filename: file.originalFilename },
+      });
+    });
+    revalidatePath('/files');
+    return { ok: true, message: 'Request withdrawn. Nothing was public.' };
   });
 }
 

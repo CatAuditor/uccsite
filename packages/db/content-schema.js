@@ -188,6 +188,11 @@ const STATEMENTS = [
     updated_at TIMESTAMPTZ DEFAULT now()
   )`,
   `CREATE INDEX ASYNC IF NOT EXISTS idx_project_files_project ON project_files(project_slug, folder, created_at)`,
+  // A file publish is a REQUEST until a second admin approves a site publish
+  // (docs/decisions/project-files-two-person-publish.md). These two record who
+  // asked and when; the approval clears them and fills public_key.
+  `ALTER TABLE project_files ADD COLUMN IF NOT EXISTS publish_requested_at TIMESTAMPTZ`,
+  `ALTER TABLE project_files ADD COLUMN IF NOT EXISTS publish_requested_by TEXT`,
 
   // ── redirects (spec §9; packages/db/redirects.js) ─────────────────────────
   ...REDIRECTS_DDL,

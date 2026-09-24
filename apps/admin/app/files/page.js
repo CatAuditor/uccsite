@@ -9,7 +9,7 @@ import { listFiles, listProjects } from '../../lib/files';
 import { ACCEPTED_EXTENSIONS, MAX_FILE_BYTES, MAX_PUBLIC_BYTES } from '@uccsite/db/files';
 import ActionForm from '../action-form';
 import FileUploader from './uploader';
-import { saveFileDetails, publish, unpublish, remove } from './actions';
+import { saveFileDetails, publish, cancelPublish, unpublish, remove } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,8 +49,8 @@ export default async function FilesPage({ searchParams }) {
     <div>
       <h1>Files</h1>
       <p className="notice">
-        Files are private to signed-in admins until <strong>Publish</strong> copies one to the live site at
-        <code> /files/…</code> and lists it on the project's block on /projects (the listing appears once a publish request is approved on Publish &amp; Status).
+        Files are private to signed-in admins until one is published to the live site at
+        <code> /files/…</code> and lists it on the project's block on /projects. <strong>Publish is a request</strong> — the file becomes reachable only when a different admin approves a publish on Publish &amp; Status.
         Unpublish or delete takes the public copy down (cached copies expire within 5 minutes).
         Files over {MAX_PUBLIC_BYTES / 1024 / 1024} MB stay private — host those on archive.org or YouTube and link to them.
         Organise by project, then by folder.
@@ -95,17 +95,22 @@ export default async function FilesPage({ searchParams }) {
               <td>
                 {f.publicPath
                   ? <a href={`${config.publicOrigin}${f.publicPath}`} target="_blank" rel="noopener" className="status-succeeded">live</a>
-                  : <span className="status-noop">private</span>}
+                  : f.publishRequestedAt
+                    ? <span className="status-pending">awaiting approval</span>
+                    : <span className="status-noop">private</span>}
                 {f.publishedAt && <div className="hint">{fmtDate(f.publishedAt)}</div>}
+                {!f.publicPath && f.publishRequestedAt && (
+                  <div className="hint">asked by {f.publishRequestedBy}</div>
+                )}
               </td>
               {!readOnly && (
                 <td className="files-actions">
                   {f.status === 'ready' && (
-                    <ActionForm action={f.publicPath ? unpublish : publish} className="inline">
+                    <ActionForm action={f.publicPath ? unpublish : f.publishRequestedAt ? cancelPublish : publish} className="inline">
                       <input type="hidden" name="id" value={f.id} />
-                      <button type="submit" disabled={!f.publicPath && f.bytes > MAX_PUBLIC_BYTES}
+                      <button type="submit" disabled={!f.publicPath && !f.publishRequestedAt && f.bytes > MAX_PUBLIC_BYTES}
                         title={!f.publicPath && f.bytes > MAX_PUBLIC_BYTES ? `Over the ${MAX_PUBLIC_BYTES / 1024 / 1024} MB publish cap` : ''}>
-                        {f.publicPath ? 'Unpublish' : 'Publish'}
+                        {f.publicPath ? 'Unpublish' : f.publishRequestedAt ? 'Cancel request' : 'Request publish'}
                       </button>
                     </ActionForm>
                   )}

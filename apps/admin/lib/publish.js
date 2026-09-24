@@ -8,6 +8,7 @@ import {
 } from '@uccsite/db/publish-requests';
 import { requireRole } from './auth';
 import { withDb, withWriteTx, recordChange, inFlightPublish } from './data';
+import { promoteRequestedFiles } from './files';
 import { config } from './config';
 
 // publishState() → what the dashboard renders.
@@ -83,6 +84,26 @@ export async function approvePublish(id, note, seenThrough) {
     }
     await recordChange(client, { actor: s.email, action: 'publish.approve', entityType: 'publish_request', entityId: id, diff: { requestedBy: open.requestedBy, note: note || '', seenThrough: seenThrough || null } });
   });
+  // Project files the writer asked to publish become public HERE — on a second
+  // admin's approval, never on one editor's click
+  // (docs/decisions/project-files-two-person-publish.md). Before the invoke:
+  // the render selects on public_key, so a file promoted after it would be
+  // live but unlisted until the next publish. Outside the tx above: these are
+  // S3 copies, which do not belong inside a database transaction.
+  try {
+    const { promoted, failed } = await withWriteTx((client) => promoteRequestedFiles(client, s.email));
+    if (promoted.length || failed.length) {
+      await withWriteTx((client) => recordChange(client, {
+        actor: s.email, action: 'files.publish_approve', entityType: 'project_files', entityId: id,
+        diff: { promoted: promoted.map((p) => p.id), failed },
+      }));
+    }
+    if (failed.length) console.warn(`[admin] ${failed.length} file(s) failed to promote on request ${id}`);
+  } catch (err) {
+    // The content publish is still correct without them; the requests survive
+    // and retry on the next approval. Do not fail the whole publish for this.
+    console.error(`[admin] file promotion failed on request ${id}: ${err.message}`);
+  }
   try {
     const lambda = new LambdaClient({ region: config.region });
     await lambda.send(new InvokeCommand({

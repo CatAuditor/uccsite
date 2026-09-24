@@ -2,7 +2,8 @@
 
 A signed-in file store inside the admin, organised by **project** (the
 Projects collection) and then by a free-text **folder** path, with a
-per-file **Publish** that copies the file to the live site at
+per-file **Publish** REQUEST that, once a second admin approves a site
+publish (docs/decisions/project-files-two-person-publish.md), copies the file to
 `/files/<id>/<filename>` and lists it on the project's block on
 `/projects` (next site Publish). Every download from the site opens the
 **download modal** (a donation ask) whose copy — with every other donation
@@ -37,7 +38,10 @@ css/pages/projects.css          .project-files / .project-file* styles
 apps/admin/app/appeals/page.js  Donation appeals editor (docs/decisions/
                                 donation-appeals-page.md)
 apps/admin/lib/files.js         listProjects, listFiles (+ presigned GET per row),
-                                createUpload (presign → pending row), confirmUpload
+                                createUpload (presign → pending row), confirmUpload,
+                                requestFilePublish / cancelFilePublish (record the ask),
+                                promoteRequestedFiles (the S3 copy, called by
+                                approvePublish), unpublishFile (one-click, by design)
                                 (HeadObject size check → ready), updateFile,
                                 publishFile (CopyObject → files/), unpublishFile,
                                 deleteFile
