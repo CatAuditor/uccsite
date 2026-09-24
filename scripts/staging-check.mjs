@@ -69,13 +69,19 @@ check('CSP present, script-src self only', csp.includes("script-src 'self'") && 
 check('CSP frame-ancestors none', csp.includes("frame-ancestors 'none'"));
 if (AUTH) check('staging noindex header', h('x-robots-tag').includes('noindex'));
 
+// The Decap CMS shell was removed 2026-09-23: it served unauthenticated and
+// wrote to GitHub `main`, a publish path around the two-person rule. /admin
+// must now be gone, and must no longer carry the loosened Decap policy.
 r = await get('/admin');
-check('/admin serves 200', r.status === 200, String(r.status));
+check('/admin is gone', r.status === 404, String(r.status));
 const adminCsp = r.headers.get('content-security-policy') || '';
-check('admin CSP allows unsafe-eval + github', adminCsp.includes("'unsafe-eval'") && adminCsp.includes('api.github.com'));
-check('admin no-store', (r.headers.get('cache-control') || '').includes('no-store'));
+check('/admin carries the site CSP, not the Decap one',
+  !adminCsp.includes("'unsafe-eval'") && !adminCsp.includes('api.github.com'));
 
-// A page whose slug merely STARTS with "admin" must get the SITE policy.
+r = await get('/admin/config.yml');
+check('/admin/* is gone', r.status === 404, String(r.status));
+
+// A page whose slug merely STARTS with "admin" must also get the SITE policy.
 r = await get('/administration-nonexistent');
 const adminishCsp = r.headers.get('content-security-policy') || '';
 check('/admin-prefixed non-admin path gets site CSP', !adminishCsp.includes("'unsafe-eval'"));

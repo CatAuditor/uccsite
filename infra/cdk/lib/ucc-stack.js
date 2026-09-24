@@ -63,22 +63,12 @@ const SITE_CSP = [
   "form-action 'self'",
 ].join('; ');
 
-// Decap CMS shell under /admin/* (retires in Phase 7) — needs inline/eval
-// scripts and the GitHub API, exactly as static/_headers grants today.
-const ADMIN_CSP = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: blob: https:",
-  "connect-src 'self' https://api.github.com https://github.com https://raw.githubusercontent.com",
-  "worker-src 'self' blob:",
-  "frame-src 'none'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join('; ');
+// The Decap CMS shell that used to live under /admin/* is gone (2026-09-23).
+// It was published unauthenticated and wired to GitHub `main`, which after
+// cutover would be a second publish path bypassing the two-person rule. Its
+// loosened CSP ('unsafe-eval', the GitHub API in connect-src) went with it —
+// /admin now serves the site policy like any other path, and 404s.
+// docs/decisions/csp-split-admin.md records why the split existed.
 
 const PERMISSIONS_POLICY = 'camera=(), microphone=(), geolocation=(), payment=(), usb=()';
 
@@ -250,20 +240,6 @@ class UccStack extends Stack {
         ],
       },
     });
-    const adminHeaders = new cloudfront.ResponseHeadersPolicy(this, 'AdminHeaders', {
-      securityHeadersBehavior: {
-        ...SECURITY_HEADERS,
-        contentSecurityPolicy: { contentSecurityPolicy: ADMIN_CSP, override: true },
-      },
-      customHeadersBehavior: {
-        customHeaders: [
-          { header: 'Permissions-Policy', value: PERMISSIONS_POLICY, override: true },
-          { header: 'X-Robots-Tag', value: 'noindex, nofollow', override: true },
-          { header: 'Cache-Control', value: 'no-store', override: true },
-        ],
-      },
-    });
-
     // ── Distribution ────────────────────────────────────────────────────────
     const siteOrigin = origins.S3BucketOrigin.withOriginAccessControl(siteBucket);
     // Media OAC: CDK's automatic grant would cover the whole bucket, including
@@ -289,11 +265,6 @@ class UccStack extends Stack {
         eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
       }],
     };
-    const adminBehavior = {
-      ...siteBehaviorBase,
-      responseHeadersPolicy: adminHeaders,
-      cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
-    };
     // Custom domain (for-conner §7.1). Inert until `prodCertificateArn` is set
     // in cdk.json: the certificate must already be ISSUED before it is named
     // here, or the deploy blocks waiting on DNS validation it cannot perform.
@@ -312,14 +283,6 @@ class UccStack extends Stack {
       ...customDomain,
       defaultBehavior: { ...siteBehaviorBase, responseHeadersPolicy: siteHeaders },
       additionalBehaviors: {
-        // Exact '/admin' (matching is on the ORIGINAL URI, before the viewer
-        // function rewrites it to /admin/index.html) plus '/admin/*'. NOT a
-        // single '/admin*' — that would pull any future /admin-... page under
-        // the loosened Decap policy. CACHING_DISABLED matches the no-store
-        // header (with CACHING_OPTIMIZED the edge cached the shell for 24h
-        // while telling browsers not to).
-        '/admin': { ...adminBehavior },
-        '/admin/*': { ...adminBehavior },
         // Media library variants: fingerprinted keys, immutable cache. The
         // viewer function stays attached for the staging basic-auth gate
         // (keys carry extensions, so its clean-URL logic passes them through).
