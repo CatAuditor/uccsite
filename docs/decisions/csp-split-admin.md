@@ -1,5 +1,11 @@
 # Strict site-wide CSP, relaxed only under /admin/*
 
+> **The /admin/* half is retired (2026-09-23).** Decap was deleted from the AWS
+> site before cutover, taking its relaxed policy with it — see
+> decap-removed-before-cutover.md. /admin now serves the site policy and 404s.
+> Cloudflare still serves both policies from `main` until the DNS flip. The
+> strict site-wide policy below stands.
+
 **Date:** 2026-08-23
 
 ## Decision
