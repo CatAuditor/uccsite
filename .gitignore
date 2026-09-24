@@ -11,3 +11,4 @@ apps/admin/.env.local
 apps/admin/.next/
 .claude/settings.local.json
 apps/admin/site-src/
+admin-dev.log
