@@ -6,6 +6,7 @@
     "stagingBasicAuth": "preview:wasatch-front-2026",
     "stagingPublicOrigin": "https://d3heb9s058a59m.cloudfront.net",
     "@aws-cdk/aws-s3:createDefaultLoggingPolicy": true,
-    "@aws-cdk/core:checkSecretUsage": true
+    "@aws-cdk/core:checkSecretUsage": true,
+    "prodCertificateArn": "arn:aws:acm:us-east-1:017110365763:certificate/ed0efb57-27c9-41f0-9f00-d88c4c9bf24c"
   }
 }
