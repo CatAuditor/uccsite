@@ -44,6 +44,24 @@ If any item is unchecked, complete it before sending the response.
 
 ---
 
+## Checklist: Development Notes (every change)
+
+`docs/dev-notes.md` is the plain-language record of the site, shown in the admin's
+**Development notes** tab (`admin.utahciviccompact.org/dev-notes`) for the people
+running the site. With EVERY change to the site, the admin or the infrastructure:
+
+- Add an entry at the TOP (newest first): `## YYYY-MM-DD — short title`
+- Say what changed and why in plain language — no file paths unless an editor needs one
+- Say what editors or admins now do differently, if anything
+- Say what is left unfinished or needs a person (keys, clicks, decisions)
+- One entry per change; update today's entry rather than adding a near-duplicate
+- Commit the note in the same commit as the change
+
+Technical detail stays in `docs/changelog.md` and `docs/systems/` — the note links
+the reader there only when useful.
+
+---
+
 ## Checklist: After Every Push to Remote
 
 After every `git push`, update `docs/changelog.md` before the session ends:
@@ -68,6 +86,7 @@ docs/
   changelog.md    — One entry per push (see checklist above)
   build-spec-aws.md — The AWS migration build spec (governing document for the rebuild)
   for-conner.md   — operator runbook: every step needing the account owner's keys/hand (update every phase)
+  dev-notes.md    — plain-language log of every change, newest first; shown in the admin's Development notes tab
   non-technical-editing-guide.md — for editors; keep in step with docs/systems/admin.md
   state-of-the-site.md — pre-migration Cloudflare snapshot (historical)
 ```

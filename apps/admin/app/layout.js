@@ -32,6 +32,7 @@ const NAV = [
     ['/tips', 'Tips'],
     ['/revisions', 'Revisions'],
     ['/audit', 'Audit Log'],
+    ['/dev-notes', 'Development notes'],
   ]},
   { group: 'Account', items: [['/profile', 'My profile & security']], owner: [['/users', 'Users & roles']] },
 ];

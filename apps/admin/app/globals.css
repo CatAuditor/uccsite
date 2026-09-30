@@ -167,3 +167,10 @@ select { padding: 8px; border: 1px solid #c9cdc6; font: inherit; width: 100%; ba
 .unfurl-actions button { margin-top: 6px; padding: 7px 14px; }
 @media (max-width: 640px) { .unfurl-card { flex-direction: column; } .unfurl-image { width: 100%; height: 160px; } }
 .unfurl-note { background: #fbf3dd; color: #6b4e0e; padding: 6px 10px; margin: 6px 0 0; font-size: 13px; }
+
+/* Development notes tab */
+.dev-notes blockquote { margin: 8px 0 0; padding: 8px 12px; background: #fff; border-left: 3px solid #16281e; font-size: 13px; }
+.dev-notes article { max-width: 760px; line-height: 1.6; }
+.dev-notes article h3 { margin: 28px 0 6px; padding-top: 18px; border-top: 1px solid #e3e6e0; }
+.dev-notes article h2 { margin-top: 8px; }
+.dev-notes article code { background: #eef0ec; padding: 1px 4px; font-size: .9em; }

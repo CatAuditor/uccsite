@@ -265,6 +265,16 @@ Logs: `[unfurl] <email> <host> ok | blocked (HTTP n) → from-link fallback | �
 Preview images are only shown in the admin; the public site's cards have no
 image field.
 
+## Development notes tab (2026-09-30)
+
+`/dev-notes` (Operations → Development notes, every role) renders
+`docs/dev-notes.md` — the plain-language change log CLAUDE.md requires with every
+change. `lib/mini-markdown.mjs` escapes first, then renders headings, bullets,
+bold, code and http(s)/relative links only (tested, incl. script/img injection).
+On Amplify the file ships via `amplify.yml` (copied into `site-src/docs/`) and
+`outputFileTracingIncludes['/dev-notes']`; locally it is read from the repo. A
+missing file renders a notice, logged as `[admin] dev-notes unreadable: <code>`.
+
 ## Env vars (lib/config.js)
 
 `UCC_ENV, UCC_REGION, COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_DOMAIN,
