@@ -5,8 +5,96 @@
 // videos) inside the item. The top level offers a text filter (narrows what
 // is shown; order and hidden items are untouched) and A–Z / newest-first
 // sorting of the whole list. Deliberately dependency-free (spec §15).
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { parseFreeDate } from '@uccsite/render/dates.mjs';
+import { unfurlLink } from '../lib/unfurl';
+
+const hostOf = (href) => { try { return new URL(href).hostname.replace(/^www\./, ''); } catch { return ''; } };
+const DEFAULT_BADGE = '#1b2f4e';
+
+// "Add from link" (docs/systems/admin.md "Link previews"): paste an article
+// URL, see the card a social feed would show, add it to the TOP of the list
+// with the fields filled. An outlet already in the list keeps its existing
+// name and badge colour, so KSL stays "KSL" in KSL blue. Nothing is saved
+// until the editor presses Save.
+function LinkAdder({ fields, items, onAdd, maxItems }) {
+  const [link, setLink] = useState('');
+  const [result, setResult] = useState(null);
+  const [pending, start] = useTransition();
+  const has = (name) => fields.some((f) => f.name === name);
+
+  const fetchPreview = () => {
+    const url = link.trim();
+    if (!url) return;
+    setResult(null);
+    start(async () => setResult(await unfurlLink(url)));
+  };
+
+  const add = () => {
+    const f = { ...result.fields };
+    const host = hostOf(f.url);
+    const known = items.find((it) => hostOf(it.url) === host)
+      || items.find((it) => String(it.outlet || '').toLowerCase() === f.outlet.toLowerCase());
+    if (known?.outlet) {
+      const spanish = f.lang_attr === 'lang="es"';
+      f.outlet = known.outlet;
+      f.read_more = spanish ? `Leer en ${known.outlet} →` : `Read on ${known.outlet} →`;
+    }
+    f.badge_color = known?.badge_color || DEFAULT_BADGE;
+    const item = Object.fromEntries(fields.map((fd) => [fd.name, fd.widget === 'list' ? [] : (f[fd.name] ?? '')]));
+    onAdd(item);
+    setLink('');
+    setResult(null);
+  };
+
+  const duplicate = result?.ok && items.some((it) => it.url && it.url === result.fields.url);
+
+  return (
+    <div className="unfurl">
+      <label htmlFor="unfurl-link">Add from link</label>
+      <div className="unfurl-row">
+        <input id="unfurl-link" type="url" placeholder="Paste an article link…" value={link}
+          onChange={(e) => setLink(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); fetchPreview(); } }} />
+        <button type="button" onClick={fetchPreview} disabled={pending || !link.trim()}>
+          {pending ? 'Fetching…' : 'Fetch preview'}
+        </button>
+      </div>
+      {result && !result.ok && <p className="unfurl-error" role="alert">{result.error}</p>}
+      {result?.ok && (
+        <div className="unfurl-card">
+          {result.card.image && <img className="unfurl-image" src={result.card.image} alt="" referrerPolicy="no-referrer" />}
+          <div className="unfurl-body">
+            <div className="unfurl-site">
+              <img src={result.card.icon} alt="" width="16" height="16" referrerPolicy="no-referrer"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              <span>{result.card.site}</span>
+              <span className="unfurl-host">{result.card.host}</span>
+            </div>
+            <div className="unfurl-title">{result.card.title || '(no headline found)'}</div>
+            {result.card.description && <div className="unfurl-desc">{result.card.description}</div>}
+            <dl className="unfurl-fields">
+              {has('date') && <><dt>Date</dt><dd>{result.fields.date || 'not found — fill in'}</dd></>}
+              {result.fields.lang_attr && has('lang_attr') && <><dt>Language</dt><dd>{result.fields.lang_attr}</dd></>}
+            </dl>
+            {result.partial && (
+              <p className="unfurl-note">This site blocks link previews, so these came from the link itself.
+                Check the headline and add a summary before saving.</p>
+            )}
+            {duplicate && <p className="unfurl-error">This link is already in the list.</p>}
+            <div className="unfurl-actions">
+              <button type="button" onClick={add}>Add to top</button>
+              <button type="button" className="secondary" onClick={() => setResult(null)}>Discard</button>
+            </div>
+            {maxItems && items.length >= maxItems && (
+              <p className="hint">This list shows {maxItems}. Adding puts this first and drops the last one.</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function emptyItem(fields) {
   return Object.fromEntries(fields.map(f => [f.name, f.widget === 'list' ? [] : '']));
@@ -85,7 +173,7 @@ const parseDate = (s) => { const t = parseFreeDate(s); return Number.isNaN(t) ? 
 
 // mediaOptions: { [fieldName]: [{ value, label }] } for widget 'media' fields —
 // the server builds it from READY assets WITH alt text (see lib/media.js).
-export default function ListEditor({ fields, items: initial, itemLabelField, readOnly, name = 'payload', mediaOptions = {}, sortable = false }) {
+export default function ListEditor({ fields, items: initial, itemLabelField, readOnly, name = 'payload', mediaOptions = {}, sortable = false, maxItems }) {
   const [items, setItems] = useState(initial);
   const [filter, setFilter] = useState('');
   const q = filter.trim().toLowerCase();
@@ -97,9 +185,17 @@ export default function ListEditor({ fields, items: initial, itemLabelField, rea
     setItems(next);
   };
 
+  const linkable = !readOnly && fields.some(f => f.name === 'url') && fields.some(f => f.name === 'headline');
+  // New stories go to the TOP; a capped list (homepage press = 3) drops its last.
+  const addFromLink = (item) => setItems((prev) => {
+    const next = [item, ...prev];
+    return maxItems ? next.slice(0, maxItems) : next;
+  });
+
   return (
     <div>
       <input type="hidden" name={name} value={JSON.stringify(items)} />
+      {linkable && <LinkAdder fields={fields} items={items} onAdd={addFromLink} maxItems={maxItems} />}
       {(sortable || items.length > 5) && (
         <div className="list-tools">
           <input type="search" placeholder="Filter items…" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Filter items" />

@@ -232,6 +232,39 @@ Review fixes 2026-09-13 (the rules every editor page follows):
   Homepage save `{ ...current, ...ownFields }` so neither page nulls the
   other's columns.
 
+## Link previews — "Add from link" (2026-09-30)
+
+On News & Media (articles) and the homepage press list: paste a link →
+**Fetch preview** → a social-feed style card → **Add to top** with the fields
+filled. Nothing saves until **Save**.
+
+```
+app/list-editor.js      LinkAdder — shown when a list has url + headline fields;
+                        inserts at the top; maxItems caps a list (homepage press = 3,
+                        the last entry drops). A host or outlet already in the list
+                        keeps its outlet name and badge colour.
+lib/unfurl.js           'use server' unfurlLink(url) — editor+. Fetches with
+                        redirect:'manual', re-checking EVERY hop against private /
+                        loopback / link-local / metadata ranges (it runs under the
+                        compute role). 8 s timeout, 1.5 MB cap, html only.
+lib/unfurl-parse.mjs    pure: Open Graph → outlet, headline (site suffix stripped),
+                        excerpt (≤320 chars), date ("August 20, 2026", Utah time),
+                        url (tracking params stripped), read_more ("Read on X →" /
+                        "Leer en X →"), lang_attr; previewFromUrl for blocked sites.
+test/unfurl-parse.test.mjs  8 tests incl. the SSRF ranges.
+```
+
+**Blocked outlets.** Utah News Dispatch sits behind a Cloudflare bot challenge
+and Forbes 403s; no honest server fetch passes either (the crawler identifies
+itself as UCC-LinkPreview and does not impersonate Facebook or Slack). On
+401/403/429/503 or a challenge page, the card is built from the link alone —
+outlet, date from the URL path, a DRAFT headline from the slug — and says so;
+the editor fixes the headline and adds the summary.
+
+Logs: `[unfurl] <email> <host> ok | blocked (HTTP n) → from-link fallback | → HTTP n | failed: <ErrorName>`.
+Preview images are only shown in the admin; the public site's cards have no
+image field.
+
 ## Env vars (lib/config.js)
 
 `UCC_ENV, UCC_REGION, COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_DOMAIN,

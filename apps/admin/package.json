@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "node --test \"test/**/*.test.mjs\""
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.1131.0",
