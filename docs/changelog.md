@@ -4,6 +4,33 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.13.0 — 2026-09-30 (branch `refactor`) — CUTOVER
+
+**utahciviccompact.org now serves from AWS.** DNS flipped 15:26 MDT: apex and
+`www` CNAME → `d1vpvgdxky8mqn.cloudfront.net`, DNS-only, TTL 300. Rollback:
+both back to `uccsite.pages.dev`, proxied (record comments say so).
+
+Covers the unlogged pushes of 2026-09-23 → 30 (9b8b5cd … 1f4e092):
+- **Prod stack:** Cognito passkey relying party removed (failed pool CREATE);
+  retained-secret orphans cleared; custom domain + ACM cert attached.
+- **Content:** team (Kaden Payne, Jarom's title, headshots) synced from main;
+  homepage features three statements.
+- **Security:** Decap CMS removed from the AWS site; project file publishing
+  now needs a second admin's approval.
+- **Admin:** hosted on Amplify (app `dmfjtx0gh1s1n`) at admin.utahciviccompact.org.
+- **Data:** donors/subscribers copied, delta re-run at the flip — 17 / 1 / 5 /
+  36, SUM 27500, matches D1 exactly.
+
+**Verified after the flip:** 1.1.1.1 and 8.8.8.8 both resolve to CloudFront;
+parity 41 URLs OK against the real domain; /api/health 200; MX (Zoho) intact.
+
+Open at cutover:
+- **P1** Resend key unset — welcome emails and billing-portal links degrade.
+- **P1** Stripe webhook endpoint URL unconfirmed (dashboard); watch deliveries.
+- **P1** Jarom has not signed in — no second publish approver yet.
+- P2 Airtable tip history not copied; GitHub backup App; Turnstile.
+- Cloudflare Pages kept deployable and idle until 2026-10-30 (§7.7).
+
 ## v0.12.1 — 2026-09-14 (branch `refactor`)
 
 API Lambda no longer connects to DSQL as `admin` (closes the v0.12.0 accepted

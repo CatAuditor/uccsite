@@ -356,3 +356,8 @@ Until this exists the admin runs only on a developer machine (`npm run dev
 
 - [x] 2026-09-13 — staging fully built (Phases 0–9), reviewed, published;
   Jarom owner user in the staging pool; this runbook.
+- [x] 2026-09-30 — **cutover**: DNS flipped to CloudFront 15:26 MDT, donor
+  delta re-run (no changes), parity green on the real domain. Admin live at
+  admin.utahciviccompact.org. Remaining: Resend key, Stripe webhook URL check,
+  Jarom sign-in, Airtable copy, GitHub App, Turnstile. Cloudflare idle until
+  2026-10-30, then §7.8.
