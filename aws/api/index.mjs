@@ -15,7 +15,7 @@ import { makeCachedClient } from '@uccsite/db';
 import { loadSecrets } from './secrets.js';
 import { handleWebhook } from './webhook.js';
 import {
-  subscribe, unsubscribe, tip, createCheckoutSession,
+  subscribe, unsubscribe, tip, petitionSign, createCheckoutSession,
   createPortalSessionPost, createPortalSessionGet, portalLinkJob, welcomeEmailJob, donationStats,
 } from './routes.js';
 
@@ -61,6 +61,7 @@ const ROUTES = {
   'GET /api/unsubscribe': { fn: unsubscribe, secrets: true },
   'POST /api/unsubscribe': { fn: unsubscribe, secrets: true },
   'POST /api/tip': { fn: tip, secrets: true },
+  'POST /api/petition': { fn: petitionSign, secrets: true },
   'POST /api/create-checkout-session': { fn: createCheckoutSession, secrets: true },
   'POST /api/create-portal-session': { fn: createPortalSessionPost, secrets: true },
   'GET /api/create-portal-session': { fn: createPortalSessionGet, secrets: true },

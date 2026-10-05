@@ -257,6 +257,72 @@ async function tip({ event, db, secrets, body }) {
   return json({ ok: true }, 200);
 }
 
+// ── POST /api/petition ──────────────────────────────────────────────────────
+// Petition signature (docs/systems/petition.md). `petition` is the campaign
+// slug the page carries (content-driven, pattern-validated — no allowlist, so
+// a new campaign needs no API change). One row per email per campaign: a
+// re-sign refreshes the details and keeps the original created_at. Signing
+// is consent to future communications (the form says so), so the signer is
+// also upserted into subscribers WITHOUT overwriting details they gave on
+// the join form. No welcome email — the thank-you page is the acknowledgment.
+const PETITION_SLUG_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const ZIP_RE = /^\d{5}(-\d{4})?$/;
+const PETITION_LIMIT = 20; // per IP per hour — one phone at a tabling event signs many
+
+async function petitionSign({ event, db, secrets, body }) {
+  const limited = await rateLimitOr429(db, event, 'petition', PETITION_LIMIT);
+  if (limited) return limited;
+
+  if (body === undefined) return json({ error: 'Invalid request body' }, 400);
+
+  const blocked = await turnstileOr403(secrets.TURNSTILE_SECRET_KEY, event, body.turnstileToken);
+  if (blocked) return blocked;
+
+  const petition = str(body.petition, 64).toLowerCase();
+  const firstName = str(body.firstName, 100);
+  const lastName = str(body.lastName, 100);
+  const email = str(body.email, 254).toLowerCase();
+  const zip = str(body.zip, 10);
+  const address = str(body.address, 200);
+  const phone = str(body.phone, 30);
+
+  if (!PETITION_SLUG_RE.test(petition)) return json({ error: 'Unknown petition' }, 400);
+  if (!firstName || !lastName) return json({ error: 'First and last name are required' }, 400);
+  if (!ZIP_RE.test(zip)) return json({ error: 'A 5-digit ZIP code is required' }, 400);
+  if (!isValidEmail(email)) return json({ error: 'A valid email address is required' }, 400);
+
+  try {
+    await db.query(
+      `INSERT INTO petition_signatures (id, petition, first_name, last_name, email, zip, address, phone)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (petition, email) DO UPDATE SET
+         first_name = excluded.first_name,
+         last_name  = excluded.last_name,
+         zip        = excluded.zip,
+         address    = COALESCE(excluded.address, petition_signatures.address),
+         phone      = COALESCE(excluded.phone, petition_signatures.phone),
+         updated_at = now()`,
+      [petition, firstName, lastName, email, zip, address || null, phone || null],
+    );
+    await db.query(
+      `INSERT INTO subscribers (id, email, first_name, last_name, address, zip)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
+       ON CONFLICT (email) DO UPDATE SET
+         first_name = COALESCE(subscribers.first_name, excluded.first_name),
+         last_name  = COALESCE(subscribers.last_name, excluded.last_name),
+         address    = COALESCE(subscribers.address, excluded.address),
+         zip        = COALESCE(subscribers.zip, excluded.zip)`,
+      [email, firstName, lastName, address || null, zip],
+    );
+  } catch (err) {
+    // Error NAME only — pg messages can echo parameter values (signer PII).
+    console.error(`[api] petition insert failed: ${err?.name || 'Error'}`);
+    return json({ error: 'Could not record your signature. Please try again.' }, 500);
+  }
+
+  return json({ ok: true });
+}
+
 // ── POST /api/create-checkout-session ───────────────────────────────────────
 async function createCheckoutSession({ event, db, secrets, body, origin }) {
   const limited = await rateLimitOr429(db, event, 'checkout', 10);
@@ -269,6 +335,8 @@ async function createCheckoutSession({ event, db, secrets, body, origin }) {
   const firstName = str(body.firstName, 100);
   const lastName = str(body.lastName, 100);
   const zip = str(body.zip, 10);
+  // Where the ask came from (e.g. 'petition:<slug>'); Stripe metadata only.
+  const source = str(body.source, 80).replace(/[^\w:.-]/g, '');
 
   if (!['subscription', 'onetime'].includes(type)) {
     return json({ error: 'Invalid type' }, 400);
@@ -302,6 +370,7 @@ async function createCheckoutSession({ event, db, secrets, body, origin }) {
       newsletterOptIn: newsletterOptIn ? '1' : '0',
       publicDonor: publicDonor === false ? '0' : '1',
     };
+    if (source) metadata.source = source;
 
     const sessionParams = {
       mode: isSub ? 'subscription' : 'payment',
@@ -454,6 +523,6 @@ async function donationStats({ db }) {
 }
 
 module.exports = {
-  subscribe, unsubscribe, tip, createCheckoutSession,
+  subscribe, unsubscribe, tip, petitionSign, createCheckoutSession,
   createPortalSessionPost, createPortalSessionGet, portalLinkJob, welcomeEmailJob, donationStats,
 };

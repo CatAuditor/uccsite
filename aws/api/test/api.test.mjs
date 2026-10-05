@@ -331,6 +331,73 @@ test('stats returns recent list only — no total, no goal', async () => {
   assert.equal(res.headers['Cache-Control'], 'public, max-age=60');
 });
 
+// ── Petition ────────────────────────────────────────────────────────────────
+
+const signer = { petition: 'udot-alpr-permits', firstName: 'Ada', lastName: 'Lovelace', email: 'Ada@Example.org', zip: '84101' };
+
+test('petition: valid signature upserts the signature AND the subscriber (lowercased email)', async () => {
+  const db = fakeDb();
+  const res = await routes.petitionSign(baseCtx(db, { body: { ...signer, address: '1 Main St', phone: '' } }));
+  assert.equal(res.statusCode, 200);
+  const sig = db.calls.find(c => c.text.includes('INSERT INTO petition_signatures'));
+  assert.deepEqual(sig.params, ['udot-alpr-permits', 'Ada', 'Lovelace', 'ada@example.org', '84101', '1 Main St', null]);
+  assert.match(sig.text, /ON CONFLICT \(petition, email\) DO UPDATE/);
+  const sub = db.calls.find(c => c.text.includes('INSERT INTO subscribers'));
+  assert.equal(sub.params[0], 'ada@example.org');
+  assert.match(sub.text, /COALESCE\(subscribers\.first_name, excluded\.first_name\)/); // never clobbers join-form details
+});
+
+test('petition: required fields and slug pattern are enforced before any write', async () => {
+  for (const bad of [
+    { ...signer, petition: 'Not A Slug!' },
+    { ...signer, firstName: '' },
+    { ...signer, lastName: '' },
+    { ...signer, zip: '8410' },
+    { ...signer, zip: 'abcde' },
+    { ...signer, email: 'nope' },
+  ]) {
+    const db = fakeDb();
+    const res = await routes.petitionSign(baseCtx(db, { body: bad }));
+    assert.equal(res.statusCode, 400, JSON.stringify(bad));
+    assert.ok(!db.calls.some(c => c.text.startsWith('INSERT INTO petition_signatures')));
+  }
+  const db = fakeDb();
+  assert.equal((await routes.petitionSign(baseCtx(db, { body: undefined }))).statusCode, 400);
+});
+
+test('petition: ZIP+4 accepted; insert failure 500s with the error name only', async () => {
+  let db = fakeDb();
+  assert.equal((await routes.petitionSign(baseCtx(db, { body: { ...signer, zip: '84101-1234' } }))).statusCode, 200);
+  const logged = [];
+  const orig = console.error;
+  console.error = (...a) => logged.push(a.join(' '));
+  try {
+    db = fakeDb({ 'INSERT INTO petition_signatures': () => { const e = new Error('duplicate key value ada@example.org'); e.name = 'error'; throw e; } });
+    const res = await routes.petitionSign(baseCtx(db, { body: signer }));
+    assert.equal(res.statusCode, 500);
+  } finally { console.error = orig; }
+  assert.ok(logged.some(l => l.includes('petition insert failed: error')));
+  assert.ok(!logged.some(l => l.includes('ada@example.org')));
+});
+
+test('checkout carries an optional sanitized source into Stripe metadata', async () => {
+  const db = fakeDb();
+  let captured;
+  const origFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    captured = String(init.body);
+    return { ok: true, status: 200, json: async () => ({ url: 'https://stripe.test/cs' }) };
+  };
+  try {
+    const res = await routes.createCheckoutSession({
+      ...baseCtx(db, { body: { type: 'onetime', amountCents: 2500, source: 'petition:udot alpr<script>' } }),
+      secrets: { STRIPE_SECRET_KEY: 'sk_test' },
+    });
+    assert.equal(res.statusCode, 200);
+  } finally { globalThis.fetch = origFetch; }
+  assert.match(captured, /metadata%5Bsource%5D=petition%3Audotalprscript/);
+});
+
 test('checkout validates type and amount bounds', async () => {
   const db = fakeDb();
   for (const body of [
