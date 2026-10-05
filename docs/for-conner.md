@@ -131,7 +131,7 @@ aws secretsmanager put-secret-value --profile uccsite --region us-west-2 --secre
 |---|---|
 | [ ] `STRIPE_SECRET_KEY` | Stripe → Developers → API keys. **Staging gets the TEST key**, prod the live key. |
 | [ ] `STRIPE_WEBHOOK_SECRET` | carries over UNCHANGED for prod (webhook URL does not change at cutover): Stripe → Developers → Webhooks → the endpoint → Signing secret. Staging: create a test-mode endpoint pointing at `https://d3heb9s058a59m.cloudfront.net/api/webhook` and use its secret. |
-| [ ] `RESEND_API_KEY` | Resend → API keys. |
+| [ ] `RESEND_API_KEY` | Resend → API keys. **Optional now**: SES replaces Resend (§10); fill only if welcome emails must work before §10 is done. |
 | [ ] `TOKEN_SECRET` | §1 — the ORIGINAL value. |
 | [ ] `TURNSTILE_SECRET_KEY` | Cloudflare → Turnstile → create a widget for utahciviccompact.org (add the staging CloudFront hostname too). **ORDER MATTERS** — see below. |
 | [ ] `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY` | §4. |
@@ -351,6 +351,83 @@ Until this exists the admin runs only on a developer machine (`npm run dev
   publish request.
 - **Custom domain + ACM on `UccProd`** (§7.1) is not in the stack yet.
 - Spec §20's tail was lost; org decision: the dev's judgement governs.
+
+## 10. Email: move from Resend to Amazon SES
+
+The AWS side is already deployed (2026-10-05): the sending domain exists in
+SES, DKIM keys are generated, the bounce/complaint alerts go to the prod ops
+topic (§1). SES is in its **sandbox** until AWS approves production access,
+and AWS will not approve until the DNS below is in place. Resend keeps
+working the whole time (if its key is set), so nothing breaks while this
+waits. Technical reference: `docs/systems/email.md`.
+
+### 10.1 `[hand]` Add five DNS records in Cloudflare
+
+Cloudflare dashboard → **utahciviccompact.org** → **DNS** → **Records** →
+**Add record**. For every one of the five: **Proxy status must be "DNS only"
+(grey cloud, NOT orange)** — an orange cloud makes AWS see Cloudflare's
+address instead of the record, and verification fails forever. TTL: Auto.
+
+Three CNAME records (DKIM — lets receivers confirm the mail really came from
+us). Paste the **Name** exactly; Cloudflare will append the domain for you,
+so if the Name box shows `._domainkey.utahciviccompact.org` twice, delete
+the trailing `.utahciviccompact.org` from what you pasted.
+
+| Type | Name | Target |
+|---|---|---|
+| CNAME | `xnovvauodelwg2mavekndd6erbszt5vb._domainkey` | `xnovvauodelwg2mavekndd6erbszt5vb.dkim.amazonses.com` |
+| CNAME | `7kgf2hqemhnafx6uwtnpfi2mlyvvuano._domainkey` | `7kgf2hqemhnafx6uwtnpfi2mlyvvuano.dkim.amazonses.com` |
+| CNAME | `tb66zh7plclc4hqrluqqj4pghohahd43._domainkey` | `tb66zh7plclc4hqrluqqj4pghohahd43.dkim.amazonses.com` |
+
+Two records on the `mail` subdomain (bounce handling / SPF alignment). These
+do NOT touch the existing `utahciviccompact.org` MX or TXT records — Zoho
+mail keeps working. Do not edit or delete anything already there.
+
+| Type | Name | Value | Extra |
+|---|---|---|---|
+| MX | `mail` | `feedback-smtp.us-west-2.amazonses.com` | Priority **10** |
+| TXT | `mail` | `v=spf1 include:amazonses.com ~all` | |
+
+(If the tokens above ever differ from what `aws cloudformation describe-stacks
+--profile uccsite --region us-west-2 --stack-name UccProd --query
+"Stacks[0].Outputs[?starts_with(OutputKey,'Ses')].[OutputKey,OutputValue]"
+--output table` prints, the stack's values win.)
+
+### 10.2 `[agent]` Verify (takes a few minutes to ~1 hour after 10.1)
+
+```
+aws sesv2 get-email-identity --profile uccsite --region us-west-2 --email-identity utahciviccompact.org --query "{verified:VerifiedForSendingStatus,dkim:DkimAttributes.Status,mailFrom:MailFromAttributes.MailFromDomainStatus}"
+```
+Done when it prints `verified: true`, `dkim: SUCCESS`, `mailFrom: SUCCESS`.
+All three, not two. If one is `FAILED` after an hour, the matching record is
+wrong or orange-clouded — fix it; do not re-create anything in AWS.
+
+- [ ] 10.1 records added, DNS-only
+- [ ] 10.2 all three green
+
+### 10.3 `[go]` then `[agent]` Request production access (leave the sandbox)
+
+This opens a review case with AWS (usually answered within 24 hours). It is
+a one-time request on the account; the dev can run it, or your agent can,
+once 10.2 is green and you say go. Fill in a real contact address AWS can
+reply to.
+
+```
+aws sesv2 put-account-details --profile uccsite --region us-west-2 --production-access-enabled --mail-type TRANSACTIONAL --website-url https://utahciviccompact.org --contact-language EN --additional-contact-email-addresses <your-email> --use-case-description "Utah Civic Compact (utahciviccompact.org) is a Utah nonprofit civic organization. Our website backend sends transactional email only: (1) a welcome email when a visitor submits the join form on our site, (2) a one-time signed link to the Stripe billing portal when a member requests it, and (3) an occasional newsletter to members who signed up through that same form. Recipients opt in explicitly on the site; every message carries List-Unsubscribe and List-Unsubscribe-Post (RFC 8058 one-click) headers plus a signed unsubscribe link, and unsubscribes take effect immediately. Bounces and complaints are handled by the account-level suppression list and routed from configuration set ucc-prod to an SNS topic our operators monitor. Expected volume is under 500 messages per month. We are moving this traffic from Resend to SES; the domain identity, DKIM and custom MAIL FROM are already verified."
+```
+
+Check status: `aws sesv2 get-account --profile uccsite --region us-west-2
+--query "{production:ProductionAccessEnabled,review:Details.ReviewDetails.Status}"`.
+Approved = `production: true`. If AWS replies in the support case asking
+questions, answer them there (Support Center in the console).
+
+- [ ] 10.3 requested → approved
+
+### 10.4 After approval `[dev]`
+
+The developer swaps the send code from Resend to SES (`docs/systems/email.md`
+"Not built yet"), then `[hand]` you cancel the Resend account and the
+`ucc/prod/RESEND_API_KEY` secret can be deleted.
 
 ## Done
 

@@ -6,6 +6,22 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-05 — Email is moving from Resend to Amazon SES (step 1 of 3)
+
+The site's emails (welcome message, billing-portal link, newsletter) still go
+out through Resend. We are switching them to Amazon's own email service (SES),
+which keeps everything inside the AWS account we already run.
+
+- **Done:** the AWS side is set up — our domain is registered with SES, the
+  signing keys exist, and bounced or complained-about emails will alert the
+  operators.
+- **Needs Conner:** five DNS records in Cloudflare (`docs/for-conner.md` §10.1),
+  all set to "DNS only". Nothing about Zoho mail changes.
+- **Then:** a one-time request to AWS to allow real sending (§10.3), usually
+  answered within a day. After that the developer switches the code over.
+- Until the switch, nothing changes for anyone; Resend keeps working if its key
+  is set.
+
 ## 2026-09-30 — Add news stories by pasting a link
 
 On **News & Media** and the homepage press list there is now an **Add from link**
