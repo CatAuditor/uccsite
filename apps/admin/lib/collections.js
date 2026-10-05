@@ -222,8 +222,9 @@ export const APPEAL_SETTINGS_FIELDS = [
 }
 
 // Homepage singleton groups (flat string fields inside each group) + press list.
-// appeals: true — edited on the Donation appeals page (app/appeals), which
-// the Homepage editor skips and preserves on save.
+// page: 'appeals' | 'petition' — the group is edited on that admin page
+// (app/appeals, app/petition); the Homepage editor skips it and preserves
+// it on save.
 export const HOMEPAGE_GROUPS = [
   { key: 'hero', title: 'Hero', fields: [
     ['headline', 'Headline', 'textarea', 'HTML allowed (line breaks with <br />)'],
@@ -241,11 +242,29 @@ export const HOMEPAGE_GROUPS = [
     ['title', 'Title'], ['body', 'Body', 'textarea'],
     ['item1', 'Item 1'], ['item2', 'Item 2'], ['item3', 'Item 3'], ['item4', 'Item 4'],
   ]},
-  { key: 'donate', title: 'Homepage donate section', appeals: true, fields: [
+  { key: 'donate', title: 'Homepage donate section', page: 'appeals', fields: [
     ['label', 'Label'], ['title', 'Title'], ['body', 'Body', 'textarea'],
   ]},
-  { key: 'modal', title: 'Homepage timed modal (7.5 s after arrival)', appeals: true, fields: [
+  { key: 'modal', title: 'Homepage timed modal (7.5 s after arrival)', page: 'appeals', fields: [
     ['badge', 'Badge'], ['title', 'Title'], ['body', 'Body', 'textarea'], ['cta', 'CTA label'],
+  ]},
+  // Petition campaign (docs/systems/petition.md): the homepage hero takeover,
+  // /petition and /petition-thanks all read this one group.
+  { key: 'petition', title: 'Petition campaign', page: 'petition', fields: [
+    ['slug', 'Campaign slug', 'text', 'lowercase-with-dashes, e.g. udot-alpr-permits. Every signature is filed under it and the CSV is per slug. Change it to start a NEW petition; old signatures stay under the old slug.'],
+    ['label', 'Eyebrow label', 'text', 'e.g. Unofficial Petition'],
+    ['headline', 'Headline', 'textarea', 'HTML allowed: <em>word</em> turns red. BLANK switches the petition OFF — the homepage shows the standing hero and /petition says no petition is open.'],
+    ['body', 'Body', 'textarea', 'The UDOT provision and the ask. Shown in the hero and on /petition.'],
+    ['cta', 'Sign button label', 'text', 'e.g. Sign the petition now'],
+    ['cta_secondary', 'Secondary link label', 'text', 'blank = no secondary link'],
+    ['cta_secondary_url', 'Secondary link URL', 'text', 'e.g. /alpr.html'],
+    ['form_title', 'Form title (/petition)'],
+    ['form_intro', 'Form intro (/petition)', 'textarea'],
+    ['consent', 'Consent line under the sign button', 'textarea', 'What signers agree to — keep it true to how the list is used.'],
+    ['thanks_title', 'Thank-you page title', 'textarea'],
+    ['thanks_body', 'Thank-you page body (the donation ask)', 'textarea'],
+    ['thanks_cta', 'Thank-you page: help button label', 'text', 'e.g. I can help — opens the $10/25/50/100 payment modal'],
+    ['thanks_dismiss', 'Thank-you page: decline label', 'text', 'e.g. Not this time'],
   ]},
 ];
 

@@ -12,6 +12,7 @@ const NAV = [
     ['/settings', 'Site Settings'],
     ['/homepage', 'Homepage'],
     ['/appeals', 'Donation appeals'],
+    ['/petition', 'Petition'],
     ['/team', 'Team & Bios'],
     ['/statements', 'Statements'],
     ['/issues', 'Policy Positions'],

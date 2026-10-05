@@ -4,7 +4,7 @@
 // columns, rendered by the footer partial on every page). One transaction:
 // both singletons, their revision snapshots and audit rows commit together,
 // with a lost-update check on BOTH stamps. Field ownership is declared in
-// lib/collections.js (appeals: true / APPEAL_SETTINGS_FIELDS) so the
+// lib/collections.js (page: 'appeals' / APPEAL_SETTINGS_FIELDS) so the
 // Homepage and Site Settings editors leave these fields alone.
 import { revalidatePath } from 'next/cache';
 import { loadSettings, saveSettings, loadHomepage, saveHomepage } from '@uccsite/db/content';
@@ -17,7 +17,7 @@ import ActionForm from '../action-form';
 
 export const dynamic = 'force-dynamic';
 
-const APPEAL_GROUPS = HOMEPAGE_GROUPS.filter(g => g.appeals);
+const APPEAL_GROUPS = HOMEPAGE_GROUPS.filter(g => g.page === 'appeals');
 
 export default async function AppealsPage() {
   const session = await requireSession();
