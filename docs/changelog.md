@@ -4,6 +4,31 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.13.1 — 2026-10-05 (branch `refactor`)
+
+SES prerequisites, step 1 of the Resend → SES move (`docs/systems/email.md`).
+- **Infra (UccProd, deployed):** SES domain identity `utahciviccompact.org`
+  with Easy DKIM, custom MAIL FROM `mail.utahciviccompact.org`
+  (`REJECT_MESSAGE` on MX failure), configuration set `ucc-prod` (reputation
+  metrics, bounce+complaint suppression) with BOUNCE/COMPLAINT/REJECT →
+  `OpsAlerts`. New outputs `SesDkimCname1-3`, `SesMailFromMx`,
+  `SesMailFromTxt`, `SesIdentityArn`, `SesConfigurationSetName`. Prod only
+  (ADR `ses-identity-in-prod-stack.md`).
+- **Docs:** `docs/systems/email.md` (new), for-conner §10 (five Cloudflare
+  records, verify command, production-access request text), dev-notes entry.
+- **Not changed:** send code still Resend; SES still in sandbox; identity
+  `PENDING` until Conner adds DNS.
+- **Verified post-pull of Conner's cutover work (2026-10-05):** tests green,
+  parity 41/41 on the live domain, `/api/health` ok, UccProd/UccStaging
+  `UPDATE_COMPLETE`, Amplify job 5 = HEAD, zero Lambda errors in 7 days.
+
+Open: **P1** Resend key unset (now optional — superseded by §10 once SES is
+approved); **P1** Jarom not signed into prod admin (no second approver);
+Stripe webhook assumed working (user decision 2026-10-05: unverifiable
+runbook items are assumed done unless code says otherwise). P2 Turnstile,
+GitHub App, Airtable tips copy. `.DS_Store` committed by 9b8b5cd, not
+ignored.
+
 ## v0.13.0 — 2026-09-30 (branch `refactor`) — CUTOVER
 
 **utahciviccompact.org now serves from AWS.** DNS flipped 15:26 MDT: apex and
