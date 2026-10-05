@@ -352,23 +352,6 @@ Until this exists the admin runs only on a developer machine (`npm run dev
 - **Custom domain + ACM on `UccProd`** (§7.1) is not in the stack yet.
 - Spec §20's tail was lost; org decision: the dev's judgement governs.
 
-## 11. Petition: enter the real copy, then publish
-
-Built 2026-10-05 (`docs/systems/petition.md`). The code, pages, database table
-and admin tab are live; the homepage hero stays as it was until the campaign
-copy exists in production.
-
-1. `[hand]` Admin → **Site Main → Petition**. Fill every field. The headline
-   and body currently hold placeholder wording for the UDOT permit provision
-   — paste the real text. Keep the slug `udot-alpr-permits` (or pick one;
-   lowercase-with-dashes). **Save petition copy.**
-2. `[hand]` Admin → **Publish & Status** → request a publish; a *different*
-   admin approves it. The homepage hero becomes the petition and `/petition`
-   starts taking signatures.
-3. Signatures: Admin → Petition → **Download CSV** (audited). Mailing
-   list: Admin → Subscribers now shows **Donor** / **Petitions** labels.
-4. Optional `[hand]`: Turnstile keys (§3) also protect the petition form.
-
 ## 10. Email: move from Resend to Amazon SES
 
 The AWS side is already deployed (2026-10-05): the sending domain exists in
@@ -445,6 +428,23 @@ questions, answer them there (Support Center in the console).
 The developer swaps the send code from Resend to SES (`docs/systems/email.md`
 "Not built yet"), then `[hand]` you cancel the Resend account and the
 `ucc/prod/RESEND_API_KEY` secret can be deleted.
+
+## 11. Petition: enter the real copy, then publish
+
+Built 2026-10-05 (`docs/systems/petition.md`). The code, pages, database table
+and admin tab are live; the homepage hero stays as it was until the campaign
+copy exists in production.
+
+1. `[hand]` Admin → **Site Main → Petition**. Fill every field. The headline
+   and body currently hold placeholder wording for the UDOT permit provision
+   — paste the real text. Keep the slug `udot-alpr-permits` (or pick one;
+   lowercase-with-dashes). **Save petition copy.**
+2. `[hand]` Admin → **Publish & Status** → request a publish; a *different*
+   admin approves it. The homepage hero becomes the petition and `/petition`
+   starts taking signatures.
+3. Signatures: Admin → Petition → **Download CSV** (audited). Mailing
+   list: Admin → Subscribers now shows **Donor** / **Petitions** labels.
+4. Optional `[hand]`: Turnstile keys (§3) also protect the petition form.
 
 ## Done
 
