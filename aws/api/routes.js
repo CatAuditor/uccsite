@@ -13,6 +13,7 @@ const {
   signToken, verifyToken, turnstileOr403,
 } = require('./lib');
 const { StripeError, stripePost } = require('./stripe');
+const { utahZipSql } = require('@uccsite/db/audience');
 
 const UNSUBSCRIBE_TTL = 60 * 60 * 24 * 365; // 1 year
 const LINK_TTL_SECONDS = 15 * 60;
@@ -323,6 +324,38 @@ async function petitionSign({ event, db, secrets, body }) {
   return json({ ok: true });
 }
 
+// ── GET /api/petition/count?petition=<slug> ─────────────────────────────────
+// Public signature counter for the hero and /petition: UTAH signers only
+// (ZIP 84xxx — packages/db/audience.js utahZipSql; the org counts Utahns,
+// out-of-state supporters are kept but not shown). Per-container cache
+// (COUNT_TTL_MS) + Cache-Control max-age: the number is at most that stale.
+// Update timing is TBD by the org — change ONE constant.
+const COUNT_TTL_MS = 60_000;
+const countCache = new Map(); // slug → { count, at }
+
+async function petitionCount({ event, db }) {
+  const petition = str(event.queryStringParameters?.petition, 64).toLowerCase();
+  if (!PETITION_SLUG_RE.test(petition)) return json({ error: 'Unknown petition' }, 400);
+  const hit = countCache.get(petition);
+  if (hit && Date.now() - hit.at < COUNT_TTL_MS) return countJson(petition, hit.count);
+  try {
+    const res = await db.query(
+      `SELECT count(*)::int AS n FROM petition_signatures WHERE petition = $1 AND ${utahZipSql('zip')}`,
+      [petition],
+    );
+    const count = res.rows[0]?.n ?? 0;
+    countCache.set(petition, { count, at: Date.now() });
+    return countJson(petition, count);
+  } catch (err) {
+    console.error('[api] petition count error:', err?.name || 'Error');
+    return json({ error: 'Internal error' }, 500);
+  }
+}
+
+function countJson(petition, count) {
+  return json({ petition, count }, 200, { 'Cache-Control': `public, max-age=${COUNT_TTL_MS / 1000}` });
+}
+
 // ── POST /api/create-checkout-session ───────────────────────────────────────
 async function createCheckoutSession({ event, db, secrets, body, origin }) {
   const limited = await rateLimitOr429(db, event, 'checkout', 10);
@@ -523,6 +556,6 @@ async function donationStats({ db }) {
 }
 
 module.exports = {
-  subscribe, unsubscribe, tip, petitionSign, createCheckoutSession,
+  subscribe, unsubscribe, tip, petitionSign, petitionCount, createCheckoutSession,
   createPortalSessionPost, createPortalSessionGet, portalLinkJob, welcomeEmailJob, donationStats,
 };

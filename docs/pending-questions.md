@@ -17,10 +17,14 @@ telling the agent; delete the entry once applied.
 3. **Store IP / user agent with each signature as evidence?** Options:
    (a) no — privacy org, and the CSV for UDOT needs name/ZIP/time, not IPs;
    (b) yes. **Chose (a).** Adding a column later is additive.
-4. **Restrict ZIP to Utah?** Options: (a) any 5-digit (or ZIP+4) ZIP;
-   (b) Utah ranges only (840xx–847xx). **Chose (a)** — out-of-state
-   supporters still count for "the public does not want these"; the CSV
-   carries ZIP so UDOT can filter. One regex change to flip.
+4. ~~Restrict ZIP to Utah?~~ **Answered 2026-10-05:** collect from anywhere,
+   separate Utah from outside, count Utah only. Residency = ZIP 84xxx
+   (`packages/db/audience.js`). Follow-on choices made without an answer:
+   the public counter hides while the Utah count is 0; it refreshes every
+   60 s (`COUNT_TTL_MS` in aws/api/routes.js — "update timing tbd");
+   the mailing list's residency uses the best ZIP on file (subscriber ZIP,
+   else newest petition ZIP, else member ZIP) and people with no ZIP are
+   their own "ZIP unknown" audience rather than lumped in with Utah.
 5. **Where does the petition copy live?** Options: (a) a `petition` group on
    the homepage singleton, edited on a dedicated admin page; (b) a new
    `petitions` table/collection. **Chose (a)** — ADR

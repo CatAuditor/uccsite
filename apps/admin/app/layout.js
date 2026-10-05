@@ -29,7 +29,7 @@ const NAV = [
     ['/', 'Publish & Status'],
     ['/redirects', 'Redirects'],
     ['/donations', 'Donations'],
-    ['/subscribers', 'Subscribers'],
+    ['/subscribers', 'Mailing list'],
     ['/tips', 'Tips'],
     ['/revisions', 'Revisions'],
     ['/audit', 'Audit Log'],

@@ -398,6 +398,25 @@ test('checkout carries an optional sanitized source into Stripe metadata', async
   assert.match(captured, /metadata%5Bsource%5D=petition%3Audotalprscript/);
 });
 
+test('petition count: Utah-only SQL, cached per slug, bad slug 400', async () => {
+  let n = 0;
+  const db = fakeDb({ 'SELECT count(*)::int AS n FROM petition_signatures': () => ({ rows: [{ n: ++n * 7 }], rowCount: 1 }) });
+  const ev = (slug) => ({ ...httpEvent({ method: 'GET', path: '/api/petition/count' }), queryStringParameters: { petition: slug } });
+  let res = await routes.petitionCount({ event: ev('count-test-a'), db });
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(JSON.parse(res.body), { petition: 'count-test-a', count: 7 });
+  assert.match(res.headers['Cache-Control'], /max-age=\d+/);
+  const q = db.calls.find(c => c.text.includes('FROM petition_signatures'));
+  assert.match(q.text, /zip LIKE '84%'/);
+  assert.deepEqual(q.params, ['count-test-a']);
+  res = await routes.petitionCount({ event: ev('count-test-a'), db });
+  assert.equal(JSON.parse(res.body).count, 7, 'second call served from cache');
+  res = await routes.petitionCount({ event: ev('count-test-b'), db });
+  assert.equal(JSON.parse(res.body).count, 14, 'different slug queries again');
+  res = await routes.petitionCount({ event: ev('Nope!'), db });
+  assert.equal(res.statusCode, 400);
+});
+
 test('checkout validates type and amount bounds', async () => {
   const db = fakeDb();
   for (const body of [

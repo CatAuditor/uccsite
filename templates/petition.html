@@ -36,6 +36,7 @@
         <p class="petition-hero-label">{{petition.label}}</p>
         <h1>{{{petition.headline}}}</h1>
         <p class="petition-hero-body">{{petition.body}}</p>
+        <p class="petition-count" data-petition-count="{{petition.slug}}" data-count-label="{{petition.count_label}}" hidden></p>
         {{#petition.cta_secondary}}<a href="{{petition.cta_secondary_url}}" class="btn btn-ghost">{{petition.cta_secondary}}</a>{{/petition.cta_secondary}}
         {{/petition.headline}}
         {{^petition.headline}}

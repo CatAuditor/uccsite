@@ -24,7 +24,7 @@ docs/for-conner.md §10       the DNS records + production-access request
 |---|---|---|---|
 | Welcome | `POST /api/subscribe` (join form) | self-invoke job, non-blocking | `List-Unsubscribe` + `List-Unsubscribe-Post: One-Click` (RFC 8058), signed 1-year unsubscribe link |
 | Billing-portal link | `POST /api/create-portal-session` | inline after the 202 | 15-minute signed link |
-| Newsletter | operator runs `scripts/send-periodical.js` | script | signed unsubscribe link |
+| Newsletter | operator runs `scripts/send-periodical.js` (`--audience utah\|outside\|unknown\|all`, `--donors-only`, `--petition <slug>` — the admin Mailing list's filters, packages/db/audience.js) | script | signed unsubscribe link |
 
 Volume is tiny (tens per month). No message bodies or recipient lists are
 ever logged (`[api] Resend error: <status>` only).

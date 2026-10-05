@@ -46,6 +46,12 @@
   max-width: 480px;
   margin-bottom: 32px;
 }
+.petition-hero .petition-count {
+  font-size: 15px;
+  color: rgba(255,255,255,0.72);
+  margin: -12px 0 28px;
+}
+.petition-hero .petition-count strong { color: var(--white); font-weight: 800; font-size: 1.15em; }
 
 .petition-form-panel {
   background: var(--white);

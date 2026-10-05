@@ -16,20 +16,26 @@ templates/petition-thanks.html  /petition-thanks — thank-you + "I can help" pa
                                 ($10 / $25 ✓ / $50 / $100, one-time); noindex, not in sitemap
 css/pages/petition.css          both petition pages + the modal's 4-up tiers
 css/pages/index.css             .hero-petition / .hero-eyebrow (hero takeover)
-js/petition.js                  form controller (POST /api/petition → /petition-thanks) and
-                                the thanks modal (POST /api/create-checkout-session, onetime,
-                                source 'petition:<slug>'); signer details ride in sessionStorage
-                                ('petition-signer') only to prefill the checkout
+js/petition.js                  form controller (POST /api/petition → /petition-thanks), the
+                                thanks modal (POST /api/create-checkout-session, onetime,
+                                source 'petition:<slug>'), and the signature counter
+                                ([data-petition-count] ← GET /api/petition/count); signer
+                                details ride in sessionStorage ('petition-signer') only to
+                                prefill the checkout. Loaded by index, petition, petition-thanks
 content/homepage.json           `petition` group — the git/local copy of the campaign text
 packages/db/content.js          HOMEPAGE_GROUP_COLS gains ['petition','petition']
 packages/db/content-schema.js   ALTER TABLE homepage ADD COLUMN petition TEXT (JSON group)
 packages/db/schema.js           petition_signatures DDL + api grants (SELECT, INSERT, UPDATE)
-aws/api/routes.js               petitionSign() — POST /api/petition; createCheckoutSession
-                                accepts optional `source` → Stripe metadata
+aws/api/routes.js               petitionSign() — POST /api/petition; petitionCount() — GET
+                                /api/petition/count (Utah only, cached COUNT_TTL_MS);
+                                createCheckoutSession accepts optional `source` → Stripe metadata
+packages/db/audience.js         THE residency rule (utahZipSql / isUtahZip: every 84xxx ZIP is
+                                Utah) + the mailing-list audience query shared by the admin
+                                Mailing list page, its CSV and scripts/send-periodical.js
 aws/api/index.mjs               route entry 'POST /api/petition' (secrets: Turnstile)
 apps/admin/app/petition/        Petition page: campaign copy editor + signatures + CSV
 apps/admin/app/petition/export/route.js   POST → CSV (audited `petition.export`)
-apps/admin/app/subscribers/query.js       shared subscriber query with donor + petitions labels
+apps/admin/app/subscribers/       Mailing list: residency / donors / petition filters → list + CSV
 apps/admin/lib/collections.js   HOMEPAGE_GROUPS entry `petition` (page: 'petition')
 aws/export-operational/         nightly export includes petition_signatures
 scripts/restore-operational.mjs restore includes petition_signatures
@@ -46,6 +52,7 @@ scripts/seed-homepage-group.mjs copy a content/homepage.json group into an env's
 | `body` | hero sub, /petition, meta description | the provision + the ask |
 | `cta` | hero button, form submit button | |
 | `cta_secondary`, `cta_secondary_url` | hero + /petition secondary link | blank label = no link; url passes `safeUrl` |
+| `count_label` | hero + /petition counter | `{count}` → number of **Utah** signatures; blank = no counter; hidden while 0 |
 | `form_title`, `form_intro` | /petition panel | |
 | `consent` | under the sign button | the "future communications" line |
 | `thanks_title`, `thanks_body`, `thanks_cta`, `thanks_dismiss` | /petition-thanks | `thanks_dismiss` also labels the modal's dismiss |
@@ -76,6 +83,37 @@ staging via `node scripts/seed-homepage-group.mjs --env staging --group petition
    records the donation exactly as for the homepage form (members +
    donations); `source` is visible on the Stripe session/customer metadata.
 5. "Not this time" → `/`.
+
+## Residency and audiences
+
+Residency is **derived from the ZIP, never stored**: every `84xxx` ZIP (and
+ZIP+4) is Utah and nothing else is — `packages/db/audience.js`
+`utahZipSql(expr)` / `isUtahZip(zip)` is the one rule everything uses.
+
+- **Public counter** (`GET /api/petition/count?petition=<slug>` →
+  `{petition, count}`): Utah signatures only. The Lambda caches per slug for
+  `COUNT_TTL_MS` (60 s) and answers `Cache-Control: public, max-age=60`;
+  CloudFront does not cache `/api/*`, so "update timing" = that one
+  constant. Rendered by `js/petition.js` into `[data-petition-count]` from
+  the `count_label` template; hidden until at least one Utahn has signed.
+- **Admin → Petition**: counts per slug split Utah / outside; residency
+  filter on the list; CSV carries `utah_resident` (yes/no) and can be
+  exported Utah-only, outside-only or both.
+- **Admin → Mailing list** (`/subscribers`): everyone an email can reach =
+  `subscribers` ∪ opted-in `members`, each labelled `residency`
+  (utah / outside / unknown from the best ZIP we hold: subscriber ZIP, else
+  newest petition ZIP, else member ZIP), `donor`, `petitions`, `via`. Filters
+  residency × donors-only × signed-petition drive the list, the "This email
+  is going to N people" line and the CSV.
+- **Sender**: `scripts/send-periodical.js --audience utah|outside|unknown|all
+  --donors-only --petition <slug>` resolves recipients with the SAME query,
+  so the dashboard count is exactly who receives.
+
+## API: GET /api/petition/count
+
+`?petition=<slug>` → `200 {petition, count}` (Utah only), `400` bad slug,
+`500` DB error (`[api] petition count error: <ErrorName>`). No rate limit
+(read-only, cached, one small indexed COUNT).
 
 ## API: POST /api/petition
 
@@ -110,8 +148,8 @@ all three; never DELETE). Admin reads with the admin role.
   non-canceled subscription) and `petitions` (slugs signed) columns in the
   list and the CSV — the mailing-list labels.
 
-CSV columns: `petition, first_name, last_name, email, zip, address, phone,
-signed_at_utc` (ISO 8601, UTC). Cells are quoted and formula-injection
+CSV columns: `petition, first_name, last_name, email, zip, utah_resident,
+address, phone, signed_at_utc` (ISO 8601, UTC). Cells are quoted and formula-injection
 guarded like the subscribers export.
 
 ## Debug
@@ -128,6 +166,5 @@ Browser: `[petition] sign failed: <status>`, `[petition] sign network error`,
 
 ## Not built (deliberate)
 
-- No public signature counter (easy: `GET` count by slug; add when wanted).
 - No IP / user-agent stored with a signature — a privacy org's petition.
 - No nav link; the hero is the entry point (add to header.html if wanted).

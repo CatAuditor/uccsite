@@ -37,8 +37,10 @@ apps/admin/
   app/users                owner-only: invite, role, disable, reset password,
                            remove MFA, sign out everywhere
   app/redirects            redirects table → CloudFront KeyValueStore on publish
-  app/subscribers          newsletter list (editor+) + CSV export (audited); query.js = the
-                           shared row query with `donor` and `petitions` labels
+  app/subscribers          Mailing list (editor+): subscribers ∪ opted-in members with
+                           residency / donor / petitions labels, "who is this email going
+                           to" filters, audited CSV; query = packages/db/audience.js (shared
+                           with the sender) — docs/systems/petition.md
   app/petition             Petition (editor+): campaign copy (homepage.petition group,
                            page: 'petition'), signatures per slug, audited CSV export
                            (docs/systems/petition.md)
@@ -78,10 +80,10 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Images | Media Library |
 | Files (PDFs, spreadsheets, records…) shared between staff, optionally published at `/files/…` and listed on /projects | Files |
 | Every donation ask (homepage section, timed modal, download modal) | Donation appeals |
-| The petition campaign: hero takeover, /petition copy, thank-you ask; signatures + CSV | Petition |
+| The petition campaign: hero takeover, /petition copy, thank-you ask, public Utah-only counter; signatures split Utah / outside + CSV | Petition |
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
 | Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |
-| Donors, newsletter list (+ CSV for the periodical, with donor / petitions labels) | Donations, Subscribers |
+| Donors; the mailing list with audience controls (residency, donors, petition signers) + CSV | Donations, Mailing list |
 | Confidential tips: read, triage status, delete | Tips (editor+; delete is owner) |
 | Accounts, roles, MFA, security keys | Users (owners), My profile (everyone) |
 

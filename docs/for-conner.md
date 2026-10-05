@@ -442,9 +442,14 @@ copy exists in production.
 2. `[hand]` Admin → **Publish & Status** → request a publish; a *different*
    admin approves it. The homepage hero becomes the petition and `/petition`
    starts taking signatures.
-3. Signatures: Admin → Petition → **Download CSV** (audited). Mailing
-   list: Admin → Subscribers now shows **Donor** / **Petitions** labels.
-4. Optional `[hand]`: Turnstile keys (§3) also protect the petition form.
+3. Signatures: Admin → Petition → **Download CSV** (Utah-only, outside-only
+   or both; audited). The site shows a public counter of **Utah** signatures
+   — its wording is the *Signature counter* field (blank = no counter).
+4. Mailing list: Admin → **Mailing list** (was Subscribers) — pick residency
+   (Utah / outside / ZIP unknown), a petition, donors-only; the page says
+   who the email is going to; the CSV and the sender script use the same
+   filters.
+5. Optional `[hand]`: Turnstile keys (§3) also protect the petition form.
 
 ## Done
 

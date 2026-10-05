@@ -15,6 +15,7 @@ Log group: `/aws/lambda/UccStaging-ApiFunction*` (or UccProd). Prefix: `[api]`.
 | `welcome email failed / portal link send failed` | routes.js jobs | Resend send failed inside the async job |
 | `Resend error: <status>` | routes.js resendSend | non-2xx from Resend |
 | `tip insert failed: <ErrorName>` | routes.js tip | 500 returned; `tips` insert threw — error NAME only, never the message (pg errors echo parameter values) |
+| `petition count error: <ErrorName>` | routes.js petitionCount | 500 on the public counter; the site hides the counter — nothing user-facing breaks |
 | `petition insert failed: <ErrorName>` | routes.js petitionSign | 500 returned; the signature or subscriber upsert threw — name only (signer PII). 42501 here = `petition_signatures` grant missing (re-run migrate-schema) |
 | `secret <NAME> is unset (placeholder)` | secrets.js | operator hasn't filled `ucc/<env>/<NAME>` yet |
 | `failed to load secret <NAME>: <err>` | secrets.js | transient — retried next invocation (never cached) |

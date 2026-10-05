@@ -138,3 +138,30 @@
     }
   });
 }());
+
+// ── Signature counter (hero + /petition) ───────────────────────────────────
+// Fills every [data-petition-count] from GET /api/petition/count (Utah
+// signers only; the API caches ~1 min). Hidden until there is at least one.
+(function initPetitionCount() {
+  const els = document.querySelectorAll('[data-petition-count]');
+  if (!els.length) return;
+  els.forEach(async (el) => {
+    const slug = el.dataset.petitionCount;
+    const label = el.dataset.countLabel || '';
+    if (!slug || !label.includes('{count}')) return;
+    try {
+      const res = await fetch('/api/petition/count?petition=' + encodeURIComponent(slug));
+      if (!res.ok) return;
+      const { count } = await res.json();
+      if (!count) return;
+      const [before, after] = label.split('{count}');
+      const strong = document.createElement('strong');
+      strong.textContent = Number(count).toLocaleString('en-US');
+      el.textContent = '';
+      el.append(before, strong, after);
+      el.removeAttribute('hidden');
+    } catch (_) {
+      console.warn('[petition] count unavailable');
+    }
+  });
+}());

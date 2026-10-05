@@ -2,7 +2,7 @@
   "name": "@uccsite/db",
   "private": true,
   "version": "0.0.0",
-  "description": "Schema + query layer for Aurora DSQL (build-spec-aws.md §9)",
+  "description": "Schema + query layer for Aurora DSQL (build-spec-aws.md \u00a79)",
   "type": "commonjs",
   "main": "index.js",
   "dependencies": {
@@ -11,5 +11,8 @@
     "@smithy/core": "^3.0.0",
     "@smithy/signature-v4": "^5.0.0",
     "pg": "^8.13.0"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
   }
 }

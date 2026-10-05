@@ -4,6 +4,29 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.14.1 — 2026-10-05 (branch `refactor`) — Petition: residency, counter, audiences
+
+- **Residency rule:** `packages/db/audience.js` — every 84xxx ZIP is Utah
+  (`utahZipSql` / `isUtahZip`), derived at query time, never stored.
+- **Public counter:** `GET /api/petition/count?petition=` (Utah only,
+  per-slug Lambda cache `COUNT_TTL_MS` = 60 s + `max-age=60`); hero and
+  /petition render `homepage.petition.count_label` (`{count}`) via
+  `js/petition.js` (now loaded on index), hidden while 0. 1 new API test.
+- **Admin → Petition:** Utah / outside counts per slug, residency filter,
+  Utah column, CSV per residency with `utah_resident`.
+- **Admin → Mailing list** (`/subscribers`): subscribers ∪ opted-in members
+  with residency / donor / petitions / via; filters residency × petition ×
+  donors-only; "This email is going to N people"; CSV with the same filters
+  (audit diff records them). `subscribers/query.js` removed.
+- **Sender:** `scripts/send-periodical.js --audience --donors-only --petition`
+  resolves recipients through the same `audienceQuery`.
+- **Tests:** `packages/db/test/audience.test.mjs` (4) — db package now has
+  a test script. Admin `next build` green; audience/count SQL verified on
+  staging DSQL with seeded rows (cleaned).
+- **Deployed:** UccStaging + UccProd; both published from DB.
+
+Open: unchanged from v0.14.0 (real copy + two-person publish; second approver).
+
 ## v0.14.0 — 2026-10-05 (branch `refactor`) — Petition
 
 UDOT ALPR special-use-permit petition, built so the next campaign is a copy

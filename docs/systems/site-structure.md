@@ -21,7 +21,7 @@ css/colors.css           GENERATED at render (packages/render/site.js withColorC
 js/main.js               nav, animations, join form, donate form, donation tracker,
                          createModal() (timed donation modal + download modal)
 js/tip.js                tipline form controller
-js/petition.js           petition form + thank-you payment modal (see petition.md)
+js/petition.js           petition form, thank-you payment modal, signature counter (index too; petition.md)
 static/                  copied verbatim into dist/: admin/, _headers, _redirects
 assets/, UCC.png, favicon.svg, robots.txt, llms.txt   copied verbatim (COPY_FROM_ROOT in build.js)
 functions/api/           Cloudflare Pages Functions (see api-security.md)
@@ -42,6 +42,7 @@ packages/db/             DSQL connection helper (IAM auth, retry on 40001)
 packages/tokens/         THE HMAC token impl (unsubscribe/portal), byte-compatible
                          with functions/api/_lib.js; used by aws/api + periodical
 packages/db/files.js     project files key layout + type allow-list (see files.md)
+packages/db/audience.js  residency rule (ZIP 84xxx = Utah) + mailing-list audience query (petition.md)
 packages/db/schema.js    DSQL DDL for the operational tables (successor to
                          schema.sql's D1 dialect; applied via migrate-schema.mjs)
 scripts/lib/stack.mjs    env → deployed stack outputs, shared by every script

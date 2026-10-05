@@ -91,6 +91,7 @@
         <a href="/petition.html" class="btn btn-donate btn-lg">{{petition.cta}}</a>
         {{#petition.cta_secondary}}<a href="{{petition.cta_secondary_url}}" class="btn btn-ghost">{{petition.cta_secondary}}</a>{{/petition.cta_secondary}}
       </div>
+      <p class="petition-count hero-count" data-petition-count="{{petition.slug}}" data-count-label="{{petition.count_label}}" hidden></p>
       {{/petition.headline}}
       {{^petition.headline}}
       <h1 class="hero-headline">
@@ -510,5 +511,6 @@
   </div>
 
   <script src="/js/main.js"></script>
+  <script src="/js/petition.js"></script>
 </body>
 </html>

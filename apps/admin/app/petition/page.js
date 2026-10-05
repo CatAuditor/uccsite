@@ -6,8 +6,12 @@
 // declared in lib/collections.js, page: 'petition', so the Homepage editor
 // leaves it alone). Save = one transaction with a lost-update check, like
 // /appeals. Signatures are contact PII → editor+ like /subscribers.
+// Utah vs outside: derived from the ZIP (every 84xxx ZIP is Utah —
+// packages/db/audience.js). The public counter counts Utah only; the admin
+// shows both and exports either.
 import { revalidatePath } from 'next/cache';
 import { loadHomepage, saveHomepage } from '@uccsite/db/content';
+import { utahZipSql } from '@uccsite/db/audience';
 import { requireRole } from '../../lib/auth';
 import { withDb, withWriteTx, recordChange, singletonStamp } from '../../lib/data';
 import { HOMEPAGE_GROUPS } from '../../lib/collections';
@@ -33,18 +37,30 @@ export default async function PetitionPage({ searchParams }) {
   const activeSlug = SLUG_RE.test(copy.slug || '') ? copy.slug : '';
   const requested = typeof sp?.petition === 'string' ? sp.petition.slice(0, 64) : '';
   const filter = requested === 'all' ? 'all' : (SLUG_RE.test(requested) ? requested : (activeSlug || 'all'));
+  const residency = ['utah', 'outside'].includes(sp?.residency) ? sp.residency : 'all';
 
+  const where = [];
+  const params = [];
+  if (filter !== 'all') { params.push(filter); where.push(`petition = $${params.length}`); }
+  if (residency === 'utah') where.push(utahZipSql('zip'));
+  if (residency === 'outside') where.push(`NOT ${utahZipSql('zip')}`);
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const { counts, rows } = await withDb(async (client) => ({
     counts: (await client.query(
-      `SELECT petition, count(*)::int AS n, MAX(created_at)::text AS newest
+      `SELECT petition, count(*)::int AS n, count(*) FILTER (WHERE ${utahZipSql('zip')})::int AS utah,
+              MAX(created_at)::text AS newest
        FROM petition_signatures GROUP BY petition ORDER BY newest DESC`)).rows,
     rows: (await client.query(
-      `SELECT id, petition, first_name, last_name, email, zip, address, phone, created_at::text AS created_at
-       FROM petition_signatures ${filter === 'all' ? '' : 'WHERE petition = $1'}
-       ORDER BY created_at DESC LIMIT ${LIST_LIMIT}`, filter === 'all' ? [] : [filter])).rows,
+      `SELECT id, petition, first_name, last_name, email, zip, address, phone, created_at::text AS created_at,
+              (${utahZipSql('zip')}) AS utah
+       FROM petition_signatures ${whereSql}
+       ORDER BY created_at DESC LIMIT ${LIST_LIMIT}`, params)).rows,
   }));
   const total = counts.reduce((s, c) => s + c.n, 0);
-  const shown = filter === 'all' ? total : (counts.find(c => c.petition === filter)?.n || 0);
+  const totalUtah = counts.reduce((s, c) => s + c.utah, 0);
+  const inSlug = filter === 'all' ? { n: total, utah: totalUtah } : (counts.find(c => c.petition === filter) || { n: 0, utah: 0 });
+  const shown = residency === 'utah' ? inSlug.utah : residency === 'outside' ? inSlug.n - inSlug.utah : inSlug.n;
+  const link = (slug, res) => `/petition?petition=${encodeURIComponent(slug)}${res === 'all' ? '' : `&residency=${res}`}`;
 
   async function save(prevState, formData) {
     'use server';
@@ -75,30 +91,38 @@ export default async function PetitionPage({ searchParams }) {
 
   return (
     <div>
-      <h1>Petition <span className="hint">{total} signatures</span></h1>
+      <h1>Petition <span className="hint">{total} signatures · {totalUtah} Utah · {total - totalUtah} outside</span></h1>
       <p className="notice">
         {copy.headline
           ? <>Petition is <strong>on</strong>: the homepage hero shows it and <code>/petition</code> takes signatures under the slug <strong>{activeSlug || '(invalid slug — fix below)'}</strong>.</>
           : <>Petition is <strong>off</strong> (no headline): the homepage shows the standing hero and <code>/petition</code> says no petition is open.</>}
         {' '}Copy changes go live on the next approved publish; signatures arrive here instantly.
+        The public counter on the site shows <strong>Utah signatures only</strong> (ZIP 84xxx), refreshed about once a minute;
+        out-of-state signatures are kept, listed and exportable here but never counted publicly.
       </p>
 
       <h2>Signatures</h2>
       <p>
-        Show:{' '}
+        Petition:{' '}
         {counts.map(c => (
           <span key={c.petition}>
-            <a href={`/petition?petition=${encodeURIComponent(c.petition)}`}>{c.petition} ({c.n})</a> ·{' '}
+            <a href={link(c.petition, residency)}>{c.petition} ({c.utah} Utah / {c.n - c.utah} outside)</a> ·{' '}
           </span>
         ))}
-        <a href="/petition?petition=all">all ({total})</a>
+        <a href={link('all', residency)}>all ({total})</a>
+        <br />
+        Residency:{' '}
+        <a href={link(filter, 'all')}>{residency === 'all' ? <strong>both</strong> : 'both'} ({inSlug.n})</a> ·{' '}
+        <a href={link(filter, 'utah')}>{residency === 'utah' ? <strong>Utah</strong> : 'Utah'} ({inSlug.utah})</a> ·{' '}
+        <a href={link(filter, 'outside')}>{residency === 'outside' ? <strong>outside Utah</strong> : 'outside Utah'} ({inSlug.n - inSlug.utah})</a>
       </p>
       <form action="/petition/export" method="post" className="inline">
         <input type="hidden" name="petition" value={filter} />
-        <button type="submit">Download CSV — {filter === 'all' ? 'every petition' : filter} ({shown} rows)</button>
+        <input type="hidden" name="residency" value={residency} />
+        <button type="submit">Download CSV — {filter === 'all' ? 'every petition' : filter}, {residency === 'all' ? 'Utah + outside' : residency === 'utah' ? 'Utah only' : 'outside Utah only'} ({shown} rows)</button>
       </form>
       <table>
-        <thead><tr><th>Signed</th><th>Petition</th><th>Name</th><th>Email</th><th>ZIP</th><th>Address</th><th>Phone</th></tr></thead>
+        <thead><tr><th>Signed</th><th>Petition</th><th>Name</th><th>Email</th><th>ZIP</th><th>Utah</th><th>Address</th><th>Phone</th></tr></thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.id}>
@@ -107,11 +131,12 @@ export default async function PetitionPage({ searchParams }) {
               <td>{[r.first_name, r.last_name].filter(Boolean).join(' ')}</td>
               <td>{r.email}</td>
               <td>{r.zip}</td>
+              <td>{r.utah ? 'yes' : 'no'}</td>
               <td>{r.address || '—'}</td>
               <td>{r.phone || '—'}</td>
             </tr>
           ))}
-          {!rows.length && <tr><td colSpan="7">No signatures{filter === 'all' ? '' : ` for ${filter}`} yet.</td></tr>}
+          {!rows.length && <tr><td colSpan="8">No signatures{filter === 'all' ? '' : ` for ${filter}`}{residency === 'all' ? '' : ` (${residency})`} yet.</td></tr>}
         </tbody>
       </table>
       {shown > rows.length && <p className="hint">Showing the newest {rows.length} of {shown}; the CSV has all of them.</p>}

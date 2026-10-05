@@ -13,6 +13,7 @@
     "cta": "Sign the petition now",
     "cta_secondary": "Read the ALPR report",
     "cta_secondary_url": "/alpr.html",
+    "count_label": "{count} Utahns have signed so far.",
     "form_title": "Sign the petition",
     "form_intro": "Add your name to the list UDOT will see. Name, ZIP code and email are required; everything else is optional.",
     "consent": "By signing this petition you agree to be included in future communications regarding our fight for Utahns.",

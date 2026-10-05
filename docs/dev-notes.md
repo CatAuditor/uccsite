@@ -6,6 +6,29 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-05 — Petition: Utah vs out-of-state, a public counter, and "who is this email going to"
+
+Follow-up to the petition launch below.
+
+- **Anyone can sign, Utah is what counts.** Out-of-state signatures are kept
+  but separated. Residency comes from the ZIP: every 84xxx ZIP is Utah.
+- **Counter on the site.** The hero and /petition show "**N** Utahns have signed
+  so far." (wording editable on Admin → Petition, field *Signature counter*).
+  Only Utah signatures count; it appears once there is at least one and
+  refreshes about once a minute (easy to change later).
+- **Admin → Petition** now shows Utah / outside counts per petition, a
+  residency switch, a Utah column, and the CSV can be Utah-only, outside-only
+  or both (new `utah_resident` column).
+- **Admin → Subscribers is now "Mailing list"** — everyone an email can reach
+  (sign-ups, petition signers, donors who opted in). Controls: residency
+  (Utah / outside / ZIP unknown), signed a given petition, donors only. The
+  page says "This email is going to N people" and the CSV follows the same
+  filters. The newsletter sending script takes the same options, so what the
+  page shows is who gets the email.
+
+**Needs a person:** nothing new. Decide later how often the counter should
+refresh (today: about a minute).
+
 ## 2026-10-05 — Petition: the homepage now leads with "Tell UDOT" and collects signatures
 
 The site can run a petition. The first one asks UDOT to revoke the special-use

@@ -22,7 +22,7 @@ user data, or a third-party integration changes (CLAUDE.md rule).
 | `project_files.uploaded_by`, `published_by` | **admin** email | admin /files uploads and publishes | until the file is deleted |
 | `project_files` (the files themselves, in the media bucket) | whatever staff upload — may include records-request responses and other documents with third-party personal data; private to signed-in admins unless an editor publishes the file | admin /files | until deleted (+90 days noncurrent versions) |
 | `team_members.email` | **staff** email (links a bio to an admin account; never published, exported to the private content repo) | Team editor | until removed |
-| `subscribers` CSV export | full subscriber list downloaded by an editor/owner (audited as `subscribers.export`), now with `donor` and `petitions` labels | admin /subscribers | on the downloader's machine — handle as PII |
+| mailing-list CSV export | subscribers ∪ opted-in members, optionally filtered by residency (derived from ZIP, not stored) / donor / petition, downloaded by an editor/owner (audited as `subscribers.export` with the filters) | admin /subscribers | on the downloader's machine — handle as PII |
 | `petition_signatures` CSV export | every signature for one or all campaigns (audited as `petition.export`) | admin /petition | on the downloader's machine; the copy given to UDOT is the org's to govern |
 
 ## Buckets

@@ -2,6 +2,12 @@
 //
 // Usage:
 //   $env:AWS_PROFILE='uccsite'; node --env-file=.env scripts/send-periodical.js --subject "Subject line" --html path/to/email.html [--text path/to/email.txt] [--dry-run] [--test you@example.com] [--resume sent.log] [--env staging|prod]
+//     [--audience utah|outside|unknown|all] [--donors-only] [--petition <slug>]
+//
+// Audience ("who is this email going to"): the SAME filters as the admin's
+// Mailing list page (packages/db/audience.js), so the count the dashboard
+// shows is exactly who receives the send. Default: everyone — subscribers
+// plus opted-in members, as before.
 //
 // Requires in .env (gitignored):
 //   MAILGUN_API_KEY  — Mailgun private API key
@@ -19,6 +25,7 @@ import { resolveEnv } from './lib/stack.mjs';
 
 const require = createRequire(import.meta.url);
 const { withConnection } = require('../packages/db');
+const { audienceQuery, describeFilters } = require('../packages/db/audience');
 
 const MAILGUN_DOMAIN = 'utahciviccompact.org';
 const FROM_ADDRESS = 'Utah Civic Compact <hello@utahciviccompact.org>';
@@ -36,6 +43,9 @@ function parseArgs(argv) {
     else if (arg === '--test') args.test = argv[++i];
     else if (arg === '--resume') args.resume = argv[++i];
     else if (arg === '--env') args.env = argv[++i];
+    else if (arg === '--audience') args.residency = argv[++i];
+    else if (arg === '--donors-only') args.donors = true;
+    else if (arg === '--petition') args.petition = argv[++i];
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return args;
@@ -44,18 +54,17 @@ function parseArgs(argv) {
 // Recipients + the origin unsubscribe links point at, both from the target
 // environment's stack — a staging test send must NOT carry prod unsubscribe
 // URLs (clicking one would act on the production tables).
-async function resolveRecipients(envName = 'prod') {
+async function resolveRecipients(envName = 'prod', filters = {}) {
   const { region, outputs } = await resolveEnv(envName, ['DsqlEndpoint', 'PublicOrigin']);
+  if (filters.residency && !['utah', 'outside', 'unknown', 'all'].includes(filters.residency)) {
+    throw new Error('--audience must be utah, outside, unknown or all');
+  }
+  if (filters.petition && !/^[a-z0-9][a-z0-9-]{0,63}$/.test(filters.petition)) throw new Error('--petition must be a campaign slug');
 
-  // Same recipient set as always: subscribers UNION opted-in members.
-  const rows = await withConnection({ endpoint: outputs.DsqlEndpoint, region }, (client) => client.query(
-    `SELECT DISTINCT email FROM (
-       SELECT email FROM subscribers
-       UNION
-       SELECT email FROM members WHERE newsletter_opt_in = 1
-     ) AS all_recipients ORDER BY email`,
-  ));
-  return { recipients: rows.rows.map((row) => row.email), origin: outputs.PublicOrigin };
+  // Subscribers UNION opted-in members, narrowed by the audience filters.
+  const { sql, params } = audienceQuery(filters, { columns: 'a.email', orderBy: 'a.email' });
+  const rows = await withConnection({ endpoint: outputs.DsqlEndpoint, region }, (client) => client.query(sql, params));
+  return { recipients: [...new Set(rows.rows.map((row) => row.email))], origin: outputs.PublicOrigin };
 }
 
 // Mirrors signToken() in packages/tokens (purpose 'unsubscribe') — the
@@ -112,11 +121,13 @@ async function main() {
   const alreadySent = new Set(
     args.resume && existsSync(args.resume) ? readFileSync(args.resume, 'utf-8').split('\n').filter(Boolean) : []
   );
-  const resolved = await resolveRecipients(args.env || 'prod');
+  const filters = { residency: args.residency, donors: args.donors, petition: args.petition };
+  const resolved = await resolveRecipients(args.env || 'prod', filters);
   const origin = resolved.origin;
   const recipients = (args.test ? [args.test] : resolved.recipients).filter((e) => !alreadySent.has(e));
 
   console.log(`Subject: ${args.subject}`);
+  console.log(`Audience: ${describeFilters(filters)}`);
   console.log(`Recipients: ${recipients.length}${alreadySent.size ? ` (skipping ${alreadySent.size} already sent)` : ''}`);
   recipients.forEach((email) => console.log(`  - ${email}`));
 
