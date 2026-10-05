@@ -44,6 +44,9 @@ const STATEMENTS = [
     modal TEXT,
     updated_at TIMESTAMPTZ DEFAULT now()
   )`,
+  // Petition campaign copy (hero takeover + /petition + /petition-thanks),
+  // edited on the admin's Petition page. Additive: ALTER for existing clusters.
+  `ALTER TABLE homepage ADD COLUMN IF NOT EXISTS petition TEXT`,
   `CREATE TABLE IF NOT EXISTS homepage_press (
     id UUID PRIMARY KEY,
     sort_order INTEGER NOT NULL,

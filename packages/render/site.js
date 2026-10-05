@@ -24,6 +24,9 @@ const PAGES = [
   { template: 'dignity-index-statement.html', content: ['settings'] },
   { template: 'theory.html',       content: ['settings'] },
   { template: 'tip.html',          content: ['settings'], sitemap: false },
+  // Petition campaign (docs/systems/petition.md): copy lives in homepage.petition.
+  { template: 'petition.html',        content: ['settings', 'homepage'], priority: '0.9' },
+  { template: 'petition-thanks.html', content: ['settings', 'homepage'], sitemap: false },
   { template: 'privacy.html',      content: ['settings'], priority: '0.3' },
   { template: 'success.html',  content: ['settings'], sitemap: false },
   { template: '404.html',      content: ['settings'], sitemap: false },

@@ -78,6 +78,7 @@ const FIELD_MAPS = {
 const HOMEPAGE_GROUP_COLS = [
   ['hero', 'hero'], ['mission', 'mission'], ['about', 'about'],
   ['join_section', 'join'], ['donate', 'donate'], ['modal', 'modal'],
+  ['petition', 'petition'], // campaign copy: hero takeover + /petition pages
 ];
 
 // content name → the tables whose rows/updated_at constitute that collection.

@@ -80,6 +80,26 @@ const STATEMENTS = [
   )`,
   `CREATE INDEX ASYNC IF NOT EXISTS idx_tips_status_created ON tips(status, created_at)`,
 
+  // Petition signatures (docs/systems/petition.md). `petition` is the campaign
+  // slug the public form posts (content-driven: homepage.petition.slug), so a
+  // new campaign is new copy + a new slug, no schema change. One signature
+  // per email per petition — a re-sign updates the row, never duplicates.
+  // created_at is the signing timestamp the CSV exports.
+  `CREATE TABLE IF NOT EXISTS petition_signatures (
+    id UUID PRIMARY KEY,
+    petition TEXT NOT NULL,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    zip TEXT NOT NULL,
+    address TEXT,
+    phone TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE (petition, email)
+  )`,
+  `CREATE INDEX ASYNC IF NOT EXISTS idx_petition_signatures_petition_created ON petition_signatures(petition, created_at)`,
+
   `CREATE TABLE IF NOT EXISTS rate_limits (
     id UUID PRIMARY KEY,
     ip TEXT,
@@ -115,6 +135,8 @@ const API_GRANTS = [
   `GRANT SELECT, INSERT ON donations TO ${API_ROLE}`,
   `GRANT SELECT, INSERT, DELETE ON processed_events TO ${API_ROLE}`,
   `GRANT INSERT ON tips TO ${API_ROLE}`,
+  // Upsert (ON CONFLICT DO UPDATE needs SELECT + UPDATE); never DELETE.
+  `GRANT SELECT, INSERT, UPDATE ON petition_signatures TO ${API_ROLE}`,
 ];
 
 module.exports = { STATEMENTS, API_ROLE, API_GRANTS };

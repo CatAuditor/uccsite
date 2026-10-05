@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thank You | Utah Civic Compact</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon-512.png" />
+  <link rel="stylesheet" href="/css/fonts.css" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/colors.css" />
+  <link rel="stylesheet" href="/css/pages/petition.css" />
+</head>
+<body>
+
+{{> header}}
+
+  <section class="petition-thanks">
+    <div class="container">
+      <div class="petition-thanks-card">
+        <div class="success-icon">
+          <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <h1>{{petition.thanks_title}}</h1>
+        <p class="petition-thanks-body">{{petition.thanks_body}}</p>
+        <div class="petition-thanks-actions">
+          <button type="button" class="btn btn-donate btn-lg" id="petition-help">{{petition.thanks_cta}}</button>
+          <a href="/" class="btn btn-outline" id="petition-decline">{{petition.thanks_dismiss}}</a>
+        </div>
+        <p class="petition-thanks-legal">Utah Civic Compact is a 501(c)(4) social welfare organization. Contributions are <strong>not</strong> tax-deductible as charitable donations.</p>
+      </div>
+    </div>
+  </section>
+
+{{> footer}}
+
+  <!-- PAYMENT MODAL -->
+  <div class="modal-overlay" id="petition-modal" role="dialog" aria-modal="true" aria-labelledby="petition-modal-title">
+    <div class="modal-card">
+      <button class="modal-close" id="petition-modal-close" aria-label="Close">&#x2715;</button>
+      <h2 class="modal-title" id="petition-modal-title">Carry this fight through the legislature</h2>
+      <p class="modal-body">Choose an amount. You'll finish on our secure Stripe checkout page.</p>
+      <div class="donate-tiers donate-tiers-4" id="petition-tiers">
+        <button type="button" class="tier-btn" data-amount="1000">$10</button>
+        <button type="button" class="tier-btn active" data-amount="2500">$25</button>
+        <button type="button" class="tier-btn" data-amount="5000">$50</button>
+        <button type="button" class="tier-btn" data-amount="10000">$100</button>
+      </div>
+      <div class="form-group form-group-check">
+        <label class="check-label">
+          <input type="checkbox" id="petition-public" checked />
+          <span>Show my first name and amount on the public donor list</span>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-donate modal-cta-btn-stay" id="petition-checkout">Continue to checkout</button>
+        <button type="button" class="modal-dismiss" id="petition-modal-dismiss">{{petition.thanks_dismiss}}</button>
+      </div>
+      <p class="donate-error is-hidden" id="petition-modal-error"></p>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script src="/js/petition.js"></script>
+</body>
+</html>

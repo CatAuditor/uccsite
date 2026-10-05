@@ -73,11 +73,26 @@
 {{> header}}
 
 
-  <!-- HERO -->
-  <section class="hero" id="home">
+  <!-- HERO — petition takeover while a campaign has a headline (admin:
+       Petition page); the standing hero otherwise. -->
+  <section class="hero{{#petition.headline}} hero-petition{{/petition.headline}}" id="home">
     <div class="hero-bg"></div>
     <div class="hero-content">
       <img src="/assets/logo-lockup-transparent.png" alt="Utah Civic Compact" class="hero-logo" width="713" height="490" />
+      {{#petition.headline}}
+      <p class="hero-eyebrow">{{petition.label}}</p>
+      <h1 class="hero-headline hero-headline-petition">
+        {{{petition.headline}}}
+      </h1>
+      <p class="hero-sub">
+        {{petition.body}}
+      </p>
+      <div class="hero-actions">
+        <a href="/petition.html" class="btn btn-donate btn-lg">{{petition.cta}}</a>
+        {{#petition.cta_secondary}}<a href="{{petition.cta_secondary_url}}" class="btn btn-ghost">{{petition.cta_secondary}}</a>{{/petition.cta_secondary}}
+      </div>
+      {{/petition.headline}}
+      {{^petition.headline}}
       <h1 class="hero-headline">
         {{{hero.headline}}}
       </h1>
@@ -88,6 +103,7 @@
         <a href="#join" class="btn btn-primary">{{hero.cta_primary}}</a>
         <a href="#mission" class="btn btn-ghost">{{hero.cta_secondary}}</a>
       </div>
+      {{/petition.headline}}
     </div>
     <div class="hero-scroll-hint">
       <span>Scroll</span>

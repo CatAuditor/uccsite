@@ -14,7 +14,7 @@ const region = process.env.AWS_REGION;
 const s3 = new S3Client({ region });
 const sns = new SNSClient({ region });
 
-const TABLES = ['members', 'subscriptions', 'donations', 'subscribers', 'tips'];
+const TABLES = ['members', 'subscriptions', 'donations', 'subscribers', 'tips', 'petition_signatures'];
 
 export async function handler() {
   const date = new Date().toISOString().slice(0, 10);

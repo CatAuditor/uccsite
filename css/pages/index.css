@@ -171,3 +171,17 @@
 @media (max-width: 600px) {
   .fights-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Petition hero takeover (templates/index.html, docs/systems/petition.md) ── */
+.hero-eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red-light);
+  margin-bottom: 18px;
+  animation: heroFadeUp 0.8s var(--ease) 0.2s both;
+}
+.hero-headline-petition { font-size: clamp(36px, 5.6vw, 64px); line-height: 1.04; }
+.hero-petition .hero-sub { max-width: 620px; color: rgba(255,255,255,0.8); }
+.hero-petition .btn-lg { padding: 16px 32px; font-size: 1.05rem; }

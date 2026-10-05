@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign the Petition | Utah Civic Compact</title>
+  <meta name="description" content="{{petition.body}}" />
+  <link rel="canonical" href="https://utahciviccompact.org/petition" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://utahciviccompact.org/petition" />
+  <meta property="og:title" content="Sign the Petition | Utah Civic Compact" />
+  <meta property="og:description" content="{{petition.body}}" />
+  <meta property="og:site_name" content="Utah Civic Compact" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Sign the Petition | Utah Civic Compact" />
+  <meta name="twitter:description" content="{{petition.body}}" />
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon-512.png" />
+  <link rel="stylesheet" href="/css/fonts.css" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/colors.css" />
+  <link rel="stylesheet" href="/css/pages/petition.css" />
+</head>
+<body>
+
+{{> header}}
+
+  <section class="petition-hero">
+    <div class="container">
+
+      <div class="petition-hero-left">
+        {{#petition.headline}}
+        <p class="petition-hero-label">{{petition.label}}</p>
+        <h1>{{{petition.headline}}}</h1>
+        <p class="petition-hero-body">{{petition.body}}</p>
+        {{#petition.cta_secondary}}<a href="{{petition.cta_secondary_url}}" class="btn btn-ghost">{{petition.cta_secondary}}</a>{{/petition.cta_secondary}}
+        {{/petition.headline}}
+        {{^petition.headline}}
+        <p class="petition-hero-label">Petition</p>
+        <h1>No petition is open right now.</h1>
+        <p class="petition-hero-body">Check back soon, or sign up for updates on the homepage so you hear first.</p>
+        <a href="/#join" class="btn btn-ghost">Get updates</a>
+        {{/petition.headline}}
+      </div>
+
+      {{#petition.headline}}
+      <div class="petition-form-panel">
+        <h2>{{petition.form_title}}</h2>
+        <p class="form-sub">{{petition.form_intro}}</p>
+
+        <form id="petition-form" novalidate data-petition="{{petition.slug}}">
+          <div class="form-row">
+            <div class="field-group">
+              <label class="field-label" for="first-name">First name <span class="req">*</span></label>
+              <input class="field-input" type="text" id="first-name" name="firstName" autocomplete="given-name" maxlength="100" required />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="last-name">Last name <span class="req">*</span></label>
+              <input class="field-input" type="text" id="last-name" name="lastName" autocomplete="family-name" maxlength="100" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field-group">
+              <label class="field-label" for="zip">ZIP code <span class="req">*</span></label>
+              <input class="field-input" type="text" id="zip" name="zip" inputmode="numeric" autocomplete="postal-code" placeholder="84101" maxlength="10" required />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="email">Email <span class="req">*</span></label>
+              <input class="field-input" type="email" id="email" name="email" autocomplete="email" placeholder="you@example.com" maxlength="254" required />
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="address">Full address <span class="optional">(optional)</span></label>
+            <input class="field-input" type="text" id="address" name="address" autocomplete="street-address" placeholder="123 Main St, Ogden, UT 84401" maxlength="200" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="phone">Phone <span class="optional">(optional)</span></label>
+            <input class="field-input" type="tel" id="phone" name="phone" autocomplete="tel" placeholder="(801) 555-0100" maxlength="30" />
+          </div>
+
+          {{#turnstileSiteKey}}<div class="field-group cf-turnstile" data-sitekey="{{turnstileSiteKey}}"></div>
+          {{/turnstileSiteKey}}<button type="submit" class="btn btn-donate btn-full" id="petition-submit">{{petition.cta}}</button>
+          <p class="petition-consent">{{petition.consent}}</p>
+          <p class="status-msg error" id="petition-error" role="alert"></p>
+        </form>{{#turnstileSiteKey}}
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{{/turnstileSiteKey}}
+      </div>
+      {{/petition.headline}}
+
+    </div>
+  </section>
+
+{{> footer}}
+
+  <script src="/js/main.js"></script>
+  <script src="/js/petition.js"></script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+/* Page styles for templates/petition.html and petition-thanks.html (docs/systems/petition.md). */
+
+/* ── /petition: hero + form panel (same bones as the tipline page) ─────── */
+.petition-hero {
+  background: var(--navy-dark);
+  padding: 140px 0 80px;
+  position: relative;
+  overflow: hidden;
+}
+.petition-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 60% 40%, rgba(192,57,43,0.14) 0%, transparent 70%);
+  pointer-events: none;
+}
+.petition-hero .container {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 72px;
+  align-items: center;
+}
+.petition-hero-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red-light);
+  margin-bottom: 18px;
+}
+.petition-hero h1 {
+  font-family: var(--font-sans);
+  font-size: clamp(32px, 4.5vw, 52px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  color: var(--white);
+  margin-bottom: 24px;
+}
+.petition-hero h1 em { font-style: normal; color: var(--red-light); }
+.petition-hero-body {
+  font-size: 17px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.72);
+  max-width: 480px;
+  margin-bottom: 32px;
+}
+
+.petition-form-panel {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 44px 40px 36px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.28), 0 0 0 1px rgba(0,0,0,0.06);
+}
+.petition-form-panel h2 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--navy-dark);
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+.petition-form-panel .form-sub {
+  font-size: 13px;
+  color: var(--gray-600);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.petition-form-panel .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.field-group { margin-bottom: 18px; }
+.field-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--navy);
+  margin-bottom: 7px;
+}
+.field-label .req { color: var(--red); margin-left: 2px; }
+.field-label .optional { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--gray-400); }
+.field-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius);
+  font-size: 14.5px;
+  color: var(--gray-900);
+  background: var(--gray-50);
+  font-family: var(--font-sans);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field-input:focus {
+  outline: none;
+  border-color: var(--navy);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(27,47,78,0.08);
+}
+.field-input.is-invalid { border-color: var(--red); }
+
+.petition-consent {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--gray-600);
+  margin-top: 14px;
+  text-align: center;
+}
+.status-msg.error {
+  display: none;
+  margin-top: 12px;
+  font-size: 13.5px;
+  color: var(--red);
+  text-align: center;
+}
+.status-msg.error.is-visible { display: block; }
+
+@media (max-width: 900px) {
+  .petition-hero { padding: 120px 0 60px; }
+  .petition-hero .container { grid-template-columns: 1fr; gap: 40px; }
+}
+@media (max-width: 600px) {
+  .petition-form-panel { padding: 32px 22px 28px; }
+  .petition-form-panel .form-row { grid-template-columns: 1fr; gap: 0; }
+}
+
+/* ── /petition-thanks ──────────────────────────────────────────────────── */
+.petition-thanks {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  background: var(--cream);
+  padding: 140px 24px 80px;
+}
+.petition-thanks-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 60px 48px;
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+}
+.petition-thanks-card .success-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--navy);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 28px;
+  color: var(--white);
+}
+.petition-thanks-card h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(26px, 4vw, 34px);
+  color: var(--navy);
+  line-height: 1.2;
+  margin-bottom: 18px;
+}
+.petition-thanks-body { color: var(--gray-600); font-size: 17px; line-height: 1.7; margin-bottom: 32px; }
+.petition-thanks-actions { display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; }
+.petition-thanks-legal {
+  font-size: 0.82rem;
+  color: var(--gray-400);
+  margin-top: 28px;
+  border-top: 1px solid var(--gray-200);
+  padding-top: 20px;
+}
+.btn-lg { padding: 16px 32px; font-size: 1.05rem; }
+@media (max-width: 480px) { .petition-thanks-card { padding: 40px 24px; } }
+
+/* ── Payment modal (reuses .modal-* and .tier-btn from styles.css) ─────── */
+.donate-tiers-4 { grid-template-columns: repeat(4, 1fr); margin-bottom: 18px; }
+.modal-cta-btn-stay { justify-content: center; }
+#petition-modal .modal-body { margin-bottom: 20px; }
+@media (max-width: 480px) { .donate-tiers-4 { grid-template-columns: repeat(2, 1fr); } }
