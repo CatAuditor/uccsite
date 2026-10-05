@@ -4,6 +4,42 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.14.0 — 2026-10-05 (branch `refactor`) — Petition
+
+UDOT ALPR special-use-permit petition, built so the next campaign is a copy
+change (`docs/systems/petition.md`, ADR `petition-copy-in-homepage-group.md`).
+- **Site:** homepage hero becomes the petition while `homepage.petition.headline`
+  is set (standing hero otherwise); new `/petition` (form: first/last name,
+  ZIP, email required; address, phone optional; consent line) and
+  `/petition-thanks` (thank-you + "I can help" modal: $10 / **$25** / $50 /
+  $100 one-time → Stripe; "Not this time" → home). `js/petition.js`,
+  `css/pages/petition.css`, hero styles in `css/pages/index.css`.
+- **API:** `POST /api/petition` — validates, 20/IP/hour, Turnstile when
+  keyed, upserts `petition_signatures` (one per email per campaign slug,
+  original signing time kept) and the `subscribers` row without
+  overwriting join-form details. Checkout accepts a sanitized `source`
+  (`petition:<slug>`) into Stripe metadata. 4 new tests (30 total).
+- **Schema (applied to staging AND prod):** `petition_signatures` + index +
+  api grants (SELECT/INSERT/UPDATE); `homepage.petition` JSON column.
+  Nightly operational export and restore include the table.
+- **Admin:** Site Main → **Petition** (campaign copy editor with lost-update
+  check + slug validation, signatures per slug, audited CSV export with
+  `signed_at_utc`); **Subscribers** list + CSV gain `donor` and `petitions`
+  columns (shared `subscribers/query.js`). Group ownership flag
+  `appeals: true` → `page: 'appeals' | 'petition'`.
+- **Ops:** `scripts/seed-homepage-group.mjs` (seed a homepage group from
+  git into an env). CLAUDE.md content-key rule now points at
+  `apps/admin/lib/collections.js` (Decap's config.yml is gone).
+- **Deployed:** UccStaging + UccProd (API + publish Lambda with the new
+  templates); staging published from DB with placeholder copy and verified
+  (26/26 e2e, API smoke: sign / re-sign / 400s, DB effects, cleanup); prod
+  published from DB — hero unchanged there until the real copy is entered
+  (for-conner §11).
+
+Open: **P1** real petition copy + two-person publish (for-conner §11);
+**P1** Jarom not signed into prod admin (no second approver); P1 Resend key /
+SES (§10). Decisions taken without an answer: `docs/pending-questions.md`.
+
 ## v0.13.1 — 2026-10-05 (branch `refactor`)
 
 SES prerequisites, step 1 of the Resend → SES move (`docs/systems/email.md`).
