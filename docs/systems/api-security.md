@@ -10,6 +10,7 @@ functions/api/
   subscribe.js               POST — join form → D1 subscribers + welcome email (Resend)
   unsubscribe.js             GET|POST ?token= — removes subscriber, sets members.newsletter_opt_in=0
   tip.js                     POST — tipline → Airtable (Cloudflare only; the AWS port writes the `tips` table — see tipline.md)
+  (AWS only) /api/petition   POST — petition signature → `petition_signatures` + `subscribers` (aws/api/routes.js petitionSign; see petition.md)
   create-checkout-session.js POST — Stripe Checkout session
   create-portal-session.js   POST (request link) / GET ?token= (open portal) — see Billing Portal
   webhook.js                 POST — Stripe events → D1
@@ -40,6 +41,7 @@ D1-based, implemented once in `_lib.js` (`checkRateLimit`, wrapped by `rateLimit
 |---|---|---|
 | `subscribe` | `/api/subscribe` | 5 / IP / hour |
 | `tip` | `/api/tip` | 5 / IP / hour |
+| `petition` | `POST /api/petition` (AWS only) | 20 / IP / hour — one shared phone at a tabling event signs many |
 | `checkout` | `/api/create-checkout-session` | 10 / IP / hour |
 | `portal` | `POST /api/create-portal-session` | 5 / IP / hour |
 
@@ -59,7 +61,7 @@ Requires `STRIPE_SECRET_KEY`, `RESEND_API_KEY`, `TOKEN_SECRET`.
 
 ## Input Handling
 - All DB queries use parameterized statements.
-- `str(value, max)` in `_lib.js` coerces to string, trims, and caps length — used for every user-supplied string in every function (names 100, address 200, zip 10, email 254, tip body 100 000).
+- `str(value, max)` in `_lib.js` coerces to string, trims, and caps length — used for every user-supplied string in every function (names 100, address 200, zip 10, email 254, phone 30, petition slug 64, checkout `source` 80 then stripped to `[\w:.-]`, tip body 100 000).
 - `isValidEmail()` applied to every email field server-side (checkout included).
 - Anything rendered into HTML from user data is escaped (`escapeHtml` in emails) or inserted via `textContent` (donor names in `js/main.js`).
 - Checkout: `customer_creation: 'always'` for one-time payments so the webhook can always link a donation to a member; `publicDonor` is copied to `subscription_data.metadata` so recurring invoices honor the opt-out.
@@ -103,6 +105,7 @@ which also creates the role and maps it to the Lambda's IAM role via
 | `donations` | SELECT, INSERT | webhook, `/api/donations/stats` |
 | `processed_events` | SELECT, INSERT, DELETE | webhook idempotency |
 | `tips` | **INSERT only** | `/api/tip` (write-only from the internet, docs/systems/tipline.md) |
+| `petition_signatures` | SELECT, INSERT, UPDATE | `/api/petition` upsert (docs/systems/petition.md); never DELETE |
 | content tables, `audit_log`, `revisions`, … | nothing | — |
 
 A route that needs more fails with SQLSTATE 42501 `permission denied for

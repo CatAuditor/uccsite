@@ -9,7 +9,7 @@ build.js                 thin shell: read inputs → packages/render → write d
 packages/render/         THE template engine + site assembly (pure, golden-file tested;
                          PAGES manifest now lives in packages/render/site.js)
 package.json             `npm run build` / `npm run dev` (wrangler pages dev); npm workspaces root
-templates/*.html         one per page (17)
+templates/*.html         one per page (19)
 templates/partials/      header.html, footer.html  ← THE nav/footer; edit here only
                          (footer.html also carries the download modal, files.md)
 content/*.json           CMS-managed content (see cms.md)
@@ -21,6 +21,7 @@ css/colors.css           GENERATED at render (packages/render/site.js withColorC
 js/main.js               nav, animations, join form, donate form, donation tracker,
                          createModal() (timed donation modal + download modal)
 js/tip.js                tipline form controller
+js/petition.js           petition form + thank-you payment modal (see petition.md)
 static/                  copied verbatim into dist/: admin/, _headers, _redirects
 assets/, UCC.png, favicon.svg, robots.txt, llms.txt   copied verbatim (COPY_FROM_ROOT in build.js)
 functions/api/           Cloudflare Pages Functions (see api-security.md)
@@ -74,7 +75,7 @@ Hard rules:
 
 | Output | Content files | Notes |
 |---|---|---|
-| `index.html` | settings, homepage, projects | featured statement derived from `statements.json` |
+| `index.html` | settings, homepage, projects | featured statement derived from `statements.json`; hero is the petition takeover while `homepage.petition.headline` is set (petition.md) |
 | `team.html` | settings, team | |
 | `blog.html` | settings, blog | |
 | `statements.html` | settings, statements | |
@@ -88,6 +89,8 @@ Hard rules:
 | `dignity-index-statement.html` | settings | 9/11 anniversary statement calling for Dignity Index adoption; bespoke design distinct from `statements.html` |
 | `theory.html` | settings | |
 | `tip.html` | settings | noindex, excluded from sitemap |
+| `petition.html` | settings, homepage | petition signature form; copy from `homepage.petition` (petition.md) |
+| `petition-thanks.html` | settings, homepage | post-signature thank-you + payment modal; noindex, excluded from sitemap |
 | `privacy.html` | settings | |
 | `success.html` | settings | Stripe return page; noindex, no nav/footer |
 | `404.html` | settings | real not-found page (replaces Pages SPA fallback); noindex, excluded from sitemap |

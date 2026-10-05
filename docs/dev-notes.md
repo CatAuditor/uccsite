@@ -6,6 +6,38 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-05 — Petition: the homepage now leads with "Tell UDOT" and collects signatures
+
+The site can run a petition. The first one asks UDOT to revoke the special-use
+permits for license-plate-reader cameras.
+
+- **Homepage hero:** while a petition is on, the top of the homepage is the
+  petition — label, headline, the UDOT provision, a red **Sign the petition
+  now** button and a link to the ALPR report. Blank the headline and the old
+  hero comes back.
+- **/petition:** the form. Required: first and last name, ZIP, email.
+  Optional: full address, phone. Under the button: "By signing this petition
+  you agree to be included in future communications regarding our fight for
+  Utahns." Signing also adds the person to the mailing list (without
+  overwriting anything they already told us on the join form).
+- **After signing:** a thank-you page ("…tell UDOT not to enable a
+  surveillance state… $25 will help us carry this fight through the
+  legislature") with **I can help** (opens a $10 / $25 / $50 / $100 chooser,
+  $25 preselected, then Stripe) and **Not this time**.
+- **Admin → Petition** (Site Main): every word of the campaign copy, the
+  signature list, and **Download CSV** (name, email, ZIP, address, phone and
+  the exact signing time). Change the slug to start a new petition later;
+  old signatures stay under the old one.
+- **Admin → Subscribers:** two new columns in the list and the CSV —
+  **Donor** (has given through the site) and **Petitions** (which ones they
+  signed) — so a mailing can be aimed at donors or signers.
+
+**What is left for a person:**
+- Enter the real copy on Admin → Petition (the headline and body currently
+  carry placeholder wording for the UDOT provision), save, request a publish,
+  and have a second admin approve it. The hero stays as it was until then.
+- Decide whether the ZIP must be a Utah ZIP (today any 5-digit ZIP is accepted).
+
 ## 2026-10-05 — Email is moving from Resend to Amazon SES (step 1 of 3)
 
 The site's emails (welcome message, billing-portal link, newsletter) still go

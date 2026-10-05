@@ -37,7 +37,11 @@ apps/admin/
   app/users                owner-only: invite, role, disable, reset password,
                            remove MFA, sign out everywhere
   app/redirects            redirects table → CloudFront KeyValueStore on publish
-  app/subscribers          newsletter list (editor+) + CSV export (audited)
+  app/subscribers          newsletter list (editor+) + CSV export (audited); query.js = the
+                           shared row query with `donor` and `petitions` labels
+  app/petition             Petition (editor+): campaign copy (homepage.petition group,
+                           page: 'petition'), signatures per slug, audited CSV export
+                           (docs/systems/petition.md)
   app/tips                 tipline inbox (editor+): list w/ status filter, [id] detail,
                            status change (audited tip.status), owner-only delete
                            (audited tip.delete, no snapshot) — docs/systems/tipline.md
@@ -74,9 +78,10 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Images | Media Library |
 | Files (PDFs, spreadsheets, records…) shared between staff, optionally published at `/files/…` and listed on /projects | Files |
 | Every donation ask (homepage section, timed modal, download modal) | Donation appeals |
+| The petition campaign: hero takeover, /petition copy, thank-you ask; signatures + CSV | Petition |
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
 | Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |
-| Donors, newsletter list (+ CSV for the periodical) | Donations, Subscribers |
+| Donors, newsletter list (+ CSV for the periodical, with donor / petitions labels) | Donations, Subscribers |
 | Confidential tips: read, triage status, delete | Tips (editor+; delete is owner) |
 | Accounts, roles, MFA, security keys | Users (owners), My profile (everyone) |
 
@@ -227,10 +232,10 @@ Review fixes 2026-09-13 (the rules every editor page follows):
 - **Singleton drift guards** at boot: `SETTINGS_FIELDS` ∪
   `APPEAL_SETTINGS_FIELDS` ≡ `FIELD_MAPS.site_settings` (disjoint);
   `HOMEPAGE_GROUPS` keys ≡ homepage JSON columns (field keys inside a group
-  follow templates/index.html). Groups flagged `appeals: true` and the
-  appeal settings fields are edited on `/appeals` only; Site Settings and
-  Homepage save `{ ...current, ...ownFields }` so neither page nulls the
-  other's columns.
+  follow templates/index.html). Groups flagged `page: 'appeals'` (and the
+  appeal settings fields) are edited on `/appeals` only, `page: 'petition'`
+  on `/petition` only; Site Settings, Homepage, Appeals and Petition each
+  save `{ ...current, ...ownFields }` so no page nulls another's columns.
 
 ## Link previews — "Add from link" (2026-09-30)
 

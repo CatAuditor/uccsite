@@ -18,7 +18,7 @@ same commit as any such change.
 - **No inline `<script>`** — the CSP blocks it. JS goes in `js/`.
 - Backend is Cloudflare Pages Functions in `functions/api/` (shared helpers in `_lib.js`) + D1 (`schema.sql`). Secrets inventory is in `wrangler.toml`.
 - **AWS Lambda/pipeline code lives under `aws/`, NEVER under `functions/`** — Cloudflare Pages compiles everything under `functions/` as live routes, so non-Pages code there breaks the Pages build.
-- Every key in `content/*.json` must be declared in `static/admin/config.yml` or the CMS deletes it on save.
+- Every key in `content/*.json` must be declared in `apps/admin/lib/collections.js` (FIELD_MAPS / HOMEPAGE_GROUPS; boot-time drift guard) or the admin wipes it on save. Decap's `static/admin/config.yml` is gone.
 - `main` auto-deploys to production with no preview.
 - The tipline is confidential: never log request or upstream response bodies in `functions/api/tip.js`.
 
