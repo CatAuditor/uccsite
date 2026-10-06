@@ -4,6 +4,12 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.14.5 — 2026-10-05 (branch `refactor`) — Stale-tab save error explained
+
+- `app/error.js` recognises Next's "Server Action … was not found" (page
+  opened before a redeploy) and shows a reload prompt; log in
+  docs/error-handling/client-side-error/2026-10-05-admin-stale-server-action.md.
+
 ## v0.14.4 — 2026-10-05 (branch `refactor`) — Owners self-approve publishes
 
 - `apps/admin/lib/publish.js` `approvePublish`: the requester ≠ reviewer

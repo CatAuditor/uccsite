@@ -22,6 +22,13 @@ security key first — none is set up yet. After setting a real password,
 Still open: with two owners signed in (Conner and Jarom), two-person
 publishing works on the live site for the first time.
 
+## 2026-10-05 — "Server Action was not found" when saving
+
+If a save fails with that message, the admin was redeployed while the page
+was open (it happened several times today). Nothing was saved. Reload the
+page and save again. The admin now says exactly that, with a Reload button,
+instead of the raw error.
+
 ## 2026-10-05 — Owners can publish their own changes
 
 An **owner** no longer needs a second admin: request the publish as before,
