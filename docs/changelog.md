@@ -68,6 +68,8 @@ staging + prod)
   update stamp, invoke-failure reopen); `lib/notify.js` generalised —
   `notifyNewsletterRequested` (same recipients as publish requests).
 - Dashboard: "Newsletters needing attention".
+- `newsletterPage` reads run sequentially on the shared pg client (concurrent
+  `query()` on one connection is deprecated in pg).
 - `NEWSLETTER_FUNCTION_NAME` via `lib/config.js`, `scripts/admin-env.mjs`,
   `amplify.yml`.
 
