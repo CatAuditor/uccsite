@@ -30,8 +30,8 @@ the homepage lists the team the same way.
 - **Needs a person:** (1) each member adds their profile links; (2) Jarom's
   bio rewrite is drafted in docs/seo-plan.md — edit it there, then paste into
   Team & Bios; (3) register the site in Google Search Console and submit the
-  sitemap (steps in docs/for-conner.md); (4) a publish from the admin to put
-  the pages live on production.
+  sitemap (steps in docs/for-conner.md). The pages went live on production
+  the same evening (operator publish).
 - Technical detail: docs/systems/author-pages.md.
 
 ## 2026-10-05 — Newsletters, round two: bounces, confirmations, web archive, quality-of-life

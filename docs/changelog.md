@@ -42,8 +42,10 @@ of each push.
 `seo-plan.md` (new; bio draft), site-structure, bylines, documents, admin, legal/data-handling,
 dev-notes, for-conner §1 (Search Console + profile links + prod publish approval), llms.txt.
 
-**Open P1**: prod publish of the author pages awaits two-person approval in the admin;
-Resend key, Stripe webhook, Jarom sign-in unchanged from v0.16.0.
+**Prod**: published the same evening with the user's go (`publish.mjs --env prod --source db`,
+30 files, verified: /team/* 200, bylines linked, 4 author URLs in sitemap, Organization.member ×4).
+
+**Open P1**: Resend key, Stripe webhook, Jarom sign-in unchanged from v0.16.0.
 
 ## v0.15.2 — 2026-10-05 (branch `refactor`) — Approval bug hunt
 

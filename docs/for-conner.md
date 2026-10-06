@@ -107,8 +107,7 @@ has yours) — and then exercise the feature that uses it.
   - `[hand]` each team member: admin → Team & Bios → **Public profile links**
     (LinkedIn, X, personal site, one per line) → Save → Request publish. Then
     put the author page URL in those profiles' website field.
-  - `[go]` approve the publish request that puts the author pages on prod
-    (the staging copy is at /team/jarom-gillins on the staging origin).
+  - [x] 2026-10-05 author pages published to prod (operator publish, 30 files).
 
 - **AWS console access** (IAM users, group `adminaccess` = AdministratorAccess).
   Sign in at https://017110365763.signin.aws.amazon.com/console
