@@ -12,7 +12,8 @@ const { escapeHtml, safeUrl } = require('./engine');
 
 const CHEVRON = '<svg class="chevron" aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
 
-// The menus as they were hand-written in templates/partials until 2026-10-06.
+// The menus as they were hand-written in templates/partials until 2026-10-06,
+// plus the Writing dropdown and footer link (2026-10-07, docs/systems/writing.md).
 // Used whenever settings.navigation is absent or unreadable, so a missing or
 // broken value can never strip the site of its menus.
 const DEFAULT_NAVIGATION = {
@@ -23,6 +24,12 @@ const DEFAULT_NAVIGATION = {
       { label: 'Theory of Change', href: '/theory.html' },
       { label: 'Policies', href: '/issues.html' },
       { label: 'Privacy Report', href: '/privacy-report.html' },
+    ] },
+    { label: 'Writing', children: [
+      { label: 'All writing', href: '/writing' },
+      { label: 'Statements', href: '/statements.html' },
+      { label: 'Reports', href: '/writing#reports' },
+      { label: 'Newsletters', href: '/newsletters' },
     ] },
     { label: 'News & Media', href: '/blog.html' },
     { label: 'Projects', href: '/projects.html' },
@@ -38,6 +45,7 @@ const DEFAULT_NAVIGATION = {
         { label: 'Team & Bios', href: '/team.html' },
         { label: 'Theory of Change', href: '/theory.html' },
         { label: 'Privacy Report', href: '/privacy-report.html' },
+        { label: 'Writing', href: '/writing' },
       ] },
       { heading: 'Get Involved', links: [
         { label: 'Join the Compact', href: '/#join' },

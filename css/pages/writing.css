@@ -1,0 +1,46 @@
+/* Page styles for templates/writing.html (docs/systems/writing.md). Same
+   cream ground, card and type scale as /statements. */
+.writing-section { padding: 64px 48px 100px; background: var(--cream); }
+.writing-inner { max-width: 780px; margin: 0 auto; }
+
+.writing-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 28px; }
+.writing-filter {
+  padding: 8px 16px; border-radius: 999px; cursor: pointer;
+  border: 1.5px solid var(--gray-200); background: var(--white); color: var(--navy);
+  font: 600 0.88rem/1 var(--font-sans);
+}
+.writing-filter span { color: var(--gray-400); font-weight: 500; margin-left: 4px; }
+.writing-filter:hover { border-color: var(--navy); }
+.writing-filter:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.writing-filter.active { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.writing-filter.active span { color: rgba(255,255,255,0.65); }
+
+.writing-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+.writing-item {
+  background: var(--white); border-radius: var(--radius-lg);
+  padding: 32px 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.writing-meta {
+  display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gray-600); margin-bottom: 10px;
+}
+.writing-type { color: var(--red); }
+.writing-title {
+  font-family: var(--font-serif); font-size: clamp(22px, 3vw, 28px); font-weight: 800;
+  line-height: 1.25; letter-spacing: -0.01em; margin: 0 0 8px;
+}
+.writing-title a { color: var(--navy-dark); text-decoration: none; }
+.writing-title a:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.writing-byline { font-size: 14px; font-weight: 600; color: var(--gray-600); margin-bottom: 10px; }
+.writing-byline a { color: var(--navy); text-decoration: none; border-bottom: 1px solid rgba(27,47,78,0.3); }
+.writing-byline a:hover { border-bottom-color: var(--navy); }
+.writing-summary { font-size: 16px; line-height: 1.7; color: var(--gray-900); margin: 0; }
+.writing-empty, .writing-more { color: var(--gray-600); font-size: 15px; }
+.writing-more { margin-top: 36px; }
+.writing-more a { color: var(--navy); }
+
+@media (max-width: 768px) {
+  .writing-section { padding: 44px 20px 72px; }
+  .writing-item { padding: 26px 22px; }
+}

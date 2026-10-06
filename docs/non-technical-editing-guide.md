@@ -84,6 +84,9 @@ puts that version back as a draft; request a publish to take it live.
   the list or type any address. To add a **new page** to the menu, create it in
   All documents first, then pick it here. Every menu change waits for a
   publish like anything else.
+- **Writing page** (`/writing`) — builds itself from published documents and
+  statements; nothing to edit. A document's **Category** sets its label there
+  (Reports, Statements, Whitepapers).
 - **Petition** — the campaign copy, the thank-you page's donation window
   (**amounts** as dollars, e.g. `5, 10, 25`; **one-time, monthly or both**; an
   Other amount is always offered) and the **share** message and preview

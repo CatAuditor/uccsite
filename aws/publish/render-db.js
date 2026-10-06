@@ -60,7 +60,7 @@ function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl, pro
   // (packages/render/site.js deriveTeam reads content.documents_index). Date
   // is the JSON-LD override's datePublished when set, else the publish date.
   const documentsIndex = bundle.documents.map(d => ({
-    slug: d.slug, title: d.title, author: d.author || '', category: d.category || '',
+    slug: d.slug, title: d.title, author: d.author || '', category: d.category || '', summary: d.metaDescription || '',
     date: (d.jsonldOverrides && d.jsonldOverrides.datePublished) || (d.publishedAt ? String(d.publishedAt).slice(0, 10) : ''),
   }));
 

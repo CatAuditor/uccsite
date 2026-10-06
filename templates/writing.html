@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writing | Utah Civic Compact</title>
+  <meta name="description" content="Statements, reports and policy papers from Utah Civic Compact on surveillance, privacy, transparency and consent in Utah — newest first." />
+  <link rel="canonical" href="https://utahciviccompact.org/writing" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://utahciviccompact.org/writing" />
+  <meta property="og:title" content="Writing | Utah Civic Compact" />
+  <meta property="og:description" content="Statements, reports and policy papers from Utah Civic Compact on surveillance, privacy, transparency and consent in Utah — newest first." />
+  <meta property="og:image" content="https://utahciviccompact.org/UCC.png" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Writing | Utah Civic Compact" />
+  <meta name="twitter:description" content="Statements, reports and policy papers from Utah Civic Compact — newest first." />
+  <meta name="twitter:image" content="https://utahciviccompact.org/UCC.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon-512.png" />
+  <link rel="stylesheet" href="/css/fonts.css" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/colors.css" />
+  <link rel="stylesheet" href="/css/pages/writing.css" />
+</head>
+<body>
+  <!-- NAVIGATION -->
+{{> header}}
+  <div class="subpage-hero">
+    <div class="section-label">Writing</div>
+    <h1>Statements, reports and papers</h1>
+    <p>Everything Utah Civic Compact has published, newest first.</p>
+  </div>
+  <div class="writing-section">
+    <div class="writing-inner">
+      <div class="writing-filters" role="group" aria-label="Show only" hidden>
+        <button type="button" class="writing-filter active" data-type="" aria-pressed="true">All <span>{{writing.count}}</span></button>
+        {{#writing.types}}<button type="button" class="writing-filter" data-type="{{key}}" aria-pressed="false">{{label}}s <span>{{n}}</span></button>
+        {{/writing.types}}
+      </div>
+      <ol class="writing-list">
+        {{#writing.items}}
+        <li class="writing-item" data-type="{{type_key}}">
+          <div class="writing-meta"><span class="writing-type">{{type}}</span>{{#date}}<time>{{date}}</time>{{/date}}</div>
+          <h2 class="writing-title"><a href="{{url}}">{{title}}</a></h2>
+          {{#author}}<div class="writing-byline">By {{#author_url}}<a href="{{author_url}}">{{author}}</a>{{/author_url}}{{^author_url}}{{author}}{{/author_url}}</div>{{/author}}
+          {{#summary}}<p class="writing-summary">{{summary}}</p>{{/summary}}
+        </li>
+        {{/writing.items}}
+      </ol>
+      {{^writing.items}}<p class="writing-empty">Nothing published yet.</p>{{/writing.items}}
+      <p class="writing-more">Looking for press coverage of our work? See <a href="/blog">News &amp; Media</a>. Past newsletters are in the <a href="/newsletters">newsletter archive</a>.</p>
+    </div>
+  </div>
+  <!-- FOOTER -->
+{{> footer}}
+  <script src="/js/main.js"></script>
+  <script src="/js/writing.js"></script>
+</body>
+</html>

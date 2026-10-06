@@ -22,5 +22,6 @@
   "team/conner-radcliffe.html": "New page: author page rendered from templates/team-member.html, one per team member (docs/systems/author-pages.md)",
   "team/clark-dice.html": "New page: author page rendered from templates/team-member.html, one per team member (docs/systems/author-pages.md)",
   "team/jarom-gillins.html": "New page: author page rendered from templates/team-member.html, one per team member (docs/systems/author-pages.md)",
-  "team/kaden-payne.html": "New page: author page rendered from templates/team-member.html, one per team member (docs/systems/author-pages.md)"
+  "team/kaden-payne.html": "New page: author page rendered from templates/team-member.html, one per team member (docs/systems/author-pages.md)",
+  "writing.html": "New page (2026-10-07): /writing lists every published statement, report and paper, newest first (docs/systems/writing.md)"
 }

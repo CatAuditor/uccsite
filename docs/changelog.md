@@ -4,6 +4,27 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.20.0 — 2026-10-07 (branch `refactor`) — /writing page and Writing menu; payment-options proposal
+
+**Site** (`packages/render/writing.js` new, `site.js`, `navigation.js`; `templates/writing.html`,
+`js/writing.js`, `css/pages/writing.css` new; `aws/publish/render-db.js`; docs/systems/writing.md)
+- /writing: published Documents (except category Legal) + Statements, newest first, merged where a
+  statement points at a document, type from Category, author links, type filters (#reports etc.).
+  Derived at render, nothing stored. `documents_index` gains `summary`.
+- DEFAULT_NAVIGATION: header **Writing** dropdown (All writing · Statements · Reports · Newsletters)
+  and a footer Organization link. Live sites with no saved custom menu pick this up on publish.
+
+**Docs**
+- `docs/proposals/payment-options.md` (new): Conner's request for a central payment-options page,
+  today's five money surfaces, proposed design, open decisions, access needed. Not built.
+- `docs/systems/navigation.md`: corrected — the golden parity test does NOT guard menu output
+  (16 of 18 site pages are exempt in expected-diffs.json); the 2026-10-06 byte-level check was the
+  comparison against the live site, not the test.
+
+**Tests**: `writing.test.mjs` (4).
+
+Deploy: needs `cdk deploy UccProd` (PublishFn bundles templates/js/css) after the push, then a publish.
+
 ## v0.19.2 — 2026-10-06 (branch `refactor`) — Privacy policy covers every collection channel
 
 **Site / legal** (`templates/privacy.html`; prod + staging `documents` row `privacy` re-imported

@@ -6,6 +6,22 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-07 — New Writing page, and a Writing menu
+
+**utahciviccompact.org/writing** lists everything we have published — reports,
+statements, papers — newest first, with buttons to show just one kind. It
+builds itself: publish a new document or statement and it appears there.
+
+- The header has a new **Writing** menu: All writing · Statements · Reports ·
+  Newsletters. The footer's Organization column links to it too.
+- A document's **Category** decides its label. "Twenty-Five Years Later" is filed
+  under Reports; set its Category to **Statements** to list it as a statement.
+- The privacy policy (category Legal) is left out on purpose.
+
+**Planned, not built:** a central **Payment options** page to define donation
+asks once and reuse them anywhere. Written up for the technical team in
+`docs/proposals/payment-options.md`.
+
 ## 2026-10-06 — Privacy policy rewritten to match what the site really collects
 
 The privacy policy at utahciviccompact.org/privacy still described the old

@@ -50,10 +50,19 @@ packages/render/test/navigation.test.mjs  6 tests (normalize, aria-current, esca
 ## Rendering
 
 The three blocks are **generated as HTML in `navigation.js`**, not with template
-sections, so the default menus reproduce the old partials byte-for-byte
-(`parity.test.mjs` golden baseline). Verified 2026-10-06 against the live site:
-header, footer columns and bottom line identical on all 19 rendered pages
-(ignoring the CRLF line endings the live header carried from a Windows checkout).
+sections, so the default menus could reproduce the old hand-written partials
+exactly. Verified 2026-10-06 against the live site: header, footer columns and
+bottom line identical on all 19 rendered pages (ignoring the CRLF line endings
+the live header carried from a Windows checkout).
+
+**The golden test does not guard this.** `parity.test.mjs` exempts every site
+page listed in `expected-diffs.json` — 16 of the 18 baseline pages — so it
+only checks that pages exist. Menu changes are covered by
+`navigation.test.mjs`; a byte-level check needs a fresh render compared with
+the live site.
+
+2026-10-07: the defaults gained a **Writing** dropdown and a footer link
+(docs/systems/writing.md).
 
 `aria-current="page"` goes on a link whose href resolves to the page being
 rendered (`pageKey`: `/team.html` → `team`), never on `#` anchors, styled

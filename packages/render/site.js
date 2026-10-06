@@ -6,6 +6,7 @@
 
 const { render, mdToHtml } = require('./engine');
 const { navFields } = require('./navigation');
+const { deriveWriting } = require('./writing');
 
 const SITE_URL = 'https://utahciviccompact.org';
 
@@ -19,6 +20,9 @@ const PAGES = [
   { template: 'team-member.html', content: ['team', 'settings', 'statements', 'projects', 'issues'], each: 'members', dir: 'team' },
   { template: 'blog.html',     content: ['settings', 'blog'] },
   { template: 'statements.html', content: ['settings', 'statements'] },
+  // Every published statement, report and paper, newest first (docs/systems/writing.md).
+  // content.writing is derived in buildSite, never stored.
+  { template: 'writing.html',    content: ['settings', 'writing'], priority: '0.8' },
   { template: 'issues.html',   content: ['settings', 'issues'] },
   { template: 'privacy-report.html', content: ['settings'] },
   { template: 'projects.html', content: ['settings', 'projects'] },
@@ -338,6 +342,8 @@ function expandPages(pages, content) {
 function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteUrl = SITE_URL, sitemapExtra = [] }) {
   const errors = [];
   const fail = (msg) => errors.push(msg);
+  // Derived page data that no content file carries (filled in below).
+  content = { ...content, writing: content.writing || {} };
 
   for (const { template, content: names } of pages) {
     if (!(template in templates)) fail(`Template not found: ${template}`);
@@ -348,7 +354,11 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
   if (errors.length) return { files: {}, errors };
 
   const colored = withColorClasses(content);
-  const derived = deriveTeam(deriveProjectFiles(deriveProjectFilters(derivePetitionShare(deriveHomepage(colored.content), siteUrl))), siteUrl);
+  const teamed = deriveTeam(deriveProjectFiles(deriveProjectFilters(derivePetitionShare(deriveHomepage(colored.content), siteUrl))), siteUrl);
+  const authors = authorIndex(teamed.team?.members || [], siteUrl);
+  // Wrapped like every content file ({ statements: { statements: [...] } }): a
+  // page's data merges each content object's keys, so the template reads writing.items.
+  const derived = { ...teamed, writing: { writing: deriveWriting(teamed, (name) => authors[String(name || '').trim()]?.url || '') } };
   const expanded = expandPages(pages, derived);
 
   const files = { 'css/colors.css': colored.colorsCss };
