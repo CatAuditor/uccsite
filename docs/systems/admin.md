@@ -120,7 +120,9 @@ operator fallback.
   Listing and removing keys happens in the admin via the user's access token.
 - The OAuth scope `aws.cognito.signin.user.admin` is requested so the access
   token (second httpOnly cookie, `ucc_admin_access_token`) can call the
-  user's own ChangePassword / TOTP / WebAuthn APIs. Both cookies expire in 1 h.
+  user's own ChangePassword / TOTP / WebAuthn APIs. Both cookies expire in 4 h
+  (2026-10-05; was 1 h) — the same as the app client's id/access token
+  validity in CDK, since the cookie carries the JWT and cannot outlive it.
   Because that scope also lets a user change their own email attribute, the
   session only accepts a **verified** email claim and the pool keeps the
   original email until a new one is verified (`keepOriginal`); owner
@@ -134,7 +136,7 @@ operator fallback.
 - Owners manage users on `/users`: invite (Cognito emails a temporary
   password), role (owner/editor/viewer group), disable/enable (+ global
   sign-out), force password reset, remove authenticator MFA, sign out
-  everywhere. Admin cookies last an hour: a role change or sign-out takes
+  everywhere. Admin cookies last four hours: a role change or sign-out takes
   effect at the next sign-in unless the user is signed out everywhere and
   their cookie has expired. Every action writes an `audit_log` row
   (`user.*`, `account.*`).
