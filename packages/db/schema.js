@@ -70,6 +70,15 @@ const STATEMENTS = [
   `ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMPTZ`,
   `UPDATE subscribers SET confirmed_at = created_at WHERE confirmed_at IS NULL AND created_at < '2026-10-07T00:00:00Z'`,
 
+  // Campaign-level newsletter opens (docs/systems/newsletters.md "Opens"):
+  // one anonymous row per pixel hit — newsletter id + time, nothing else.
+  `CREATE TABLE IF NOT EXISTS newsletter_opens (
+    id UUID PRIMARY KEY,
+    newsletter_id UUID NOT NULL,
+    at TIMESTAMPTZ DEFAULT now()
+  )`,
+  `CREATE INDEX ASYNC IF NOT EXISTS idx_newsletter_opens_newsletter ON newsletter_opens(newsletter_id)`,
+
   // SES bounce/complaint/reject ledger (packages/db/email-events.js).
   ...require('./email-events').DDL,
 
@@ -145,6 +154,7 @@ const API_GRANTS = [
   `GRANT SELECT, INSERT ON donations TO ${API_ROLE}`,
   `GRANT SELECT, INSERT, DELETE ON processed_events TO ${API_ROLE}`,
   `GRANT INSERT ON tips TO ${API_ROLE}`,
+  `GRANT INSERT ON newsletter_opens TO ${API_ROLE}`, // the open pixel; never SELECT
   // Upsert (ON CONFLICT DO UPDATE needs SELECT + UPDATE); never DELETE.
   `GRANT SELECT, INSERT, UPDATE ON petition_signatures TO ${API_ROLE}`,
 ];

@@ -68,7 +68,8 @@ test('deliveries: the primary key is the idempotency key', async () => {
 });
 
 test('deleteNewsletter refuses in-flight rows', async () => {
-  const c = fakeClient([{ rowCount: 5 }, { rowCount: 0 }]);
+  const c = fakeClient([{ rowCount: 5 }, { rowCount: 2 }, { rowCount: 0 }]);
   assert.equal(await nl.deleteNewsletter(c, 'a'), false);
-  assert.match(c.calls[1].sql, /status NOT IN \('pending', 'approved', 'sending'\)/);
+  assert.match(c.calls[1].sql, /DELETE FROM newsletter_opens/);
+  assert.match(c.calls[2].sql, /status NOT IN \('pending', 'approved', 'sending'\)/);
 });

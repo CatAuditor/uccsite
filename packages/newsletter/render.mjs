@@ -185,7 +185,8 @@ export function tagLinks(html, siteUrl, campaign) {
 // renderEmail(doc, { mode, viewUrl, siteUrl, campaign })
 //   viewUrl: the web copy (/newsletters/<slug>) → "View in browser" line
 //   siteUrl + campaign: UTM-tag links into the site (tagLinks)
-export function renderEmail({ subject = '', preheader = '', headline = '', blocks = [], theme: rawTheme } = {}, { mode = 'auto', viewUrl = '', siteUrl = '', campaign = '' } = {}) {
+//   pixelUrl: campaign-level open pixel (sent copies only — never previews or tests)
+export function renderEmail({ subject = '', preheader = '', headline = '', blocks = [], theme: rawTheme } = {}, { mode = 'auto', viewUrl = '', siteUrl = '', campaign = '', pixelUrl = '' } = {}) {
   const theme = normalizeTheme(rawTheme);
   const font = FONTS[theme.font];
   const dark = { bg: '#111412', card: '#1b1f1b', text: '#e9e9e3', muted: '#a9afa6', rule: '#343a34', quoteBg: '#232823' };
@@ -270,6 +271,7 @@ ${parts.join('\n')}
 </table>
 </td></tr>
 </table>
+${pixelUrl ? `<img src="${escapeHtml(pixelUrl)}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;">` : ''}
 </body>
 </html>`;
 

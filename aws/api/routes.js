@@ -237,6 +237,31 @@ function buildWelcomeEmail(greeting, unsubscribeUrl, confirmUrl = '') {
 </html>`;
 }
 
+// ── GET /api/open?c=<newsletter id> ─────────────────────────────────────────
+// Campaign-level open counter (docs/systems/newsletters.md "Opens"): the
+// pixel URL carries ONLY the newsletter id — no recipient, no token — so a
+// row says "someone opened issue X", never who. No IP, no user agent. The
+// count is inflated by Apple Mail's prefetch and undercounts image-blocking
+// clients; the admin says so beside the number.
+const GIF_1X1 = 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+const NEWSLETTER_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+async function newsletterOpen({ event, db }) {
+  const id = String(event.queryStringParameters?.c || '').toLowerCase();
+  if (NEWSLETTER_ID_RE.test(id)) {
+    try {
+      await db.query('INSERT INTO newsletter_opens (id, newsletter_id) VALUES (gen_random_uuid(), $1)', [id]);
+    } catch (err) {
+      console.error('[api] open DB error:', err.message); // still serve the pixel
+    }
+  }
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'image/gif', 'Cache-Control': 'no-store, private', 'X-Robots-Tag': 'noindex' },
+    body: GIF_1X1,
+    isBase64Encoded: true,
+  };
+}
+
 // ── GET /api/confirm?token=... ───────────────────────────────────────────────
 // Double opt-in: marks the join-form subscriber confirmed. Idempotent; an
 // expired or forged token gets the same page with a different message.
@@ -631,7 +656,7 @@ async function donationStats({ db }) {
 }
 
 module.exports = {
-  subscribe, unsubscribe, confirmSubscription, tip, petitionSign, petitionCount, createCheckoutSession,
+  subscribe, unsubscribe, confirmSubscription, newsletterOpen, tip, petitionSign, petitionCount, createCheckoutSession,
   createPortalSessionPost, createPortalSessionGet, portalLinkJob, welcomeEmailJob, donationStats,
   _setSesClient,
 };

@@ -75,9 +75,10 @@ export async function newsletterPage(id) {
     const count = await audienceCount(client, newsletter.audience);
     const petitions = await petitionSlugs(client);
     const deliveries = ['sending', 'sent', 'failed'].includes(newsletter.status) ? await db.deliveryCounts(client, newsletter.id) : null;
+    const opens = deliveries ? (await db.openCounts(client, [newsletter.id])).get(newsletter.id) || 0 : 0;
     const defaults = await db.getDefaults(client);
     const diff = newsletter.status === 'pending' && newsletter.priorBlocks ? blockDiff(newsletter.priorBlocks, newsletter.requestedBlocks || newsletter.blocks) : null;
-    return { newsletter, names, count, petitions, deliveries, defaults, diff };
+    return { newsletter, names, count, petitions, deliveries, defaults, diff, opens };
   });
 }
 
@@ -144,10 +145,13 @@ export async function saveNewsletter(id, formData) {
   return fields;
 }
 
-// renderFrozen(n, slug) → { html, text, webHtml } — the bytes a request freezes.
-function renderFrozen(n, slug) {
+// renderFrozen(n, slug, { pixel }) → { html, text, webHtml } — the bytes a
+// request freezes. pixel: the campaign-level open counter (real sends only;
+// a test send must not count as an open).
+function renderFrozen(n, slug, { pixel = false } = {}) {
   const viewUrl = n.publishToSite && slug ? `${config.publicOrigin}/newsletters/${slug}` : '';
-  const { html, text } = renderEmail(n, { mode: 'auto', viewUrl, siteUrl: config.publicOrigin, campaign: slug || n.id });
+  const pixelUrl = pixel ? `${config.publicOrigin}/api/open?c=${n.id}` : '';
+  const { html, text } = renderEmail(n, { mode: 'auto', viewUrl, siteUrl: config.publicOrigin, campaign: slug || n.id, pixelUrl });
   const webHtml = n.publishToSite ? renderWebBody(n) : '';
   return { html, text, webHtml };
 }
@@ -167,7 +171,7 @@ export async function requestSend(id, note, scheduleLocal) {
     const recipients = await audienceCount(client, n.audience);
     if (!recipients) throw new Error(`Nobody matches the audience (${describeFilters(normalizeFilters(n.audience))}).`);
     const slug = n.slug || archiveSlug(n.subject, at || new Date());
-    const { html, text, webHtml } = renderFrozen(n, slug);
+    const { html, text, webHtml } = renderFrozen(n, slug, { pixel: true });
     const ok = await db.requestSend(client, {
       id: nid, requestedBy: s.email, requestedByUser: s.username, note: clip(note, NOTE_MAX), scheduledFor: at ? at.toISOString() : null,
       html, text, webHtml, slug, recipients, blocks: n.blocks,
@@ -315,7 +319,7 @@ export async function sendTest(id, { all = false } = {}) {
       Destination: { ToAddresses: to },
       ...(config.envName === 'prod' ? { ConfigurationSetName: 'ucc-prod' } : {}),
       Content: { Simple: {
-        Subject: { Data: `[TEST] ${n.subject}`, Charset: 'UTF-8' },
+        Subject: { Data: `TEST: ${n.subject}`, Charset: 'UTF-8' },
         Body: { Html: { Data: html.replaceAll(UNSUBSCRIBE_TOKEN, link), Charset: 'UTF-8' }, Text: { Data: text.replaceAll(UNSUBSCRIBE_TOKEN, link), Charset: 'UTF-8' } },
       } },
     }));

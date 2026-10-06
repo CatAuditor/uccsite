@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { describeFilters, normalizeFilters } from '@uccsite/db/audience';
-import { listNewsletters } from '@uccsite/db/newsletters';
+import { listNewsletters, openCounts } from '@uccsite/db/newsletters';
 import { formatZoned } from '@uccsite/newsletter/schedule';
 import { requireSession } from '../../lib/auth';
 import { withDb } from '../../lib/data';
@@ -19,7 +19,7 @@ const when = (iso) => (iso ? iso.slice(0, 16).replace('T', ' ') : '');
 
 export default async function MailPage() {
   const session = await requireSession();
-  const rows = await withDb((client) => listNewsletters(client));
+  const { rows, opens } = await withDb(async (client) => { const rows = await listNewsletters(client); return { rows, opens: await openCounts(client, rows.filter((r) => r.status === 'sent').map((r) => r.id)) }; });
   const canAct = session.role !== 'viewer';
 
   async function duplicate(prev, formData) {
@@ -56,7 +56,7 @@ export default async function MailPage() {
       )}
 
       <table>
-        <thead><tr><th>Subject</th><th>Status</th><th>From</th><th>Audience</th><th>Created</th><th>Sent / scheduled</th><th></th></tr></thead>
+        <thead><tr><th>Subject</th><th>Status</th><th>From</th><th>Audience</th><th>Created</th><th>Sent / scheduled</th><th>Opens</th><th></th></tr></thead>
         <tbody>
           {rows.map((n) => (
             <tr key={n.id}>
@@ -69,6 +69,7 @@ export default async function MailPage() {
               <td>{describeFilters(normalizeFilters(n.audience))}{n.recipients != null ? ` · ${n.recipients}` : ''}</td>
               <td>{when(n.createdAt)} · {n.createdBy}</td>
               <td>{n.sentAt ? `${formatZoned(n.sentAt)} · ${n.sentCount ?? 0} sent` : n.scheduledFor && ['pending', 'approved'].includes(n.status) ? formatZoned(n.scheduledFor) : ''}</td>
+              <td title="Per issue, never per person; inflated by Apple Mail image pre-loading">{n.status === 'sent' ? `~${opens.get(n.id) || 0}` : ''}</td>
               <td>{canAct && (
                 <ActionForm action={duplicate} className="inline">
                   <input type="hidden" name="id" value={n.id} />
@@ -77,7 +78,7 @@ export default async function MailPage() {
               )}</td>
             </tr>
           ))}
-          {!rows.length && <tr><td colSpan="7">No newsletters yet.</td></tr>}
+          {!rows.length && <tr><td colSpan="8">No newsletters yet.</td></tr>}
         </tbody>
       </table>
     </div>

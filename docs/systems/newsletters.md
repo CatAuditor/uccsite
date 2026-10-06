@@ -198,6 +198,24 @@ the migration (`UPDATE … WHERE confirmed_at IS NULL AND created_at <
 '2026-10-07'`). The join-form success copy on the site tells people to
 press the button. Mailing list page shows "N not yet confirmed".
 
+### Opens (campaign-level, 2026-10-06)
+
+Org decision: no per-person tracking, but an issue-level open count is
+useful. Every SENT copy (never previews or test sends) carries a 1×1 pixel
+`PUBLIC_ORIGIN/api/open?c=<newsletter id>`; `GET /api/open`
+(`aws/api/routes.js newsletterOpen`, API role `INSERT` only) stores one row
+in `newsletter_opens` (id, newsletter_id, at — no address, no IP, no user
+agent) and returns the gif, `Cache-Control: no-store`. The admin shows
+"About N opens (~X% of sent)" on the list and the editor, with the caveat
+that Apple Mail pre-loads images (over-counts) and image-blocking clients
+are never counted (under-counts). Rows are deleted with the newsletter.
+Click tracking (redirect links) is deliberately NOT built — links stay
+plain, UTM-tagged for site-side attribution only.
+
+Test sends go to the four admins (+ the sender) with the subject prefixed
+`TEST: ` — button **Test send (all admins)**; "Send me a test" is the
+single-address variant.
+
 ## Rendering
 
 - Table-based 600 px card, inline styles (Gmail strips `<style>` partially),

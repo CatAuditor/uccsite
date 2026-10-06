@@ -141,3 +141,10 @@ test('viewUrl adds a View in browser line to html and text; campaign tags the bo
   assert.ok(html.includes('https://utahciviccompact.org/mida?utm_source=newsletter&utm_medium=email&utm_campaign=2026-10-06-x'));
   assert.ok(!renderEmail(doc).html.includes('View in browser'));
 });
+
+test('pixelUrl adds the open pixel only when asked', () => {
+  const withPixel = renderEmail(doc, { pixelUrl: 'https://utahciviccompact.org/api/open?c=abc' }).html;
+  assert.ok(withPixel.includes('<img src="https://utahciviccompact.org/api/open?c=abc" width="1" height="1" alt=""'));
+  assert.ok(!renderEmail(doc).html.includes('/api/open'));
+  assert.ok(!previewHtml(doc, 'light').includes('/api/open'));
+});

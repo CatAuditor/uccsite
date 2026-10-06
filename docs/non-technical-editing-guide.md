@@ -186,7 +186,10 @@ Also useful:
 - **Use this look as the default** makes the current colours, font, small
   header line and footer the starting point for every new newsletter — set
   it once, and put the org's postal address in the footer when there is one.
-- **Send a test to all admins** emails the saved version to the four admins.
+- **Test send (all admins)** emails the saved version to the four admins with
+  `TEST:` at the start of the subject; **Send me a test** goes to you only.
+- After a send, the list and the page show **about how many opens** the
+  issue got — per issue, never per person, and only a rough signal.
 - **Also publish a web copy** (ticked by default) puts the sent email at
   utahciviccompact.org/newsletters/… and adds a "View in browser" link to
   the email. Untick it for an email that should stay email-only.

@@ -74,6 +74,17 @@ Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
 
 Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
 
+## v0.17.1 — 2026-10-06 (branch `refactor`) — Campaign-level opens + TEST: prefix
+
+- `GET /api/open?c=<id>` (`newsletterOpen`): 1×1 gif, one anonymous
+  `newsletter_opens` row (API role INSERT only; schema + grant applied
+  staging/prod). `renderEmail({ pixelUrl })` adds the pixel; the admin passes
+  it on real requests only (never previews/tests). `openCounts` on the list
+  and editor with the Apple-prefetch caveat; opens deleted with the newsletter.
+- Test send subject prefix `TEST: ` (was `[TEST]`); "Test send (all admins)"
+  is the primary button.
+- Docs: newsletters.md "Opens", data-handling row, dev note.
+
 ## v0.17.0 — 2026-10-05 (branch `refactor`) — Mailing roadmap tiers 1-3 + double opt-in
 
 **Send Lambda** (`aws/newsletter`): `List-Id` + `Precedence: bulk`; `sendWithRetry`

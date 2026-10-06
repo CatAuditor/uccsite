@@ -285,9 +285,17 @@ async function listArchive(client) {
   return res.rows.map((r) => ({ id: r.id, subject: r.subject || '', preheader: r.preheader || '', headline: r.headline || '', slug: r.slug, webHtml: r.web_html || '', sentAt: r.sent_at, archivedAt: r.archived_at }));
 }
 
+// openCounts(client, ids) → Map<newsletter_id, hits> (campaign-level pixel hits).
+async function openCounts(client, ids) {
+  if (!ids.length) return new Map();
+  const res = await client.query(`SELECT newsletter_id, count(*)::int AS n FROM newsletter_opens WHERE newsletter_id = ANY($1::uuid[]) GROUP BY newsletter_id`, [ids]);
+  return new Map(res.rows.map((r) => [r.newsletter_id, r.n]));
+}
+
 // deleteNewsletter(client, id) → true. Only rows that are not in flight.
 async function deleteNewsletter(client, id) {
   await client.query(`DELETE FROM newsletter_deliveries WHERE newsletter_id = $1`, [id]);
+  await client.query(`DELETE FROM newsletter_opens WHERE newsletter_id = $1`, [id]);
   const res = await client.query(`DELETE FROM newsletters WHERE id = $1 AND status NOT IN ('pending', 'approved', 'sending')`, [id]);
   return res.rowCount === 1;
 }
@@ -295,5 +303,5 @@ async function deleteNewsletter(client, id) {
 module.exports = {
   DDL, STATUSES, STALE_DELIVERY_MINUTES, rowToNewsletter, listNewsletters, getNewsletter, pendingNewsletters, createNewsletter, duplicateNewsletter, saveNewsletter,
   requestSend, reschedule, reviewSend, cancelScheduled, retryFailed, getDefaults, setDefaults, claimForSending, dueNewsletters, beginDelivery, finishDelivery,
-  deliveryCounts, deliveriesFor, finishNewsletter, listArchive, deleteNewsletter,
+  deliveryCounts, deliveriesFor, finishNewsletter, listArchive, openCounts, deleteNewsletter,
 };

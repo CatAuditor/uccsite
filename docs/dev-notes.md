@@ -34,6 +34,21 @@ the homepage lists the team the same way.
   the same evening (operator publish).
 - Technical detail: docs/systems/author-pages.md.
 
+## 2026-10-06 — Newsletter open counts (per issue, not per person) and the test-send button
+
+Each sent newsletter now shows **about how many times it was opened** on
+the Newsletters list and on its page. The count is per issue: nothing
+records *who* opened it, and no address or device is stored. Treat it as a
+rough signal — Apple Mail "opens" every email on the reader's behalf, and
+other mail apps block images entirely.
+
+The **Test send (all admins)** button is now the main test button. It emails
+the saved draft to Jarom, Conner, Clark and Kaden with `TEST:` at the start
+of the subject. "Send me a test" still sends to you alone.
+
+- **Nothing to set up.** Test sends never count as opens.
+- Technical detail: docs/systems/newsletters.md "Opens".
+
 ## 2026-10-05 — Newsletters, round two: bounces, confirmations, web archive, quality-of-life
 
 Follow-ups to this morning's Mail section:

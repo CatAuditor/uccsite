@@ -31,7 +31,7 @@ export default async function NewsletterPage({ params }) {
   const { id } = await params;
   const page = await newsletterPage(id);
   if (!page) notFound();
-  const { newsletter: n, names, count, petitions, deliveries, defaults, diff } = page;
+  const { newsletter: n, names, count, petitions, deliveries, defaults, diff, opens } = page;
   const canAct = session.role !== 'viewer';
   const isDraft = n.status === 'draft';
   const isRequester = n.requestedByUser === session.username || n.requestedBy === session.email;
@@ -80,7 +80,7 @@ export default async function NewsletterPage({ params }) {
     'use server';
     return runAction(async () => {
       const to = await sendTest(id, { all: String(formData?.get('all') || '') === '1' });
-      return { ok: true, message: `Test sent to ${to.join(', ')} (subject starts with [TEST]).` };
+      return { ok: true, message: `Test sent to ${to.join(', ')} (subject starts with TEST:).` };
     });
   }
   async function duplicate() {
@@ -141,6 +141,12 @@ export default async function NewsletterPage({ params }) {
           {diff && diff.same && <p className="hint">Same content as the previous request (only the note, time or audience changed).</p>}
           {deliveries && (
             <p><strong>{deliveries.sent}</strong> delivered to SES{deliveries.failed ? `, ${deliveries.failed} failed` : ''}{deliveries.suppressed ? `, ${deliveries.suppressed} suppressed (bounced or complained — skipped next time)` : ''}{deliveries.sending ? `, ${deliveries.sending} unknown (interrupted mid-send)` : ''}{n.status === 'sending' ? ' — this page refreshes itself.' : '.'}</p>
+          )}
+          {n.status === 'sent' && (
+            <p>
+              <strong>About {opens} open{opens === 1 ? '' : 's'}</strong>{n.sentCount ? ` (~${Math.min(999, Math.round((opens / n.sentCount) * 100))}% of ${n.sentCount} sent)` : ''}.
+              <span className="hint"> Counted per issue, never per person. Apple Mail pre-loads images (counts as opened), other clients block them (never counted) — a rough signal, not a measurement.</span>
+            </p>
           )}
           {n.status === 'sent' && n.publishToSite && n.slug && (
             <p className="hint">Web copy: <a href={`${config.publicOrigin}/newsletters/${n.slug}`} target="_blank" rel="noopener">/newsletters/{n.slug}</a>{n.archivedAt ? '' : ' (goes live with the next site publish)'}.</p>
@@ -206,8 +212,8 @@ export default async function NewsletterPage({ params }) {
       {canAct && (
         <div className="mail-tools">
           <ActionForm action={test} className="inline">
-            <button type="submit" className="secondary" title="Emails the saved version to you only">Send me a test ({session.email})</button>{' '}
-            <button type="submit" name="all" value="1" className="secondary" title="Emails the saved version to all four admins">Send a test to all admins</button>
+            <button type="submit" name="all" value="1" title="Emails the saved version to all four admins with TEST: in the subject">Test send (all admins)</button>{' '}
+            <button type="submit" className="secondary" title="Emails the saved version to you only">Send me a test ({session.email})</button>
           </ActionForm>
           <div className="mail-row">
             <ActionForm action={duplicate} className="inline">

@@ -498,3 +498,18 @@ test('petition signers are confirmed at insert; join-form signups are not', asyn
   const join = db2.calls.find(c => c.text.includes('INSERT INTO subscribers'));
   assert.ok(!join.text.includes('confirmed_at'));
 });
+
+test('open pixel: one anonymous row per hit, gif either way, bad ids ignored', async () => {
+  const db = fakeDb();
+  const id = '11111111-2222-3333-4444-555555555555';
+  let res = await routes.newsletterOpen({ event: httpEvent({ method: 'GET', path: '/api/open', query: { c: id } }), db });
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.headers['Content-Type'], 'image/gif');
+  assert.equal(res.isBase64Encoded, true);
+  const ins = db.calls.find(c => c.text.includes('INSERT INTO newsletter_opens'));
+  assert.deepEqual(ins.params, [id]);
+  assert.equal(ins.text.includes('ip'), false);
+  res = await routes.newsletterOpen({ event: httpEvent({ method: 'GET', path: '/api/open', query: { c: "x' OR 1=1" } }), db });
+  assert.equal(res.statusCode, 200);
+  assert.equal(db.calls.filter(c => c.text.includes('INSERT INTO newsletter_opens')).length, 1);
+});
