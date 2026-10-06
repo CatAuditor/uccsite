@@ -14,6 +14,7 @@ export const config = {
   get authDomain() { return required('COGNITO_DOMAIN'); }, // ucc-admin-<env>.auth.<region>.amazoncognito.com
   get dsqlEndpoint() { return required('DSQL_ENDPOINT'); },
   get publishFunctionName() { return required('PUBLISH_FUNCTION_NAME'); },
+  get newsletterFunctionName() { return required('NEWSLETTER_FUNCTION_NAME'); }, // NewsletterSendFn (docs/systems/newsletters.md)
   get mediaBucket() { return required('MEDIA_BUCKET'); },
   get siteBucket() { return required('SITE_BUCKET'); },        // live css/styles.css for the Style Kit
   get publicOrigin() { return required('PUBLIC_ORIGIN'); },    // <base> for the document preview

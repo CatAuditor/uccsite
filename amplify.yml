@@ -24,7 +24,7 @@ applications:
             - mkdir -p apps/admin/site-src/docs && cp docs/dev-notes.md apps/admin/site-src/docs/
         build:
           commands:
-            - env | grep -e '^UCC_ENV=' -e '^UCC_REGION=' -e '^COGNITO_' -e '^DSQL_ENDPOINT=' -e '^PUBLISH_FUNCTION_NAME=' -e '^MEDIA_BUCKET=' -e '^SITE_BUCKET=' -e '^PUBLIC_ORIGIN=' -e '^APP_ORIGIN=' -e '^PUBLISH_NOTIFY_TO=' >> apps/admin/.env.production
+            - env | grep -e '^UCC_ENV=' -e '^UCC_REGION=' -e '^COGNITO_' -e '^DSQL_ENDPOINT=' -e '^PUBLISH_FUNCTION_NAME=' -e '^NEWSLETTER_FUNCTION_NAME=' -e '^MEDIA_BUCKET=' -e '^SITE_BUCKET=' -e '^PUBLIC_ORIGIN=' -e '^APP_ORIGIN=' -e '^PUBLISH_NOTIFY_TO=' >> apps/admin/.env.production
             - echo 'SITE_SRC_ROOT=site-src' >> apps/admin/.env.production
             - npm run build --workspace=@uccsite/admin
       artifacts:

@@ -631,6 +631,54 @@ class UccStack extends Stack {
       resources: [redirectStore.keyValueStoreArn],
     }));
 
+    // ── newsletter send Lambda (docs/systems/newsletters.md). The admin's
+    // approval invokes it with { id } (send now); EventBridge ticks it every
+    // minute with { tick: true } so approved-and-scheduled newsletters start
+    // on time and a stalled run resumes. It re-invokes itself when a long
+    // send nears the timeout (per-recipient delivery rows make that safe).
+    // Same SES identity/From pin as the API; TOKEN_SECRET signs the
+    // per-recipient unsubscribe links (read at runtime like the API's).
+    const newsletterFn = new nodejs.NodejsFunction(this, 'NewsletterSendFn', {
+      entry: path.join(repoRoot, 'aws', 'newsletter', 'handler.mjs'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      memorySize: 512,
+      timeout: Duration.minutes(15),
+      environment: {
+        DSQL_ENDPOINT: dsqlEndpoint,
+        PUBLIC_ORIGIN: publicOrigin,
+        SECRET_ARN_TOKEN_SECRET: apiSecrets.TOKEN_SECRET.secretArn,
+        ...(isProd ? { SES_CONFIGURATION_SET: 'ucc-prod' } : {}),
+      },
+      bundling: { externalModules: ['pg-native'] },
+      depsLockFilePath: path.join(repoRoot, 'package-lock.json'),
+    });
+    newsletterFn.configureAsyncInvoke({ retryAttempts: 0 }); // a retry would re-claim; the ledger makes it harmless but pointless
+    apiSecrets.TOKEN_SECRET.grantRead(newsletterFn);
+    newsletterFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['dsql:DbConnectAdmin'],
+      resources: [cluster.attrResourceArn],
+    }));
+    newsletterFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ses:SendEmail'],
+      resources: [
+        `arn:aws:ses:${this.region}:${this.account}:identity/utahciviccompact.org`,
+        `arn:aws:ses:${this.region}:${this.account}:configuration-set/ucc-prod`,
+      ],
+      conditions: { StringEquals: { 'ses:FromAddress': 'hello@utahciviccompact.org' } },
+    }));
+    new iam.Policy(this, 'NewsletterSelfInvokePolicy', {
+      roles: [newsletterFn.role],
+      statements: [new iam.PolicyStatement({
+        actions: ['lambda:InvokeFunction'],
+        resources: [newsletterFn.functionArn, `${newsletterFn.functionArn}:*`],
+      })],
+    });
+    new events.Rule(this, 'NewsletterTick', {
+      schedule: events.Schedule.rate(Duration.minutes(1)),
+      targets: [new targets.LambdaFunction(newsletterFn, { event: events.RuleTargetInput.fromObject({ tick: true }) })],
+    });
+
     // ── media-process Lambda (spec §13): S3 ObjectCreated under uploads/ →
     // sharp AVIF/WebP variants under media/ + media_assets row update.
     // sharp ships prebuilt native binaries per platform; the bundling host
@@ -760,6 +808,8 @@ class UccStack extends Stack {
     branding.addDependency(userPoolDomain.node.defaultChild); // branding needs the managed-login domain first
 
     new CfnOutput(this, 'PublishFunctionName', { value: publishFn.functionName });
+    new CfnOutput(this, 'NewsletterFunctionName', { value: newsletterFn.functionName });
+    new CfnOutput(this, 'NewsletterFunctionArn', { value: newsletterFn.functionArn });
     new CfnOutput(this, 'MediaBucketName', { value: mediaBucket.bucketName });
     new CfnOutput(this, 'ExportContentFunctionName', { value: exportContentFn.functionName });
     new CfnOutput(this, 'AdminUserPoolId', { value: userPool.userPoolId });
