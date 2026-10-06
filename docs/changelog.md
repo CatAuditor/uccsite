@@ -107,6 +107,8 @@ re-request diff, suppressed count + web-copy link in the delivery panel, owner
 ledger CSV (`/mail/[id]/ledger`), Mailing list: unconfirmed/suppressed counts
 + recent SES events.
 
+**Fixes in the same push**: archive index always rendered (footer link never 404s); sitemap entries carry `content[]` + valid `lastmodAt` (docs/error-handling/build-failures/2026-10-06-newsletter-archive-sitemap-lastmod.md); `newsletter-smoke.mjs --no-archive` for prod.
+
 **Docs**: newsletters.md (second pass, three new sections), email.md,
 data-handling.md (2 rows), for-conner §12 (DMARC DNS edits + postal address),
 dev note.
