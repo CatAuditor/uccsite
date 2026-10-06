@@ -4,6 +4,31 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.16.5 — 2026-10-06 (branch `refactor`) — Admin restyled to the live site's look
+
+**Admin / styling** (`apps/admin/app/globals.css`, `layout.js`, `nav.js`, `login/page.js`, `manifest.js`;
+docs/systems/admin.md "Styling")
+- `globals.css` rewritten around `:root` tokens copied from `css/styles.css`: `--navy-dark` sidebar /
+  phone top bar / tab bar, `--red` accent (current-page bar, pending-request ring, `.danger`, sign-in
+  button, active tab notch), `--cream` notices and quotes, site gray scale, `--radius` 6px controls /
+  `--radius-lg` 12px cards, `--ring` focus halo. Every class name kept, so no page markup moved.
+- Inter via `next/font/google` (`inter.className` on `<body>`); `--font-sans` lists `'Inter'` first.
+- Buttons: navy filled / `.secondary` white outline / `.danger` red / `.linkish` text; one shared
+  white-outline rule for the compact tool buttons. Cards (editors, request, uploader, media, picker,
+  request-send, dev-notes article, tables) white + 1px `--gray-200` + 12px + soft shadow; tables
+  `border-collapse: separate` for rounded corners; `.notice` / `.error` / `.ok` with a left bar;
+  `h1 .hint` as a pill; custom `select` chevron; `accent-color` checkboxes.
+- Sidebar brand = `/icon.png` mark + "UCC Admin / Utah Civic Compact"; `.sidebar .nav-find input`
+  (prefix needed to beat the generic `input[type="search"]` rule). Phone bar 54px.
+- Login: `.login-card` (mark, red eyebrow, "Admin sign in", full-width red button).
+- `themeColor` (viewport) and manifest `theme_color` → `#0f1e33` (sidebar colour).
+- Verified in headless Chrome: 1280×900 dashboard + list editor, login, and 390×844 dashboard /
+  menu sheet / editor rendered inside iframes (Windows Chrome clamps `--window-size` width to
+  ~500px, so the earlier 390px shots were cropped renders of a wider viewport).
+
+Not verified on a real phone yet. Open P1 (unchanged): Resend key deletion pending; Stripe
+webhook; Jarom sign-in.
+
 ## v0.16.4 — 2026-10-05 (branch `refactor`) — Admin navigation: tab bar, location bar, menu sheet, filter
 
 **Admin / navigation** (`apps/admin/app/nav.js`, `app/layout.js`, `app/globals.css`)
