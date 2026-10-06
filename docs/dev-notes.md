@@ -39,6 +39,7 @@ move to AWS. Nothing broken; every change shows in the admin.
 - An out-of-date copy of the code on Conner's laptop was renamed
   `uccsite-refactor-STALE-do-not-use`; publishing from it would have
   rolled the site back to 2 October.
+
 ## 2026-10-06 — Jarom's title is now "Director of Policy" everywhere
 
 **What changed.** Jarom Gillins' role on the Team page and his author page

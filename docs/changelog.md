@@ -4,6 +4,25 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.17.1 — 2026-10-06 (branch `refactor`) — Jarom's title: "Director of Policy" everywhere
+
+**Content / Team** (`content/team.json`; prod `team_members` row for Jarom Gillins)
+- The title field had already been changed to "Director of Policy, Board of Directors" in the
+  admin (06:26 UTC) and published (06:39 UTC); the bio's first sentence still said "Senior Policy
+  Director" on /team, /team/jarom-gillins and its meta/JSON-LD descriptions.
+- Prod DB: bio updated in place (`UPDATE team_members ... WHERE name = 'Jarom Gillins'`) with a
+  `team.save` audit_log row (actor jaromforcongress@gmail.com) so Publish & Status lists it; no
+  revisions snapshot was written. Republished with `publish.mjs --env prod --source db --trigger
+  script` (operator path): 2 files changed (team.html, team/jarom-gillins.html), invalidation
+  verified, live pages read back clean. Nothing else was pending in the DB, so the operator
+  publish bypassed no awaiting approval.
+- Repo copy `content/team.json` title updated; `docs/seo-plan.md` wording updated. The repo bio
+  still differs from the DB bio (DB is the newer truth; the nightly export reconciles it).
+- Rebased onto v0.17.0 (petition sharing); `docs/dev-notes.md` conflict resolved by keeping both
+  entries.
+
+Open P1s: unchanged from v0.17.0.
+
 ## v0.17.0 — 2026-10-06 (branch `refactor`) — Petition sharing and an editable donation ask
 
 **Site / Petition** (`templates/partials/petition-share.html` new, `templates/petition.html`,
