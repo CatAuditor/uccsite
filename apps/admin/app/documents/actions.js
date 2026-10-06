@@ -16,6 +16,7 @@ import { withWriteTx, withDb, recordChange } from '../../lib/data';
 import { runAction } from '../../lib/actions';
 import { runIngest, loadSiteSources, styleKitFor, ruleMatchCounts, validateSelector, tokenErrors } from '../../lib/documents';
 import { CONFLICT_MESSAGE } from '../../lib/collection-save';
+import { docxToHtml, markdownToHtml, uploadKind } from '../../lib/convert-upload.mjs';
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,80}$/;
 const RESERVED_SLUGS = new Set(['index', 'team', 'blog', 'statements', 'issues', 'projects', 'tip', 'success', '404', 'admin', 'api', 'media', 'css', 'js', 'assets']);
@@ -288,5 +289,28 @@ export async function unmapForeignClass(prevState, formData) {
     });
     revalidatePath('/styles');
     return { ok: true, message: 'Mapping removed.' };
+  });
+}
+
+// convertUpload(formData): a .docx or Markdown file → the HTML fragment for
+// the Body HTML box (docs/systems/documents.md "Upload a file"). Called
+// directly from the client (not via ActionForm); nothing is stored, the
+// editor still has to save, which runs the ingest. 8 MB cap matches
+// next.config.js bodySizeLimit.
+const UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
+
+export async function convertUpload(formData) {
+  return runAction(async () => {
+    await requireRole('editor');
+    const file = formData.get('file');
+    if (!file || typeof file.arrayBuffer !== 'function') throw new Error('No file received');
+    if (file.size > UPLOAD_MAX_BYTES) throw new Error('File is larger than 8 MB');
+    const kind = uploadKind(file.name);
+    let out;
+    if (kind === 'docx') out = await docxToHtml(Buffer.from(await file.arrayBuffer()));
+    else if (kind === 'markdown') out = markdownToHtml(await file.text());
+    else throw new Error('Upload a .docx, .md or .html file');
+    console.log(`[documents] convert ${kind} "${file.name}" ${file.size}B -> ${out.html.length} chars, ${out.imagesOmitted} images omitted${out.warnings?.length ? `, warnings: ${out.warnings.join(' | ')}` : ''}`);
+    return { ok: true, html: out.html, imagesOmitted: out.imagesOmitted, warnings: out.warnings || [] };
   });
 }

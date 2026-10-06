@@ -1,9 +1,12 @@
 'use client';
 // HTML + page-CSS editors (spec §5 "paste or upload", §3.2 per-page CSS) and
 // the ingest report — "report, never silently drop" (§5.8). The textareas
-// are plain form fields; the file input just fills the HTML field from a
-// local .html file (no upload — ingest runs server-side on save).
+// are plain form fields; the file input fills the HTML field: an .html file
+// is read locally, a .docx or Markdown file goes through convertUpload
+// (server, deterministic) and the result lands in the box. Nothing is
+// stored until save, which runs the ingest.
 import { useState } from 'react';
+import { convertUpload } from '../actions';
 
 function Removed({ removed }) {
   if (!removed?.length) return null;
@@ -28,9 +31,22 @@ export default function HtmlEditor({ bodyHtmlRaw, pageCss, readOnly, report, orp
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    const text = await file.text();
-    setHtml(text);
-    setLoaded(`Loaded ${file.name} (${text.length} characters) — save to ingest.`);
+    if (/\.html?$/i.test(file.name)) {
+      const text = await file.text();
+      setHtml(text);
+      setLoaded(`Loaded ${file.name} (${text.length} characters) — save to ingest.`);
+      return;
+    }
+    setLoaded(`Converting ${file.name}…`);
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await convertUpload(fd);
+    if (res?.error) { setLoaded(`Could not convert ${file.name}: ${res.error}`); return; }
+    setHtml(res.html);
+    const notes = [];
+    if (res.imagesOmitted) notes.push(`${res.imagesOmitted} image${res.imagesOmitted === 1 ? '' : 's'} left out (upload on Media, then replace the placeholder)`);
+    if (res.warnings?.length) notes.push(res.warnings.join('; '));
+    setLoaded(`Converted ${file.name} to HTML (${res.html.length} characters)${notes.length ? ` — ${notes.join(' — ')}` : ''} — review, then save to ingest.`);
   }
 
   return (
@@ -38,8 +54,8 @@ export default function HtmlEditor({ bodyHtmlRaw, pageCss, readOnly, report, orp
       <legend>HTML &amp; page CSS</legend>
       {!readOnly && (
         <div>
-          <label htmlFor="html-file">Upload an .html file (fills the editor below)</label>
-          <input type="file" id="html-file" accept=".html,.htm,text/html" onChange={onFile} />
+          <label htmlFor="html-file">Upload a file (fills the editor below): .html as-is; .docx from Word, Google Docs or Claude Docs, or .md Markdown, converted to HTML</label>
+          <input type="file" id="html-file" accept=".html,.htm,.docx,.md,.markdown,.txt,text/html,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={onFile} />
           {loaded && <div className="notice">{loaded}</div>}
         </div>
       )}

@@ -11,6 +11,9 @@ module.exports = {
   experimental: {
     serverActions: {
       allowedOrigins: [new URL(appOrigin).host],
+      // Documents "Upload a file": a .docx with embedded images is sent to
+      // convertUpload as a server-action body (default limit is 1 MB).
+      bodySizeLimit: '8mb',
     },
   },
 };
