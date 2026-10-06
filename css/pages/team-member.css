@@ -1,0 +1,111 @@
+/* Page styles for templates/team-member.html (author pages, docs/systems/author-pages.md). */
+.hero-backlink {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,0.35);
+}
+.hero-backlink:hover { border-bottom-color: rgba(255,255,255,0.8); }
+
+.author-section {
+  padding: 80px 48px 100px;
+  background: var(--cream);
+}
+.author-section .inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.author-card {
+  display: flex;
+  gap: 40px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.author-photo {
+  flex-shrink: 0;
+  width: 200px;
+  height: 200px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.author-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+.author-content { flex: 1; }
+.author-text {
+  font-size: 17px;
+  color: var(--gray-600);
+  line-height: 1.75;
+}
+.author-text p + p { margin-top: 14px; }
+.author-links {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 14px;
+}
+.author-links a {
+  color: var(--navy);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.author-works { margin-top: 56px; }
+.author-works h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--navy-dark);
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+.work-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.work-item {
+  display: grid;
+  grid-template-columns: 140px 1fr auto;
+  gap: 16px;
+  align-items: baseline;
+  padding: 18px 0;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+.work-item:last-child { border-bottom: 1px solid rgba(0,0,0,0.08); }
+.work-kind {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.work-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy-dark);
+  text-decoration: none;
+}
+.work-title:hover { text-decoration: underline; }
+.work-date {
+  font-size: 14px;
+  color: var(--gray-600);
+  white-space: nowrap;
+}
+.work-empty {
+  font-size: 16px;
+  color: var(--gray-600);
+}
+
+@media (max-width: 640px) {
+  .author-section { padding: 48px 24px 64px; }
+  .author-card { flex-direction: column; align-items: center; gap: 28px; padding: 28px 24px; }
+  .author-photo { width: 160px; height: 160px; }
+  .work-item { grid-template-columns: 1fr; gap: 6px; }
+}

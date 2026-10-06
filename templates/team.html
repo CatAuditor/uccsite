@@ -43,11 +43,12 @@
           <img src="{{photo}}" alt="{{name}}" width="160" height="160" />
         </div>
         <div class="bio-content">
-          <h2 class="bio-name">{{name}}</h2>
+          <h2 class="bio-name"><a href="{{page_url}}">{{name}}</a></h2>
           <div class="bio-title">{{title}}</div>
           <div class="bio-text">
             {{{bio}}}
           </div>
+          <a class="bio-more" href="{{page_url}}">All work by {{name}} &rarr;</a>
         </div>
       </div>
       {{/members}}

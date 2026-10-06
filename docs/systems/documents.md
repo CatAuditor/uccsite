@@ -70,7 +70,7 @@ page_css ─▶ css/pages/<slug>.<sha256[0:8]>.css (linked from the head)
 SEO fallback chain (§12): document → template default → settings. Empty
 title or description is a render ERROR (the save action refuses to publish
 without a meta description). JSON-LD: `{@context, @type: jsonld_type,
-headline, description, url, publisher}` merged under `jsonld_overrides`.
+headline, description, url, datePublished (published_at), author, publisher}` merged under `jsonld_overrides`. `author` is a Person built from the document's **Author** field; when the name matches a team member it carries that member's `@id`/`url` (`/team/<slug>#person`) so the piece is listed on their author page — docs/systems/author-pages.md.
 
 ## Publish integration (`aws/publish/render-db.js`)
 

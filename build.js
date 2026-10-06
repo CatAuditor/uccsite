@@ -57,6 +57,7 @@ if (fs.existsSync(STATIC)) {
 }
 
 for (const [name, text] of Object.entries(result.files)) {
+  fs.mkdirSync(path.dirname(path.join(DIST, name)), { recursive: true }); // nested outputs: css/, team/<slug>.html
   fs.writeFileSync(path.join(DIST, name), text, 'utf8');
   if (name !== 'sitemap.xml') console.log(`Built: ${name}`);
 }

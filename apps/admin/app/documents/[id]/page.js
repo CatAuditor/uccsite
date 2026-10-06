@@ -74,6 +74,10 @@ export default async function DocumentEditorPage({ params }) {
               <input type="text" id="category" name="category" defaultValue={doc.category} disabled={readOnly} />
             </div>
             <div>
+              <label htmlFor="author">Author</label>
+              <input type="text" id="author" name="author" defaultValue={doc.author} disabled={readOnly} placeholder="Team member's full name" />
+            </div>
+            <div>
               <label htmlFor="status">Status</label>
               <select id="status" name="status" defaultValue={doc.status} disabled={readOnly}>
                 {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}

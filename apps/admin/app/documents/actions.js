@@ -84,7 +84,7 @@ export async function saveDocument(prevState, formData) {
       const allowScripts = s.role === 'owner' ? flag(formData, 'allowScripts') : current.allowScripts; // owner-only field
       const next = {
         ...current,
-        title: str(formData, 'title', 200), slug, category: str(formData, 'category', 60), templateKey, status,
+        title: str(formData, 'title', 200), slug, category: str(formData, 'category', 60), author: str(formData, 'author', 120), templateKey, status,
         sortOrder: Number(str(formData, 'sortOrder', 10) || 0),
         bodyHtmlRaw: String(formData.get('bodyHtmlRaw') ?? ''),
         pageCss: String(formData.get('pageCss') ?? ''),

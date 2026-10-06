@@ -18,5 +18,9 @@
   "success.html": "CSP tightening (Phase 8): self-hosted fonts link, css/colors.css, inline <style>/style= moved to css/pages + classes",
   "css/colors.css": "New generated stylesheet: content badge/status colours as classes (CSP style-src self)",
   "petition.html": "New page: petition signature form (docs/systems/petition.md)",
-  "petition-thanks.html": "New page: post-signature thank-you + payment modal (docs/systems/petition.md)"
+  "petition-thanks.html": "New page: post-signature thank-you + payment modal (docs/systems/petition.md)",
+  "team/conner-radcliffe.html": "New page: author page rendered from templates/team-member.html, one per team member (docs/systems/author-pages.md)",
+  "team/clark-dice.html": "New page: author page rendered from templates/team-member.html, one per team member (docs/systems/author-pages.md)",
+  "team/jarom-gillins.html": "New page: author page rendered from templates/team-member.html, one per team member (docs/systems/author-pages.md)",
+  "team/kaden-payne.html": "New page: author page rendered from templates/team-member.html, one per team member (docs/systems/author-pages.md)"
 }

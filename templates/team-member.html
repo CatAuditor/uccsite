@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{name}} — {{title}} | Utah Civic Compact</title>
+  <meta name="description" content="{{meta_description}}" />
+  <link rel="canonical" href="https://utahciviccompact.org{{page_url}}" />
+  <meta property="og:type" content="profile" />
+  <meta property="og:url" content="https://utahciviccompact.org{{page_url}}" />
+  <meta property="og:title" content="{{name}} — {{title}} | Utah Civic Compact" />
+  <meta property="og:description" content="{{meta_description}}" />
+  <meta property="og:site_name" content="Utah Civic Compact" />
+  {{#photo_abs}}<meta property="og:image" content="{{photo_abs}}" />{{/photo_abs}}
+  {{^photo_abs}}<meta property="og:image" content="https://utahciviccompact.org/UCC.png" />{{/photo_abs}}
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="{{name}} — {{title}} | Utah Civic Compact" />
+  <meta name="twitter:description" content="{{meta_description}}" />
+
+  <!-- JSON-LD: ProfilePage + Person (generated in packages/render/site.js deriveTeam) -->
+  <script type="application/ld+json">
+{{{jsonld}}}
+  </script>
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon-512.png" />
+  <link rel="stylesheet" href="/css/fonts.css" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/colors.css" />
+  <link rel="stylesheet" href="/css/pages/team-member.css" />
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+{{> header}}
+
+  <div class="subpage-hero">
+    <div class="section-label"><a href="/team" class="hero-backlink">Team &amp; Bios</a></div>
+    <h1>{{name}}</h1>
+    <p>{{title}}, Utah Civic Compact</p>
+  </div>
+
+  <div class="author-section">
+    <div class="inner">
+
+      <article class="author-card">
+        {{#photo}}
+        <div class="author-photo">
+          <img src="{{photo}}" alt="{{name}}" width="200" height="200" />
+        </div>
+        {{/photo}}
+        <div class="author-content">
+          <div class="author-text">
+            {{{bio}}}
+          </div>
+          {{#has_links}}
+          <ul class="author-links">
+            {{#links}}
+            <li><a href="{{url}}" rel="me noopener" target="_blank">{{url}}</a></li>
+            {{/links}}
+          </ul>
+          {{/has_links}}
+        </div>
+      </article>
+
+      <section class="author-works" aria-labelledby="works-heading">
+        <h2 id="works-heading">Work by {{name}}</h2>
+        {{#has_works}}
+        <ul class="work-list">
+          {{#works}}
+          <li class="work-item">
+            <span class="work-kind">{{kind}}</span>
+            <a class="work-title" href="{{url}}">{{title}}</a>
+            {{#date}}<span class="work-date">{{date}}</span>{{/date}}
+          </li>
+          {{/works}}
+        </ul>
+        {{/has_works}}
+        {{^has_works}}
+        <p class="work-empty">Published work by {{name}} will be listed here.</p>
+        {{/has_works}}
+      </section>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+{{> footer}}
+  <script src="/js/main.js"></script>
+</body>
+</html>

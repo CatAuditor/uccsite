@@ -8,7 +8,7 @@
 // fixed-page template with the same slug — the eight long-form templates
 // stay in the repo for the git/build.js path until cutover, but once a
 // Document with that slug is published the database wins.
-const { buildSite, PAGES, withColorClasses, documents: docs } = require('@uccsite/render');
+const { buildSite, PAGES, withColorClasses, authorIndex, documents: docs } = require('@uccsite/render');
 const { loadContent, contentMeta, makeDbLastmod } = require('@uccsite/db/content');
 const { loadPublishBundle, markDocumentLive, markDocumentPublishError } = require('@uccsite/db/documents');
 const { listRedirects, kvsEntries } = require('@uccsite/db/redirects');
@@ -50,7 +50,16 @@ function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl, pro
     overrides: bundle.overrides,
     foreignClassMaps,
     coverage: withColorClasses(content).content.coverage, // badge_class for the strips
+    authors: authorIndex(content.team?.members, siteUrl), // Person @id per team member (author pages)
   });
+
+  // Author pages list every published Document whose `author` is the member
+  // (packages/render/site.js deriveTeam reads content.documents_index). Date
+  // is the JSON-LD override's datePublished when set, else the publish date.
+  const documentsIndex = bundle.documents.map(d => ({
+    slug: d.slug, title: d.title, author: d.author || '', category: d.category || '',
+    date: (d.jsonldOverrides && d.jsonldOverrides.datePublished) || (d.publishedAt ? String(d.publishedAt).slice(0, 10) : ''),
+  }));
 
   // Any document row (draft included) supersedes the same-slug fixed template:
   // unpublishing a migrated report must not resurrect templates/<slug>.html
@@ -62,7 +71,7 @@ function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl, pro
 
   // Published project files ride along as content.project_files (not part of
   // loadContent — the content export must not carry derived data).
-  const site = buildSite({ ...inputs, content: { ...content, project_files: projectFiles }, lastmod, pages, siteUrl, sitemapExtra: built.pages });
+  const site = buildSite({ ...inputs, content: { ...content, project_files: projectFiles, documents_index: documentsIndex }, lastmod, pages, siteUrl, sitemapExtra: built.pages });
   const errors = [...site.errors, ...built.errors];
   const files = errors.length ? {} : { ...site.files, ...built.files };
   return {

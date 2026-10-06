@@ -141,3 +141,6 @@
   color: var(--gray-600);
   margin-top: 4px;
 }
+
+.project-byline a { color: var(--navy); text-decoration: none; border-bottom: 1px solid rgba(27,47,78,0.3); }
+.project-byline a:hover { border-bottom-color: var(--navy); }

@@ -22,7 +22,8 @@ const SITE_SRC_FILES = COPY_FROM_ROOT.filter(e => e.includes('.'));
 // feeds both lastmod strategies.
 function pageInputFiles(page) {
   return [
-    path.join('templates', page.template),
+    // Expanded pages (team/<slug>.html) render from `source` (packages/render/site.js expandPages)
+    path.join('templates', page.source || page.template),
     ...page.content.map(n => path.join('content', `${n}.json`)),
   ];
 }

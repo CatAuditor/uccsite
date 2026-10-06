@@ -96,6 +96,20 @@ has yours) — and then exercise the feature that uses it.
     "AWS Notification - Subscription Confirmation" email and click Confirm
     subscription.** Until clicked, that address gets nothing.
 
+- [ ] **SEO: Google Search Console + author pages** (2026-10-05, docs/seo-plan.md)
+  - `[hand]` https://search.google.com/search-console → Add property →
+    **Domain** `utahciviccompact.org` → copy the TXT record → Cloudflare DNS
+    (TXT @, value as given) → Verify. Then Sitemaps → submit
+    `https://utahciviccompact.org/sitemap.xml`. Same at
+    https://www.bing.com/webmasters (import from Search Console).
+  - `[hand]` URL Inspection → Request indexing for `/team`, `/team/jarom-gillins`,
+    `/team/conner-radcliffe`, `/team/clark-dice`, `/team/kaden-payne`.
+  - `[hand]` each team member: admin → Team & Bios → **Public profile links**
+    (LinkedIn, X, personal site, one per line) → Save → Request publish. Then
+    put the author page URL in those profiles' website field.
+  - `[go]` approve the publish request that puts the author pages on prod
+    (the staging copy is at /team/jarom-gillins on the staging origin).
+
 - **AWS console access** (IAM users, group `adminaccess` = AdministratorAccess).
   Sign in at https://017110365763.signin.aws.amazon.com/console
   - `conner.radcliffe` — existed since 2026-09-14, last used 2026-09-23. No MFA yet.

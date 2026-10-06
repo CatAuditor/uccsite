@@ -6,6 +6,34 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-05 — Author pages: every team member now has a page of their work
+
+Each person on the Team page now has their own page at
+utahciviccompact.org/team/first-last (for example /team/jarom-gillins). It
+shows the bio and headshot and lists everything on the site written by that
+person — investigations, reports, statements, policy positions. Clicking a
+name on the Team page, or any "By …" byline anywhere on the site, goes there.
+
+Why: a search for a team member's name was showing their outside history and
+nothing from this site. The site named people but gave search engines nothing
+to attach the name to. Each author page now carries structured "this is a
+person, this is their work" data that every bylined page points back at, and
+the homepage lists the team the same way.
+
+- **Editors:** Team & Bios has two new fields. *Public profile links* — one
+  URL per line (LinkedIn, X, a personal site). Fill this in for each member;
+  it is what tells search engines the person on LinkedIn and the author here
+  are the same person. *Author page URL slug* — leave blank unless a name
+  changes. Documents have a new **Author** field: type the team member's full
+  name exactly as it appears on the Team page, or the piece will not show on
+  their author page.
+- **Needs a person:** (1) each member adds their profile links; (2) Jarom's
+  bio rewrite is drafted in docs/seo-plan.md — edit it there, then paste into
+  Team & Bios; (3) register the site in Google Search Console and submit the
+  sitemap (steps in docs/for-conner.md); (4) a publish from the admin to put
+  the pages live on production.
+- Technical detail: docs/systems/author-pages.md.
+
 ## 2026-10-05 — Upload images right where you use them
 
 Image fields no longer send you to the Media Library first. Beside the

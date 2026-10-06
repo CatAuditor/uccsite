@@ -122,6 +122,7 @@ operator fallback.
   self-guards compare `cognito:username`, not email. Turning MFA off or
   removing a security key requires a sign-in less than 15 minutes old
   (`auth_time`).
+- Team & Bios carries two author-page fields (slug, public profile links) — docs/systems/author-pages.md.
 - Everyone can edit their **own** bio, title and headshot on `/profile` when a
   team member carries their email (`team_members.email`, set by an editor in
   the Team editor; never published). Other people's entries: the Team page.

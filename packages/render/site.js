@@ -10,8 +10,12 @@ const SITE_URL = 'https://utahciviccompact.org';
 
 // Templates → content file mapping. `sitemap: false` excludes a page (noindex pages).
 const PAGES = [
-  { template: 'index.html',    content: ['settings', 'homepage', 'projects'], priority: '1.0' },
+  { template: 'index.html',    content: ['settings', 'homepage', 'projects', 'team'], priority: '1.0' },
   { template: 'team.html',     content: ['settings', 'team'] },
+  // Author pages (docs/systems/author-pages.md): ONE template rendered once
+  // per team member to team/<slug>.html. `each` names the list on the first
+  // content collection; expandPages() turns this entry into N page entries.
+  { template: 'team-member.html', content: ['team', 'settings', 'statements', 'projects', 'issues'], each: 'members', dir: 'team' },
   { template: 'blog.html',     content: ['settings', 'blog'] },
   { template: 'statements.html', content: ['settings', 'statements'] },
   { template: 'issues.html',   content: ['settings', 'issues'] },
@@ -130,6 +134,139 @@ function deriveProjectFiles(content) {
   };
 }
 
+// ── Author pages (docs/systems/author-pages.md) ──────────────────────────────
+// slugify('Jarom Gillins') → 'jarom-gillins'. A member's explicit `slug`
+// wins; the name is the fallback so no editor action is needed for a page.
+function slugify(s) {
+  return String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+function memberSlug(m) { return slugify(m.slug) || slugify(m.name); }
+
+// authorIndex(members, siteUrl) → { name → { slug, url, id } } for byline
+// links and JSON-LD @id references. The Person @id is the author page URL +
+// '#person' — ONE identifier every Article on the site points at, so search
+// engines merge the author into a single entity.
+function authorIndex(members, siteUrl = SITE_URL) {
+  const idx = {};
+  for (const m of members || []) {
+    if (!m.name) continue;
+    const slug = memberSlug(m);
+    idx[m.name.trim()] = { slug, url: `/team/${slug}`, id: `${siteUrl}/team/${slug}#person` };
+  }
+  return idx;
+}
+
+// "/alpr.html" | "/alpr" | "/statements.html#slug" → "/alpr" | "/statements#slug"
+const cleanUrl = (u) => String(u || '').replace(/\.html(?=$|[#?])/, '');
+const firstParagraph = (md) => String(md || '').trim().split(/\n{2,}/)[0].replace(/\*\*|\*|\[([^\]]+)\]\([^)]*\)/g, '$1').trim();
+const jsonForScript = (v) => JSON.stringify(v, null, 2).replace(/</g, '\\u003c');
+
+// deriveTeam(content, siteUrl) → NEW content:
+//   team.members[]  + slug, page_url, photo_abs, links[] ({url}), works[]
+//                     ({title, date, url, kind}), meta_description, jsonld
+//   statements/projects/issues items + author_url ('' when the author is not
+//                     a team member → templates render a plain name)
+//   team.org_members_json / team.org_sameas_json  fragments for the homepage
+//                     Organization JSON-LD
+// Works are everything on the site whose `author` equals the member's name:
+// statements, projects, issue positions and, on the database render,
+// content.documents_index ({slug, title, author, date, category} — supplied
+// by aws/publish/render-db.js; the git build has none). Deduped by URL
+// (a project and its Document report share one).
+function deriveTeam(content, siteUrl = SITE_URL) {
+  const members = content.team?.members;
+  if (!Array.isArray(members)) return content;
+  const idx = authorIndex(members, siteUrl);
+  const linkAuthors = (items) => Array.isArray(items)
+    ? items.map(it => ({ ...it, author_url: idx[String(it.author || '').trim()]?.url || '' }))
+    : items;
+
+  const statements = content.statements?.statements || [];
+  const projects = content.projects?.projects || [];
+  const issues = content.issues?.issues || [];
+  const documents = Array.isArray(content.documents_index) ? content.documents_index : [];
+
+  const derivedMembers = members.map(m => {
+    const name = String(m.name || '').trim();
+    const slug = memberSlug(m);
+    const page_url = `/team/${slug}`;
+    const byAuthor = (it) => String(it.author || '').trim() === name;
+    const works = [];
+    const seen = new Set();
+    const add = (w) => {
+      const url = cleanUrl(w.url);
+      if (!url || seen.has(url)) return;
+      seen.add(url);
+      works.push({ ...w, url });
+    };
+    for (const p of projects.filter(byAuthor)) add({ title: p.name, date: p.date || '', url: p.cta_url, kind: 'Investigation' });
+    for (const d of documents.filter(byAuthor)) add({ title: d.title, date: d.date || '', url: `/${d.slug}`, kind: d.category || 'Report' });
+    for (const s of statements.filter(byAuthor)) add({ title: s.title, date: s.date || '', url: s.url || `/statements#${s.slug}`, kind: 'Statement' });
+    for (const i of issues.filter(byAuthor)) add({ title: i.title, date: '', url: `/issues#${i.slug}`, kind: 'Policy position' });
+
+    const links = String(m.links || '').split(/\r?\n/).map(s => s.trim()).filter(s => /^https?:\/\//i.test(s)).map(url => ({ url }));
+    const photo_abs = m.photo ? (/^https?:/i.test(m.photo) ? m.photo : `${siteUrl}${m.photo}`) : '';
+    const meta_description = firstParagraph(m.bio).slice(0, 300) || `${name}, ${m.title || ''} at Utah Civic Compact.`;
+    const person = {
+      '@context': 'https://schema.org',
+      '@type': 'ProfilePage',
+      url: `${siteUrl}${page_url}`,
+      name,
+      mainEntity: {
+        '@type': 'Person',
+        '@id': `${siteUrl}${page_url}#person`,
+        name,
+        url: `${siteUrl}${page_url}`,
+        jobTitle: m.title || undefined,
+        description: meta_description,
+        image: photo_abs || undefined,
+        worksFor: { '@type': 'Organization', name: 'Utah Civic Compact', url: siteUrl },
+        affiliation: { '@type': 'Organization', name: 'Utah Civic Compact', url: siteUrl },
+        sameAs: links.length ? links.map(l => l.url) : undefined,
+      },
+      hasPart: works.map(w => ({
+        '@type': w.kind === 'Statement' ? 'Article' : 'Report',
+        headline: w.title,
+        url: `${siteUrl}${w.url}`,
+        author: { '@id': `${siteUrl}${page_url}#person` },
+      })),
+    };
+    return { ...m, slug, page_url, photo_abs, links, works, has_links: links.length > 0, has_works: works.length > 0, meta_description, jsonld: jsonForScript(person) };
+  });
+
+  const org_members_json = JSON.stringify(derivedMembers.map(m => ({
+    '@type': 'Person', '@id': `${siteUrl}${m.page_url}#person`, name: m.name, jobTitle: m.title || undefined, url: `${siteUrl}${m.page_url}`,
+  })), null, 2).replace(/</g, '\\u003c').replace(/\n/g, '\n    ');
+  const org_sameas_json = JSON.stringify([content.settings?.instagram].filter(Boolean));
+
+  return {
+    ...content,
+    team: { ...content.team, members: derivedMembers, org_members_json, org_sameas_json },
+    statements: content.statements ? { ...content.statements, statements: linkAuthors(statements) } : content.statements,
+    projects: content.projects ? { ...content.projects, projects: linkAuthors(projects) } : content.projects,
+    issues: content.issues ? { ...content.issues, issues: linkAuthors(issues) } : content.issues,
+  };
+}
+
+// expandPages(pages, content) → pages with every `each` entry replaced by one
+// entry per list item: { template: 'team/<slug>.html', source: 'team-member.html',
+// item, content, priority }. Callers' lastmod providers read `source` for the
+// template file and `content` for the collections, as for fixed pages.
+function expandPages(pages, content) {
+  const out = [];
+  for (const p of pages) {
+    if (!p.each) { out.push(p); continue; }
+    const list = content[p.content[0]]?.[p.each];
+    if (!Array.isArray(list)) continue;
+    for (const item of list) {
+      if (!item.slug) continue;
+      out.push({ ...p, each: undefined, template: `${p.dir}/${item.slug}.html`, source: p.template, item });
+    }
+  }
+  return out;
+}
+
 // buildSite({ templates, partials, content, lastmod, pages?, siteUrl? })
 //   templates: { 'index.html' → template string } — must cover every PAGES entry
 //   partials:  { 'header' → string, ... }
@@ -152,14 +289,18 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
   if (errors.length) return { files: {}, errors };
 
   const colored = withColorClasses(content);
-  const derived = deriveProjectFiles(deriveProjectFilters(deriveHomepage(colored.content)));
+  const derived = deriveTeam(deriveProjectFiles(deriveProjectFilters(deriveHomepage(colored.content))), siteUrl);
+  const expanded = expandPages(pages, derived);
 
   const files = { 'css/colors.css': colored.colorsCss };
-  for (const { template, content: names } of pages) {
-    const page = template.replace(/\.html$/, '');
+  for (const { template, source, item, content: names } of expanded) {
+    // Expanded pages (team/<slug>.html) take nav state from their directory
+    // ('team') and get the item's fields merged on top of the collections.
+    const page = (source ? template.split('/')[0] : template).replace(/\.html$/, '');
     const data = Object.assign(
       { page, is_home: page === 'index', current: { [page]: true } }, // used by partials for nav state
-      ...names.map(n => derived[n])
+      ...names.map(n => derived[n]),
+      item ? { ...item, bio: mdToHtml(item.bio) } : {}
     );
 
     for (const [arrayKey, field] of Object.entries(MARKDOWN_FIELDS)) {
@@ -168,11 +309,11 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
       }
     }
 
-    files[template] = render(templates[template], data, partials, fail);
+    files[template] = render(templates[source || template], data, partials, fail);
   }
   if (errors.length) return { files: {}, errors };
 
-  files['sitemap.xml'] = makeSitemap([...pages, ...sitemapExtra], lastmod, siteUrl);
+  files['sitemap.xml'] = makeSitemap([...expanded, ...sitemapExtra], lastmod, siteUrl);
   return { files, errors };
 }
 
@@ -190,4 +331,7 @@ ${pages.filter(p => p.sitemap !== false).map(p => {
 `;
 }
 
-module.exports = { PAGES, MARKDOWN_FIELDS, SITE_URL, deriveHomepage, deriveProjectFilters, deriveProjectFiles, withColorClasses, buildSite, makeSitemap };
+module.exports = {
+  PAGES, MARKDOWN_FIELDS, SITE_URL, deriveHomepage, deriveProjectFilters, deriveProjectFiles, withColorClasses, buildSite, makeSitemap,
+  slugify, memberSlug, authorIndex, deriveTeam, expandPages,
+};

@@ -44,7 +44,7 @@
           <h2 class="issue-title">{{title}}</h2>
         </div>
         <p class="issue-epigraph">{{epigraph}}</p>
-        <div class="issue-byline">By {{author}}</div>
+        <div class="issue-byline">By {{#author_url}}<a href="{{author_url}}">{{author}}</a>{{/author_url}}{{^author_url}}{{author}}{{/author_url}}</div>
         <div class="issue-body">{{{body}}}</div>
       </article>
       {{/issues}}

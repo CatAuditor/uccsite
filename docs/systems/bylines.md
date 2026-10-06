@@ -1,6 +1,6 @@
 # Bylines — Content Authorship
 
-Every project, statement, and issue position on the site carries a visible "By {name}" byline.
+Every project, statement, and issue position on the site carries a visible "By {name}" byline. Since 2026-10-05 the name is a **link to the author's page** (`/team/<slug>`, docs/systems/author-pages.md) whenever it matches a team member's name exactly; otherwise it renders as plain text.
 
 ## Attribution split
 

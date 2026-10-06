@@ -80,3 +80,14 @@
   .bio-photo { width: 140px; height: 140px; }
   .bio-content { text-align: center; }
 }
+.bio-name a { color: inherit; text-decoration: none; }
+.bio-name a:hover { text-decoration: underline; }
+.bio-more {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--red);
+  text-decoration: none;
+}
+.bio-more:hover { text-decoration: underline; }

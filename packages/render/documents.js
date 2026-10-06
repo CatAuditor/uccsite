@@ -64,15 +64,30 @@ function seoBlock(doc, settings, siteUrl) {
   return { html: lines.join('\n'), errors, title, description, canonical };
 }
 
-// jsonldBlock(doc, seo, settings, siteUrl) → '' | '<script type="application/ld+json">…'
-function jsonldBlock(doc, seo, settings, siteUrl) {
+// jsonldBlock(doc, seo, settings, siteUrl, authors?) → '' | '<script type="application/ld+json">…'
+// authors: { name → { url, id } } (packages/render/site.js authorIndex). A
+// document's `author` becomes a Person; when the name is a team member the
+// Person carries the author page's @id/url so every page by that person
+// resolves to ONE entity (docs/systems/author-pages.md). Overrides still win.
+function jsonldBlock(doc, seo, settings, siteUrl, authors = {}) {
   if (!doc.jsonldType) return '';
+  const authorName = String(doc.author || '').trim();
+  const known = authors[authorName];
   const base = {
     '@context': 'https://schema.org',
     '@type': doc.jsonldType,
     headline: doc.ogTitle || doc.title,
     description: seo.description,
     url: seo.canonical,
+    ...(doc.publishedAt ? { datePublished: String(doc.publishedAt).slice(0, 10) } : {}),
+    ...(authorName ? {
+      author: {
+        '@type': 'Person',
+        ...(known ? { '@id': known.id, url: `${siteUrl}${known.url}` } : {}),
+        name: authorName,
+        affiliation: { '@type': 'Organization', name: settings.orgName || 'Utah Civic Compact', url: siteUrl },
+      },
+    } : {}),
     publisher: { '@type': 'Organization', name: settings.orgName || 'Utah Civic Compact', url: siteUrl },
   };
   const merged = { ...base, ...(doc.jsonldOverrides && typeof doc.jsonldOverrides === 'object' ? doc.jsonldOverrides : {}) };
@@ -120,7 +135,7 @@ function overridesFor(doc, overrides) {
 
 // composeDocument({ doc, shell, partials, settings, siteUrl, siteCss, rules,
 //   overrides, foreignClassMap, coverage }) → { html, cssKey, css, ingestResult, errors }
-function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss = '', rules = [], overrides = [], foreignClassMap = {}, coverage = {} }) {
+function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss = '', rules = [], overrides = [], foreignClassMap = {}, coverage = {}, authors = {} }) {
   const errors = [];
   const fail = (m) => errors.push(`document ${doc.slug}: ${m}`);
 
@@ -144,7 +159,7 @@ function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss
     page: doc.slug,
     current: { [doc.slug]: true },
     seo_block: seo.html,
-    jsonld_block: jsonldBlock(doc, seo, settings, siteUrl),
+    jsonld_block: jsonldBlock(doc, seo, settings, siteUrl, authors),
     page_css_link: cssKey ? `  <link rel="stylesheet" href="/${cssKey}" />` : '',
     body,
   };
@@ -156,7 +171,7 @@ function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss
 //   rules, overrides, foreignClassMaps, coverage }) →
 //   { files: { '<slug>.html', 'css/pages/…' }, errors: [], pages: [{template, priority, lastmodAt}] , hashes: {slug: contentHash} }
 // pages entries feed the sitemap through the same makeSitemap as fixed pages.
-function buildDocuments({ documents = [], shells, partials, settings, siteUrl, siteCss, rules, overrides, foreignClassMaps = {}, coverage }) {
+function buildDocuments({ documents = [], shells, partials, settings, siteUrl, siteCss, rules, overrides, foreignClassMaps = {}, coverage, authors = {} }) {
   const files = {};
   const errors = [];
   const pages = [];
@@ -172,7 +187,7 @@ function buildDocuments({ documents = [], shells, partials, settings, siteUrl, s
     slugs.add(doc.slug);
     const out = composeDocument({
       doc, shell: shells[doc.templateKey], partials, settings, siteUrl, siteCss, rules, overrides,
-      foreignClassMap: foreignClassMaps[doc.templateKey] || {}, coverage,
+      foreignClassMap: foreignClassMaps[doc.templateKey] || {}, coverage, authors,
     });
     errors.push(...out.errors);
     if (out.errors.length) continue;

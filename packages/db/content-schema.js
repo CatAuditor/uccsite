@@ -66,6 +66,10 @@ const STATEMENTS = [
   // email links a team member to their admin account (self-service bio/
   // headshot on /profile). Never rendered. Existing clusters: ADD COLUMN.
   `ALTER TABLE team_members ADD COLUMN IF NOT EXISTS email TEXT`,
+  // Author pages (docs/systems/author-pages.md): slug = /team/<slug> (blank →
+  // derived from the name); links = public profile URLs, one per line → sameAs.
+  `ALTER TABLE team_members ADD COLUMN IF NOT EXISTS slug TEXT`,
+  `ALTER TABLE team_members ADD COLUMN IF NOT EXISTS links TEXT`,
   `CREATE TABLE IF NOT EXISTS statements (
     id UUID PRIMARY KEY,
     sort_order INTEGER NOT NULL,
@@ -248,6 +252,9 @@ const STATEMENTS = [
     updated_at TIMESTAMPTZ DEFAULT now()
   )`,
   `CREATE INDEX ASYNC IF NOT EXISTS idx_documents_status ON documents(status, sort_order)`,
+  // Author (team member's full name) → JSON-LD Person with the author page's
+  // @id + listing on /team/<slug> (docs/systems/author-pages.md). Existing clusters: ADD COLUMN.
+  `ALTER TABLE documents ADD COLUMN IF NOT EXISTS author TEXT`,
   // Rules match structure (selector subset, §6.2); scope 'template' rules
   // apply to every document with that template_key, 'page' rules to one.
   `CREATE TABLE IF NOT EXISTS style_rules (

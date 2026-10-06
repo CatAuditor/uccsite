@@ -72,7 +72,7 @@
 
         <h2 class="project-name">{{name}}</h2>
         <p class="project-tagline">{{tagline}}</p>
-        <div class="project-byline">By {{author}}</div>
+        <div class="project-byline">By {{#author_url}}<a href="{{author_url}}">{{author}}</a>{{/author_url}}{{^author_url}}{{author}}{{/author_url}}</div>
 
         <div class="project-cta">
           <a href="{{cta_url}}" class="btn btn-primary">{{cta_text}}</a>

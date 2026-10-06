@@ -9,7 +9,7 @@ build.js                 thin shell: read inputs → packages/render → write d
 packages/render/         THE template engine + site assembly (pure, golden-file tested;
                          PAGES manifest now lives in packages/render/site.js)
 package.json             `npm run build` / `npm run dev` (wrangler pages dev); npm workspaces root
-templates/*.html         one per page (19)
+templates/*.html         one per page (20; team-member.html renders once per team member → team/<slug>.html, author-pages.md)
 templates/partials/      header.html, footer.html  ← THE nav/footer; edit here only
                          (footer.html also carries the download modal, files.md)
 content/*.json           CMS-managed content (see cms.md)
@@ -76,8 +76,9 @@ Hard rules:
 
 | Output | Content files | Notes |
 |---|---|---|
-| `index.html` | settings, homepage, projects | featured statement derived from `statements.json`; hero is the petition takeover while `homepage.petition.headline` is set (petition.md) |
-| `team.html` | settings, team | |
+| `index.html` | settings, homepage, projects, team | featured statement derived from `statements.json`; hero is the petition takeover while `homepage.petition.headline` is set (petition.md) |
+| `team.html` | settings, team | bio names link to the author pages |
+| `team/<slug>.html` (× members) | team, settings, statements, projects, issues | **expanded** from `team-member.html` by `expandPages` — one author page per team member (author-pages.md) |
 | `blog.html` | settings, blog | |
 | `statements.html` | settings, statements | |
 | `issues.html` | settings, issues | |
