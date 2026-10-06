@@ -7,6 +7,7 @@
 // server as JSON hidden fields inside the surrounding ActionForm.
 import { useMemo, useState } from 'react';
 import { previewHtml, BLOCK_TYPES, DEFAULT_THEME, FONTS } from '@uccsite/newsletter/render';
+import InlineImageUpload from '../../media/inline-upload';
 
 const RESIDENCIES = [['all', 'everyone'], ['utah', 'Utah residents'], ['outside', 'outside Utah'], ['unknown', 'ZIP unknown']];
 const BLOCK_LABEL = { heading: 'Heading', text: 'Text', button: 'Button', image: 'Image', quote: 'Quote', divider: 'Divider' };
@@ -17,7 +18,7 @@ const NEW_BLOCK = {
 let seq = 0;
 const withKey = (b) => ({ ...b, _k: b._k ?? `b${++seq}` });
 
-function BlockFields({ block, onChange, readOnly }) {
+function BlockFields({ block, onChange, readOnly, publicOrigin }) {
   const set = (field) => (e) => onChange({ ...block, [field]: e.target.value });
   switch (block.type) {
     case 'heading': return <input value={block.text} onChange={set('text')} placeholder="Section heading" maxLength={300} disabled={readOnly} />;
@@ -37,8 +38,12 @@ function BlockFields({ block, onChange, readOnly }) {
     );
     case 'image': return (
       <>
+        {!readOnly && (
+          <InlineImageUpload targetWidth={1200} compact label="Upload an image"
+            onDone={(path, { alt }) => onChange({ ...block, url: `${publicOrigin}${path}`, alt: block.alt || alt })} />
+        )}
         <div className="mail-row">
-          <input value={block.url} onChange={set('url')} placeholder="Image address (copy it from the Media Library)" type="url" disabled={readOnly} />
+          <input value={block.url} onChange={set('url')} placeholder="Image address (upload above, or paste from the Media Library)" type="url" disabled={readOnly} />
           <input value={block.alt} onChange={set('alt')} placeholder="Alt text (what the image shows)" maxLength={300} disabled={readOnly} />
         </div>
         <div className="mail-row">
@@ -57,7 +62,7 @@ function BlockFields({ block, onChange, readOnly }) {
   }
 }
 
-export default function Composer({ newsletter, names, count, petitions, readOnly }) {
+export default function Composer({ newsletter, names, count, petitions, readOnly, publicOrigin }) {
   const [subject, setSubject] = useState(newsletter.subject);
   const [preheader, setPreheader] = useState(newsletter.preheader);
   const [headline, setHeadline] = useState(newsletter.headline);
@@ -130,7 +135,7 @@ export default function Composer({ newsletter, names, count, petitions, readOnly
                   </span>
                 )}
               </div>
-              <BlockFields block={b} onChange={(nb) => update(i, nb)} readOnly={readOnly} />
+              <BlockFields block={b} onChange={(nb) => update(i, nb)} readOnly={readOnly} publicOrigin={publicOrigin} />
             </div>
           ))}
           {!blocks.length && <p className="hint">Nothing yet — add a block below.</p>}

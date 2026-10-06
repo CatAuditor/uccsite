@@ -64,6 +64,8 @@ apps/admin/
   app/settings, /homepage, /team, /statements, /issues, /blog, /coverage,
   /projects                collection editors (generic ListEditor client component;
                            projects is nested — docs/systems/projects.md)
+  app/media/inline-upload.js  InlineImageUpload — upload beside any image field (team/profile
+                           headshot, newsletter image block, document og:image; media.md)
   app/media                media library: presigned-PUT uploads, sharp variants
                            via the MediaProcessFn Lambda, alt text, delete
                            (docs/systems/media.md)

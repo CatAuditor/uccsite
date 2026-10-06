@@ -12,6 +12,7 @@ import ActionForm from '../../action-form';
 import RequestPublish from '../../request-publish';
 import HtmlEditor from './html-editor';
 import StyleEditor from './style-editor';
+import ImageUrlField from '../../media/image-url-field';
 import { saveDocument, deleteDocument } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -112,7 +113,9 @@ export default async function DocumentEditorPage({ params }) {
               <label htmlFor={name}>{label}</label>
               {name === 'metaDescription' || name === 'ogDescription'
                 ? <textarea id={name} name={name} defaultValue={doc[name]} disabled={readOnly} rows={2} />
-                : <input type="text" id={name} name={name} defaultValue={doc[name]} disabled={readOnly} />}
+                : name === 'ogImage'
+                  ? <ImageUrlField id={name} name={name} defaultValue={doc[name]} disabled={readOnly} targetWidth={1200} label="Upload a share image" />
+                  : <input type="text" id={name} name={name} defaultValue={doc[name]} disabled={readOnly} />}
               <div className="hint">{hint}</div>
             </div>
           ))}

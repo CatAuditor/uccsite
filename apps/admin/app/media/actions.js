@@ -6,7 +6,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireRole } from '../../lib/auth';
 import { withWriteDb, withWriteTx, recordChange } from '../../lib/data';
-import { createUpload, deleteAsset } from '../../lib/media';
+import { createUpload, deleteAsset, assetState } from '../../lib/media';
 import { runAction } from '../../lib/actions';
 
 // beginUpload({ filename, mime, bytes }) → { id, url } | { error }
@@ -21,13 +21,30 @@ export async function beginUpload({ filename, mime, bytes }) {
 }
 
 // After the browser's PUT succeeds: audit it (the Lambda does the rest).
-export async function finishUpload(id) {
+// alt (inline uploads) is stored now so the asset is placeable the moment
+// the Lambda marks it ready; the Media page's uploader leaves it for later.
+export async function finishUpload(id, alt) {
   return runAction(async () => {
     const s = await requireRole('editor');
-    await withWriteDb((client) => recordChange(client, {
-      actor: s.email, action: 'media.upload', entityType: 'media', entityId: String(id),
-    }));
+    const altText = String(alt || '').trim().slice(0, 300);
+    if (!/^[0-9a-f-]{36}$/.test(String(id))) throw new Error('Bad asset id');
+    await withWriteDb(async (client) => {
+      if (altText) await client.query('UPDATE media_assets SET alt = $2, updated_at = now() WHERE id = $1 AND (alt IS NULL OR alt = \'\')', [id, altText]);
+      await recordChange(client, {
+        actor: s.email, action: 'media.upload', entityType: 'media', entityId: String(id), diff: altText ? { alt: altText } : undefined,
+      });
+    });
     revalidatePath('/media');
+  });
+}
+
+// assetReady(id, targetWidth) → { status, path?, width?, message? } for the
+// inline uploader's poll. path = the variant the field should store.
+export async function assetReady(id, targetWidth) {
+  return runAction(async () => {
+    await requireRole('editor');
+    const state = await withWriteDb((client) => assetState(client, String(id), Number(targetWidth) || 800));
+    return { ok: true, ...state };
   });
 }
 

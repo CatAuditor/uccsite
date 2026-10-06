@@ -221,3 +221,11 @@ select { padding: 8px; border: 1px solid #c9cdc6; font: inherit; width: 100%; ba
 .request-send h2 { margin-top: 0; }
 .chip.status-pending, .chip.status-approved, .chip.status-sending, .chip.status-succeeded, .chip.status-failed, .chip.status-draft { font-size: 13px; vertical-align: middle; margin-left: 8px; }
 @media (max-width: 1100px) { .mail-split { grid-template-columns: 1fr; } .mail-preview { position: static; } }
+
+/* Inline image upload (app/media/inline-upload.js) beside any image field */
+.inline-upload { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
+.inline-upload input[type="text"] { flex: 1 1 220px; min-width: 0; margin: 0; }
+.inline-upload button { margin: 0; white-space: nowrap; }
+.inline-upload .error { flex-basis: 100%; margin: 0; }
+.inline-upload.compact input[type="text"] { padding: 6px 8px; font-size: 13px; }
+.inline-upload.compact button { padding: 6px 12px; font-size: 12px; }

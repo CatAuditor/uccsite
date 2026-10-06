@@ -7,6 +7,7 @@
 // sorting of the whole list. Deliberately dependency-free (spec §15).
 import { useState, useTransition } from 'react';
 import { parseFreeDate } from '@uccsite/render/dates.mjs';
+import InlineImageUpload from './media/inline-upload';
 import { unfurlLink } from '../lib/unfurl';
 
 const hostOf = (href) => { try { return new URL(href).hostname.replace(/^www\./, ''); } catch { return ''; } };
@@ -153,6 +154,7 @@ function Items({ fields, items, onChange, itemLabelField, readOnly, idPrefix, me
                       <option value="">Pick from Media Library…</option>
                       {(mediaOptions[f.name] || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
+                    {!readOnly && <InlineImageUpload targetWidth={f.targetWidth || 800} compact onDone={(path) => update(i, f.name, path)} />}
                   </div>
                 ) : (
                   <input type="text" id={id} value={item[f.name] ?? ''} disabled={readOnly}

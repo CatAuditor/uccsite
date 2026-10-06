@@ -6,6 +6,21 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-05 — Upload images right where you use them
+
+Image fields no longer send you to the Media Library first. Beside the
+**Team headshot** field (Team & Bios and your own profile), inside a
+newsletter's **Image** block, and on a document's **og:image** (the picture
+shown when a page is shared), there is now an alt-text box and an
+**Upload** button. Type what the image shows, choose the file, wait a few
+seconds while it is processed, and the field fills itself in. The image
+also appears in the Media Library as usual.
+
+- **Editors:** alt text is required before the upload starts — that is the
+  same rule the Media Library has always enforced.
+- **Needs a person:** nothing.
+- Technical detail: docs/systems/media.md "Inline upload".
+
 ## 2026-10-05 — Newsletters: write, preview and send email from the admin (Mail section)
 
 The admin has a new **Mail** section. **Newsletters** is a small

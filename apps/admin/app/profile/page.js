@@ -7,6 +7,7 @@ import { withDb } from '../../lib/data';
 import { accountStatus, passkeyAddUrl } from '../../lib/account';
 import { loadCollectionItems, loadCollectionBaseline } from '../../lib/collection-save';
 import { mediaOptionsFor } from '../../lib/media';
+import HeadshotField from './headshot-field';
 import { COLLECTIONS } from '../../lib/collections';
 import ActionForm from '../action-form';
 import RequestPublish from '../request-publish';
@@ -98,9 +99,7 @@ export default async function ProfilePage() {
           <label htmlFor="title">Title / role</label>
           <input type="text" id="title" name="title" defaultValue={me.title || ''} />
           <label htmlFor="photo">Headshot</label>
-          <input type="text" id="photo" name="photo" defaultValue={me.photo || ''} list="headshots" />
-          <datalist id="headshots">{photoOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</datalist>
-          <div className="hint">Pick a Media Library image (only images with alt text are offered — upload yours on the Media page) or keep the current path.</div>
+          <HeadshotField name="photo" defaultValue={me.photo || ''} options={photoOptions} targetWidth={400} />
           <label htmlFor="bio">Bio</label>
           <textarea id="bio" name="bio" defaultValue={me.bio || ''} rows={8} />
           <div className="hint">Supports **bold**, *italic*, [link text](https://url). Blank line = new paragraph.</div>

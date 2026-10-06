@@ -31,7 +31,7 @@ apps/admin/lib/newsletters.js      every rule: create/save/request/approve/decli
 apps/admin/lib/notify.js           notifyNewsletterRequested (reviewer email, same recipients as publish)
 apps/admin/app/mail/page.js        list + "new newsletter"
 apps/admin/app/mail/[id]/page.js   editor page: review panel, Composer in an ActionForm, test/request/delete
-apps/admin/app/mail/[id]/composer.js  client: block editor + theme + audience | phone/desktop, light/dark preview
+apps/admin/app/mail/[id]/composer.js  client: block editor (image block has inline upload) + theme + audience | phone/desktop, light/dark preview
 apps/admin/app/mail/status.js      status labels
 apps/admin/app/page.js             dashboard "Newsletters needing attention" (pending/approved/sending)
 scripts/newsletter-smoke.mjs       E2E of the Lambda with recipientsOverride (mailbox simulator)
@@ -186,8 +186,8 @@ node scripts/migrate-schema.mjs --env <env>                                    #
 
 ## Not built / decisions
 
-- Images are URLs (paste the address from the Media Library); no inline
-  upload in the composer.
+- Image blocks: **Upload an image** inside the block (inline upload, alt
+  text required, 1200 px variant, absolute URL) or paste any https URL.
 - No open/click tracking (SES event destination only routes bounces and
   complaints; nothing per recipient).
 - Schedule granularity: the tick runs every minute; a scheduled send starts

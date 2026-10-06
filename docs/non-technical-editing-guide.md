@@ -155,7 +155,8 @@ visual; a developer changes the code and publishes.
    **audience** (same choices as the Mailing list page), then the content
    as blocks — *Heading*, *Text* (plain writing; `**bold**`, `*italic*`,
    `[link text](https://…)`, "- " for bullets), *Button*, *Image* (paste the
-   image address from the Media Library, always give alt text), *Quote*,
+   *Upload an image* right in the block after typing its alt text, or paste
+   an address from the Media Library), *Quote*,
    *Divider*. Use ↑ ↓ ✕ to reorder or remove. *Look* changes colours, font,
    the small line above the headline and the footer.
 3. **Preview** on the right is what a phone shows. Switch **Light / Dark**

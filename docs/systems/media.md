@@ -44,6 +44,29 @@ apps/admin/lib/collection-save.js  alt-text gate on save (assertAltText)
 scripts/admin-env.mjs        writes MEDIA_BUCKET from the stack output
 ```
 
+## Inline upload (2026-10-05)
+
+Every image field can take a new file without a trip to the Media Library:
+`app/media/inline-upload.js` (`InlineImageUpload`) asks for **alt text
+first** (the placement gate), then runs the same path as the library page —
+`beginUpload` (presigned PUT) → browser PUT → `finishUpload(id, alt)` (stores
+the alt + audit `media.upload`) → polls `assetReady(id, targetWidth)` every
+2 s (up to 90 s; `lib/media.js assetState`) until the Lambda has made the
+variants → `onDone(path, { alt, id, width })` with the `pickVariant` webp
+path for the field's `targetWidth`. Used by:
+
+| Field | Where | targetWidth | stores |
+|---|---|---|---|
+| Team headshot (and any future `widget: 'media'` collection field) | `app/list-editor.js` media widget | field's `targetWidth` (400) | variant path |
+| Own headshot | `/profile` (`app/profile/headshot-field.js`) | 400 | variant path |
+| Newsletter image block | `app/mail/[id]/composer.js` (`InlineImageUpload` inside the block; alt copied into the block) | 1200 | **absolute** URL `PUBLIC_ORIGIN + path` (email needs it) |
+| Document og:image | `app/documents/[id]/page.js` via `app/media/image-url-field.js` | 1200 | variant path |
+
+The asset appears in the Media Library like any other; delete still refuses
+while a field references it. Processing failures surface in the widget
+(`failed` status message); a timeout tells the editor to find the asset on
+the Media page once ready.
+
 ## Data flow
 
 1. Editor picks files on `/media`. For each: `beginUpload({filename, mime,

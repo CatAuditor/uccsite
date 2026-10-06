@@ -31,6 +31,22 @@ Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
 
 Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
 
+## v0.16.1 — 2026-10-05 (branch `refactor`) — Inline image upload on every image field
+
+**Admin**
+- `app/media/inline-upload.js` (`InlineImageUpload`): alt text first, presigned
+  PUT, `finishUpload(id, alt)` stores the alt, polls `assetReady` (new action →
+  `lib/media.js assetState`) until the Lambda's variants exist, hands the
+  `pickVariant` path to the field.
+- Used by: `list-editor.js` media widget (Team headshot), `/profile`
+  (`profile/headshot-field.js`), newsletter image block (absolute URL,
+  `publicOrigin` prop), Documents og:image (`media/image-url-field.js`).
+- Docs: media.md "Inline upload", newsletters.md, admin.md, editing guide,
+  dev note. New `docs/plans/mailing-roadmap.md` (recommended next steps for
+  the mailing system — not started).
+
+Open P1 (unchanged): Resend key deletion pending; Stripe webhook unconfirmed.
+
 ## v0.16.0 — 2026-10-05 (branch `refactor`) — Mail section: newsletters composed, reviewed and sent from the admin
 
 **Newsletter package** (`packages/newsletter`, pure ESM, 12 tests)

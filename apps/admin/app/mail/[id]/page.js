@@ -15,6 +15,7 @@ import {
   newsletterPage, saveNewsletter, requestSend, approveSend, declineSend, withdrawSend, cancelSend, retrySend, sendTest, deleteNewsletter,
 } from '../../../lib/newsletters';
 import { runAction } from '../../../lib/actions';
+import { config } from '../../../lib/config';
 import ActionForm from '../../action-form';
 import Refresher from '../../refresher';
 import Composer from './composer';
@@ -144,7 +145,7 @@ export default async function NewsletterPage({ params }) {
 
       <ActionForm action={save} className="editor">
         <input type="hidden" name="updatedAt" value={n.updatedAt} />
-        <Composer newsletter={n} names={names} count={count} petitions={petitions} readOnly={!canAct || !isDraft} />
+        <Composer newsletter={n} names={names} count={count} petitions={petitions} readOnly={!canAct || !isDraft} publicOrigin={config.publicOrigin} />
         {canAct && isDraft && (
           <div className="item-tools">
             <button type="submit">Save</button>

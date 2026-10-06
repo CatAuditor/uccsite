@@ -141,6 +141,18 @@ export async function mediaOptionsFor(client, targetWidth) {
   }).filter(Boolean);
 }
 
+// assetState(client, id, targetWidth) → { status, path, width, message } —
+// one row read for the inline uploader's poll (lib/media.js is the only
+// place that knows which variant a field should store).
+export async function assetState(client, id, targetWidth) {
+  if (!/^[0-9a-f-]{36}$/.test(String(id))) throw new Error('Bad asset id');
+  const row = (await client.query(`SELECT ${ASSET_COLUMNS} FROM media_assets WHERE id = $1`, [id])).rows[0];
+  if (!row) throw new Error('Asset not found');
+  const a = rowToAsset(row);
+  const v = a.status === 'ready' ? pickVariant(a.variants, targetWidth, 'webp') : null;
+  return { status: a.status, path: v?.path || null, width: v?.width || null, message: a.error || '' };
+}
+
 // assertAltText(client, ids) — throws naming the first asset lacking alt text.
 export async function assertAltText(client, ids) {
   if (!ids.length) return;
