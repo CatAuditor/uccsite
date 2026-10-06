@@ -20,7 +20,11 @@ of each push.
   escape) — now the literal `▾`.
 - Verified in headless Chrome against the real stylesheet: 390×844 closed + menu open, 1280×800.
 
-**Docs**: admin.md (Code Map, "Navigation & phone use" rewritten), non-technical-editing-guide.md,
+**Admin / PWA icons** (`apps/admin/app/icon.png`, `apple-icon.png`, `manifest.js`; separate session, same push)
+- Icons are the UCC mark flattened onto site navy `#1b2f4e` with padding for maskable launchers
+  (`purpose: 'any maskable'`); `background_color` matches so the splash is seamless.
+
+**Docs**: admin.md (Code Map, "Navigation & phone use" rewritten, PWA icons), non-technical-editing-guide.md,
 dev-notes.md (today's entry updated).
 
 Not verified on a real phone yet. Open P1 (unchanged): Resend key deletion pending; Stripe
