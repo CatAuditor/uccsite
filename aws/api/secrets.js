@@ -7,9 +7,12 @@
 const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
 
 const PLACEHOLDER = 'REPLACE_ME';
+// RESEND_API_KEY was removed 2026-10-05 (email now goes through SES via the
+// Lambda role). The prod secret ucc/prod/RESEND_API_KEY is RETAIN'd — the
+// operator deletes it by hand (docs/for-conner.md §10.4).
 const NAMES = [
   'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET',
-  'RESEND_API_KEY', 'TOKEN_SECRET', 'TURNSTILE_SECRET_KEY',
+  'TOKEN_SECRET', 'TURNSTILE_SECRET_KEY',
 ];
 
 // Per-secret cache. A FAILED fetch is never cached — a transient Secrets

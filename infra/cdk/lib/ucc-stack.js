@@ -185,6 +185,10 @@ class UccStack extends Stack {
         // publicOrigin is validated non-empty below — an empty value would
         // put Function URL hosts into email links, which the origin lock 403s.
         PUBLIC_ORIGIN: publicOrigin,
+        // SES configuration set for transactional sends (bounce/complaint →
+        // ops topic). Prod only: staging sends through the same identity but
+        // without a set, so staging test bounces never page the prod topic.
+        ...(isProd ? { SES_CONFIGURATION_SET: 'ucc-prod' } : {}),
         ...Object.fromEntries(API_SECRET_NAMES.map(n => [`SECRET_ARN_${n}`, apiSecrets[n].secretArn])),
       },
       bundling: {
@@ -199,6 +203,20 @@ class UccStack extends Stack {
       resources: [cluster.attrResourceArn],
     }));
     for (const name of API_SECRET_NAMES) apiSecrets[name].grantRead(apiFn);
+    // Transactional email via SES (docs/systems/email.md). The domain identity
+    // is a prod-stack resource (one per region per account), so BOTH stacks
+    // name it by ARN string rather than by reference. From is pinned by
+    // condition: a compromised Lambda cannot send as anyone else on the domain.
+    // Prod additionally needs the configuration set as a resource, or SES
+    // denies the send when ConfigurationSetName is supplied.
+    apiFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ses:SendEmail'],
+      resources: [
+        `arn:aws:ses:${this.region}:${this.account}:identity/utahciviccompact.org`,
+        ...(isProd ? [`arn:aws:ses:${this.region}:${this.account}:configuration-set/ucc-prod`] : []),
+      ],
+      conditions: { StringEquals: { 'ses:FromAddress': 'hello@utahciviccompact.org' } },
+    }));
     // Async self-invocation (portal magic-link job). A STANDALONE policy, not
     // addToRolePolicy: CDK makes the function DependsOn its role's default
     // policy, so putting our own ARN there is a circular dependency.

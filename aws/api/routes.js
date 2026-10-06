@@ -61,9 +61,9 @@ async function subscribe(ctx) {
   }
 
   // Welcome email via async self-invocation — off the response path like the
-  // Cloudflare waitUntil original. Inline sending meant a Resend stall held
+  // Cloudflare waitUntil original. Inline sending meant a provider stall held
   // the user's response (and each retry burned a rate-limit slot).
-  if (secrets.RESEND_API_KEY && ctx.selfInvoke) {
+  if (ctx.selfInvoke) {
     try {
       await ctx.selfInvoke({ job: 'welcome-email', email, firstName, origin });
     } catch (err) {
@@ -83,18 +83,49 @@ async function welcomeEmailJob({ secrets, email, firstName, origin }) {
   }
 }
 
-// THE Resend send path — both transactional emails go through it.
+// THE send path — both transactional emails go through it. Amazon SES v2
+// (docs/systems/email.md): auth is the Lambda role (ses:SendEmail on the
+// domain identity, From pinned by IAM condition), so there is no API key to
+// be unset — if sending is broken it is IAM or SES, and the error says so.
+// SES_CONFIGURATION_SET (prod: ucc-prod) routes bounces/complaints to the
+// ops topic; staging sends without one.
 const FROM_ADDRESS = 'Utah Civic Compact <hello@utahciviccompact.org>';
 const EMAIL_TIMEOUT_MS = 8000;
 
-async function resendSend(apiKey, { to, subject, html, headers }) {
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM_ADDRESS, to: [to], subject, html, ...(headers ? { headers } : {}) }),
-    signal: AbortSignal.timeout(EMAIL_TIMEOUT_MS),
-  });
-  if (!res.ok) console.error('[api] Resend error:', res.status);
+let sesClient = null;
+function getSesClient() {
+  if (!sesClient) {
+    const { SESv2Client } = require('@aws-sdk/client-sesv2');
+    sesClient = new SESv2Client({ requestHandler: { requestTimeout: EMAIL_TIMEOUT_MS } });
+  }
+  return sesClient;
+}
+// Tests swap in a fake; never called in production.
+function _setSesClient(client) { sesClient = client; }
+
+async function sesSend({ to, subject, html, headers }) {
+  const { SendEmailCommand } = require('@aws-sdk/client-sesv2');
+  const configSet = process.env.SES_CONFIGURATION_SET;
+  const input = {
+    FromEmailAddress: FROM_ADDRESS,
+    Destination: { ToAddresses: [to] },
+    Content: {
+      Simple: {
+        Subject: { Data: subject, Charset: 'UTF-8' },
+        Body: { Html: { Data: html, Charset: 'UTF-8' } },
+        ...(headers ? { Headers: Object.entries(headers).map(([Name, Value]) => ({ Name, Value })) } : {}),
+      },
+    },
+    ...(configSet ? { ConfigurationSetName: configSet } : {}),
+  };
+  try {
+    const res = await getSesClient().send(new SendEmailCommand(input));
+    console.log(`[api] SES sent ${res.MessageId} subject="${subject}"`);
+  } catch (err) {
+    // Recipient never logged. err.name is the SES/IAM error class
+    // (AccessDeniedException, MessageRejected, AccountSuspendedException ...).
+    console.error('[api] SES error:', err?.name, err?.message);
+  }
 }
 
 async function sendWelcomeEmail(secrets, origin, email, firstName) {
@@ -105,7 +136,7 @@ async function sendWelcomeEmail(secrets, origin, email, firstName) {
     unsubscribeUrl = `${origin}/api/unsubscribe?token=${encodeURIComponent(token)}`;
   }
 
-  await resendSend(secrets.RESEND_API_KEY, {
+  await sesSend({
     to: email,
     subject: "You're in. Here's what that means.",
     html: buildWelcomeEmail(greeting, unsubscribeUrl),
@@ -455,8 +486,8 @@ async function createPortalSessionPost({ event, db, secrets, body, origin, selfI
   const email = str(body.email, 254).toLowerCase();
   if (!isValidEmail(email)) return json({ error: 'A valid email address is required' }, 400);
 
-  if (!secrets.TOKEN_SECRET || !secrets.RESEND_API_KEY) {
-    console.error('[api] portal: TOKEN_SECRET or RESEND_API_KEY not set');
+  if (!secrets.TOKEN_SECRET) {
+    console.error('[api] portal: TOKEN_SECRET not set');
     return json({ error: 'Portal is temporarily unavailable' }, 503);
   }
 
@@ -479,7 +510,7 @@ async function portalLinkJob({ db, secrets, email, origin }) {
     if (!member) return;
     const token = await signToken(secrets.TOKEN_SECRET, PORTAL_PURPOSE, email, LINK_TTL_SECONDS);
     const link = `${origin}/api/create-portal-session?token=${encodeURIComponent(token)}`;
-    await sendPortalLink(secrets.RESEND_API_KEY, email, link);
+    await sendPortalLink(email, link);
   } catch (err) {
     console.error('[api] portal link send failed:', err?.message);
   }
@@ -525,9 +556,9 @@ async function findMember(db, email) {
   return res.rows[0] || null;
 }
 
-async function sendPortalLink(apiKey, email, link) {
+async function sendPortalLink(email, link) {
   const safeLink = escapeHtml(link);
-  await resendSend(apiKey, {
+  await sesSend({
     to: email,
     subject: 'Manage your Utah Civic Compact membership',
     html: `<p>Use the link below to manage your recurring donation. It expires in 15 minutes.</p>
@@ -565,4 +596,5 @@ async function donationStats({ db }) {
 module.exports = {
   subscribe, unsubscribe, tip, petitionSign, petitionCount, createCheckoutSession,
   createPortalSessionPost, createPortalSessionGet, portalLinkJob, welcomeEmailJob, donationStats,
+  _setSesClient,
 };

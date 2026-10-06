@@ -187,12 +187,11 @@ test('subscribe: invalid email 400; valid upserts with lowercased email', async 
   assert.equal(upsert.params[0], 'a@b.co');
 });
 
-test('subscribe dispatches the welcome-email job (not inline) when Resend is configured', async () => {
+test('subscribe dispatches the welcome-email job (not inline)', async () => {
   const db = fakeDb();
   const invocations = [];
   const res = await routes.subscribe({
     ...baseCtx(db, { body: { email: 'a@b.co', firstName: 'Q' } }),
-    secrets: { RESEND_API_KEY: 'k' },
     selfInvoke: async (p) => invocations.push(p),
   });
   assert.equal(res.statusCode, 200);
@@ -205,7 +204,6 @@ test('subscribe still 200s if the welcome-email dispatch fails', async () => {
   const db = fakeDb();
   const res = await routes.subscribe({
     ...baseCtx(db, { body: { email: 'a@b.co' } }),
-    secrets: { RESEND_API_KEY: 'k' },
     selfInvoke: async () => { throw new Error('throttled'); },
   });
   assert.equal(res.statusCode, 200);
@@ -215,10 +213,46 @@ test('portal POST still 202s if the self-invoke fails (constant response)', asyn
   const db = fakeDb();
   const res = await routes.createPortalSessionPost({
     ...baseCtx(db, { body: { email: 'a@b.co' } }),
-    secrets: { TOKEN_SECRET: SECRET, RESEND_API_KEY: 'k' },
+    secrets: { TOKEN_SECRET: SECRET },
     selfInvoke: async () => { throw new Error('throttled'); },
   });
   assert.equal(res.statusCode, 202);
+});
+
+// ── SES send path ───────────────────────────────────────────────────────────
+
+function fakeSes(behavior = async () => ({ MessageId: 'msg-1' })) {
+  const sent = [];
+  routes._setSesClient({ async send(cmd) { sent.push(cmd.input); return behavior(cmd.input); } });
+  return sent;
+}
+
+test('welcome-email job sends one SES message from hello@ with one-click unsubscribe headers', async () => {
+  const sent = fakeSes();
+  process.env.SES_CONFIGURATION_SET = 'ucc-test';
+  try {
+    await routes.welcomeEmailJob({ secrets: { TOKEN_SECRET: SECRET }, email: 'a@b.co', firstName: 'Q', origin: 'https://x.test' });
+  } finally { delete process.env.SES_CONFIGURATION_SET; routes._setSesClient(null); }
+  assert.equal(sent.length, 1);
+  const m = sent[0];
+  assert.equal(m.FromEmailAddress, 'Utah Civic Compact <hello@utahciviccompact.org>');
+  assert.deepEqual(m.Destination.ToAddresses, ['a@b.co']);
+  assert.equal(m.ConfigurationSetName, 'ucc-test');
+  assert.match(m.Content.Simple.Body.Html.Data, /Hi Q,/);
+  const headers = Object.fromEntries(m.Content.Simple.Headers.map(h => [h.Name, h.Value]));
+  assert.match(headers['List-Unsubscribe'], /^<https:\/\/x\.test\/api\/unsubscribe\?token=/);
+  assert.equal(headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
+});
+
+test('SES failure is logged by error class, never the recipient, and never throws', async () => {
+  fakeSes(async () => { const e = new Error('Email address is not verified. a@b.co'); e.name = 'MessageRejected'; throw e; });
+  try {
+    const { lines } = await spyConsole(() => routes.portalLinkJob({
+      db: fakeDb({ 'SELECT stripe_customer_id': { rows: [{ stripe_customer_id: 'cus_1' }], rowCount: 1 } }),
+      secrets: { TOKEN_SECRET: SECRET }, email: 'a@b.co', origin: 'https://x.test',
+    }));
+    assert.ok(lines.some(l => l.includes('SES error: MessageRejected')));
+  } finally { routes._setSesClient(null); }
 });
 
 test('rate limit trips at the threshold with a 429', async () => {
@@ -264,7 +298,7 @@ test('portal POST 503s without secrets; with secrets always 202 + constant self-
   const invocations = [];
   res = await routes.createPortalSessionPost({
     ...baseCtx(db, { body: { email: 'a@b.co' } }),
-    secrets: { TOKEN_SECRET: SECRET, RESEND_API_KEY: 'k' },
+    secrets: { TOKEN_SECRET: SECRET },
     selfInvoke: async (p) => invocations.push(p),
   });
   assert.equal(res.statusCode, 202);
