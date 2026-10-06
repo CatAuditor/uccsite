@@ -13,7 +13,7 @@ apps/admin/
   app/nav.js               sidebar (client): current page highlighted, collapsible
                            sections, phone top bar + Menu drawer (see "Navigation")
   app/manifest.js          web app manifest → /manifest.webmanifest (installable PWA);
-  app/icon.png,            icons = the site favicons (512 / 180). No service worker.
+  app/icon.png,            icons = the UCC mark on site navy #1b2f4e (512 maskable / 180). No service worker.
   app/apple-icon.png
   lib/config.js            env-driven config (scripts/admin-env.mjs writes .env.local)
   lib/aws-account.js       wrong-account guard: STS GetCallerIdentity vs UCC_ACCOUNT_ID,
@@ -162,8 +162,13 @@ operator fallback.
   `display:block; overflow-x:auto`, `.split` (Documents style editor) and
   `.mail-split` stack, inputs are 16px (iOS focus zoom), the bottom sign-out
   duplicate is hidden.
-- Installable: `app/manifest.js` (standalone, theme `#16281e`, start `/`),
-  `app/icon.png` 512 + `app/apple-icon.png` 180, `viewport` + `appleWebApp`
+- Installable: `app/manifest.js` (standalone, theme `#16281e`, splash/background
+  `#1b2f4e` = site `--navy`, start `/`),
+  `app/icon.png` 512 (`purpose: any maskable`) + `app/apple-icon.png` 180: the
+  transparent UCC mark (white + gold) flattened onto `--navy` `#1b2f4e` and
+  padded to the inner 70% so maskable launchers and iOS (which fills alpha
+  with black) both show navy. Regenerate with sharp from the site favicon,
+  not by re-saving the transparent source. `viewport` + `appleWebApp`
   exports in `layout.js`. Middleware lets `/manifest.webmanifest`, `/icon.png`
   and `/apple-icon.png` through without the cookie. **No service worker** by
   design: every screen is a live DB read and a cached shell would outlive

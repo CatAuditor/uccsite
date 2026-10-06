@@ -11,10 +11,12 @@ export default function manifest() {
     description: 'Utah Civic Compact site administration',
     start_url: '/',
     display: 'standalone',
-    background_color: '#f5f6f4',
+    // Icons are the UCC mark flattened onto site navy (--navy), padded for
+    // maskable launchers; background_color matches so the splash is seamless.
+    background_color: '#1b2f4e',
     theme_color: '#16281e',
     icons: [
-      { src: '/icon.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icon.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
       { src: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   };

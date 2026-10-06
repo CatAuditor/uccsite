@@ -19,7 +19,9 @@ one.
 
 **Add it to your home screen.** iPhone: open the admin in Safari, tap Share,
 then *Add to Home Screen*. Android: open it in Chrome and choose *Install
-app* from the menu. It opens full-screen like an app, with the UCC icon.
+app* from the menu. It opens full-screen like an app, with the UCC icon on
+the site's navy blue (the logo is transparent, so phones were painting it on
+a cream tile).
 There is no offline mode on purpose: every screen shows live data, so an
 offline copy would only ever be stale.
 
