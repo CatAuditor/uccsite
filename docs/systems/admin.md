@@ -8,7 +8,13 @@ Amplify Hosting at `admin.utahciviccompact.org` at rollout.
 
 ```
 apps/admin/
-  middleware.js            cookieless requests → /login (verification is NOT here)
+  middleware.js            cookieless requests → /login (verification is NOT here);
+                           manifest + icons pass through for the install flow
+  app/nav.js               sidebar (client): current page highlighted, collapsible
+                           sections, phone top bar + Menu drawer (see "Navigation")
+  app/manifest.js          web app manifest → /manifest.webmanifest (installable PWA);
+  app/icon.png,            icons = the site favicons (512 / 180). No service worker.
+  app/apple-icon.png
   lib/config.js            env-driven config (scripts/admin-env.mjs writes .env.local)
   lib/aws-account.js       wrong-account guard: STS GetCallerIdentity vs UCC_ACCOUNT_ID,
                            once per process, before any DB use (no-op when unset)
@@ -142,6 +148,30 @@ operator fallback.
   (`user.*`, `account.*`).
 - CLI equivalent for the first owner: `node scripts/admin-user.mjs --env
   staging --email … --name "…" --group owner`.
+
+## Navigation & phone use — PWA (2026-10-05)
+
+- `app/layout.js` (server) builds the nav groups per session role and renders
+  `app/nav.js` (client, inside `<Suspense>` because it reads
+  `useSearchParams`). Groups are `<details open>`; the current page gets
+  `.nav-link.active` + `aria-current` by longest-prefix match on
+  `pathname?query` (so `/documents/abc` lights "All documents" and
+  `/documents?category=Reports` lights that category only; `/` only exactly).
+- Below 800px (`globals.css` "Phone layout") the sidebar is a sticky top bar
+  with a **Menu** button; the drawer closes on every navigation. Tables become
+  `display:block; overflow-x:auto`, `.split` (Documents style editor) and
+  `.mail-split` stack, inputs are 16px (iOS focus zoom), the bottom sign-out
+  duplicate is hidden.
+- Installable: `app/manifest.js` (standalone, theme `#16281e`, start `/`),
+  `app/icon.png` 512 + `app/apple-icon.png` 180, `viewport` + `appleWebApp`
+  exports in `layout.js`. Middleware lets `/manifest.webmanifest`, `/icon.png`
+  and `/apple-icon.png` through without the cookie. **No service worker** by
+  design: every screen is a live DB read and a cached shell would outlive
+  Amplify deploys; Chrome and Safari install without one.
+- Sessions are 4 h (callback cookie `maxAge` = CDK `idTokenValidity` /
+  `accessTokenValidity` on AdminAppClient). Sign-in on a phone goes through
+  the same Cognito managed login; passkeys work in standalone mode on iOS 16+.
+- Status: built, `next build` clean; not yet verified on a real phone.
 
 ## Auth
 

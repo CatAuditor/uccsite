@@ -4,6 +4,37 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.16.3 — 2026-10-05 (branch `refactor`) — Phone layout + installable admin, 4 h sessions
+
+**Admin / sessions** (`apps/admin/app/auth/callback/route.js`, `infra/cdk/lib/ucc-stack.js`)
+- Session + access cookies `maxAge` 1 h → 4 h; AdminAppClient `idTokenValidity` /
+  `accessTokenValidity` = 4 h to match (the cookie carries the JWT). `cdk deploy` UccProd +
+  UccStaging: in-place update of the user pool client only.
+
+**Admin / navigation + phone layout** (`app/nav.js` new, `app/layout.js`, `app/globals.css`)
+- Client `Nav` (in `<Suspense>`, uses `useSearchParams`): current page `.active` + `aria-current`
+  by longest-prefix match; sections are `<details open>`; ≤800px the sidebar is a sticky top bar
+  with a Menu drawer that closes on navigation.
+- `@media (max-width: 800px)`: tables `display:block; overflow-x:auto`; `.split` / `.mail-split`
+  stack; 16px inputs (iOS zoom); content padding 16px; login card margins.
+
+**Admin / PWA** (`app/manifest.js`, `app/icon.png`, `app/apple-icon.png`, `middleware.js`)
+- Manifest (standalone, theme `#16281e`), 512/180 icons from `assets/favicon-*.png`, `viewport`
+  + `appleWebApp` metadata exports. Middleware `PUBLIC_PATHS` += `/manifest.webmanifest`,
+  `/icon.png`, `/apple-icon.png`. No service worker (live-data admin; cached shell would
+  outlive deploys).
+
+**Admin / Documents upload** (`app/documents/actions.js`, `[id]/html-editor.js`, `page.js`)
+- `.html` accepted by MIME type (`text/html`) as well as extension in the browser; `convertUpload`
+  passes `html` kind / `text/html` through unchanged instead of rejecting it (its error message
+  already claimed to accept .html). `accept` gains `text/plain`.
+
+**Docs**: admin.md (Code Map, new "Navigation & phone use — PWA", 4 h sessions), documents.md
+(Upload a file), non-technical-editing-guide.md (phone install, 4 h), dev-notes.md.
+
+Not verified on a real phone yet (needs the account owner's hand). Open P1 (unchanged): Resend
+key deletion pending; Stripe webhook; Jarom sign-in.
+
 ## v0.16.2 — 2026-10-05 (branch `refactor`) — Authoring kit + .docx/Markdown upload for Documents
 
 **Admin / Documents** (`apps/admin/lib/authoring-kit.js`, `app/documents/authoring-kit/route.js`, `app/documents/page.js`)

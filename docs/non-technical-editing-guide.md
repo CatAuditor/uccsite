@@ -23,8 +23,12 @@ request is approved (section 2). Nobody rebuilds anything by hand.
   Keep two ways in (a key and the app, or two keys) in case one is lost.
 - Forgot your password? An **owner** can send you a reset from the Users
   page. Lost your only second factor? An owner can remove it.
-- Sign out with the button at the bottom of the sidebar. Sessions end after
-  an hour on their own.
+- Sign out with the button under your name in the sidebar. Sessions end after
+  four hours on their own.
+- **On a phone**, open the admin in Safari (iPhone) or Chrome (Android) and
+  use *Share → Add to Home Screen* (iPhone) or *Install app* from the menu
+  (Android). It then opens full-screen like an app. The menu is behind the
+  **Menu** button at the top; wide tables scroll sideways.
 
 **Roles**
 

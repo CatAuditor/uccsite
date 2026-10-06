@@ -6,6 +6,41 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-05 — The admin works on a phone, sessions last four hours
+
+**Phone layout.** The admin used to be a desktop-only layout: a fixed sidebar
+that ate a phone screen, tables wider than the viewport, two-column editors
+that never stacked. On a phone (or any narrow window) the sidebar is now a
+bar across the top with a **Menu** button that opens the navigation; the menu
+closes itself when you pick a page. Wide tables scroll sideways with a
+finger, the Documents style editor and the newsletter composer stack their
+columns, and form fields are sized so iPhones stop zooming in when you tap
+one.
+
+**Add it to your home screen.** iPhone: open the admin in Safari, tap Share,
+then *Add to Home Screen*. Android: open it in Chrome and choose *Install
+app* from the menu. It opens full-screen like an app, with the UCC icon.
+There is no offline mode on purpose: every screen shows live data, so an
+offline copy would only ever be stale.
+
+**Navigation on every screen.** The page you are on is highlighted in the
+sidebar, and each section (Site Main, Documents, Mail, Operations, Account)
+can be folded away by tapping its name.
+
+**Sessions.** You stay signed in for four hours instead of one. A role change
+or a forced sign-out by an owner therefore takes up to four hours to bite
+unless the owner uses *sign out everywhere*. Sensitive changes on *My
+profile & security* still ask for a sign-in less than 15 minutes old.
+
+**Documents: .html upload.** Uploading an .html file into a document's HTML
+box now also works when the phone's file picker hands the file over without
+its name ending in .html.
+
+Needs a person: open the admin on an actual phone, sign in, add it to the
+home screen, and try one edit on each of Documents, Mail and a list page;
+report anything cramped. Details in `docs/systems/admin.md` ("Navigation &
+phone use").
+
 ## 2026-10-05 — Long-form writing: an authoring kit for Claude, and Word/Markdown upload
 
 Writing a report used to mean producing HTML by hand and pasting it into a
