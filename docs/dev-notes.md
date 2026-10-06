@@ -22,6 +22,18 @@ security key first — none is set up yet. After setting a real password,
 Still open: with two owners signed in (Conner and Jarom), two-person
 publishing works on the live site for the first time.
 
+## 2026-10-05 — The petition hero is live; the admin now shows which hero is showing
+
+- **Published:** utahciviccompact.org now opens with the petition hero and
+  `/petition` takes signatures.
+- **Admin → Homepage and Admin → Petition** open with a box titled *Which hero
+  is showing?* It reads the live homepage on the spot and says whether it is
+  the petition takeover or the standing hero, next to what is saved in the
+  admin. Green = in sync; gold = saved but not yet published; red = the live
+  check could not run (reload).
+- The standing hero (Homepage → Hero fields) stays the default: blank the
+  petition headline on the Petition page and it comes back on the next publish.
+
 ## 2026-10-05 — Petition: Utah vs out-of-state, a public counter, and "who is this email going to"
 
 Follow-up to the petition launch below.

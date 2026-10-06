@@ -58,6 +58,12 @@ fieldset.item legend { font-weight: 700; padding: 0 6px; }
 .nested fieldset.item { background: #fff; }
 form.inline { display: inline-block; margin: 0 4px 4px 0; }
 form.inline button { margin: 0; padding: 4px 10px; font-size: 12px; }
+section.hero-status { background: #fff; border: 1px solid #e4e6e2; border-left: 5px solid #8a8f88; padding: 14px 18px; margin: 14px 0 18px; }
+section.hero-status.in-sync { border-left-color: #1c7c3c; }
+section.hero-status.out-of-sync { border-left-color: #c8a84b; }
+section.hero-status.unknown { border-left-color: #b3261e; }
+section.hero-status h2 { margin: 0 0 8px; }
+section.hero-status th { width: 220px; background: transparent; text-transform: none; letter-spacing: 0; font-size: 13px; vertical-align: top; }
 form.inline select { width: auto; padding: 4px 6px; font-size: 12px; margin-right: 4px; }
 .user-actions { white-space: nowrap; }
 .totp-secret { background: #fff; border: 1px solid #e4e6e2; padding: 10px 14px; font-size: 16px; letter-spacing: 0.08em; margin: 8px 0; }

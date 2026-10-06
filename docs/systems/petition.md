@@ -35,6 +35,8 @@ packages/db/audience.js         THE residency rule (utahZipSql / isUtahZip: ever
 aws/api/index.mjs               route entry 'POST /api/petition' (secrets: Turnstile)
 apps/admin/app/petition/        Petition page: campaign copy editor + signatures + CSV
 apps/admin/app/petition/export/route.js   POST → CSV (audited `petition.export`)
+apps/admin/lib/hero-status.js   draftHero/liveHero/HeroStatus — "which hero is showing" block on
+                                the Homepage and Petition editors
 apps/admin/app/subscribers/       Mailing list: residency / donors / petition filters → list + CSV
 apps/admin/lib/collections.js   HOMEPAGE_GROUPS entry `petition` (page: 'petition')
 aws/export-operational/         nightly export includes petition_signatures
@@ -160,6 +162,18 @@ guarded like the subscribers export.
 Browser: `[petition] sign failed: <status>`, `[petition] sign network error`,
 `[petition] checkout failed`. API: see docs/error-handling/debug/api.md
 (`petition insert failed`, `rate limit check failed (petition)`).
+
+## Verifying the hero
+
+Both the Homepage and the Petition editor open with a **Which hero is
+showing?** block (`apps/admin/lib/hero-status.js`): the *live* row fetches
+the public homepage on every page view (`PUBLIC_ORIGIN`, `cache: 'no-store'`,
+5 s timeout) and reads the hero `<section>` class — `hero-petition` = takeover;
+the *saved* row derives from `homepage.petition.headline` in the database.
+Green border = in sync, gold = saved but not published, red = the live check
+failed (`[admin] live hero check failed: <ErrorName>`; the saved row is still
+right). The standing hero (Homepage → Hero fields) is always the default:
+blank the petition headline and it returns on the next publish.
 
 ## Turning it off / starting the next one
 

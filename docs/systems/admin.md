@@ -68,6 +68,7 @@ apps/admin/
   app/documents            Documents list/create + [id] editor (Phase 8,
                            docs/systems/documents.md); app/styles rules/kit
   lib/documents.js         editor data, Style Kit, preview, match counts
+  lib/hero-status.js       live-vs-saved hero check shown on /homepage and /petition (petition.md)
 scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 ```
 

@@ -12,16 +12,20 @@ import { sanitizeItems, CONFLICT_MESSAGE } from '../../lib/collection-save';
 import { runAction } from '../../lib/actions';
 import ListEditor from '../list-editor';
 import ActionForm from '../action-form';
+import { draftHero, liveHero, HeroStatus } from '../../lib/hero-status';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomepagePage() {
   const session = await requireSession();
   const readOnly = session.role === 'viewer';
-  const { homepage, baseline } = await withDb(async (client) => ({
-    homepage: await loadHomepage(client),
-    baseline: await singletonStamp(client, 'homepage'),
-  }));
+  const [{ homepage, baseline }, live] = await Promise.all([
+    withDb(async (client) => ({
+      homepage: await loadHomepage(client),
+      baseline: await singletonStamp(client, 'homepage'),
+    })),
+    liveHero(),
+  ]);
 
   async function save(prevState, formData) {
     'use server';
@@ -58,6 +62,8 @@ export default async function HomepagePage() {
       <h1>Homepage</h1>
       <p className="notice">The featured statement card comes from the newest entry in Statements — edit it there. The donate section and the timed donation modal are under Donation appeals; the petition hero is under Petition.</p>
       {readOnly && <p className="notice">Viewer role — read-only.</p>}
+      <HeroStatus draft={draftHero(homepage)} live={live} />
+      <p className="notice">The <strong>Hero</strong> fields below are the standing hero — the default whenever no petition headline is set on the Petition page.</p>
       <ActionForm className="editor" action={save} successMessage="Homepage saved. Publish to make it live.">
         <input type="hidden" name="baseline" value={baseline} />
         {HOMEPAGE_GROUPS.filter(g => !g.page).map((group) => (

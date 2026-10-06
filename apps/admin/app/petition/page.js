@@ -18,6 +18,7 @@ import { HOMEPAGE_GROUPS } from '../../lib/collections';
 import { CONFLICT_MESSAGE } from '../../lib/collection-save';
 import { runAction } from '../../lib/actions';
 import ActionForm from '../action-form';
+import { draftHero, liveHero, HeroStatus } from '../../lib/hero-status';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,10 +30,13 @@ const LIST_LIMIT = 500;
 export default async function PetitionPage({ searchParams }) {
   const session = await requireRole('editor');
   const sp = await searchParams;
-  const { homepage, baseline } = await withDb(async (client) => ({
-    homepage: await loadHomepage(client),
-    baseline: await singletonStamp(client, 'homepage'),
-  }));
+  const [{ homepage, baseline }, live] = await Promise.all([
+    withDb(async (client) => ({
+      homepage: await loadHomepage(client),
+      baseline: await singletonStamp(client, 'homepage'),
+    })),
+    liveHero(),
+  ]);
   const copy = homepage.petition || {};
   const activeSlug = SLUG_RE.test(copy.slug || '') ? copy.slug : '';
   const requested = typeof sp?.petition === 'string' ? sp.petition.slice(0, 64) : '';
@@ -100,6 +104,8 @@ export default async function PetitionPage({ searchParams }) {
         The public counter on the site shows <strong>Utah signatures only</strong> (ZIP 84xxx), refreshed about once a minute;
         out-of-state signatures are kept, listed and exportable here but never counted publicly.
       </p>
+
+      <HeroStatus draft={draftHero(homepage)} live={live} />
 
       <h2>Signatures</h2>
       <p>

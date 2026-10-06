@@ -4,6 +4,15 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.14.3 — 2026-10-05 (branch `refactor`) — Hero live; hero status in the admin
+
+- **Prod published** (`operator:petition-hero-go-live`): petition hero +
+  /petition live on utahciviccompact.org; 23/23 e2e after.
+- **Admin:** `lib/hero-status.js` — "Which hero is showing?" on /homepage
+  and /petition: live (fetched from PUBLIC_ORIGIN, no-store, 5 s timeout,
+  detects `hero-petition`) vs saved (petition headline set or not), colour
+  coded; Homepage editor notes that its Hero fields are the default.
+
 ## v0.14.2 — 2026-10-05 (branch `refactor`) — Petition copy + event-driven counter
 
 - **Copy:** hero/form quote the permit agreement's termination provision
