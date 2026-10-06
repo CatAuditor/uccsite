@@ -21,12 +21,14 @@ export default async function DocumentsPage({ searchParams }) {
     <div>
       <h1>{category ? category : 'Long-form Documents'}</h1>
       <div className="notice">
-        <strong>Writing a new piece?</strong> Download the authoring kit first and give it to Claude, or to whoever is
-        writing, before the draft starts. It is one file that carries the site&apos;s voice rules (what we never
-        publish), the page fields the admin asks for, the HTML the editor accepts and the current Style Kit. Ask for
-        prose and upload the finished <code>.docx</code>, <code>.md</code> or <code>.html</code> into a document, or ask for the HTML
-        fragment and paste it. The kit is rebuilt from the live stylesheet every time you download it.{' '}
-        <a href="/documents/authoring-kit" download>Download the authoring kit (.md)</a>
+        <strong>Writing a new piece?</strong> Download the authoring and style kit first and give it to Claude, or to
+        whoever is writing, before the draft starts. It is one web page that carries the site&apos;s voice rules (what we
+        never publish), the page fields the admin asks for, the HTML the editor accepts, and the site&apos;s styling: the
+        live stylesheet, every class a writer may use with its CSS, and a sample page rendered with them. Open it in a
+        browser to read it; hand the file to Claude as it is. Ask for prose and upload the finished <code>.docx</code>,{' '}
+        <code>.md</code> or <code>.html</code> into a document, or ask for the HTML fragment and paste it. The kit is rebuilt
+        from the live stylesheet every time you download it.{' '}
+        <a href="/documents/authoring-kit" download>Download the authoring and style kit (.html)</a>
       </div>
       <p className="notice">
         A Document is pasted HTML plus its own page CSS and SEO fields. Saving runs the ingest

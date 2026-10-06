@@ -109,7 +109,20 @@ rebuilt from the live stylesheet every time). When the draft is finished,
 ask Claude for the HTML fragment rather than prose if you want it to arrive
 styled; the prose route still works and is styled afterwards in the editor.
 
-**Nothing to finish.** No keys or decisions needed.
+**One file, as a web page.** Later the same day the kit became a single
+`.html` file instead of a `.md`: open it in a browser and the writing rules
+read as a normal page, the sample page renders with the site's real
+stylesheet (dark hero, stats band, cream cards, press coverage), and its
+source sits right under it. The site's stylesheet is embedded in the file so
+it renders and so Claude can read each class's CSS beside the markup; a note
+at the top says the site itself never accepts inline styles, only the
+classes. Hand the file to Claude unchanged.
+
+**Nothing to finish.** No keys or decisions needed. One thing worth knowing:
+a plain paragraph inside the site's content frame has no spacing of its own
+(the real reports get theirs from per-document page CSS), so a new piece
+still needs the report prose styles added on the Styling tab, or a template
+rule written once for all reports.
 
 ## 2026-10-06 — Home-screen icon: the navy tile now actually reaches phones
 

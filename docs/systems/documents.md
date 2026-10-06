@@ -47,12 +47,14 @@ apps/admin/app/documents/         list (by category) + authoring-kit download
                                   split view), actions.js (all server actions,
                                   incl. convertUpload)
 apps/admin/app/documents/authoring-kit/route.js
-                                  GET: the authoring kit as a .md download,
-                                  rebuilt per request (any signed-in role)
+                                  GET: the authoring and style kit as ONE .html
+                                  download, rebuilt per request (any signed-in role)
 apps/admin/lib/authoring-kit.js   buildAuthoringKit({ kit, rules, coverageKeys, designTokens })
-                                  → markdown: static voice/HTML/shape sections +
+                                  → markdown source: voice/HTML/shape sections +
                                   document frame + :root tokens + template rules +
-                                  Style Kit catalog with each class's CSS
+                                  reference fragment + catalog with each class's CSS;
+                                  buildAuthoringKitHtml({ ...same, siteCss }) → the
+                                  .html page (marked + embedded site CSS + live render)
 apps/admin/lib/convert-upload.mjs docxToHtml (mammoth), markdownToHtml (marked),
                                   finishHtml (image placeholders, line breaks)
 apps/admin/app/styles/            rules with match counts, foreign class map,
@@ -149,8 +151,19 @@ cannot wedge publishing.
 The spec's authoring model is "write outside, paste in" (§1). The kit is the
 file that makes an outside tool, Claude in particular, produce something
 that lands clean: **GET `/documents/authoring-kit`** (link at the top of the
-All documents page) returns `ucc-authoring-kit-<date>.md`, built on every
-request by `lib/authoring-kit.js buildAuthoringKit` from
+All documents page) returns `ucc-authoring-kit-<date>.html` (since
+2026-10-06; it was a `.md`), one self-contained page built on every request
+by `lib/authoring-kit.js buildAuthoringKitHtml`, which renders the markdown
+from `buildAuthoringKit` with `marked` (gfm) and wraps it: the live
+`css/styles.css` verbatim in the page's first `<style>` (`</style` escaped)
+so the page renders like the site and a machine reads each class's CSS
+beside the markup; a second `<style>` with `.kit-doc` prose styles (the
+site sheet resets margins, bullets and underlines); a `.kit-note` at the top
+saying the embedded stylesheet is for reading only and that a document body
+on the site never carries `<style>` or `style=`; and the reference fragment
+spliced in at the `<!--KIT:LIVE-->` marker as a live `.kit-live` block
+(site CSS only, no `.kit-doc` rules) right above its escaped source.
+The markdown is built from
 
 - static text in the module: how to use it (three modes: prose only →
   .docx/.md upload; HTML fragment → paste/upload; convert my draft), the
@@ -199,9 +212,15 @@ anyway. Live size: ~42 k chars, 73 classes offered. Editing the fragment:
 keep every class in it real (the test kit flags unknown ones, the live kit
 will too), keep it dash-free, and re-run `apps/admin/test`.
 
-Dynamic strings are passed through `dash()` so the file never contains an
-em/en dash (the test asserts the whole file is dash-free; the kit must obey
-its own rules). Auth: `getSession()` only, any role; 403 when signed out.
+Dynamic strings are passed through `dash()` so the kit text never contains
+an em/en dash (the test asserts the markdown is dash-free; the kit must obey
+its own rules; the embedded site CSS is verbatim and outside that rule).
+The HTML download is ~130 k chars, most of it the stylesheet. Verified in
+headless Chrome 2026-10-06: guide text readable, fragment renders as on the
+site (hero, impact band, pillars on cream, issue cards, about, news). The
+render also shows that plain prose in `section > container` has no spacing
+(margins reset; real reports get prose styles from per-document page CSS),
+which 6.1 now tells the author. Auth: `getSession()` only, any role; 403 when signed out.
 No personal data in the file. Logged as `[documents] authoring kit for
 <email>: N classes, N template rules, N coverage keys, N chars`.
 

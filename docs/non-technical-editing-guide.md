@@ -108,9 +108,10 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
 ### Documents (long-form pages: reports, whitepapers, the privacy policy)
 - Open **All documents** → pick one, or **New document** (title + the URL
   slug, e.g. `box-elder-report` becomes utahciviccompact.org/box-elder-report).
-- **Start with the authoring kit.** At the top of All documents, download
-  the kit (one `.md` file) and give it to Claude, or to whoever is writing,
-  before the draft starts. It holds the site's voice rules (the things we
+- **Start with the authoring and style kit.** At the top of All documents,
+  download the kit (one `.html` file: open it in a browser to read it, hand
+  the file as it is to Claude) and give it to Claude, or to whoever is
+  writing, before the draft starts. It holds the site's voice rules (the things we
   never publish: em dashes, "it's not X, it's Y", buzzwords and the rest),
   the fields the admin asks for, the HTML the editor accepts, and the site's
   own styling: the page frame a document sits in, a sample page that shows

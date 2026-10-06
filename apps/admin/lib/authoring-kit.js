@@ -9,9 +9,21 @@
 // live here; the dynamic ones are read from the live stylesheet and the
 // database at download time (app/documents/authoring-kit/route.js) so the
 // file never drifts from what the editor actually does. Pure: no I/O.
+//
+// Two builders: buildAuthoringKit → markdown (the source text, also what the
+// tests read), buildAuthoringKitHtml → ONE self-contained .html for download
+// (the markdown rendered with marked, the live site stylesheet embedded in
+// <style> so the reference fragment renders as on the site and a machine can
+// read the CSS beside the markup, plus the escaped source). The site itself
+// never accepts <style> or style= in a document body; the page says so.
 import { ALLOWED_TAGS } from '@uccsite/html-ingest';
+import { marked } from 'marked';
 
 const SITE = 'https://utahciviccompact.org';
+// Where the HTML builder splices the live-rendered fragment into the
+// converted markdown (an HTML comment passes through marked untouched).
+const LIVE_MARKER = '<!--KIT:LIVE-->';
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // Classes the ingest accepts but an author never writes: site chrome, forms,
 // the donation page and the homepage hero (the report hero is subpage-hero).
@@ -248,6 +260,8 @@ function exampleSection(kit) {
     'pattern is for. Copy the blocks you need, in any order after the hero; a report rarely needs more than three or four.',
     'The content is a sample, not a source.',
     '',
+    LIVE_MARKER,
+    '',
     '```html',
     EXAMPLE_HTML,
     '```',
@@ -305,7 +319,7 @@ export function buildAuthoringKit({ kit, rules = [], coverageKeys = [], designTo
   // Accepted by the ingest but not for authors: SVG geometry, site-chrome
   // wrappers, and presentational inline tags the voice rules exclude anyway.
   const tags = ALLOWED_TAGS.filter(t => !['svg', 'g', 'path', 'polyline', 'polygon', 'line', 'circle', 'rect', 'picture', 'source', 'wbr', 'var', 'kbd', 'dfn', 'ins', 'del', 's', 'u', 'b', 'i', 'header', 'footer', 'address'].includes(t));
-  return `# Utah Civic Compact: authoring kit for long-form pages
+  return `# Utah Civic Compact: authoring and style kit for long-form pages
 
 Generated ${when} from the live site stylesheet and the admin's current styling rules. Download a fresh copy from the admin (All documents, top of the page) whenever you start a new piece; an old copy may list classes that no longer exist.
 
@@ -487,7 +501,7 @@ A document's body is inserted between the site header and footer with no wrapper
 
 1. **Hero:** \`<div class="subpage-hero">\` holding an optional \`<div class="section-label">\` eyebrow, the single \`<h1>\`, and one or two \`<p>\` for the lead. The hero styles its own \`<h1>\` and \`<p>\` (dark navy gradient, white display headline).
 2. **Body:** one or more \`<section class="section">\`, each wrapping a \`<div class="container">\` that holds the content. \`section\` gives the vertical padding, \`container\` the centred max width. Alternate \`<section class="section bg-cream">\` for a cream band when a part of the piece should sit apart (the data, the recommendations).
-3. Inside the container, plain \`<h2>\`, \`<h3>\`, \`<p>\`, \`<blockquote>\`, \`<table>\`, \`<figure>\` as section 5 describes. Add \`section-label\` and \`section-title\` to a section's eyebrow and heading when it should read as a site section rather than running prose; leave them off for ordinary report headings.
+3. Inside the container, plain \`<h2>\`, \`<h3>\`, \`<p>\`, \`<blockquote>\`, \`<table>\`, \`<figure>\` as section 5 describes. Add \`section-label\` and \`section-title\` to a section's eyebrow and heading when it should read as a site section rather than running prose; leave them off for ordinary report headings. Know that the site stylesheet resets margins, so plain prose inside a container has only the base font and no spacing of its own (the rendered fragment in 6.4 shows this); the editor adds the report prose styles to the document on the Styling tab. Write the prose plain anyway and say in your note that the piece needs them.
 
 ### 6.2 Design tokens
 
@@ -521,5 +535,73 @@ Classes that exist in the stylesheet but are not listed here are site chrome (na
 - [ ] Prose route only: saved as .docx (from Claude Docs, Word or Google Docs) or .md, ready for **Upload a file** in the admin.
 
 The admin page is ${SITE.replace('https://', 'https://admin.')} > All documents. The live site is ${SITE}.
+`;
+}
+
+// Styles for the guide text only (class-scoped to .kit-doc so the live
+// fragment keeps the site's own rendering). The site stylesheet resets
+// margins, bullets and link underlines; these put them back for prose.
+const KIT_CSS = `
+.kit-doc { max-width: 900px; margin: 0 auto; padding: 48px 24px 24px; }
+.kit-doc h1 { font-size: 36px; line-height: 1.15; margin: 0 0 16px; color: var(--navy-dark); }
+.kit-doc h2 { font-size: 26px; line-height: 1.2; margin: 48px 0 12px; padding-top: 24px; border-top: 1px solid var(--gray-200); color: var(--navy-dark); }
+.kit-doc h3 { font-size: 19px; margin: 28px 0 8px; color: var(--navy); }
+.kit-doc p { margin: 0 0 14px; line-height: 1.65; }
+.kit-doc ul { list-style: disc; padding-left: 24px; margin: 0 0 14px; }
+.kit-doc ol { padding-left: 24px; margin: 0 0 14px; }
+.kit-doc li { margin: 4px 0; line-height: 1.6; }
+.kit-doc a { color: var(--red); text-decoration: underline; }
+.kit-doc code { font-family: ui-monospace, Consolas, Menlo, monospace; font-size: 0.9em; background: var(--gray-100); padding: 1px 5px; border-radius: 4px; }
+.kit-doc pre { background: var(--navy-dark); color: #e6edf3; padding: 18px 20px; border-radius: 8px; overflow: auto; font-size: 13px; line-height: 1.5; margin: 0 0 18px; }
+.kit-doc pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+.kit-doc table { border-collapse: collapse; width: 100%; margin: 0 0 18px; font-size: 14px; }
+.kit-doc th, .kit-doc td { border: 1px solid var(--gray-200); padding: 8px 10px; text-align: left; vertical-align: top; }
+.kit-doc th { background: var(--gray-50); }
+.kit-doc blockquote { border-left: 3px solid var(--red); padding: 4px 16px; color: var(--gray-600); margin: 0 0 14px; }
+.kit-doc input[type="checkbox"] { margin-right: 6px; }
+.kit-note { background: var(--cream); border-left: 4px solid var(--red); padding: 16px 20px; border-radius: 6px; margin: 0 0 24px; }
+.kit-note p:last-child { margin-bottom: 0; }
+.kit-live { max-width: 1240px; margin: 0 auto 24px; border: 2px dashed var(--red); border-radius: 8px; overflow: hidden; }
+.kit-live-label { background: var(--red); color: var(--white); font: 700 12px/1 var(--font-sans); letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 16px; }
+.kit-live-label span { font-weight: 400; text-transform: none; letter-spacing: 0; margin-left: 10px; }
+`;
+
+const FILE_NOTE = `<div class="kit-note">
+<p><strong>About this file.</strong> One self-contained page: the writing rules, the page fields, the HTML the editor accepts, the site's design tokens, every class an author may use with its CSS, and a reference fragment rendered live below in section 6.4. Open it in a browser to see the site's patterns; hand the file itself to Claude (attach it, or add it to a Claude Project) so it reads the markup and the CSS together.</p>
+<p><strong>The stylesheet in this file is for reading, not copying.</strong> The <code>&lt;style&gt;</code> block in this page's head is the site's live stylesheet, embedded so this page renders the way the site does and so a machine can read each class's CSS beside the markup that uses it. On the site itself a document body never carries a <code>&lt;style&gt;</code> block or a <code>style="..."</code> attribute: the editor strips both on save and the page's security policy blocks inline styles. Styling is done with the classes in sections 6.1 to 6.5, nothing else.</p>
+</div>`;
+
+// buildAuthoringKitHtml({ kit, rules, coverageKeys, designTokens, siteCss, generatedAt }) → one .html document
+export function buildAuthoringKitHtml({ siteCss = '', ...rest } = {}) {
+  const md = buildAuthoringKit(rest);
+  const title = (md.match(/^# (.+)$/m) || [])[1] || 'Utah Civic Compact: authoring and style kit';
+  const body = marked.parse(md, { gfm: true, breaks: false, async: false });
+  const [before, after = ''] = body.split(LIVE_MARKER);
+  const live = `<div class="kit-live"><div class="kit-live-label">Rendered with the live stylesheet<span>the fragment below, as the site would show it; its source follows</span></div>\n${EXAMPLE_HTML}\n</div>`;
+  const safeCss = String(siteCss || '').replace(/<\/style/gi, '<\/style');
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title>
+<!-- The site's live stylesheet, verbatim, so this page renders like the site. For reading only: a document body on the site never carries <style> or style= (see the note at the top of the page). -->
+<style>
+${safeCss}
+</style>
+<!-- Styles for this guide's own text (.kit-doc); the rendered fragment inside .kit-live uses the site stylesheet alone. -->
+<style>${KIT_CSS}</style>
+</head>
+<body>
+<div class="kit-doc">
+${FILE_NOTE}
+${before}
+</div>
+${live}
+<div class="kit-doc">
+${after}
+</div>
+</body>
+</html>
 `;
 }
