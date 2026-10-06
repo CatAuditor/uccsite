@@ -435,10 +435,10 @@ Built 2026-10-05 (`docs/systems/petition.md`). The code, pages, database table
 and admin tab are live; the homepage hero stays as it was until the campaign
 copy exists in production.
 
-1. `[hand]` Admin → **Site Main → Petition**. Fill every field. The headline
-   and body currently hold placeholder wording for the UDOT permit provision
-   — paste the real text. Keep the slug `udot-alpr-permits` (or pick one;
-   lowercase-with-dashes). **Save petition copy.**
+1. `[hand]` Admin → **Site Main → Petition**. The copy is seeded (real
+   provision quote, 2026-10-05) — review and edit wording; keep the slug
+   `udot-alpr-permits` (or pick one; lowercase-with-dashes). **Save petition
+   copy** if you change anything.
 2. `[hand]` Admin → **Publish & Status** → request a publish; a *different*
    admin approves it. The homepage hero becomes the petition and `/petition`
    starts taking signatures.

@@ -26,8 +26,14 @@ Follow-up to the petition launch below.
   filters. The newsletter sending script takes the same options, so what the
   page shows is who gets the email.
 
-**Needs a person:** nothing new. Decide later how often the counter should
-refresh (today: about a minute).
+- **Real copy is in.** The hero and /petition now quote the permit agreement:
+  UDOT may terminate it if "UDOT determines that the public does not support
+  the Company's activities." Staged for review; the live homepage flips on the
+  next approved publish (or the operator's go).
+
+**Needs a person:** approve the publish that puts the petition hero on the live
+homepage. Decide later how often the counter should refresh (today: about a
+minute).
 
 ## 2026-10-05 — Petition: the homepage now leads with "Tell UDOT" and collects signatures
 
