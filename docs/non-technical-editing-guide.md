@@ -27,8 +27,10 @@ request is approved (section 2). Nobody rebuilds anything by hand.
   four hours on their own.
 - **On a phone**, open the admin in Safari (iPhone) or Chrome (Android) and
   use *Share → Add to Home Screen* (iPhone) or *Install app* from the menu
-  (Android). It then opens full-screen like an app. The menu is behind the
-  **Menu** button at the top; wide tables scroll sideways.
+  (Android). It then opens full-screen like an app. The bar at the top shows
+  where you are; the tabs along the bottom jump to Publish & Status,
+  Documents, Mail and Tips; **Menu** opens everything else, with a
+  *Find a page* box at the top. Wide tables scroll sideways.
 
 **Roles**
 

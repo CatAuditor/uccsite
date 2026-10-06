@@ -10,12 +10,16 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 **Phone layout.** The admin used to be a desktop-only layout: a fixed sidebar
 that ate a phone screen, tables wider than the viewport, two-column editors
-that never stacked. On a phone (or any narrow window) the sidebar is now a
-bar across the top with a **Menu** button that opens the navigation; the menu
-closes itself when you pick a page. Wide tables scroll sideways with a
-finger, the Documents style editor and the newsletter composer stack their
-columns, and form fields are sized so iPhones stop zooming in when you tap
-one.
+that never stacked. On a phone (or any narrow window) there is now a bar
+across the top that says where you are (for example *Operations › Tips*),
+tabs along the bottom for the places most often checked from a phone
+(Publish & Status, Documents, Mail, Tips) and a **Menu** tab that opens the
+full navigation as a sheet: only the section you are in is unfolded, the
+others open with a tap, and a *Find a page* box at the top filters the list
+as you type. The sheet closes itself when you pick a page. Wide tables
+scroll sideways with a finger, the Documents style editor and the newsletter
+composer stack their columns, and form fields are sized so iPhones stop
+zooming in when you tap one.
 
 **Add it to your home screen.** iPhone: open the admin in Safari, tap Share,
 then *Add to Home Screen*. Android: open it in Chrome and choose *Install
@@ -25,9 +29,11 @@ a cream tile).
 There is no offline mode on purpose: every screen shows live data, so an
 offline copy would only ever be stale.
 
-**Navigation on every screen.** The page you are on is highlighted in the
-sidebar, and each section (Site Main, Documents, Mail, Operations, Account)
-can be folded away by tapping its name.
+**Navigation on every screen.** Publish & Status now sits at the top of the
+sidebar instead of halfway down. The page you are on is highlighted, each
+section (Site Main, Documents, Mail, Operations, Account) folds away when you
+tap its name, a *Find a page* box at the top of the sidebar filters the
+list, and your name with the Sign out button stays pinned at the bottom.
 
 **Sessions.** You stay signed in for four hours instead of one. A role change
 or a forced sign-out by an owner therefore takes up to four hours to bite

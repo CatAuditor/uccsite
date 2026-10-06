@@ -4,6 +4,28 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.16.4 — 2026-10-05 (branch `refactor`) — Admin navigation: tab bar, location bar, menu sheet, filter
+
+**Admin / navigation** (`apps/admin/app/nav.js`, `app/layout.js`, `app/globals.css`)
+- Phone (≤800px): 52px sticky top bar (brand → `/`, `Section › Page`, Menu); fixed bottom tab bar
+  (`TABS`: Home `/`, Documents, Mail, Tips, Menu) with `env(safe-area-inset-bottom)`, viewport
+  `viewportFit: 'cover'`; menu as a full-screen sheet — only the current section unfolded on first
+  paint (`matchMedia` → `folded` Set; folded current section labelled "you are here"), closes on
+  navigation / Escape / Close, `body.nav-open` locks scroll; content padded for the tab bar.
+- Every width: "Find a page" filter (page or section label; filtering unfolds all), foldable
+  `<details>` sections, user + Sign out block `position: sticky; bottom: 0` in the sidebar, the
+  duplicate top sign-out removed, `:focus-visible` outlines, `.sr-only` utility.
+- `NAV`: new first group *Overview* holds `/` Publish & Status (removed from *Operations*).
+- Fixed from v0.16.3: the section caret was written as a control character (Python `\25` octal
+  escape) — now the literal `▾`.
+- Verified in headless Chrome against the real stylesheet: 390×844 closed + menu open, 1280×800.
+
+**Docs**: admin.md (Code Map, "Navigation & phone use" rewritten), non-technical-editing-guide.md,
+dev-notes.md (today's entry updated).
+
+Not verified on a real phone yet. Open P1 (unchanged): Resend key deletion pending; Stripe
+webhook; Jarom sign-in.
+
 ## v0.16.3 — 2026-10-05 (branch `refactor`) — Phone layout + installable admin, 4 h sessions
 
 **Admin / sessions** (`apps/admin/app/auth/callback/route.js`, `infra/cdk/lib/ucc-stack.js`)

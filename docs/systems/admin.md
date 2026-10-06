@@ -10,8 +10,9 @@ Amplify Hosting at `admin.utahciviccompact.org` at rollout.
 apps/admin/
   middleware.js            cookieless requests → /login (verification is NOT here);
                            manifest + icons pass through for the install flow
-  app/nav.js               sidebar (client): current page highlighted, collapsible
-                           sections, phone top bar + Menu drawer (see "Navigation")
+  app/nav.js               navigation (client): find-a-page filter, folding sections,
+                           current page; phone top bar (Section › Page) + bottom tab bar
+                           + full-screen menu sheet (see "Navigation & phone use")
   app/manifest.js          web app manifest → /manifest.webmanifest (installable PWA);
   app/icon.png,            icons = the UCC mark on site navy #1b2f4e (512 maskable / 180). No service worker.
   app/apple-icon.png
@@ -151,17 +152,31 @@ operator fallback.
 
 ## Navigation & phone use — PWA (2026-10-05)
 
-- `app/layout.js` (server) builds the nav groups per session role and renders
-  `app/nav.js` (client, inside `<Suspense>` because it reads
-  `useSearchParams`). Groups are `<details open>`; the current page gets
-  `.nav-link.active` + `aria-current` by longest-prefix match on
+- `app/layout.js` (server) builds the nav groups per session role — the
+  dashboard (`/` Publish & Status) is its own first group, *Overview* — and
+  renders `app/nav.js` (client, inside `<Suspense>` because it reads
+  `useSearchParams`). The current page is found by longest-prefix match on
   `pathname?query` (so `/documents/abc` lights "All documents" and
-  `/documents?category=Reports` lights that category only; `/` only exactly).
-- Below 800px (`globals.css` "Phone layout") the sidebar is a sticky top bar
-  with a **Menu** button; the drawer closes on every navigation. Tables become
-  `display:block; overflow-x:auto`, `.split` (Documents style editor) and
-  `.mail-split` stack, inputs are 16px (iOS focus zoom), the bottom sign-out
-  duplicate is hidden.
+  `/documents?category=Reports` lights that category only; `/` only exactly)
+  and gets `.nav-link.active` + `aria-current`.
+- Sidebar (every width): a **Find a page** filter at the top (matches page or
+  section label; all sections unfold while filtering), sections as `<details>`
+  the user can fold, the signed-in user + Sign out as a block stuck to the
+  bottom of the (scrolling) sidebar. `:focus-visible` outlines throughout.
+- Phone (≤800px, `globals.css` "Phone layout"): the sidebar becomes a 52px
+  sticky **top bar** — brand (→ `/`), `Section › Page` for the current page,
+  Menu — plus a fixed **bottom tab bar** (`TABS` in nav.js: Home = `/`,
+  Documents, Mail, Tips, Menu; `env(safe-area-inset-bottom)` padding,
+  `viewportFit: 'cover'`). The menu is a **full-screen sheet** under the bar:
+  on first paint only the current section is unfolded (`folded` state from
+  `matchMedia`; a folded current section says "you are here"), it closes on
+  navigation, Escape or Close, and `body.nav-open` locks page scroll. Content
+  gets bottom padding for the tab bar. Tables become `display:block;
+  overflow-x:auto`, `.split` (Documents style editor) and `.mail-split`
+  stack, inputs are 16px (iOS focus zoom).
+- Verified by rendering the component's markup against `globals.css` in
+  headless Chrome at 390×844 (closed, menu open) and 1280×800
+  (2026-10-05); not yet on a real phone.
 - Installable: `app/manifest.js` (standalone, theme `#16281e`, splash/background
   `#1b2f4e` = site `--navy`, start `/`),
   `app/icon.png` 512 (`purpose: any maskable`) + `app/apple-icon.png` 180: the
