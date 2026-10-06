@@ -4,6 +4,18 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.15.1 — 2026-10-05 (branch `refactor`) — Petition/appeals saves count for publishing
+
+- `packages/db/publish-requests.js` `CONTENT_ACTION_RE` now matches
+  `petition.save` and `appeals.save` (anchored; `petition.export` excluded).
+  Before: those saves never showed as unpublished and Request publish said
+  "Nothing to publish". Log: docs/error-handling/client-side-error/2026-10-05-petition-save-not-publishable.md.
+- New test `packages/db/test/publish-requests.test.mjs` covers every content
+  action name.
+- (v0.15.0's changelog commit af55559 was its own push.)
+
+Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
+
 ## v0.15.0 — 2026-10-05 (branch `refactor`) — Request publish everywhere + reviewer email
 
 **Admin**
