@@ -4,6 +4,21 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.15.2 — 2026-10-05 (branch `refactor`) — Approval bug hunt
+
+**Admin / publishing** (`lib/publish.js`, `app/page.js`)
+- Post-approval gap closed: an approved request with no run row yet
+  (reviewed < 10 min ago) counts as in flight (`busyPublish`, `runStatus
+  'starting'` / `'never started'`). Dashboard shows "Publishing now…", polls,
+  hides the request form; `requestPublish` and `approvePublish` refuse while
+  busy. Log: docs/error-handling/client-side-error/2026-10-05-publish-starting-window.md.
+- Times on the dashboard and in the review email are Mountain time with an
+  "MT" label (`lib/when.mjs` + test) instead of raw UTC text.
+- Decline hidden from the requester; duplicate request by the same person
+  says "your request is already waiting".
+
+Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
+
 ## v0.15.1 — 2026-10-05 (branch `refactor`) — Petition/appeals saves count for publishing
 
 - `packages/db/publish-requests.js` `CONTENT_ACTION_RE` now matches
