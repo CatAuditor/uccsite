@@ -95,6 +95,19 @@ Every template loads it before `styles.css`:
 Add a family by editing `FAMILIES` in `scripts/fetch-fonts.mjs` and re-running
 it. Never link fonts.googleapis.com — the AWS CSP is `font-src 'self'`.
 
+### Document prose group (2026-10-06)
+
+`css/styles.css` "DOCUMENT PROSE": `.prose` (wrapper; descendant rules for
+h2/h3/h4, p, ul/ol/li, a, strong, blockquote, table/caption/th/td,
+figure/figcaption, img, hr, code/pre; 760px measure; mobile sizes under
+720px), `.callout`, `.callout-label`, `.callout-dark`. Values mirror the
+migrated reports' per-page CSS (`report-section`, `report-callout`,
+`report-table` in `templates/privacy-report.html`) so a new document
+written with the authoring kit looks like the existing reports. Used only
+by admin Documents (the kit's frame is `subpage-hero` + `section >
+container > prose`); no fixed template uses it. Annotated, so the admin's
+Styles page and the authoring kit list it under "Document prose".
+
 ### Style Kit annotations
 Every class rule in `css/styles.css` carries a `/* @class … @label … @applies …
 @group … @desc … */` comment the admin's class picker reads (spec §6.1).

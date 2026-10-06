@@ -83,25 +83,39 @@ const EXAMPLE_HTML = `<!-- 1. Hero: the only place the <h1> goes. Eyebrow, headl
   </div>
 </section>
 
-<!-- 3. Ordinary report section: section > container, plain headings and prose. This is most of a piece. -->
-<section class="section">
+<!-- 3. Ordinary report section: section > container > prose. Plain headings and text inside prose; this is most of a piece. A callout for a note on sources. -->
+<section class="section bg-cream">
   <div class="container">
-    <h2>Where the records came from</h2>
-    <p>UCC requested the search logs on 3 February 2026 under the Government Records Access and Management Act. The county released 5,171,087 rows on 14 March 2026 and withheld the names of the officers who ran each search.</p>
-    <blockquote>
-      <p>The sheriff's office does not audit searches run by outside agencies.</p>
-    </blockquote>
-    <p>Weber County records officer, email to UCC, 14 March 2026.</p>
+    <div class="prose">
+      <h2>Where the records came from</h2>
+      <p>UCC requested the search logs on 3 February 2026 under the Government Records Access and Management Act. The county released 5,171,087 rows on 14 March 2026 and withheld the names of the officers who ran each search.</p>
+      <div class="callout">
+        <strong class="callout-label">A note on this investigation</strong>
+        <p>Nothing on this page is a criticism of the sheriff's office. Weber County is the only county that has let anyone look.</p>
+      </div>
+      <blockquote>
+        <p>The sheriff's office does not audit searches run by outside agencies.</p>
+      </blockquote>
+      <p>Weber County records officer, email to UCC, 14 March 2026.</p>
 
-    <h3>What one row contains</h3>
-    <table>
-      <caption>Fields in each search record, as released by Weber County</caption>
-      <thead><tr><th>Field</th><th>Example</th></tr></thead>
-      <tbody>
-        <tr><td>Agency</td><td>Ogden Police Department</td></tr>
-        <tr><td>Reason given</td><td>Investigation</td></tr>
-      </tbody>
-    </table>
+      <h3>What one row contains</h3>
+      <table>
+        <caption>Fields in each search record, as released by Weber County</caption>
+        <thead><tr><th>Field</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>Agency</td><td>Ogden Police Department</td></tr>
+          <tr><td>Reason given</td><td>Investigation</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li>Agencies in 45 states appear in the logs.</li>
+        <li>Utah agencies account for 11 percent of searches.</li>
+      </ul>
+      <div class="callout-dark">
+        <strong class="callout-label">What the county did not answer</strong>
+        <p>Which agencies ran the 1,208,331 searches logged without a case number.</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -407,7 +421,7 @@ Whether you return prose or HTML, the structure is the same.
 5. **The evidence**: quotes, tables, figures, each attributed in the text next to it. A table needs a caption or a sentence introducing it.
 6. **What is unknown**, and what UCC asked that went unanswered.
 7. **What UCC recommends or will do next**, if anything, in a section of its own so fact and position do not mix.
-8. **No signature, no date line, no "About UCC" paragraph, no "Contact" block** at the end. The site adds the byline, the date and the footer.
+8. **No "About UCC" paragraph, no "Contact" block, no signature** at the end; the site adds the footer. The site does not print a byline or a date on the page itself (the Author field feeds the page's structured data only), so if the piece is bylined, put one line at the end of the hero: \`<p>By [Name], 14 March 2026</p>\`.
 
 Images are not part of the draft. If a chart or a document scan belongs in the piece, write a one-line note where it goes (\`[IMAGE: the vendor contract, page 3, signature block]\`) and the editor uploads it on the admin's Media page and inserts it with alt text. Alt text is required for every image, so suggest it in the note.
 
@@ -449,7 +463,7 @@ ${tokensSection(coverageKeys)}
 
 ### Skeleton
 
-Everything a report needs, and nothing it does not, inside the site's document frame (section 6.1). Replace the bracketed text.
+Everything a report needs, and nothing it does not, inside the site's document frame (section 6.1: hero, then section > container > prose). Replace the bracketed text.
 
 \`\`\`html
 <div class="subpage-hero">
@@ -458,37 +472,43 @@ Everything a report needs, and nothing it does not, inside the site's document f
   <p>[Lead: one to three sentences stating what the records show.]</p>
 </div>
 
-<section class="section">
+<section class="section bg-cream">
   <div class="container">
+    <div class="prose">
 
-    <h2>[Where the records came from]</h2>
-    <p>[Who released what, under which law, on which date; what was withheld.]</p>
+      <h2>[Where the records came from]</h2>
+      <p>[Who released what, under which law, on which date; what was withheld.]</p>
+      <div class="callout">
+        <strong class="callout-label">A note on the records</strong>
+        <p>[What was requested, what was withheld, and why that matters.]</p>
+      </div>
 
-    <h2>[First finding]</h2>
-    <p>[Evidence, attributed.]</p>
-    <blockquote>
-      <p>[Quoted passage.]</p>
-    </blockquote>
-    <p>[Who said it, where, when.]</p>
+      <h2>[First finding]</h2>
+      <p>[Evidence, attributed.]</p>
+      <blockquote>
+        <p>[Quoted passage.]</p>
+      </blockquote>
+      <p>[Who said it, where, when.]</p>
 
-    <h3>[Supporting detail]</h3>
-    <table>
-      <caption>[What this table shows and its source]</caption>
-      <thead><tr><th>[Column]</th><th>[Column]</th></tr></thead>
-      <tbody>
-        <tr><td>[Value]</td><td>[Value]</td></tr>
-      </tbody>
-    </table>
+      <h3>[Supporting detail]</h3>
+      <table>
+        <caption>[What this table shows and its source]</caption>
+        <thead><tr><th>[Column]</th><th>[Column]</th></tr></thead>
+        <tbody>
+          <tr><td>[Value]</td><td>[Value]</td></tr>
+        </tbody>
+      </table>
 
-    <h2>[Second finding]</h2>
-    <p>[...]</p>
+      <h2>[Second finding]</h2>
+      <p>[...]</p>
 
-    <h2>What the county did not answer</h2>
-    <p>[...]</p>
+      <h2>What the county did not answer</h2>
+      <p>[...]</p>
 
-    <h2>What UCC recommends</h2>
-    <p>[...]</p>
+      <h2>What UCC recommends</h2>
+      <p>[...]</p>
 
+    </div>
   </div>
 </section>
 \`\`\`
@@ -501,7 +521,8 @@ A document's body is inserted between the site header and footer with no wrapper
 
 1. **Hero:** \`<div class="subpage-hero">\` holding an optional \`<div class="section-label">\` eyebrow, the single \`<h1>\`, and one or two \`<p>\` for the lead. The hero styles its own \`<h1>\` and \`<p>\` (dark navy gradient, white display headline).
 2. **Body:** one or more \`<section class="section">\`, each wrapping a \`<div class="container">\` that holds the content. \`section\` gives the vertical padding, \`container\` the centred max width. Alternate \`<section class="section bg-cream">\` for a cream band when a part of the piece should sit apart (the data, the recommendations).
-3. Inside the container, plain \`<h2>\`, \`<h3>\`, \`<p>\`, \`<blockquote>\`, \`<table>\`, \`<figure>\` as section 5 describes. Add \`section-label\` and \`section-title\` to a section's eyebrow and heading when it should read as a site section rather than running prose; leave them off for ordinary report headings. Know that the site stylesheet resets margins, so plain prose inside a container has only the base font and no spacing of its own (the rendered fragment in 6.4 shows this); the editor adds the report prose styles to the document on the Styling tab. Write the prose plain anyway and say in your note that the piece needs them.
+3. **Running text goes inside \`<div class="prose">\`**, directly inside the container. \`prose\` styles every plain tag in it: \`<h2>\`, \`<h3>\`, \`<p>\`, \`<ul>\`, \`<blockquote>\`, \`<table>\`, \`<figure>\`, links, on a centred 760px measure. Without it the site stylesheet's reset leaves plain text with no spacing at all, so every section of running text needs it. Inside \`prose\`, write plain tags; the only classes that belong there are \`callout\`, \`callout-dark\` and \`callout-label\`.
+4. Site-pattern sections (stats band, card grids, the two-column block) sit beside the prose sections as their own \`<section>\`, not inside \`prose\`. Add \`section-label\` and \`section-title\` to those sections' eyebrow and heading so they read as site sections.
 
 ### 6.2 Design tokens
 

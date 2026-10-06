@@ -78,6 +78,31 @@ as a saved-and-published edit under Jarom's account.
 **Left to do.** Nothing on the site. The old wording on LinkedIn, X and
 press bylines is outside the site and is Jarom's to update.
 
+## 2026-10-06 — New documents can look like the site's reports without any CSS
+
+**What changed.** The site's stylesheet had no styles for the running text
+of a document. The existing reports each carry their own private CSS, so a
+new piece written with the authoring kit arrived as bare text with no space
+between paragraphs, even with the right page frame. The stylesheet now has a
+"Document prose" set: one wrapper that styles every plain heading,
+paragraph, list, quote, table, picture caption and link inside it the way
+the existing reports look, plus a white callout box, a dark callout box and
+a small red label for them. The authoring kit, the sample page in it and the
+admin's Styles page list them automatically.
+
+**What you do differently.** Nothing new to learn. Give Claude the fresh
+kit; its HTML now puts the running text inside the prose wrapper, so the
+piece arrives styled. The kit also stops claiming the site prints a byline:
+it does not, so a bylined piece carries its own "By Name, date" line at the
+end of the hero.
+
+**Decision recorded.** No automatic styling is added on upload; the writer's
+tool styles the piece before it is uploaded, and the editor adjusts on the
+Styling tab if needed.
+
+**Needs a publish.** The stylesheet change reaches the live site with the
+next publish from Publish & Status.
+
 ## 2026-10-06 — The authoring kit now carries the site's styling
 
 **What changed.** The authoring kit (the file you download at the top of All

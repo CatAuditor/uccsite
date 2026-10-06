@@ -30,7 +30,7 @@ test('kit carries the static sections and the dynamic catalog, rules and tokens'
   assert.match(md, /- `pull-quote` on `<div>`: Large quoted line\.\n  CSS: `font-size: 28px; color: var\(--navy\);`/, 'catalog entry carries its CSS');
   assert.match(md, /- `impact-grid` on `<div>`: Used on `<div>` in index\.\n  CSS: `display: flex; \/\* \+ \*\/ flex-direction: column;`/, 'auto "Sets:" tail is dropped, CSS printed once');
   assert.match(md, /```css\n--navy: #1B2F4E;\n--red: #C0392B;\n```/, 'design tokens printed one per line');
-  assert.match(md, /<div class="subpage-hero">[\s\S]*<section class="section">\n  <div class="container">/, 'skeleton uses the document frame');
+  assert.match(md, /<div class="subpage-hero">[\s\S]*<section class="section bg-cream">\n  <div class="container">\n    <div class="prose">/, 'skeleton uses the document frame with the prose wrapper');
   assert.ok(!md.includes('nav-links'), 'chrome groups are hidden from authors');
   assert.ok(!md.includes('`undoc`'), 'unannotated classes are not offered');
   assert.match(md, /Keys that exist today: `alpr`/);

@@ -2203,6 +2203,193 @@ input, textarea, select { font: inherit; }
   width: 100%; height: 100%;
   border: 0;
 }
+/* ============================================================
+   DOCUMENT PROSE (admin Documents: the body of a report, statement
+   or explainer written outside and pasted in; docs/systems/documents.md
+   "Authoring kit"). A document body lands bare between the header and
+   footer, and the reset above zeroes every margin, so running text needs
+   a wrapper that styles plain tags. The writer writes plain <h2>, <p>,
+   <ul>, <blockquote>, <table>, <figure> inside .prose and nothing else.
+   The migrated reports (alpr, privacy-report, ...) still carry their own
+   per-page CSS; this group is for every new document.
+   ============================================================ */
+
+/* @class prose
+   @label Document prose
+   @applies div
+   @group Document prose
+   @desc Wrapper for the running text of a document. Styles every plain tag inside it (headings, paragraphs, lists, quotes, tables, figures, links) on a centred 760px measure. Put it inside section > container; write plain tags inside it. */
+.prose {
+  max-width: 760px;
+  margin: 0 auto;
+  font-size: 16.5px;
+  line-height: 1.8;
+  color: #2c2c2c;
+}
+.prose > :last-child { margin-bottom: 0; }
+.prose h2 {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--navy-dark);
+  letter-spacing: -0.01em;
+  margin: 48px 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(0,0,0,0.08);
+}
+.prose h2:first-child { margin-top: 0; }
+.prose h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--red);
+  letter-spacing: -0.01em;
+  margin: 32px 0 12px;
+}
+.prose h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy-dark);
+  margin: 24px 0 8px;
+}
+.prose p { margin: 0 0 18px; }
+.prose ul, .prose ol { margin: 0 0 18px 24px; padding: 0; }
+.prose ul { list-style: disc; }
+.prose ol { list-style: decimal; }
+.prose li { margin-bottom: 10px; line-height: 1.75; }
+.prose a {
+  color: var(--red);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose a:hover { color: var(--navy-dark); }
+.prose strong { color: var(--navy-dark); }
+.prose blockquote {
+  margin: 24px 0;
+  padding: 4px 0 4px 20px;
+  border-left: 4px solid var(--red);
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--navy-dark);
+}
+.prose blockquote p { margin: 0 0 8px; }
+.prose blockquote p:last-child { margin: 0; }
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 20px 0;
+}
+.prose caption {
+  caption-side: top;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-600);
+  padding: 0 0 8px;
+}
+.prose th {
+  background: var(--navy-dark);
+  color: var(--white);
+  text-align: left;
+  padding: 12px 14px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.prose td {
+  padding: 12px 14px;
+  border-top: 1px solid var(--gray-200);
+  vertical-align: top;
+}
+.prose figure { margin: 28px 0; }
+.prose figcaption {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gray-600);
+  margin-top: 8px;
+}
+.prose img { border-radius: 8px; }
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--gray-200);
+  margin: 40px 0;
+}
+.prose code {
+  font-family: ui-monospace, Consolas, Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--gray-100);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.prose pre {
+  background: var(--navy-dark);
+  color: #e6edf3;
+  padding: 16px 20px;
+  border-radius: 8px;
+  overflow: auto;
+  font-size: 13px;
+  margin: 0 0 18px;
+}
+.prose pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+@media (max-width: 720px) {
+  .prose { font-size: 16px; }
+  .prose h2 { font-size: 23px; margin-top: 40px; }
+  .prose table { display: block; overflow-x: auto; }
+}
+
+/* @class callout
+   @label Callout
+   @applies div aside
+   @group Document prose
+   @desc White box with a red bar inside the prose: a note on sources, an aside, a key figure in words. Optional first line <strong class="callout-label">. */
+.callout {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-left: 4px solid var(--red);
+  border-radius: 6px;
+  padding: 20px 24px;
+  margin: 24px 0;
+}
+.callout p { font-size: 15.5px; line-height: 1.7; margin: 0 0 10px; }
+.callout p:last-child { margin: 0; }
+
+/* @class callout-label
+   @label Callout label
+   @applies strong span div
+   @group Document prose
+   @desc Small red uppercase label on the first line of a callout ("A note on this investigation"). */
+.callout-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 8px;
+}
+
+/* @class callout-dark
+   @label Callout, dark
+   @applies div aside
+   @group Document prose
+   @desc Navy box with light text for a quoted finding or a warning that should stand out from the page. Same inner shape as callout. */
+.callout-dark {
+  background: var(--navy-dark);
+  border-left: 4px solid var(--red-light);
+  border-radius: 6px;
+  padding: 20px 24px;
+  margin: 24px 0;
+  color: rgba(255,255,255,0.9);
+}
+.callout-dark p { font-size: 15.5px; line-height: 1.7; color: rgba(255,255,255,0.9); margin: 0 0 10px; }
+.callout-dark p:last-child { margin: 0; }
+.callout-dark .callout-label { color: rgba(255,255,255,0.6); }
+
 /* @class video-meta
    @label Video Meta
    @applies div

@@ -193,8 +193,18 @@ that already looks like the site. A document body is composed bare between
 the header and footer partials (`templates/documents/report.html`, no
 `<main>`/container wrapper), so the kit's skeleton and "6.1 Document frame"
 tell the author to supply `div.subpage-hero` (eyebrow `section-label`,
-`h1`, lead `p`) and `section.section > div.container` (optionally
-`bg-cream`) themselves. 6.2 design tokens, 6.3 template rules, 6.4 a
+`h1`, lead `p`) and `section.section > div.container > div.prose`
+(optionally `bg-cream` on the section) themselves. **`prose` is the
+stylesheet's "Document prose" group (css/styles.css, added 2026-10-06):**
+a wrapper that styles every plain tag inside it (h2/h3/h4, p, ul/ol,
+blockquote, table/caption/th/td, figure/figcaption, img, hr, a, code) on a
+760px measure, plus `callout`, `callout-label`, `callout-dark`. It exists
+because the reset in the site sheet zeroes every margin and the migrated
+reports carry their own per-page CSS, so a new document written with plain
+tags rendered as unspaced text. Nothing is applied automatically: the
+writer's tool puts the frame and `prose` in before upload (the user's
+decision 2026-10-06, no auto-styling in the admin); the editor can still add
+classes on the Styling tab. 6.2 design tokens, 6.3 template rules, 6.4 a
 **reference fragment** (`EXAMPLE_HTML` in the module: one body that uses
 almost every offered class in the nesting the site uses, hero, mission
 strip, plain section, impact band, pillars grid on cream, issues card grid,
@@ -218,11 +228,15 @@ its own rules; the embedded site CSS is verbatim and outside that rule).
 The HTML download is ~130 k chars, most of it the stylesheet. Verified in
 headless Chrome 2026-10-06: guide text readable, fragment renders as on the
 site (hero, impact band, pillars on cream, issue cards, about, news). The
-render also shows that plain prose in `section > container` has no spacing
-(margins reset; real reports get prose styles from per-document page CSS),
-which 6.1 now tells the author. Auth: `getSession()` only, any role; 403 when signed out.
+render first showed plain prose in `section > container` with no spacing
+(margins reset); the Document prose group fixed that and the fragment now
+renders the prose section styled (serif h2 rule, red h3, callouts, navy
+table header, bullets). Section 4 no longer claims the site prints a
+byline: it does not (JSON-LD only, docs/decisions/byline-attribution.md), so
+a bylined piece puts `By Name, date` as the hero's last paragraph.
+Auth: `getSession()` only, any role; 403 when signed out.
 No personal data in the file. Logged as `[documents] authoring kit for
-<email>: N classes, N template rules, N coverage keys, N chars`.
+<email>: N classes, N template rules, N coverage keys, N chars html`.
 
 No AI service is part of the product (spec §1); the kit is a document an
 author chooses to give to their own tool.
