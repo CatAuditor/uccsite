@@ -6,6 +6,24 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — Home-screen icon: the navy tile now actually reaches phones
+
+**What changed.** Yesterday's fix put the UCC mark on a navy tile, but phones
+that reinstalled the app still got the old cream/transparent one. The admin
+tells browsers its icon files never change (cached for a year), and the
+install screen asks for them by plain name, so a phone kept the copy it
+already had. The icon files now have new names, so every phone fetches the
+navy version fresh.
+
+**What you do.** Remove the app from the home screen and add it again; it
+should come back on navy. On iPhone, if it still shows the old tile, Settings
+→ Safari → Advanced → Website Data → remove admin.utahciviccompact.org, then
+add again.
+
+**For the future.** Whenever the icon artwork changes, it needs a new file
+name (`docs/systems/admin.md` "Phone / PWA" says how), or phones keep the old
+one for a year.
+
 ## 2026-10-06 — The admin now looks like the site
 
 **What changed.** The admin used to be a green-and-gold back office that

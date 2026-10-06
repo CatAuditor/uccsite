@@ -90,7 +90,7 @@ export default async function RootLayout({ children }) {
         <div className="shell">
           {/* Suspense: Nav reads useSearchParams, which Next needs bounded for the
               statically prerendered error pages. */}
-          <Suspense fallback={<aside className="sidebar"><div className="sidebar-bar"><div className="brand"><img className="brand-mark" src="/icon.png" alt="" width="30" height="30" /><span className="brand-text">UCC Admin</span></div></div></aside>}>
+          <Suspense fallback={<aside className="sidebar"><div className="sidebar-bar"><div className="brand"><img className="brand-mark" src="/icon1.png" alt="" width="30" height="30" /><span className="brand-text">UCC Admin</span></div></div></aside>}>
             <Nav groups={nav.map(({ group, items }) => ({ group, items }))} email={session.email} role={session.role} />
           </Suspense>
           <main className="content">{children}</main>

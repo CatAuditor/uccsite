@@ -18,8 +18,8 @@ apps/admin/
                            current page; phone top bar (Section › Page) + bottom tab bar
                            + full-screen menu sheet (see "Navigation & phone use")
   app/manifest.js          web app manifest → /manifest.webmanifest (installable PWA);
-  app/icon.png,            icons = the UCC mark on site navy #1b2f4e (512 maskable / 180). No service worker.
-  app/apple-icon.png
+  app/icon1.png,           icons = the UCC mark on site navy #1b2f4e (512 maskable / 180). Numbered:
+  app/apple-icon1.png      Next serves them immutable for a year, so a changed icon gets a new number.
   lib/config.js            env-driven config (scripts/admin-env.mjs writes .env.local)
   lib/aws-account.js       wrong-account guard: STS GetCallerIdentity vs UCC_ACCOUNT_ID,
                            once per process, before any DB use (no-op when unset)
@@ -184,13 +184,19 @@ operator fallback.
 - Installable: `app/manifest.js` (standalone, theme `#0f1e33` = site
   `--navy-dark` = the sidebar/top bar, splash/background `#1b2f4e` = site
   `--navy`, start `/`),
-  `app/icon.png` 512 (`purpose: any maskable`) + `app/apple-icon.png` 180: the
+  `app/icon1.png` 512 (`purpose: any maskable`) + `app/apple-icon1.png` 180: the
   transparent UCC mark (white + gold) flattened onto `--navy` `#1b2f4e` and
   padded to the inner 70% so maskable launchers and iOS (which fills alpha
   with black) both show navy. Regenerate with sharp from the site favicon,
   not by re-saving the transparent source. `viewport` + `appleWebApp`
-  exports in `layout.js`. Middleware lets `/manifest.webmanifest`, `/icon.png`
-  and `/apple-icon.png` through without the cookie. **No service worker** by
+  exports in `layout.js`. **Numbered filenames on purpose**: Next serves
+  `app/icon*.png` with `Cache-Control: immutable, max-age=31536000` and only
+  its own `<link>` tags get a content-hash query; the manifest `src` cannot,
+  so Android's install flow reused the year-cached old PNG at `/icon.png`.
+  Any future icon change: bump to `icon2.png` / `apple-icon2.png` and update
+  manifest, middleware `PUBLIC_PATHS`, and the three `<img src>` (layout,
+  nav, login). Middleware lets `/manifest.webmanifest`, `/icon1.png`
+  and `/apple-icon1.png` through without the cookie. **No service worker** by
   design: every screen is a live DB read and a cached shell would outlive
   Amplify deploys; Chrome and Safari install without one.
 - Sessions are 4 h (callback cookie `maxAge` = CDK `idTokenValidity` /
@@ -223,7 +229,7 @@ operator fallback.
   pill (Tips count). Tables use `border-collapse: separate` so the rounded
   corners clip; the phone block still makes them `display:block;
   overflow-x:auto`.
-- Sidebar: navy-dark, brand = `/icon.png` mark + "UCC Admin / Utah Civic
+- Sidebar: navy-dark, brand = `/icon1.png` mark + "UCC Admin / Utah Civic
   Compact"; links are 6px-radius rows, the current page gets a red left bar;
   the Find box is a dark input (`.sidebar .nav-find input` — the `.sidebar`
   prefix is what beats the generic `input[type="search"]` rule). The phone

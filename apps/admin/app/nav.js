@@ -96,7 +96,7 @@ export default function Nav({ groups, email, role }) {
       <aside className={open ? 'sidebar open' : 'sidebar'}>
         <div className="sidebar-bar">
           <Link href="/" className="brand" aria-label="UCC Admin home">
-            <img className="brand-mark" src="/icon.png" alt="" width="30" height="30" />
+            <img className="brand-mark" src="/icon1.png" alt="" width="30" height="30" />
             <span className="brand-text">UCC Admin<small>Utah Civic Compact</small></span>
           </Link>
           <div className="crumb">

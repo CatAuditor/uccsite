@@ -25,7 +25,7 @@ export default async function LoginPage({ searchParams }) {
 
   return (
     <div className="login-card">
-      <img src="/icon.png" alt="" width="72" height="72" />
+      <img src="/icon1.png" alt="" width="72" height="72" />
       <p className="login-eyebrow">Utah Civic Compact</p>
       <h1>Admin sign in</h1>
       <p>Sign in with your admin account. Accounts are created by an owner — there is no self-signup.</p>
