@@ -4,6 +4,32 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.15.0 — 2026-10-05 (branch `refactor`) — Request publish everywhere + reviewer email
+
+**Admin**
+- "Request publish" button beside every Save button (`app/request-publish.js`
+  → `app/publish-actions.js` → `lib/publish.js requestPublish`): collections,
+  homepage, appeals, petition copy, settings, documents, style rules and
+  foreign-class mappings, redirects, media alt text, own bio.
+- `requestPublish` returns `{ id, needsReview, notified }`; the dashboard and
+  inline messages say whether reviewers were emailed.
+- `lib/notify.js` + `lib/notify-recipients.mjs` (tested): after an EDITOR's
+  request commits, one SES `SendEmail` to the four admins minus the requester;
+  owner requests send nothing (owners self-approve). Off prod only with
+  `PUBLISH_NOTIFY_TO`. Failures logged `[admin] publish notify SES error`,
+  never thrown.
+- New dep `@aws-sdk/client-sesv2`; `amplify.yml` passes `PUBLISH_NOTIFY_TO`.
+
+**Infra (hand-managed)**
+- `UccProdAdminCompute` / `admin-runtime`: `ses:SendEmail` on the domain
+  identity + `ucc-prod` config set, From pinned to hello@utahciviccompact.org.
+
+**Docs**: admin.md (Code Map, Publishing, env, SSR role), email.md, for-conner
+§8.3, debug/admin.md, non-technical guide (stale "owners included" fixed),
+dev note.
+
+Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
+
 ## v0.14.5 — 2026-10-05 (branch `refactor`) — Stale-tab save error explained
 
 - `app/error.js` recognises Next's "Server Action … was not found" (page
