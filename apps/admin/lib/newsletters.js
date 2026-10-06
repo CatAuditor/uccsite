@@ -53,10 +53,12 @@ export async function newsletterPage(id) {
   return withDb(async (client) => {
     const newsletter = await db.getNewsletter(client, assertId(id));
     if (!newsletter) return null;
-    const [names, count, petitions, deliveries] = await Promise.all([
-      teamNames(client), audienceCount(client, newsletter.audience), petitionSlugs(client),
-      ['sending', 'sent', 'failed'].includes(newsletter.status) ? db.deliveryCounts(client, newsletter.id) : null,
-    ]);
+    // Sequential: the shared read client is one pg connection (concurrent
+    // query() calls on it are deprecated and serialise anyway).
+    const names = await teamNames(client);
+    const count = await audienceCount(client, newsletter.audience);
+    const petitions = await petitionSlugs(client);
+    const deliveries = ['sending', 'sent', 'failed'].includes(newsletter.status) ? await db.deliveryCounts(client, newsletter.id) : null;
     return { newsletter, names, count, petitions, deliveries };
   });
 }
