@@ -9,22 +9,35 @@ body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: #1c2733; backgrou
 .nav-link { display: block; color: #e8e8e2; text-decoration: none; padding: 6px 20px; }
 .nav-link:hover { background: #1f3a2b; }
 button.linkish { background: none; border: 0; margin: 0; width: 100%; text-align: left; font: inherit; }
-.session { margin-top: auto; padding: 14px 0 0; border-top: 1px solid #2b4636; }
-.session-top { margin: 0 0 14px; padding: 0 0 14px; border-top: 0; border-bottom: 1px solid #2b4636; }
-.signout { margin: 8px 20px 0; padding: 6px 14px; font-size: 12px; background: #c8a84b; color: #16281e; font-weight: 700; }
+.session { margin-top: auto; padding: 14px 0 14px; border-top: 1px solid #2b4636; position: sticky; bottom: 0; background: #16281e; }
+.signout { margin: 8px 20px 0; width: calc(100% - 40px); padding: 6px 14px; font-size: 12px; background: #c8a84b; color: #16281e; font-weight: 700; }
 .signout:hover { background: #dcc06a; }
 .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .session-user { padding: 0 20px; font-size: 12px; word-break: break-all; }
 .session-role { padding: 0 20px 6px; font-size: 11px; color: #c8a84b; text-transform: uppercase; }
-/* Navigation (app/nav.js): current page, collapsible sections, phone drawer */
-.sidebar-body { display: flex; flex-direction: column; flex: 1; }
+/* Navigation (app/nav.js): filter, folding sections, current page; the
+   phone bar / sheet / tab bar live in the phone block at the end. */
+.brand { display: block; text-decoration: none; }
+.brand:hover { color: #dcc06a; }
+.crumb { display: none; }
+.sidebar-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.sidebar-body > nav { flex: 1; }
 .nav-toggle { display: none; margin: 0; padding: 6px 12px; font-size: 13px; background: #c8a84b; color: #16281e; font-weight: 700; }
-summary.nav-group-title { cursor: pointer; list-style: none; user-select: none; }
+.nav-find { display: block; margin: 0 14px 12px; }
+.nav-find input { width: 100%; padding: 7px 10px; font: inherit; font-size: 13px; color: #e8e8e2; background: #0f1c15; border: 1px solid #2b4636; border-radius: 6px; }
+.nav-find input::placeholder { color: #7f9488; }
+.nav-find input:focus { outline: 2px solid #c8a84b; outline-offset: 1px; }
+.nav-none { padding: 6px 20px; font-size: 13px; color: #7f9488; }
+summary.nav-group-title { cursor: pointer; list-style: none; user-select: none; display: flex; align-items: center; gap: 6px; }
 summary.nav-group-title::-webkit-details-marker { display: none; }
-summary.nav-group-title::before { content: "BE"; display: inline-block; width: 12px; margin-left: -12px; font-size: 10px; transition: transform .15s; }
+summary.nav-group-title::before { content: "▾"; display: inline-block; width: 10px; font-size: 10px; transition: transform .15s; }
 .nav-group:not([open]) > summary.nav-group-title::before { transform: rotate(-90deg); }
+.nav-here { margin-left: auto; font-size: 10px; letter-spacing: 0; text-transform: none; color: #c8a84b; }
 .nav-link.active { background: #c8a84b; color: #16281e; font-weight: 600; }
 .nav-link.active:hover { background: #dcc06a; }
+.nav-link:focus-visible, .signout:focus-visible, .nav-toggle:focus-visible, summary.nav-group-title:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.tabbar { display: none; }
 .content { flex: 1; padding: 32px 40px; max-width: 900px; }
 h1 { font-size: 22px; margin: 0 0 18px; }
 h2 { font-size: 16px; margin: 24px 0 10px; }
@@ -239,22 +252,39 @@ select { padding: 8px; border: 1px solid #c9cdc6; font: inherit; width: 100%; ba
 .inline-upload.compact input[type="text"] { padding: 6px 8px; font-size: 13px; }
 .inline-upload.compact button { padding: 6px 12px; font-size: 12px; }
 
-/* Phone layout (docs/systems/admin.md "Phone / PWA"): the sidebar becomes a
-   sticky top bar with a Menu drawer; tables scroll sideways; the two-column
-   editors stack; 16px inputs stop iOS zooming on focus. */
+/* Phone layout (docs/systems/admin.md "Navigation & phone use"): top bar
+   (brand, "Section › Page", Menu) + bottom tab bar (Home, Documents, Mail,
+   Tips, Menu) + the menu as a full-screen sheet under the bar. Tables scroll
+   sideways; the two-column editors stack; 16px inputs stop iOS focus zoom. */
 @media (max-width: 800px) {
   .shell { display: block; }
-  .sidebar { position: sticky; top: 0; z-index: 10; width: auto; height: auto; max-height: 100vh; padding: 0; }
-  .sidebar-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; }
-  .brand { padding: 0; }
+  body.nav-open { overflow: hidden; }
+  .sidebar { position: sticky; top: 0; z-index: 20; width: auto; height: auto; padding: 0; overflow: visible; }
+  .sidebar-bar { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; height: 52px; padding: 0 12px 0 16px; }
+  .brand { padding: 0; font-size: 13px; }
+  .crumb { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 600; color: #fff; }
+  .crumb-group { color: #7f9488; font-weight: 500; }
+  .crumb-sep { color: #7f9488; }
   .nav-toggle { display: inline-block; }
-  .sidebar-body { display: none; padding-bottom: 12px; border-top: 1px solid #2b4636; }
+  .sidebar-body { display: none; position: fixed; top: 52px; left: 0; right: 0; bottom: 0; z-index: 20; overflow-y: auto; overscroll-behavior: contain; background: #16281e; border-top: 1px solid #2b4636; padding: 14px 0 calc(72px + env(safe-area-inset-bottom)); }
   .sidebar.open .sidebar-body { display: flex; }
-  .sidebar .session:not(.session-top) { display: none; }
-  .session-top { margin: 12px 0; }
-  .nav-link { padding: 10px 20px; }
-  .content { padding: 18px 16px; max-width: none; }
+  .nav-find { margin: 0 16px 10px; }
+  .nav-find input { font-size: 16px; padding: 10px 12px; }
+  .nav-group { margin-bottom: 4px; }
+  .nav-group-title { font-size: 12px; padding: 14px 20px; }
+  .nav-group[open] > .nav-group-title { background: #132319; }
+  .nav-link { padding: 12px 20px 12px 36px; font-size: 15px; border-bottom: 1px solid #1d3326; }
+  .session { margin-top: 16px; padding: 14px 0 0; position: static; }
+  .session-user { font-size: 13px; }
+  .signout { margin-top: 10px; padding: 10px 14px; font-size: 14px; }
+  .tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: #16281e; border-top: 1px solid #2b4636; padding-bottom: env(safe-area-inset-bottom); }
+  .tab { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; margin: 0; padding: 6px 0 4px; background: none; border: 0; color: #b8c4bb; font: inherit; font-size: 11px; text-decoration: none; }
+  .tab.active { color: #c8a84b; }
+  .tab:active { background: #1f3a2b; }
+  .tab:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+  .content { padding: 18px 16px calc(84px + env(safe-area-inset-bottom)); max-width: none; }
   .content:has(.doc-editor) { max-width: none; }
+  h1 { font-size: 20px; }
   input[type="text"], input[type="search"], input[type="email"], input[type="url"], input[type="number"], input[type="password"], textarea, select { font-size: 16px; }
   table { display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
   form.editor, .uploader { padding: 14px; }
@@ -268,5 +298,6 @@ select { padding: 8px; border: 1px solid #c9cdc6; font: inherit; width: 100%; ba
   .request-publish { margin-left: 0; margin-top: 8px; }
   .mail-device iframe { height: 70vh; }
   .mail-device.desktop iframe { height: 70vh; }
+  .mail-preview { position: static; }
   .login-only { margin-top: 6vh; padding: 0 16px; }
 }

@@ -9,11 +9,14 @@ export const metadata = {
   // Installable on phones (app/manifest.js). appleWebApp: iOS standalone mode.
   appleWebApp: { capable: true, title: 'UCC Admin', statusBarStyle: 'default' },
 };
-export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#16281e' };
+// viewportFit cover: the phone tab bar pads itself with env(safe-area-inset-bottom).
+export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#16281e', viewportFit: 'cover' };
 
 // Nav grouped by section (org decision: "site main" / "reports" / …).
 // Documents ("Reports"/"Whitepapers") arrive in Phase 8.
 const NAV = [
+  // The dashboard (publish queue + status) first: it is what most visits are for.
+  { group: 'Overview', items: [['/', 'Publish & Status']] },
   { group: 'Site Main', items: [
     ['/settings', 'Site Settings'],
     ['/homepage', 'Homepage'],
@@ -35,7 +38,6 @@ const NAV = [
   // the mailing list is the audience they reach (docs/systems/newsletters.md).
   { group: 'Mail', items: [['/mail', 'Newsletters'], ['/subscribers', 'Mailing list']] },
   { group: 'Operations', items: [
-    ['/', 'Publish & Status'],
     ['/redirects', 'Redirects'],
     ['/donations', 'Donations'],
     ['/tips', 'Tips'],
