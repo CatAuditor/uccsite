@@ -13,6 +13,9 @@
 //
 // Usage: node scripts/migrate-documents.mjs              (dry run, prints report)
 //        $env:AWS_PROFILE='uccsite'; node scripts/migrate-documents.mjs --env staging --apply
+//        ... --only privacy --overwrite --out <dir>   (re-import ONE template over its
+//        Document after a copy change; --only limits --overwrite's blast radius and
+//        --out keeps the tracked docs/migration/documents artefacts untouched)
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
@@ -28,6 +31,7 @@ const ROOT = join(import.meta.dirname, '..');
 const args = process.argv.slice(2);
 const APPLY = args.includes('--apply');
 const OUT = argValue(args, '--out', join(ROOT, 'docs', 'migration', 'documents'));
+const ONLY = argValue(args, '--only', '').split(',').filter(Boolean);
 
 // slug → { category, priority } (planning addendum 3 grouping).
 const DOCS = {
@@ -147,7 +151,8 @@ const lastmod = () => '2026-01-01';
 const { files: oldFiles, errors: oldErrors } = buildSite({ ...inputs, lastmod });
 if (oldErrors.length) fail(oldErrors.join('\n'));
 
-const documents = Object.keys(DOCS).map(slug => extract(slug, inputs.templates[`${slug}.html`]));
+for (const slug of ONLY) if (!DOCS[slug]) fail(`--only: unknown document slug "${slug}"`);
+const documents = (ONLY.length ? ONLY : Object.keys(DOCS)).map(slug => extract(slug, inputs.templates[`${slug}.html`]));
 const built = docs.buildDocuments({
   documents, shells: inputs.shells, partials: inputs.partials, settings: inputs.content.settings,
   siteUrl: 'https://utahciviccompact.org', siteCss, rules: [], overrides: [], foreignClassMaps: {},
