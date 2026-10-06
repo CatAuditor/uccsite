@@ -4,6 +4,47 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.16.1 — 2026-10-05 (branch `refactor`) — Author pages + Person structured data
+
+**Site / render** (`packages/render/site.js`, `templates/team-member.html`, `css/pages/team-member.css`)
+- One author page per team member at `/team/<slug>` (PAGES `each` entry → `expandPages`), with
+  ProfilePage + Person JSON-LD (`@id = <page>#person`), `sameAs` from the new `links` field,
+  and a list of every project, Document, statement and issue position bylined to them
+  (`deriveTeam`; Documents via `content.documents_index` from `render-db.js`).
+- Bylines on statements/projects/issues link to the author page (`author_url`); the five
+  long-form templates link theirs and carry the Person `@id` in JSON-LD (Dignity gains an
+  Article block). Team page names link through; homepage Organization adds `@id`, `logo`,
+  `sameAs`, `member[]`, plus `og:image`/`twitter:image`.
+- `build.js` creates nested output dirs; `inputs.js` lastmod reads `page.source`.
+- Golden tests: counts use `expandPages(PAGES, deriveTeam(content))`; four `team/*.html`
+  entries in `expected-diffs.json`.
+
+**Documents** (`packages/render/documents.js`, `packages/db/documents.js`, admin editor)
+- New `author` column/field. JSON-LD gains `datePublished` (from `published_at`) and an
+  `author` Person carrying the team member's `@id`/`url` when the name matches.
+
+**Database** (`packages/db/content-schema.js`, `content.js`)
+- `team_members.slug`, `team_members.links`; `documents.author`. Migrated on staging and prod.
+- `scripts/backfill-authors.mjs`: set authors and link the bylines on the five migrated
+  Documents (run on staging and prod).
+
+**Admin** (`lib/collections.js`, `app/documents/`)
+- Team & Bios: *Author page URL slug*, *Public profile links*. Documents: *Author*.
+
+**Infra / ops**
+- `cdk deploy` UccStaging + UccProd (PublishFn and ExportContentFn bundles). Staging
+  published from the DB (`publish.mjs --source db`): 20 files changed, author pages verified.
+- Note: `migrate-schema.mjs` also applied another in-progress session's uncommitted
+  operational DDL (`subscribers.confirmed_at`, `email_events`) to both clusters — additive,
+  idempotent; flagged in the session report.
+
+**Docs**: `systems/author-pages.md` (new), `decisions/author-pages-person-id.md` (new),
+`seo-plan.md` (new; bio draft), site-structure, bylines, documents, admin, legal/data-handling,
+dev-notes, for-conner §1 (Search Console + profile links + prod publish approval), llms.txt.
+
+**Open P1**: prod publish of the author pages awaits two-person approval in the admin;
+Resend key, Stripe webhook, Jarom sign-in unchanged from v0.16.0.
+
 ## v0.15.2 — 2026-10-05 (branch `refactor`) — Approval bug hunt
 
 **Admin / publishing** (`lib/publish.js`, `app/page.js`)
@@ -30,6 +71,45 @@ Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
 - (v0.15.0's changelog commit af55559 was its own push.)
 
 Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
+
+## v0.17.0 — 2026-10-05 (branch `refactor`) — Mailing roadmap tiers 1-3 + double opt-in
+
+**Send Lambda** (`aws/newsletter`): `List-Id` + `Precedence: bulk`; `sendWithRetry`
+backoff on throttling/5xx; stale `sending` deliveries (>10 min) reclaimed on
+retry; invokes PublishFn after a send whose row is archived (env
+`PUBLISH_FUNCTION_NAME`, IAM).
+
+**Newsletter package**: `tagLinks` (UTM on site links), `viewUrl` → "View in
+browser" (html + text); `web.mjs` (`renderWebBody`, `archiveSlug`).
+
+**DB** (`packages/db`): newsletters + `publish_to_site, slug, web_html,
+archived_at, requested_blocks, prior_blocks`; `newsletter_defaults`;
+`duplicateNewsletter`, `reschedule`, `getDefaults/setDefaults`,
+`deliveriesFor`, `listArchive`, `deliveryCounts.suppressed`;
+`email-events.js` (table, `classify`, `SUPPRESSED_SQL`); audience excludes
+suppressed addresses and unconfirmed join-form rows; `subscribers.confirmed_at`
++ grandfather UPDATE.
+
+**API**: welcome email carries a signed confirm button; `GET /api/confirm`;
+petition signers confirmed at insert; `unsubPage` title param.
+
+**Site**: `packages/render/newsletters.js` archive (index + per-issue pages in
+the report shell), `css/newsletters.css`, footer link, render-db wiring,
+join-form success copy mentions the confirm button.
+
+**Infra** (`SesEventsFn`, both stacks): ops topic → `email_events`.
+
+**Admin**: Copy as a new draft (list + editor), Use this look as the default,
+Send a test to all admins, publish-to-site checkbox, reschedule while pending,
+re-request diff, suppressed count + web-copy link in the delivery panel, owner
+ledger CSV (`/mail/[id]/ledger`), Mailing list: unconfirmed/suppressed counts
++ recent SES events.
+
+**Docs**: newsletters.md (second pass, three new sections), email.md,
+data-handling.md (2 rows), for-conner §12 (DMARC DNS edits + postal address),
+dev note.
+
+Open P1: Resend key deletion pending; Stripe webhook unconfirmed.
 
 ## v0.16.1 — 2026-10-05 (branch `refactor`) — Inline image upload on every image field
 
