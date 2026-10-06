@@ -342,6 +342,10 @@ Until this exists the admin runs only on a developer machine (`npm run dev
    `lambda:InvokeFunction` on `PublishFunctionName`; `s3:PutObject`,
    `s3:GetObject`, `s3:DeleteObject` on `<MediaBucketName>/*` (media AND
    project files); `s3:GetObject` on `<SiteBucketName>/css/styles.css`;
+   `ses:SendEmail` on `arn:aws:ses:us-west-2:017110365763:identity/utahciviccompact.org`
+   and `…:configuration-set/ucc-prod` with condition `ses:FromAddress =
+   hello@utahciviccompact.org` (publish-request review email; added to
+   `UccProdAdminCompute` / `admin-runtime` 2026-10-05);
    on the user pool: `cognito-idp:ListUsers, AdminGetUser,
    AdminListGroupsForUser, AdminCreateUser, AdminAddUserToGroup,
    AdminRemoveUserFromGroup, AdminDisableUser, AdminEnableUser,

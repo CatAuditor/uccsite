@@ -11,6 +11,7 @@ import {
 import { requireRole } from './auth';
 import { withDb, withWriteTx, recordChange, inFlightPublish } from './data';
 import { promoteRequestedFiles } from './files';
+import { notifyPublishRequested } from './notify';
 import { config } from './config';
 
 // publishState() → what the dashboard renders.
@@ -39,9 +40,13 @@ export async function publishState() {
   });
 }
 
+// requestPublish(note) → { id, needsReview, notified }. needsReview = the requester
+// is not an owner (owners approve their own, so nobody is told); notified =
+// how many reviewers were emailed (lib/notify.js, after the commit — never
+// inside the transaction, and a mail failure never fails the request).
 export async function requestPublish(note) {
   const s = await requireRole('editor');
-  return withWriteTx(async (client) => {
+  const { id, changes } = await withWriteTx(async (client) => {
     await bumpGate(client); // two racing requests now conflict; the loser replays and sees the winner
     const open = await pendingRequest(client);
     if (open) throw new Error(`A publish request from ${open.requestedBy} is already waiting for review.`);
@@ -51,8 +56,11 @@ export async function requestPublish(note) {
       requestedBy: s.email, requestedByUser: s.username, requestNote: note, changes,
     });
     await recordChange(client, { actor: s.email, action: 'publish.request', entityType: 'publish_request', entityId: id, diff: { changes: changes.length } });
-    return id;
+    return { id, changes };
   });
+  const needsReview = s.role !== 'owner';
+  const notified = await notifyPublishRequested({ requestedBy: s.email, role: s.role, note, changes });
+  return { id, needsReview, notified };
 }
 
 // approvePublish(id, note, seenThrough): a DIFFERENT editor/owner than the

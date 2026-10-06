@@ -50,9 +50,14 @@ export default async function Dashboard() {
   async function request(prev, formData) {
     'use server';
     return runAction(async () => {
-      await requestPublish(String(formData.get('note') || '').trim().slice(0, 2000));
+      const { needsReview, notified } = await requestPublish(String(formData.get('note') || '').trim().slice(0, 2000));
       revalidatePath('/');
-      return { ok: true, message: 'Publish requested — approve it below (owners) or wait for another admin to approve it before anything goes live.' };
+      return {
+        ok: true,
+        message: needsReview
+          ? `Publish requested — ${notified ? 'the other admins have been emailed to review it' : 'another admin or an owner has to approve it'} before anything goes live.`
+          : 'Publish requested — approve it below.',
+      };
     });
   }
   async function decide(prev, formData) {
