@@ -808,6 +808,11 @@ class UccStack extends Stack {
       // stuffing target that bypasses the hosted UI.
       authFlows: { user: true, userSrp: true, userPassword: !isProd },
       preventUserExistenceErrors: true, // no account enumeration via error text
+      // 4 h sessions (2026-10-05, admin used from phones): the admin's session
+      // cookie (apps/admin/app/auth/callback/route.js) carries the ID token and
+      // lives exactly this long — keep the two in step.
+      idTokenValidity: Duration.hours(4),
+      accessTokenValidity: Duration.hours(4),
 
       oAuth: {
         flows: { authorizationCodeGrant: true },

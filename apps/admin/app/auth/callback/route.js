@@ -22,7 +22,10 @@ export async function GET(request) {
       return res;
     }
     const res = NextResponse.redirect(new URL('/', config.appOrigin));
-    const flags = { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 3600, path: '/' };
+    // 4 h (2026-10-05, phone use): matches the app client's id/access token
+    // validity in infra/cdk (ucc-stack.js AdminAppClient) — the cookie is only
+    // as long-lived as the JWT inside it, which getSession() verifies.
+    const flags = { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 4 * 3600, path: '/' };
     res.cookies.set(SESSION_COOKIE, idToken, flags);
     if (accessToken) res.cookies.set(ACCESS_COOKIE, accessToken, flags);
     res.cookies.delete(PKCE_COOKIE);
