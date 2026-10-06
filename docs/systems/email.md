@@ -25,14 +25,17 @@ docs/for-conner.md §10       the DNS records, production-access request, Resend
   `List-Unsubscribe` / `List-Unsubscribe-Post` headers passed as
   `Content.Simple.Headers`.
 - `ConfigurationSetName` comes from env `SES_CONFIGURATION_SET`; CDK sets it
-  to `ucc-prod` on prod only. Staging sends through the same identity with no
-  set, so staging test bounces never reach the prod ops topic.
-- Auth is the Lambda role, no API key. IAM: `ses:SendEmail` on
-  `arn:aws:ses:<region>:<acct>:identity/utahciviccompact.org` (+ the
-  `configuration-set/ucc-prod` ARN on prod — SES denies a send that names a
-  set the policy does not cover), condition `ses:FromAddress =
-  hello@utahciviccompact.org`. Both stacks use the ARN string because the
-  identity is a prod-stack resource.
+  to `ucc-prod` on prod only. **`ucc-prod` is also the identity's default
+  configuration set**, so staging sends land in it regardless — staging test
+  bounces reach the prod ops topic. Staging tests use the mailbox simulator
+  (`success@simulator.amazonses.com`), which never bounces.
+- Auth is the Lambda role, no API key. IAM (both stacks): `ses:SendEmail` on
+  `arn:aws:ses:<region>:<acct>:identity/utahciviccompact.org` AND
+  `…:configuration-set/ucc-prod` (SES authorizes the default set too — without
+  it the send is `AccessDeniedException`, see
+  `docs/error-handling/client-side-error/2026-10-05-ses-config-set-access-denied.md`),
+  condition `ses:FromAddress = hello@utahciviccompact.org`. Both stacks use
+  the ARN strings because the identity is a prod-stack resource.
 - Client is lazy (first send on a container) with an 8 s request timeout.
 - Failures are logged as `[api] SES error: <ErrorName> <message>` and never
   thrown — the calling job already swallowed errors for Resend, and the

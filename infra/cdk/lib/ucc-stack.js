@@ -185,9 +185,10 @@ class UccStack extends Stack {
         // publicOrigin is validated non-empty below — an empty value would
         // put Function URL hosts into email links, which the origin lock 403s.
         PUBLIC_ORIGIN: publicOrigin,
-        // SES configuration set for transactional sends (bounce/complaint →
-        // ops topic). Prod only: staging sends through the same identity but
-        // without a set, so staging test bounces never page the prod topic.
+        // SES configuration set named explicitly on prod sends. It is also
+        // the identity's default set, so staging sends land in it anyway —
+        // staging test bounces DO reach the prod ops topic; use the SES
+        // mailbox simulator (success@simulator.amazonses.com) for staging tests.
         ...(isProd ? { SES_CONFIGURATION_SET: 'ucc-prod' } : {}),
         ...Object.fromEntries(API_SECRET_NAMES.map(n => [`SECRET_ARN_${n}`, apiSecrets[n].secretArn])),
       },
@@ -207,13 +208,15 @@ class UccStack extends Stack {
     // is a prod-stack resource (one per region per account), so BOTH stacks
     // name it by ARN string rather than by reference. From is pinned by
     // condition: a compromised Lambda cannot send as anyone else on the domain.
-    // Prod additionally needs the configuration set as a resource, or SES
-    // denies the send when ConfigurationSetName is supplied.
+    // The configuration set is the identity's DEFAULT set, so SES applies it
+    // to every send through the identity whether or not the Lambda names it —
+    // both stacks must therefore be allowed on it, or the send is denied
+    // (staging hit exactly this on 2026-10-05).
     apiFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['ses:SendEmail'],
       resources: [
         `arn:aws:ses:${this.region}:${this.account}:identity/utahciviccompact.org`,
-        ...(isProd ? [`arn:aws:ses:${this.region}:${this.account}:configuration-set/ucc-prod`] : []),
+        `arn:aws:ses:${this.region}:${this.account}:configuration-set/ucc-prod`,
       ],
       conditions: { StringEquals: { 'ses:FromAddress': 'hello@utahciviccompact.org' } },
     }));
