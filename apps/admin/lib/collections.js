@@ -269,6 +269,20 @@ export const HOMEPAGE_GROUPS = [
     ['thanks_body', 'Thank-you page body (the donation ask)', 'textarea'],
     ['thanks_cta', 'Thank-you page: help button label', 'text', 'e.g. I can help — opens the $10/25/50/100 payment modal'],
     ['thanks_dismiss', 'Thank-you page: decline label', 'text', 'e.g. Not this time'],
+    // Payment modal on the thank-you page (packages/render/site.js petitionDonate).
+    ['donate_title', 'Payment window: title', 'text', 'Blank = "Carry this fight through the legislature"'],
+    ['donate_body', 'Payment window: text', 'textarea', "Blank = \"Choose an amount. You'll finish on our secure Stripe checkout page.\""],
+    ['donate_amounts', 'Payment window: amounts', 'text', 'Dollars, separated by commas, e.g. 5, 10, 25, 50. Up to six. An "Other" button for any amount is always added. Blank = 10, 25, 50, 100.'],
+    ['donate_default', 'Payment window: pre-selected amount', 'text', 'One of the amounts above, e.g. 25'],
+    ['donate_frequency', 'Payment window: one-time or monthly', 'text', 'both (shows a One-time / Monthly switch), one-time, or monthly. Blank = both.'],
+    ['donate_default_frequency', 'Payment window: starts on', 'text', 'one-time or monthly — which side of the switch is selected first. Blank = one-time.'],
+    ['donate_custom_label', 'Payment window: custom amount button', 'text', 'Blank = Other'],
+    ['donate_button', 'Payment window: checkout button', 'text', 'Blank = Continue to checkout'],
+    ['donate_public_label', 'Payment window: public donor checkbox', 'text', 'Blank = Show my first name and amount on the public donor list'],
+    // Sharing (packages/render/site.js derivePetitionShare).
+    ['share_title', 'Share: heading', 'text', 'Above the share buttons on /petition and the thank-you page. Blank = Share the petition'],
+    ['share_text', 'Share: message', 'textarea', 'Pre-filled in X, Bluesky, texts and emails (Facebook uses the page preview). Blank = the headline. The link is added automatically.'],
+    ['share_image', 'Share: preview image', 'text', 'The picture shown when the link is posted. A Media Library path, e.g. /media/…/1200.jpg — 1200×630 works best. Blank = the logo, as a small card.'],
   ]},
 ];
 

@@ -31,6 +31,7 @@
           <button type="button" class="btn btn-donate btn-lg" id="petition-help">{{petition.thanks_cta}}</button>
           <a href="/" class="btn btn-outline" id="petition-decline">{{petition.thanks_dismiss}}</a>
         </div>
+        {{> petition-share}}
         <p class="petition-thanks-legal">Utah Civic Compact is a 501(c)(4) social welfare organization. Contributions are <strong>not</strong> tax-deductible as charitable donations.</p>
       </div>
     </div>
@@ -42,22 +43,28 @@
   <div class="modal-overlay" id="petition-modal" role="dialog" aria-modal="true" aria-labelledby="petition-modal-title">
     <div class="modal-card">
       <button class="modal-close" id="petition-modal-close" aria-label="Close">&#x2715;</button>
-      <h2 class="modal-title" id="petition-modal-title">Carry this fight through the legislature</h2>
-      <p class="modal-body">Choose an amount. You'll finish on our secure Stripe checkout page.</p>
-      <div class="donate-tiers donate-tiers-4" id="petition-tiers">
-        <button type="button" class="tier-btn" data-amount="1000">$10</button>
-        <button type="button" class="tier-btn active" data-amount="2500">$25</button>
-        <button type="button" class="tier-btn" data-amount="5000">$50</button>
-        <button type="button" class="tier-btn" data-amount="10000">$100</button>
+      <h2 class="modal-title" id="petition-modal-title">{{petition.donate.title}}</h2>
+      <p class="modal-body">{{petition.donate.body}}</p>
+      {{#petition.donate.toggle}}<div class="donate-type-toggle" id="petition-type">
+        <button type="button" class="toggle-btn{{#petition.donate.onetime}} active{{/petition.donate.onetime}}" data-type="onetime">One-time</button>
+        <button type="button" class="toggle-btn{{#petition.donate.monthly}} active{{/petition.donate.monthly}}" data-type="subscription">Monthly</button>
+      </div>{{/petition.donate.toggle}}
+      <div class="donate-tiers" id="petition-tiers" data-type="{{petition.donate.type}}">
+        {{#petition.donate.tiers}}<button type="button" class="tier-btn{{#active}} active{{/active}}" data-amount="{{cents}}">{{label}}<span class="tier-per">{{per}}</span></button>
+        {{/petition.donate.tiers}}<button type="button" class="tier-btn tier-custom" data-amount="custom">{{petition.donate.customLabel}}</button>
+      </div>
+      <div class="donate-custom-wrap is-hidden" id="petition-custom-wrap">
+        <label for="petition-custom-amount">Enter amount ($)</label>
+        <input type="number" id="petition-custom-amount" min="1" max="100000" step="1" inputmode="decimal" placeholder="Enter amount" />
       </div>
       <div class="form-group form-group-check">
         <label class="check-label">
           <input type="checkbox" id="petition-public" checked />
-          <span>Show my first name and amount on the public donor list</span>
+          <span>{{petition.donate.publicLabel}}</span>
         </label>
       </div>
       <div class="modal-actions">
-        <button type="button" class="btn btn-donate modal-cta-btn-stay" id="petition-checkout">Continue to checkout</button>
+        <button type="button" class="btn btn-donate modal-cta-btn-stay" id="petition-checkout">{{petition.donate.button}}</button>
         <button type="button" class="modal-dismiss" id="petition-modal-dismiss">{{petition.thanks_dismiss}}</button>
       </div>
       <p class="donate-error is-hidden" id="petition-modal-error"></p>

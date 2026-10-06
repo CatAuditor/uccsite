@@ -58,6 +58,64 @@ function deriveHomepage(content) {
   return { ...content, homepage: { ...content.homepage, statements } };
 }
 
+// Petition share links (docs/systems/petition.md "Sharing"). Built at render
+// time, not in the browser, so every button works with JavaScript off and the
+// preview tags (og:image) are in the HTML that Facebook, iMessage and X fetch.
+// Text: share_text, else the headline with its <em> markup stripped. Image: a
+// site path to a png/jpg/webp under /media or /assets (1200×630 → large card),
+// else the logo as a small card. Absent when the petition is switched off.
+const SHARE_IMAGE = /^\/(media|assets)\/[\w./-]+\.(png|jpe?g|webp)$/i;
+function derivePetitionShare(content, siteUrl = SITE_URL) {
+  const p = content.homepage && content.homepage.petition;
+  if (!p || !String(p.headline || '').trim()) return content;
+  const e = encodeURIComponent;
+  const url = `${siteUrl}/petition`;
+  const text = String(p.share_text || p.headline).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const custom = SHARE_IMAGE.test(String(p.share_image || '').trim());
+  const share = {
+    title: p.share_title || 'Share the petition',
+    url, text,
+    image: custom ? `${siteUrl}${String(p.share_image).trim()}` : `${siteUrl}/UCC.png`,
+    card: custom ? 'summary_large_image' : 'summary',
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${e(url)}`,
+    x: `https://twitter.com/intent/tweet?text=${e(text)}&url=${e(url)}`,
+    bluesky: `https://bsky.app/intent/compose?text=${e(`${text} ${url}`)}`,
+    sms: `sms:?&body=${e(`${text} ${url}`)}`,
+    email: `mailto:?subject=${e(text)}&body=${e(`${text}\n\n${url}`)}`,
+  };
+  return { ...content, homepage: { ...content.homepage, petition: { ...p, share, donate: petitionDonate(p) } } };
+}
+
+// Thank-you page payment modal (docs/systems/petition.md "Donation ask"), all
+// from the admin's Petition page. Amounts are typed as dollars ("5, 10, 25");
+// anything outside $1–$100,000 (the API's bounds) is dropped, at most six are
+// kept, and an empty or unreadable list falls back to $10/$25/$50/$100.
+// Frequency: "both" (default), "one-time" or "monthly". An "Other" button
+// with a free amount is always offered.
+const DONATE_FALLBACK = [10, 25, 50, 100];
+function petitionDonate(p) {
+  const dollars = [...new Set(String(p.donate_amounts || '').split(/[,\s]+/)
+    .map((x) => Math.round(Number(x.replace(/[$]/g, ''))))
+    .filter((n) => Number.isFinite(n) && n >= 1 && n <= 100000))].slice(0, 6);
+  const amounts = dollars.length ? dollars : DONATE_FALLBACK;
+  const wanted = Math.round(Number(String(p.donate_default || '').replace(/[$]/g, '')));
+  const preset = amounts.includes(wanted) ? wanted : (amounts.includes(25) ? 25 : amounts[0]);
+  const f = String(p.donate_frequency || 'both').toLowerCase();
+  const monthlyOnly = /month/.test(f) && !/one|both/.test(f);
+  const onetimeOnly = /one/.test(f) && !/month|both/.test(f);
+  const startMonthly = monthlyOnly || (!onetimeOnly && /month/.test(String(p.donate_default_frequency || '').toLowerCase()));
+  const type = startMonthly ? 'subscription' : 'onetime';
+  return {
+    title: p.donate_title || 'Carry this fight through the legislature',
+    body: p.donate_body || "Choose an amount. You'll finish on our secure Stripe checkout page.",
+    tiers: amounts.map((d) => ({ cents: d * 100, label: `$${d.toLocaleString('en-US')}`, active: d === preset, per: startMonthly ? '/mo' : '' })),
+    type, toggle: !monthlyOnly && !onetimeOnly, monthly: startMonthly, onetime: !startMonthly,
+    customLabel: p.donate_custom_label || 'Other',
+    button: p.donate_button || 'Continue to checkout',
+    publicLabel: p.donate_public_label || 'Show my first name and amount on the public donor list',
+  };
+}
+
 // withColorClasses(content) → { content, colorsCss }
 // Content carries badge_color / status_color hex values; templates used to
 // paint them with inline style attributes, which CSP style-src 'self'
@@ -289,7 +347,7 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
   if (errors.length) return { files: {}, errors };
 
   const colored = withColorClasses(content);
-  const derived = deriveTeam(deriveProjectFiles(deriveProjectFilters(deriveHomepage(colored.content))), siteUrl);
+  const derived = deriveTeam(deriveProjectFiles(deriveProjectFilters(derivePetitionShare(deriveHomepage(colored.content), siteUrl))), siteUrl);
   const expanded = expandPages(pages, derived);
 
   const files = { 'css/colors.css': colored.colorsCss };
@@ -333,5 +391,5 @@ ${pages.filter(p => p.sitemap !== false).map(p => {
 
 module.exports = {
   PAGES, MARKDOWN_FIELDS, SITE_URL, deriveHomepage, deriveProjectFilters, deriveProjectFiles, withColorClasses, buildSite, makeSitemap,
-  slugify, memberSlug, authorIndex, deriveTeam, expandPages,
+  slugify, memberSlug, authorIndex, deriveTeam, expandPages, derivePetitionShare, petitionDonate,
 };

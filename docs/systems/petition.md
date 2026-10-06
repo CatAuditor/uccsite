@@ -181,6 +181,42 @@ blank the petition headline and it returns on the next publish.
 - Next campaign: set a new slug + copy, save, publish. The hero, /petition
   and the thank-you page follow; the admin filter defaults to the new slug.
 
+## Sharing (2026-10-06)
+
+`templates/partials/petition-share.html`, included on /petition (hero, under the
+buttons) and /petition-thanks (under the donation ask). Facebook, X, Bluesky,
+Text and Email are plain links built at render time by
+`derivePetitionShare` (`packages/render/site.js`) — they work with JavaScript
+off. `js/petition.js` adds the phone share sheet (`navigator.share`) and
+**Copy link** (`navigator.clipboard`), each hidden until supported.
+
+- **Message**: `share_text`, else the headline with tags stripped. Link
+  appended automatically; Facebook ignores pre-filled text and uses the
+  page's Open Graph preview.
+- **Preview** (`og:image`, `twitter:card`/`twitter:image` on /petition):
+  `share_image` if it is a `/media/…` or `/assets/…` png/jpg/webp →
+  `summary_large_image`; anything else falls back to `/UCC.png` as `summary`.
+- **Heading**: `share_title`, default "Share the petition".
+- Absent entirely when the petition is off (headline blank).
+
+## Donation ask on the thank-you page (2026-10-06)
+
+The payment window's copy, amounts and frequency come from the petition
+group, via `petitionDonate` (`packages/render/site.js`):
+
+| Field | Meaning | Blank = |
+|---|---|---|
+| `donate_amounts` | dollars, comma-separated; $1–$100,000, de-duplicated, max six | 10, 25, 50, 100 |
+| `donate_default` | pre-selected amount | 25, else the first |
+| `donate_frequency` | `both` / `one-time` / `monthly` | both (One-time / Monthly switch) |
+| `donate_default_frequency` | which side the switch starts on | one-time |
+| `donate_title`, `donate_body`, `donate_button`, `donate_custom_label`, `donate_public_label` | copy | previous hard-coded text |
+
+An **Other** button with a free amount ($1–$100,000) is always present.
+Monthly sends `type: 'subscription'` to `POST /api/create-checkout-session`
+(already supported — no API or Stripe change). Tests:
+`packages/render/test/petition-share.test.mjs`.
+
 ## Not built (deliberate)
 
 - No IP / user-agent stored with a signature — a privacy org's petition.

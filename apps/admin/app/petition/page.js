@@ -170,8 +170,7 @@ export default async function PetitionPage({ searchParams }) {
         <button type="submit">Save petition copy</button><RequestPublish />
       </ActionForm>
       <p className="notice">
-        Signed in as {session.email}. Not editable here: the payment modal's $10/$25/$50/$100 amounts and the
-        501(c)(4) legal line — those live in the templates.
+        Signed in as {session.email}. Not editable here: the 501(c)(4) legal line — it lives in the templates.
       </p>
     </div>
   );

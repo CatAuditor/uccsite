@@ -6,6 +6,40 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — Petition: share buttons, and you control the donation ask
+
+**Sharing.** /petition and the thank-you page now have share buttons:
+Facebook, X, Bluesky, Text, Email, Copy link — and on phones, the phone's own
+share menu. A link posted anywhere now shows a picture and the headline.
+
+**The donation ask is yours to edit.** On the Petition page in the admin,
+under the thank-you fields:
+
+- **Amounts** — type them as dollars, e.g. `5, 10, 25, 50`. An **Other** button
+  for any amount is always added.
+- **One-time or monthly** — `both` shows a switch; or just `one-time` or `monthly`.
+- Title, text, button and checkbox wording.
+- **Share message** and **preview image** — paste a Media Library path; a
+  1200×630 picture shows large. Blank uses the logo.
+
+Everything blank looks exactly as before, plus the One-time / Monthly switch
+and Other. Like any copy, it goes live when you publish.
+
+## 2026-10-06 — Audit: changes made outside the admin
+
+A check of everything changed directly (not through the admin) since the
+move to AWS. Nothing broken; every change shows in the admin.
+
+- **2 October:** two KUTV stories, two videos and the homepage press list
+  were added straight into the database. They show in News & Media and
+  Homepage, with a revision you can roll back from **Revisions**.
+- **5 October:** five DNS records for Amazon email (SES), added in Cloudflare.
+- A team-page change was saved and requested on 6 October but not yet
+  approved — it isn't live until someone approves it on Publish & Status.
+- An out-of-date copy of the code on Conner's laptop was renamed
+  `uccsite-refactor-STALE-do-not-use`; publishing from it would have
+  rolled the site back to 2 October.
+
 ## 2026-10-06 — The authoring kit now carries the site's styling
 
 **What changed.** The authoring kit (the file you download at the top of All

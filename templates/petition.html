@@ -12,7 +12,9 @@
   <meta property="og:title" content="Sign the Petition | Utah Civic Compact" />
   <meta property="og:description" content="{{petition.body}}" />
   <meta property="og:site_name" content="Utah Civic Compact" />
-  <meta name="twitter:card" content="summary" />
+  {{#petition.share}}<meta property="og:image" content="{{petition.share.image}}" />
+  <meta name="twitter:card" content="{{petition.share.card}}" />
+  <meta name="twitter:image" content="{{petition.share.image}}" />{{/petition.share}}{{^petition.share}}<meta name="twitter:card" content="summary" />{{/petition.share}}
   <meta name="twitter:title" content="Sign the Petition | Utah Civic Compact" />
   <meta name="twitter:description" content="{{petition.body}}" />
 
@@ -38,6 +40,7 @@
         <p class="petition-hero-body">{{petition.body}}</p>
         <p class="petition-count" data-petition-count="{{petition.slug}}" data-count-label="{{petition.count_label}}" hidden></p>
         {{#petition.cta_secondary}}<a href="{{petition.cta_secondary_url}}" class="btn btn-ghost">{{petition.cta_secondary}}</a>{{/petition.cta_secondary}}
+        {{> petition-share}}
         {{/petition.headline}}
         {{^petition.headline}}
         <p class="petition-hero-label">Petition</p>

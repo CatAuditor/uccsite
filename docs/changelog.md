@@ -4,6 +4,30 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.17.0 — 2026-10-06 (branch `refactor`) — Petition sharing and an editable donation ask
+
+**Site / Petition** (`templates/partials/petition-share.html` new, `templates/petition.html`,
+`templates/petition-thanks.html`, `js/petition.js`, `css/pages/petition.css`;
+docs/systems/petition.md "Sharing", "Donation ask")
+- Share block on /petition and /petition-thanks: Facebook, X, Bluesky, Text, Email as no-JS links
+  built at render (`derivePetitionShare`); native share sheet and Copy link added by JS when supported.
+- /petition gets `og:image` + `twitter:image`; `summary_large_image` when `share_image` is a
+  /media or /assets picture, else the logo as `summary`.
+- Thank-you payment window driven by the petition group (`petitionDonate`): amounts, pre-selected
+  amount, one-time / monthly / both with a starting side, an always-present Other amount, and all copy.
+  Monthly checkout sends `type: 'subscription'` (API unchanged).
+
+**Admin** (`apps/admin/lib/collections.js`, `app/petition/page.js`)
+- Petition group gains 12 fields: `donate_*` (9) and `share_*` (3). JSON group, no schema change.
+
+**Tests**: `packages/render/test/petition-share.test.mjs` (5). Golden parity unchanged.
+
+**Docs**: dev notes also record the 2026-10-06 audit of changes made outside the admin.
+
+Deploy note: templates/js/css ship inside PublishFn's bundled site-src, so this needs
+`cdk deploy UccProd` before an admin publish carries it (otherwise a later admin publish would
+render with the old templates).
+
 ## v0.16.7 — 2026-10-06 (branch `refactor`) — Authoring kit carries the site's full styling
 
 **Admin / Documents** (`apps/admin/lib/authoring-kit.js`, `app/documents/authoring-kit/route.js`,

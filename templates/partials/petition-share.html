@@ -1,0 +1,38 @@
+{{#petition.share}}
+<!-- Petition sharing (docs/systems/petition.md "Sharing"): plain links that work
+     without JavaScript; js/petition.js adds the phone share sheet and Copy link. -->
+<div class="petition-share" data-share data-share-url="{{petition.share.url}}" data-share-text="{{petition.share.text}}">
+  <p class="petition-share-title">{{petition.share.title}}</p>
+  <div class="petition-share-buttons">
+    <button type="button" class="share-btn share-native" data-share-native hidden>
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      Share
+    </button>
+    <a class="share-btn" href="{{petition.share.facebook}}" target="_blank" rel="noopener" aria-label="Share on Facebook (opens in a new tab)">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z"/></svg>
+      Facebook
+    </a>
+    <a class="share-btn" href="{{petition.share.x}}" target="_blank" rel="noopener" aria-label="Share on X (opens in a new tab)">
+      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.67l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64z"/></svg>
+      X
+    </a>
+    <a class="share-btn" href="{{petition.share.bluesky}}" target="_blank" rel="noopener" aria-label="Share on Bluesky (opens in a new tab)">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5.2 3.6C7.6 5.4 10.2 9 11.2 11c.9-2 3.5-5.6 6-7.4 1.7-1.3 4.5-2.3 4.5.9 0 .6-.4 5.3-.6 6.1-.7 2.7-3.5 3.4-6 3 4.4.7 5.5 3.2 3.1 5.7-4.6 4.7-6.6-1.2-7.1-2.7-.1-.3-.1-.4-.1-.3 0-.1 0 0-.1.3-.5 1.5-2.5 7.4-7.1 2.7-2.4-2.5-1.3-5 3.1-5.7-2.5.4-5.3-.3-6-3-.2-.8-.6-5.5-.6-6.1 0-3.2 2.8-2.2 4.5-.9z"/></svg>
+      Bluesky
+    </a>
+    <a class="share-btn" href="{{petition.share.sms}}" aria-label="Share by text message">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Text
+    </a>
+    <a class="share-btn" href="{{petition.share.email}}" aria-label="Share by email">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></svg>
+      Email
+    </a>
+    <button type="button" class="share-btn" data-share-copy hidden>
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Copy link
+    </button>
+  </div>
+  <p class="petition-share-status" role="status" aria-live="polite"></p>
+</div>
+{{/petition.share}}

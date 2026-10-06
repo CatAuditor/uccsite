@@ -88,10 +88,28 @@
   if (!overlay || !helpBtn || typeof createModal !== 'function') return;
 
   const modal = createModal(overlay);
+  // Amounts, frequency and labels come from the admin's Petition page via the
+  // template (docs/systems/petition.md "Donation ask").
+  const tierBox = document.getElementById('petition-tiers');
   const tiers = overlay.querySelectorAll('.tier-btn');
+  const typeBtns = overlay.querySelectorAll('#petition-type .toggle-btn');
+  const customWrap = document.getElementById('petition-custom-wrap');
+  const customInput = document.getElementById('petition-custom-amount');
   const checkoutBtn = document.getElementById('petition-checkout');
+  const checkoutLabel = checkoutBtn.textContent;
   const errorEl = document.getElementById('petition-modal-error');
-  let amountCents = 2500; // $25 preselected
+  let type = (tierBox && tierBox.dataset.type) || 'onetime';
+  const preset = overlay.querySelector('.tier-btn.active');
+  let amountCents = preset && preset.dataset.amount !== 'custom' ? parseInt(preset.dataset.amount, 10) : 0;
+
+  typeBtns.forEach(b => {
+    b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
+    b.addEventListener('click', () => {
+      type = b.dataset.type;
+      typeBtns.forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      overlay.querySelectorAll('.tier-per').forEach(span => { span.textContent = type === 'subscription' ? '/mo' : ''; });
+    });
+  });
 
   let signer = {};
   try { signer = JSON.parse(sessionStorage.getItem('petition-signer') || '{}') || {}; } catch (_) {}
@@ -102,11 +120,29 @@
     t.addEventListener('click', () => {
       tiers.forEach(b => b.classList.remove('active'));
       t.classList.add('active');
-      amountCents = parseInt(t.dataset.amount, 10);
+      const custom = t.dataset.amount === 'custom';
+      if (customWrap) customWrap.classList.toggle('is-hidden', !custom);
+      if (custom) { amountCents = 0; customInput.focus(); }
+      else amountCents = parseInt(t.dataset.amount, 10);
     });
   });
 
   checkoutBtn.addEventListener('click', async () => {
+    if (customWrap && !customWrap.classList.contains('is-hidden')) {
+      const dollars = parseFloat(customInput.value);
+      if (!(dollars >= 1 && dollars <= 100000)) {
+        errorEl.textContent = 'Enter an amount between $1 and $100,000.';
+        errorEl.classList.remove('is-hidden');
+        customInput.focus();
+        return;
+      }
+      amountCents = Math.round(dollars * 100);
+    }
+    if (!amountCents) {
+      errorEl.textContent = 'Choose an amount.';
+      errorEl.classList.remove('is-hidden');
+      return;
+    }
     checkoutBtn.disabled = true;
     checkoutBtn.textContent = 'Redirecting to checkout…';
     errorEl.classList.add('is-hidden');
@@ -115,7 +151,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'onetime',
+          type,
           amountCents,
           email: signer.email || '',
           firstName: signer.firstName || '',
@@ -134,7 +170,7 @@
       errorEl.textContent = err.message;
       errorEl.classList.remove('is-hidden');
       checkoutBtn.disabled = false;
-      checkoutBtn.textContent = 'Continue to checkout';
+      checkoutBtn.textContent = checkoutLabel;
     }
   });
 }());
@@ -162,6 +198,34 @@
       el.removeAttribute('hidden');
     } catch (_) {
       console.warn('[petition] count unavailable');
+    }
+  });
+}());
+
+// ── Sharing (docs/systems/petition.md "Sharing") ──────────────────────────
+// The Facebook / X / Bluesky / Text / Email links work without this. Here:
+// the phone's own share sheet when the browser has one, and Copy link.
+(function initPetitionShare() {
+  document.querySelectorAll('[data-share]').forEach(box => {
+    const url = box.dataset.shareUrl;
+    const text = box.dataset.shareText;
+    const status = box.querySelector('.petition-share-status');
+    const say = (msg) => { if (status) status.textContent = msg; };
+    const nativeBtn = box.querySelector('[data-share-native]');
+    if (nativeBtn && navigator.share) {
+      nativeBtn.hidden = false;
+      nativeBtn.addEventListener('click', () => {
+        navigator.share({ title: document.title, text, url }).catch(() => {});
+      });
+    }
+    const copyBtn = box.querySelector('[data-share-copy]');
+    if (copyBtn && navigator.clipboard) {
+      copyBtn.hidden = false;
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(url)
+          .then(() => say('Link copied — paste it anywhere.'))
+          .catch(() => say('Could not copy. The link is ' + url));
+      });
     }
   });
 }());

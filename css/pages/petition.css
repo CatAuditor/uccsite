@@ -182,3 +182,39 @@
 .modal-cta-btn-stay { justify-content: center; }
 #petition-modal .modal-body { margin-bottom: 20px; }
 @media (max-width: 480px) { .donate-tiers-4 { grid-template-columns: repeat(2, 1fr); } }
+
+/* ── Sharing (templates/partials/petition-share.html) ───────────────────── */
+.petition-share { margin-top: 28px; }
+.petition-share-title {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gray-600); margin: 0 0 10px;
+}
+.petition-share-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.share-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px; border-radius: 999px;
+  border: 1.5px solid var(--gray-200); background: var(--white); color: var(--navy);
+  font: 600 0.85rem/1 var(--font-sans); text-decoration: none; cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.share-btn:hover { border-color: var(--navy); }
+.share-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.share-btn.share-native { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.petition-share-status { min-height: 1.2em; margin: 8px 0 0; font-size: 0.85rem; color: var(--gray-600); }
+
+/* On the dark /petition hero */
+.petition-hero .petition-share-title { color: rgba(255,255,255,0.6); }
+.petition-hero .share-btn { background: transparent; border-color: rgba(255,255,255,0.35); color: var(--white); }
+.petition-hero .share-btn:hover { border-color: var(--white); background: rgba(255,255,255,0.08); }
+.petition-hero .share-btn.share-native { background: var(--white); border-color: var(--white); color: var(--navy-dark); }
+.petition-hero .petition-share-status { color: rgba(255,255,255,0.75); }
+
+/* On the thank-you card */
+.petition-thanks-card .petition-share { margin: 28px 0 0; padding-top: 24px; border-top: 1px solid var(--gray-200); }
+.petition-thanks-card .petition-share-buttons { justify-content: center; }
+.petition-thanks-card .petition-share-title { text-align: center; }
+
+/* Payment modal: one-time / monthly toggle + Other amount */
+#petition-modal .donate-type-toggle { margin: 4px 0 14px; }
+#petition-modal .donate-tiers { grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); }
+#petition-modal .donate-custom-wrap { margin-top: 12px; }
