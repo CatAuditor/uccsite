@@ -42,6 +42,9 @@ apps/admin/
   app/users                owner-only: invite, role, disable, reset password,
                            remove MFA, sign out everywhere
   app/redirects            redirects table → CloudFront KeyValueStore on publish
+  app/mail, app/mail/[id]  Newsletters: block composer + phone/desktop light/dark preview,
+                           test send, two-person send request/approve, schedule
+                           (docs/systems/newsletters.md; lib/newsletters.js)
   app/subscribers          Mailing list (editor+): subscribers ∪ opted-in members with
                            residency / donor / petitions labels, "who is this email going
                            to" filters, audited CSV; query = packages/db/audience.js (shared
@@ -90,12 +93,14 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
 | Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |
 | Donors; the mailing list with audience controls (residency, donors, petition signers) + CSV | Donations, Mailing list |
+| Newsletters: write, preview (phone, light/dark), test, request → approve → send (now or scheduled) | Mail → Newsletters (docs/systems/newsletters.md) |
 | Confidential tips: read, triage status, delete | Tips (editor+; delete is owner) |
 | Accounts, roles, MFA, security keys | Users (owners), My profile (everyone) |
 
 Not in the admin by design: secrets (Secrets Manager), templates for fixed
-pages (developer-owned, spec §3.3), sending the periodical
-(`scripts/send-periodical.js`).
+pages (developer-owned, spec §3.3). The newsletter moved INTO the admin on
+2026-10-05 (Mail → Newsletters); `scripts/send-periodical.js` remains an
+operator fallback.
 
 ## Account & security (spec §11)
 
@@ -160,6 +165,10 @@ Draft/Publishing…/Live/Failed/Refused (the Lambda holds the real mutex —
 docs/systems/publish-pipeline.md).
 
 ## Publishing (two-person rule, 2026-09-13)
+
+Newsletters follow the same rule with their own table and pages — see
+docs/systems/newsletters.md; the dashboard lists newsletters needing
+attention above the publish request.
 
 No post or update goes live on one person's say-so. `lib/publish.js` +
 `packages/db/publish-requests.js` (table `publish_requests`, DDL wired into

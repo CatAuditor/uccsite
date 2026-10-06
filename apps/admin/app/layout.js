@@ -25,11 +25,13 @@ const NAV = [
   // Documents are grouped by their category field (planning addendum 3);
   // the categories are read live in RootLayout and appended after this group.
   { group: 'Documents', items: [['/documents', 'All documents'], ['/styles', 'Styles & rules']] },
+  // Mail (2026-10-05): newsletters are composed, reviewed and sent here;
+  // the mailing list is the audience they reach (docs/systems/newsletters.md).
+  { group: 'Mail', items: [['/mail', 'Newsletters'], ['/subscribers', 'Mailing list']] },
   { group: 'Operations', items: [
     ['/', 'Publish & Status'],
     ['/redirects', 'Redirects'],
     ['/donations', 'Donations'],
-    ['/subscribers', 'Mailing list'],
     ['/tips', 'Tips'],
     ['/revisions', 'Revisions'],
     ['/audit', 'Audit Log'],

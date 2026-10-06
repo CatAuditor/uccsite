@@ -32,3 +32,11 @@ test('email escapes content and links to the dashboard', () => {
   assert.match(html, /href="https:\/\/admin\.example\/"/);
   assert.match(html, /1 saved change to/);
 });
+
+test('newsletterRequestEmail escapes and links the editor', async () => {
+  const { newsletterRequestEmail } = await import('../lib/notify-recipients.mjs');
+  const m = newsletterRequestEmail({ requestedBy: 'e@x.y', id: 'abc', subject: '<s>', note: '<n>', recipients: 1, scheduledLabel: '', appOrigin: 'https://a' });
+  assert.equal(m.subject, 'Newsletter "<s>" from e@x.y needs a review');
+  assert.ok(m.html.includes('&lt;s&gt;') && m.html.includes('&lt;n&gt;') && m.html.includes('https://a/mail/abc') && m.html.includes('1 person') && m.html.includes('as soon as it is approved'));
+  assert.ok(newsletterRequestEmail({ requestedBy: 'e', id: 'i', subject: 's', recipients: 2, scheduledLabel: 'Tue 9:00 AM MDT', appOrigin: 'https://a' }).html.includes('scheduled for <strong>Tue 9:00 AM MDT</strong>'));
+});

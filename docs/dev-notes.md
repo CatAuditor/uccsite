@@ -6,6 +6,31 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-05 — Newsletters: write, preview and send email from the admin (Mail section)
+
+The admin has a new **Mail** section. **Newsletters** is a small
+Mailchimp-style composer: write the email from blocks (headings, text,
+buttons, images, quotes, dividers), pick the colours and font, choose the
+audience with the same filters as the Mailing list, and watch it render on
+the right exactly as a phone would show it — with **Light / Dark** and
+**Phone / Desktop** switches. **Send me a test** emails the saved version to
+you. The **Mailing list** page moved under Mail too.
+
+Sending follows the same rule as publishing the site: the writer **requests
+the send** (now, or at a chosen Mountain-time date and time), a
+**different** admin approves it (owners can approve their own), and only
+then does it go out — from "Your Name from Utah Civic Compact"
+<hello@utahciviccompact.org>, with an unsubscribe link in every copy. The
+page then shows how many were delivered and any failures; a failed send can
+be retried without emailing anyone twice. Requests show up on Publish &
+Status and the other admins get an email, just like a publish request.
+
+- **Editors and owners:** nothing to set up — open Mail → Newsletters. The
+  non-technical editing guide has a step-by-step section.
+- **Needs a person:** nothing. The operator script for sending is still
+  there as a fallback but should not be needed.
+- Technical detail: docs/systems/newsletters.md.
+
 ## 2026-10-05 — "Request publish" beside every Save button, and an email when a request needs a reviewer
 
 Editors no longer have to walk over to Publish & Status to ask for a

@@ -14,7 +14,8 @@ aws/api/routes.js            sesSend() — THE send path (welcome email, portal 
                              FROM_ADDRESS = 'Utah Civic Compact <hello@utahciviccompact.org>'
                              _setSesClient() — test seam only
 aws/api/secrets.js           TOKEN_SECRET (signs unsubscribe/portal links); RESEND_API_KEY removed
-apps/admin/lib/notify.js     publish-request review email from the admin (same From, identity,
+aws/newsletter/              NewsletterSendFn — the newsletter send path (docs/systems/newsletters.md)
+apps/admin/lib/notify.js     publish-request + newsletter-request review emails from the admin (same From, identity,
                              config set; auth = the Amplify SSR compute role UccProdAdminCompute)
 scripts/send-periodical.js   newsletter sender — SESv2 SendEmail per recipient, config set ucc-prod (signs the same unsubscribe token format)
 infra/cdk/lib/ucc-stack.js   "SES sending domain" block (prod only) + ApiFunction ses:SendEmail policy (both stacks)
@@ -55,7 +56,9 @@ the ops topic and reputation metrics are not tagged.
 | Welcome | `POST /api/subscribe` (join form) | self-invoke job, non-blocking | `List-Unsubscribe` + `List-Unsubscribe-Post: One-Click` (RFC 8058), signed 1-year unsubscribe link |
 | Billing-portal link | `POST /api/create-portal-session` | inline after the 202 | 15-minute signed link |
 | Publish request needs review | an EDITOR (not an owner) requests a publish in the admin | `apps/admin/lib/notify.js`, after the request commits; one `SendEmail` to the four admins minus the requester (list in `lib/notify-recipients.mjs`); prod only unless `PUBLISH_NOTIFY_TO` is set | none — internal; links to the admin dashboard |
-| Newsletter | operator runs `scripts/send-periodical.js` (`--audience utah\|outside\|unknown\|all`, `--donors-only`, `--petition <slug>` — the admin Mailing list's filters, packages/db/audience.js) | script: one `SendEmail` per recipient, 250 ms apart (well under the 14/sec quota), `sent-<ts>.log` + `--resume` | `List-Unsubscribe` + One-Click headers, `{{unsubscribe_url}}` substituted in the body. Needs only `TOKEN_SECRET` in `.env` + profile `uccsite` (the operator's IAM user must hold `ses:SendEmail`; admins do) |
+| Newsletter (admin) | an approved send request in the admin (Mail → Newsletters; docs/systems/newsletters.md) | `NewsletterSendFn` Lambda: one `SendEmail` per recipient, 100 ms apart, per-recipient delivery ledger, self-resume; From `"<Author> from Utah Civic Compact" <hello@…>` (display name only — the address is IAM-pinned) | `List-Unsubscribe` + One-Click, signed 1-year unsubscribe link per recipient |
+| Newsletter test | "Send me a test" in the composer | admin SSR role, to the signed-in admin only, subject `[TEST] …` | none |
+| Newsletter (script, fallback) | operator runs `scripts/send-periodical.js` (`--audience utah\|outside\|unknown\|all`, `--donors-only`, `--petition <slug>` — the admin Mailing list's filters, packages/db/audience.js) | script: one `SendEmail` per recipient, 250 ms apart (well under the 14/sec quota), `sent-<ts>.log` + `--resume` | `List-Unsubscribe` + One-Click headers, `{{unsubscribe_url}}` substituted in the body. Needs only `TOKEN_SECRET` in `.env` + profile `uccsite` (the operator's IAM user must hold `ses:SendEmail`; admins do) |
 
 Volume is tiny (tens per month). No message bodies or recipient lists are
 ever logged (`[api] SES error: <ErrorName>` / `[api] SES sent <MessageId>` only).

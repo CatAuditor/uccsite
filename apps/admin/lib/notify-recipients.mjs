@@ -43,3 +43,14 @@ export function publishRequestEmail({ requestedBy, note, changes, appOrigin }) {
       + `<p><a href="${escapeHtml(appOrigin)}/">Review it on Publish &amp; Status</a>. Nothing goes live until an owner or another editor approves it.</p>`,
   };
 }
+
+// newsletterRequestEmail({ requestedBy, id, subject, note, recipients, scheduledLabel, appOrigin }) → { subject, html }
+export function newsletterRequestEmail({ requestedBy, id, subject, note, recipients, scheduledLabel, appOrigin }) {
+  const when = scheduledLabel ? `scheduled for <strong>${escapeHtml(scheduledLabel)}</strong>` : 'to go out <strong>as soon as it is approved</strong>';
+  return {
+    subject: `Newsletter "${subject}" from ${requestedBy} needs a review`,
+    html: `<p><strong>${escapeHtml(requestedBy)}</strong> asked to send the newsletter <strong>${escapeHtml(subject)}</strong> to ${Number(recipients) || 0} ${Number(recipients) === 1 ? 'person' : 'people'}, ${when}.</p>`
+      + (note ? `<blockquote>${escapeHtml(note)}</blockquote>` : '')
+      + `<p><a href="${escapeHtml(appOrigin)}/mail/${escapeHtml(id)}">Read it and approve or decline</a>. Nothing is sent until an owner or another editor approves it.</p>`,
+  };
+}

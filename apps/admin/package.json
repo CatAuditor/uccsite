@@ -18,6 +18,7 @@
     "@aws-sdk/s3-request-presigner": "^3.700.0",
     "@uccsite/db": "*",
     "@uccsite/html-ingest": "*",
+    "@uccsite/newsletter": "*",
     "@uccsite/render": "*",
     "@uccsite/style-apply": "*",
     "@uccsite/style-kit": "*",

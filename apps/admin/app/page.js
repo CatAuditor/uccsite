@@ -6,6 +6,9 @@ import { revalidatePath } from 'next/cache';
 import { requireSession } from '../lib/auth';
 import { withDb, latestPublishRuns, IN_FLIGHT_GRACE_MS } from '../lib/data';
 import { publishState, requestPublish, approvePublish, declinePublish, withdrawPublish } from '../lib/publish';
+import { pendingNewsletters } from '@uccsite/db/newsletters';
+import { formatZoned } from '@uccsite/newsletter/schedule';
+import Link from 'next/link';
 import { runAction } from '../lib/actions';
 import Refresher from './refresher';
 import { when } from '../lib/when.mjs';
@@ -41,6 +44,9 @@ function ChangeList({ changes }) {
 export default async function Dashboard() {
   const session = await requireSession();
   const runs = await withDb((client) => latestPublishRuns(client));
+  // Newsletters follow the same two-person rule but live on /mail; surface
+  // the ones needing attention here so a reviewer sees them on sign-in.
+  const newsletters = await withDb(pendingNewsletters);
   const { pending, liveAt, unpublished, sinceRequest, seenThrough, requests, busy } = await publishState();
   const canAct = session.role !== 'viewer';
   const isRequester = pending && (pending.requestedByUser === session.username || pending.requestedBy === session.email);
@@ -86,6 +92,20 @@ export default async function Dashboard() {
         <strong> different</strong> admin approves it — or an <strong>owner</strong> approves their own.
         Last live: {liveAt ? when(liveAt) : 'never'}.
       </p>
+
+      {newsletters.length > 0 && (
+        <section className="request pending">
+          <h2>Newsletters needing attention</h2>
+          <ul>
+            {newsletters.map((n) => (
+              <li key={n.id}>
+                <Link href={`/mail/${n.id}`}><strong>{n.subject || '(no subject)'}</strong></Link> — {n.requestedBy}, {n.recipients} people:{' '}
+                {n.status === 'pending' ? 'waiting for review' : n.status === 'approved' ? `approved, sends ${formatZoned(n.scheduledFor)}` : 'sending now'}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {pending ? (
         <section className="request pending">

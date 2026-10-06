@@ -31,7 +31,7 @@ request is approved (section 2). Nobody rebuilds anything by hand.
 | Role | Can |
 |---|---|
 | **viewer** | look at everything, change nothing |
-| **editor** | edit all content, upload images, request and approve publishes, see donors, subscribers and tips |
+| **editor** | edit all content, upload images, request and approve publishes, write newsletters and request/approve sends, see donors, subscribers and tips |
 | **owner** | everything, plus invite people, change roles, reset passwords, delete tips |
 
 ---
@@ -145,3 +145,33 @@ visual; a developer changes the code and publishes.
   including "IT" — nobody on the team will ever ask for them.
 - Nightly, the content is backed up to the code repository automatically;
   Revisions cover the everyday "undo".
+
+## Newsletters (Mail → Newsletters)
+
+1. **Start writing**: type the subject line and press *Start writing*.
+2. **Compose** on the left: preview text (the line inboxes show after the
+   subject), an optional headline for the green band, **From** (your name —
+   the email arrives as "Your Name from Utah Civic Compact"), the
+   **audience** (same choices as the Mailing list page), then the content
+   as blocks — *Heading*, *Text* (plain writing; `**bold**`, `*italic*`,
+   `[link text](https://…)`, "- " for bullets), *Button*, *Image* (paste the
+   image address from the Media Library, always give alt text), *Quote*,
+   *Divider*. Use ↑ ↓ ✕ to reorder or remove. *Look* changes colours, font,
+   the small line above the headline and the footer.
+3. **Preview** on the right is what a phone shows. Switch **Light / Dark**
+   and **Phone / Desktop** to check both. Gmail does its own dark-mode
+   recolouring, so also use **Send me a test** — it emails the saved version
+   to you with `[TEST]` in the subject.
+4. **Save**, then **Request send**. Leave the time empty to send as soon as
+   someone approves, or pick a date and time (Mountain time, at least five
+   minutes ahead) to schedule it. The other admins get an email.
+5. **Review** (a different admin, or an owner for their own): read the
+   preview, then *Approve* (sends now, or at the scheduled time) or
+   *Decline with notes*. The writer can *Withdraw* a request to keep editing,
+   and anyone can *Cancel* a scheduled send before it starts.
+6. **After sending** the page shows how many were delivered and any
+   failures. A failed send can be *Retried*; people already sent to are
+   skipped.
+
+A request freezes the email: once requested it cannot be edited until it is
+withdrawn, declined or cancelled. Only owners can delete a newsletter.
