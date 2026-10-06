@@ -346,6 +346,11 @@ Until this exists the admin runs only on a developer machine (`npm run dev
    and `…:configuration-set/ucc-prod` with condition `ses:FromAddress =
    hello@utahciviccompact.org` (publish-request review email; added to
    `UccProdAdminCompute` / `admin-runtime` 2026-10-05);
+   `lambda:InvokeFunction` on the `NewsletterFunctionArn` stack output
+   (statement `NewsletterSend`, added by `scripts/newsletter-prod-wiring.mjs`
+   2026-10-05 — rerun it after any redeploy that replaces the function);
+   Amplify env var `NEWSLETTER_FUNCTION_NAME` = `NewsletterFunctionName`
+   output (same script sets it; takes effect on the next build);
    on the user pool: `cognito-idp:ListUsers, AdminGetUser,
    AdminListGroupsForUser, AdminCreateUser, AdminAddUserToGroup,
    AdminRemoveUserFromGroup, AdminDisableUser, AdminEnableUser,

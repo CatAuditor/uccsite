@@ -18,6 +18,8 @@
     "test": "npm test --workspaces --if-present"
   },
   "devDependencies": {
+    "@aws-sdk/client-amplify": "^3.1146.0",
+    "@aws-sdk/client-iam": "^3.1146.0",
     "wrangler": "^4"
   }
 }

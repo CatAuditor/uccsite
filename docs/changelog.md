@@ -31,6 +31,59 @@ Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
 
 Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
 
+## v0.16.0 — 2026-10-05 (branch `refactor`) — Mail section: newsletters composed, reviewed and sent from the admin
+
+**Newsletter package** (`packages/newsletter`, pure ESM, 12 tests)
+- `render.mjs`: blocks (heading/text/button/image/quote/divider) + theme →
+  table-based email HTML with inline styles, plain-text twin, dark-mode
+  `prefers-color-scheme` block + `[data-ogsc]`; `mode` auto/dark/light for
+  preview; author text escaped first, http(s)/mailto only; `fromHeader()`
+  puts the author in the From display name, address stays hello@.
+- `schedule.mjs`: America/Denver datetime-local ⇄ UTC (DST), `parseSchedule`
+  (≥5 min lead).
+
+**Database** (`packages/db/newsletters.js`, DDL in content-schema, applied
+staging + prod)
+- `newsletters` (status draft → pending → approved → sending → sent|failed;
+  html/text frozen at request; request/review/run columns) +
+  `newsletter_deliveries` (PK newsletter_id+email = idempotency key).
+  Conditional-update transitions; `claimForSending` mutex. 6 tests.
+
+**Lambda** (`aws/newsletter`, `NewsletterSendFn` in both stacks)
+- `{id}` from an approval, `{id, resume}` self re-invoke near the timeout,
+  `{tick}` every minute (EventBridge) for scheduled sends + stalled runs,
+  `recipientsOverride` for the smoke script. Per recipient: delivery row,
+  signed 1-year unsubscribe link (`@uccsite/tokens`), SESv2 SendEmail with
+  List-Unsubscribe/One-Click, 100 ms gap. IAM: dsql admin, ses:SendEmail
+  (From pin), TOKEN_SECRET read, self-invoke. 5 tests.
+
+**Admin**
+- Nav group **Mail**: `/mail` (list + create), `/mail/[id]` (Composer
+  client component: block editor, theme, audience filters shared with the
+  Mailing list, phone/desktop + light/dark preview via the same renderer;
+  Send me a test; Request send with optional schedule; review panel
+  approve/decline/withdraw/cancel/retry; owner delete). Mailing list moved
+  under Mail.
+- `lib/newsletters.js`: every rule (two-person, owner self-approve, lost-
+  update stamp, invoke-failure reopen); `lib/notify.js` generalised —
+  `notifyNewsletterRequested` (same recipients as publish requests).
+- Dashboard: "Newsletters needing attention".
+- `NEWSLETTER_FUNCTION_NAME` via `lib/config.js`, `scripts/admin-env.mjs`,
+  `amplify.yml`.
+
+**Ops**
+- `scripts/newsletter-smoke.mjs` (Lambda E2E via the mailbox simulator;
+  green on staging and prod), `scripts/newsletter-prod-wiring.mjs` (IAM
+  invoke grant on `UccProdAdminCompute/admin-runtime` + Amplify env var,
+  both applied). Staging `ucc/staging/TOKEN_SECRET` now holds a self-set
+  test value. Root devDeps `@aws-sdk/client-iam`, `@aws-sdk/client-amplify`.
+
+**Docs**: systems/newsletters.md (new), admin.md, email.md,
+legal/data-handling.md (2 rows), non-technical guide (Newsletters section),
+error-handling/debug/newsletters.md, for-conner §8.3, dev note.
+
+Open P1 (unchanged): Resend key deletion pending; Stripe webhook unconfirmed.
+
 ## v0.15.0 — 2026-10-05 (branch `refactor`) — Request publish everywhere + reviewer email
 
 **Admin**
