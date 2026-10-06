@@ -403,8 +403,8 @@ Done when it prints `verified: true`, `dkim: SUCCESS`, `mailFrom: SUCCESS`.
 All three, not two. If one is `FAILED` after an hour, the matching record is
 wrong or orange-clouded — fix it; do not re-create anything in AWS.
 
-- [ ] 10.1 records added, DNS-only
-- [ ] 10.2 all three green
+- [x] 10.1 records added, DNS-only (verified 2026-10-05)
+- [x] 10.2 all three green (verified 2026-10-05)
 
 ### 10.3 `[go]` then `[agent]` Request production access (leave the sandbox)
 
