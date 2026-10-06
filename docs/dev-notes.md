@@ -22,6 +22,15 @@ saves and a link to Publish & Status. When an **owner** asks, nobody is
 emailed: owners approve their own requests, so there is nothing for anyone
 else to do. The Publish & Status request form behaves the same way.
 
+- **Also fixed (approval bug hunt):** for the first minute after an
+  approval the dashboard still showed the approved saves as "unpublished"
+  with a working Request publish button, so people asked again for what was
+  already going live. It now shows "Publishing now…" and refreshes itself
+  until the publish lands; requesting or approving during that time is
+  refused with an explanation. Times on Publish & Status and in the review
+  email are now Mountain time (they were UTC with no label). The Decline
+  button no longer appears on your own request, and asking twice says "your
+  request is already waiting" instead of quoting your own email back.
 - **Fixed the same day:** saves on the Petition page and the Donation appeals
   page were never counted as "unpublished", so Request publish said there was
   nothing to publish and Publish & Status did not list them. They count now.

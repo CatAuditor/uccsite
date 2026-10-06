@@ -31,6 +31,7 @@ apps/admin/
                            calls app/publish-actions.js requestPublishInline
   lib/notify.js            review-request email via SES (lib/notify-recipients.mjs:
                            pure recipient list + body, tested)
+  lib/when.mjs             DSQL text timestamp → "Oct 5, 9:14 PM MT" (tested)
   app/error.js             backstop error boundary
   lib/media.js             media library server helpers (docs/systems/media.md)
   lib/files.js             project files server helpers (docs/systems/files.md)
@@ -199,6 +200,21 @@ No post or update goes live on one person's say-so. `lib/publish.js` +
      The writer sees the note on the dashboard's request history.
    - **Withdraw** → the requester (or an owner clearing a stale request);
      audit `publish.withdraw`.
+   **Starting window (2026-10-05):** the Lambda writes its `publishing`
+   row only after rendering and diffing the site against S3 (30-60 s; a
+   noop run only at the end), so `inFlightPublish` sees nothing meanwhile.
+   `busyPublish` in `lib/publish.js` therefore also treats an `approved`
+   request with no run row yet, reviewed < 10 min ago, as in flight
+   (`runStatus = 'starting'`; past the window `'never started'`). While busy:
+   the dashboard shows "Publishing now…" instead of the request form and
+   polls (`Refresher`), Approve is disabled, and `requestPublish` /
+   `approvePublish` refuse server-side — before this, people re-requested
+   saves that were already going live. The requester's own pending request
+   is reported as "Your publish request is already waiting"; Decline is
+   hidden from the requester (the server refused it anyway).
+   **Times** on the dashboard and in the review email are Mountain time with
+   an "MT" label (`lib/when.mjs`, tested) — DSQL text timestamps are UTC and
+   were shown raw before.
 3. A publish renders the whole database, so saves made AFTER the request
    go live too; the pending panel lists them separately ("Also saved after
    the request") so the reviewer knows what they are approving (and the

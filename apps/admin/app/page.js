@@ -8,6 +8,7 @@ import { withDb, latestPublishRuns, IN_FLIGHT_GRACE_MS } from '../lib/data';
 import { publishState, requestPublish, approvePublish, declinePublish, withdrawPublish } from '../lib/publish';
 import { runAction } from '../lib/actions';
 import Refresher from './refresher';
+import { when } from '../lib/when.mjs';
 import ActionForm from './action-form';
 
 export const dynamic = 'force-dynamic';
@@ -19,13 +20,12 @@ function isFreshPublishing(run) {
     && Date.now() - new Date(run.started_at).getTime() < IN_FLIGHT_GRACE_MS;
 }
 
-const when = (iso) => (iso ? iso.slice(0, 16).replace('T', ' ') : '');
-
 const STATUS_LABEL = { pending: 'Waiting for review', declined: 'Declined', withdrawn: 'Withdrawn' };
-const RUN_LABEL = { succeeded: 'Approved — live', noop: 'Approved — nothing to change', publishing: 'Approved — publishing…', failed: 'Approved — publish FAILED', refused: 'Approved — publish refused (another was running)' };
+const RUN_LABEL = { succeeded: 'Approved — live', noop: 'Approved — nothing to change', publishing: 'Approved — publishing…', starting: 'Approved — starting…', 'never started': 'Approved — publish never started (ask a developer)', failed: 'Approved — publish FAILED', refused: 'Approved — publish refused (another was running)' };
+const RUN_CLASS = { noop: 'succeeded', starting: 'publishing', 'never started': 'failed' };
 // An approved request is only as good as the run it started.
 const requestLabel = (r) => (r.status === 'approved' ? RUN_LABEL[r.runStatus] || `Approved — publish ${r.runStatus}` : STATUS_LABEL[r.status] || r.status);
-const requestClass = (r) => (r.status === 'approved' ? `status-${r.runStatus === 'noop' ? 'succeeded' : r.runStatus}` : `status-${r.status}`);
+const requestClass = (r) => (r.status === 'approved' ? `status-${RUN_CLASS[r.runStatus] || r.runStatus}` : `status-${r.status}`);
 
 function ChangeList({ changes }) {
   if (!changes.length) return <p className="hint">No saves recorded.</p>;
@@ -41,7 +41,7 @@ function ChangeList({ changes }) {
 export default async function Dashboard() {
   const session = await requireSession();
   const runs = await withDb((client) => latestPublishRuns(client));
-  const { pending, liveAt, unpublished, sinceRequest, seenThrough, requests, inFlight } = await publishState();
+  const { pending, liveAt, unpublished, sinceRequest, seenThrough, requests, busy } = await publishState();
   const canAct = session.role !== 'viewer';
   const isRequester = pending && (pending.requestedByUser === session.username || pending.requestedBy === session.email);
   // Owners may approve their own request (lib/publish.js); editors still need a second admin.
@@ -80,7 +80,7 @@ export default async function Dashboard() {
   return (
     <div>
       <h1>Publish &amp; Status</h1>
-      <Refresher active={Boolean(inFlight)} />
+      <Refresher active={Boolean(busy)} />
       <p className="notice">
         Saves are drafts. The site only changes when an admin <strong>requests</strong> a publish and a
         <strong> different</strong> admin approves it — or an <strong>owner</strong> approves their own.
@@ -115,13 +115,23 @@ export default async function Dashboard() {
               {isRequester && <p className="notice">This is your own request. As an owner you can publish it yourself — check the list above first.</p>}
               <label htmlFor="review-note">Notes to the writer (required to decline)</label>
               <textarea id="review-note" name="note" placeholder="What's wrong, or what you checked." />
-              <button type="submit" name="decision" value="approve" disabled={Boolean(inFlight)}>
-                {inFlight ? 'Publishing…' : 'Approve & publish'}
+              <button type="submit" name="decision" value="approve" disabled={Boolean(busy)}>
+                {busy ? 'Publishing…' : 'Approve & publish'}
               </button>{' '}
-              <button type="submit" name="decision" value="decline" className="secondary">Decline with notes</button>
+              {!isRequester && <button type="submit" name="decision" value="decline" className="secondary">Decline with notes</button>}
               {session.role === 'owner' && <>{' '}<button type="submit" name="decision" value="withdraw" className="secondary">Withdraw (owner)</button></>}
             </ActionForm>
           )}
+        </section>
+      ) : busy ? (
+        <section className="request pending">
+          <h2>Publishing now…</h2>
+          <p>
+            {busy.kind === 'starting' ? `Approved by ${busy.by} at ${when(busy.since)}; the publish is starting.` : `A publish started at ${when(busy.since)}.`}
+            {' '}Saves made before it started go live with it. This page refreshes itself; anything still listed as unpublished afterwards needs a new request.
+          </p>
+          <h3>Not yet live ({unpublished.length})</h3>
+          <ChangeList changes={unpublished} />
         </section>
       ) : (
         <section className="request">
@@ -164,10 +174,10 @@ export default async function Dashboard() {
         <tbody>
           {runs.map((run) => (
             <tr key={run.id}>
-              <td>{run.started_at?.slice(0, 19).replace('T', ' ')}</td>
+              <td>{when(run.started_at, { seconds: true })}</td>
               <td>{run.trigger_source}</td>
               <td className={`status-${run.status}`}>
-                {run.status === 'succeeded' ? `Live (${run.finished_at?.slice(11, 16)})`
+                {run.status === 'succeeded' ? `Live (${when(run.finished_at)})`
                   : run.status === 'publishing' ? (isFreshPublishing(run) ? 'Publishing…' : 'Stalled (abandoned)')
                   : run.status === 'refused' ? 'Refused (another publish was running)'
                   : run.status}

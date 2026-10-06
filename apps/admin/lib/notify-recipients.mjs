@@ -2,6 +2,8 @@
 // docs/systems/admin.md "Publishing"). The reviewer list is the org's four
 // admins by decision 2026-10-05 — a fixed list, not a Cognito lookup, so a
 // mis-grouped account can never be mailed about a request.
+import { when } from './when.mjs';
+
 export const PUBLISH_REVIEWERS = [
   'jarom.gillins@utahciviccompact.org',
   'conner.radcliffe@utahciviccompact.org',
@@ -31,7 +33,7 @@ export const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[
 export function publishRequestEmail({ requestedBy, note, changes, appOrigin }) {
   const n = changes.length;
   const items = changes.slice(0, 50).map((c) =>
-    `<li><code>${escapeHtml(c.action)}</code>${c.entityId ? ` ${escapeHtml(c.entityId)}` : ''} — ${escapeHtml(c.actor)}, ${escapeHtml(String(c.at).slice(0, 16).replace('T', ' '))}</li>`).join('');
+    `<li><code>${escapeHtml(c.action)}</code>${c.entityId ? ` ${escapeHtml(c.entityId)}` : ''} — ${escapeHtml(c.actor)}, ${escapeHtml(when(c.at))}</li>`).join('');
   const more = n > 50 ? `<li>…and ${n - 50} more</li>` : '';
   return {
     subject: `Publish request from ${requestedBy} needs a review`,

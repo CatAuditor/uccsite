@@ -13,6 +13,42 @@ import { withDb, withWriteTx, recordChange, inFlightPublish } from './data';
 import { promoteRequestedFiles } from './files';
 import { notifyPublishRequested } from './notify';
 import { config } from './config';
+import { parseDbTime } from './when.mjs';
+
+// The Lambda writes its 'publishing' row only AFTER rendering and diffing
+// the whole site against S3 (30-60 s; a noop run writes a row only at the
+// end), so for that long inFlightPublish() sees nothing and the dashboard
+// would show the approved saves as "unpublished" with a live Request button
+// — people re-requested what was already going live (2026-10-05). An
+// approved request with no run row yet, approved inside this window, counts
+// as a publish that is STARTING; past it, the run never started.
+const STARTING_WINDOW_MS = 10 * 60 * 1000;
+
+// runStatusFor(request, runs) → the run's status, or 'starting' /
+// 'never started' for an approval with no run row yet.
+function runStatusFor(r, runs) {
+  if (r.status !== 'approved') return '';
+  if (!r.publishTrigger) return 'never started';
+  if (runs[r.publishTrigger]) return runs[r.publishTrigger];
+  const t = parseDbTime(r.reviewedAt);
+  return t && Date.now() - t.getTime() < STARTING_WINDOW_MS ? 'starting' : 'never started';
+}
+
+// recentRequests(client) → the last 10 requests, each with runStatus.
+async function recentRequests(client) {
+  const requests = await listRequests(client, 10);
+  const runs = await runsFor(client, requests.map(r => r.publishTrigger));
+  return requests.map(r => ({ ...r, runStatus: runStatusFor(r, runs) }));
+}
+
+// busyPublish(client) → the in-flight run, or the request whose publish is
+// starting, or null. Both the dashboard and requestPublish gate on it.
+async function busyPublish(client) {
+  const run = await inFlightPublish(client);
+  if (run) return { kind: 'publishing', since: run.started_at };
+  const starting = (await recentRequests(client)).find(r => r.runStatus === 'starting');
+  return starting ? { kind: 'starting', since: starting.reviewedAt, by: starting.reviewedBy } : null;
+}
 
 // publishState() → what the dashboard renders.
 export async function publishState() {
@@ -20,8 +56,7 @@ export async function publishState() {
     const pending = await pendingRequest(client);
     const liveAt = await lastLiveAt(client);
     const sinceRequest = pending ? await changesSince(client, pending.createdAt) : [];
-    const requests = await listRequests(client, 10);
-    const runs = await runsFor(client, requests.map(r => r.publishTrigger));
+    const requests = await recentRequests(client);
     return {
       pending,
       liveAt,
@@ -34,8 +69,10 @@ export async function publishState() {
       // back; approvePublish refuses if anything was saved after it.
       seenThrough: pending ? (sinceRequest.at(-1)?.at || pending.createdAt) : null,
       // Each approved request labelled by the run its approval started.
-      requests: requests.map(r => ({ ...r, runStatus: r.publishTrigger ? runs[r.publishTrigger] || 'not started' : '' })),
-      inFlight: await inFlightPublish(client),
+      requests,
+      // A publish in flight (run row) or starting (approved, no row yet):
+      // Approve/Request are refused and the page polls until it settles.
+      busy: await busyPublish(client),
     };
   });
 }
@@ -49,7 +86,15 @@ export async function requestPublish(note) {
   const { id, changes } = await withWriteTx(async (client) => {
     await bumpGate(client); // two racing requests now conflict; the loser replays and sees the winner
     const open = await pendingRequest(client);
-    if (open) throw new Error(`A publish request from ${open.requestedBy} is already waiting for review.`);
+    if (open) {
+      const mine = open.requestedByUser === s.username || open.requestedBy === s.email;
+      throw new Error(mine
+        ? 'Your publish request is already waiting for review — see Publish & Status.'
+        : `A publish request from ${open.requestedBy} is already waiting for review.`);
+    }
+    if (await busyPublish(client)) {
+      throw new Error('A publish is running right now. Saves made before it started go live with it; wait for it to finish, then request again if anything is still listed as unpublished.');
+    }
     const changes = await changesSince(client, await lastLiveAt(client));
     if (!changes.length) throw new Error('Nothing to publish — no saves since the site last went live.');
     const id = await createRequest(client, {
@@ -73,9 +118,9 @@ export async function requestPublish(note) {
 // approvers racing can't both publish.
 export async function approvePublish(id, note, seenThrough) {
   const s = await requireRole('editor');
-  const inFlightRun = await withDb(inFlightPublish);
-  if (inFlightRun) {
-    console.warn(`[admin] ${s.email} approve not sent: run ${inFlightRun.id} in flight`);
+  const busy = await withDb(busyPublish);
+  if (busy) {
+    console.warn(`[admin] ${s.email} approve not sent: a publish is ${busy.kind} since ${busy.since}`);
     throw new Error('A publish is already running — wait for it to finish, then approve.');
   }
   const trigger = `approve:${id}:${s.email}`;
