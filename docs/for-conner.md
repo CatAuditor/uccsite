@@ -189,8 +189,9 @@ never go live.
 
 - [x] `jarom.gillins@utahciviccompact.org` is `owner` in the **staging**
   pool (2026-09-13).
-- [ ] `[agent]` after the prod stack redeploy (§6 step 1), create the prod
-  owner:
+- [x] `[agent]` prod owner created 2026-10-05 (invite emailed; the earlier
+  `jaromforcongress@gmail.com` accounts are disabled in both pools — not an
+  authorized login). Command, for reference:
   ```
   node scripts/admin-user.mjs --env prod --email jarom.gillins@utahciviccompact.org --name "Jarom Gillins" --group owner
   ```

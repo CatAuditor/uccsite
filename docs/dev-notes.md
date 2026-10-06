@@ -6,6 +6,22 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-05 — Jarom's admin account on the live site
+
+Jarom's live-site admin account was under the wrong email (a personal Gmail
+address), so sign-in at admin.utahciviccompact.org never worked for the
+work address. The work address (jarom.gillins@utahciviccompact.org) is now an
+owner on the live site; Cognito emailed a temporary password. The Gmail
+account is disabled on both the live and the test site.
+
+What to do: open the invite email, sign in, and on the first screen choose
+"Sign in with password" (or "Try another way") if the page asks for a
+security key first — none is set up yet. After setting a real password,
+/profile offers an authenticator app and security keys.
+
+Still open: with two owners signed in (Conner and Jarom), two-person
+publishing works on the live site for the first time.
+
 ## 2026-10-05 — Petition: Utah vs out-of-state, a public counter, and "who is this email going to"
 
 Follow-up to the petition launch below.
