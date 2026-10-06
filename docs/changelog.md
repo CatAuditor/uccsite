@@ -4,20 +4,20 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
-## v0.16.2 — 2026-10-05 (branch ) — Authoring kit + .docx/Markdown upload for Documents
+## v0.16.2 — 2026-10-05 (branch `refactor`) — Authoring kit + .docx/Markdown upload for Documents
 
-**Admin / Documents** (, , )
-- Authoring kit:  (any signed-in role) returns one markdown file for
+**Admin / Documents** (`apps/admin/lib/authoring-kit.js`, `app/documents/authoring-kit/route.js`, `app/documents/page.js`)
+- Authoring kit: `GET /documents/authoring-kit` (any signed-in role) returns one markdown file for
   Claude or any writing tool, rebuilt per request: static usage/instructions, voice rules with the
   machine-writing DON'T list, page-fields block, shape of a piece, HTML rules + skeleton, hand-over
   checklist; live Style Kit catalog (annotated, chrome groups hidden), template style rules, coverage
   keys. Download block with instructions at the top of All documents. Test asserts the file is dash-free.
 
-**Admin / Documents upload** (, , , )
+**Admin / Documents upload** (`apps/admin/lib/convert-upload.mjs`, `app/documents/actions.js convertUpload`, `[id]/html-editor.js`, `next.config.js`)
 - The HTML box's file input accepts .docx (mammoth, style map for Title/Subtitle/Quote) and
   .md/.markdown/.txt (marked, GFM) besides .html; converted server-side, images replaced by numbered
-  placeholders, result lands in the body for review; save runs the normal ingest.  8 MB.
-- New deps in apps/admin:  ^1.9,  ^15.
+  placeholders, result lands in the body for review; save runs the normal ingest. `bodySizeLimit` 8 MB.
+- New deps in apps/admin: `mammoth` ^1.9, `marked` ^15.
 
 **Docs**: documents.md (Code Map, Authoring kit, Upload a file), admin.md code map, debug/documents.md,
 non-technical-editing-guide.md, dev-notes.md.
