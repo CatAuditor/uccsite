@@ -91,6 +91,19 @@ has yours) — and then exercise the feature that uses it.
   ```
   `[hand]` click the confirmation link in each email. This is where drift
   rollbacks, publish failures and the prod CloudFront spend budget alert go.
+  - [x] 2026-10-05 subscribed (prod + staging): jarom.gillins@, conner.radcliffe@,
+    kaden.payne@ (all @utahciviccompact.org). **Each of you: open the
+    "AWS Notification - Subscription Confirmation" email and click Confirm
+    subscription.** Until clicked, that address gets nothing.
+
+- **AWS console access** (IAM users, group `adminaccess` = AdministratorAccess).
+  Sign in at https://017110365763.signin.aws.amazon.com/console
+  - `conner.radcliffe` — existed since 2026-09-14, last used 2026-09-23. No MFA yet.
+  - `kaden.payne` — created 2026-10-05; temporary password handed to Jarom; must
+    be changed on first sign-in.
+  - `[hand]` both: IAM → your user → Security credentials → **Assign MFA device**
+    (phone authenticator app). Admin accounts without MFA are the biggest
+    single risk on this account.
 
 ## 2. Cloudflare (still the live site until cutover)
 
@@ -422,7 +435,20 @@ Check status: `aws sesv2 get-account --profile uccsite --region us-west-2
 Approved = `production: true`. If AWS replies in the support case asking
 questions, answer them there (Support Center in the console).
 
-- [ ] 10.3 requested → approved
+- [x] 10.3 **requested 2026-10-05** (status `PENDING`; contacts: jarom.gillins@,
+  conner.radcliffe@, kaden.payne@). AWS may email any of those three with
+  follow-up questions — **Jarom answers them** (reply in the email thread or
+  Support Center → the case). Watch for the approval email too.
+- [ ] 10.3 approved (`production: true`)
+
+Checked 2026-10-05 for anything that could sink the review: site live over
+HTTPS, join form says "No spam. Unsubscribe anytime.", every send carries a
+signed unsubscribe link + one-click headers, bounce/complaint suppression on,
+DMARC published. Two soft spots a reviewer could poke at, neither blocking:
+the privacy page only describes the tipline (not the join-list emails), and
+the email footer says "Salt Lake City, UT" rather than a full postal address
+(CAN-SPAM wants a street or PO box on the newsletter). Both are copy edits
+for an editor + the dev; fix at leisure.
 
 ### 10.4 After approval `[dev]`
 

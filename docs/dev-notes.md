@@ -6,6 +6,27 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-05 — Email: production-access request sent to AWS (step 2 of 3)
+
+The DNS records for Amazon SES were confirmed in place and our domain is fully
+verified, so we asked AWS to take the account out of its email sandbox. That
+request is now **pending** with AWS; they usually answer within a day. The
+request lists Jarom, Conner and Kaden as contacts — if AWS emails one of you
+with questions, Jarom replies.
+
+Also done today:
+
+- **Alert emails.** Jarom, Conner and Kaden were subscribed to the operations
+  alert list (bounced email, failed publishes, spend warnings). **Each of you
+  must click "Confirm subscription" in the AWS email you just received**, or
+  you will not get alerts.
+- **AWS console access.** Kaden now has an administrator login (Conner already
+  had one). Jarom has Kaden's temporary password; it must be changed at first
+  sign-in. Both should turn on two-factor (MFA) in the AWS console.
+
+Nothing changes for editors. Emails still go out through Resend until the
+developer switches the sending code over after AWS approves (step 3).
+
 ## 2026-10-05 — Jarom's admin account on the live site
 
 Jarom's live-site admin account was under the wrong email (a personal Gmail
