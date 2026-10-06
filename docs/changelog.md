@@ -4,6 +4,20 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.19.0 — 2026-10-06 (branch `refactor`) — Publish & Status: "What will change on the live site"
+
+**Admin** (`lib/change-detail.js`, `lib/change-detail-core.mjs` new; `lib/publish.js`, `app/page.js`,
+`app/globals.css`; docs/systems/admin.md "What changed")
+- Expandable per-section summary of the net effect of publishing: BEFORE = revision snapshot from just
+  before the first unpublished save, AFTER = the database now. Field-level before → after; list items
+  matched by natural key; menus compared as flattened paths; documents by details, word count, CSS,
+  overrides. Homepage/settings rows split into Homepage / Petition / Donation appeals / Site Settings /
+  Menus. Undescribable saves (media, redirects, styles) still listed with their saves.
+- Raw save lists moved into a collapsed "Save log"; approve/seenThrough logic untouched.
+- Verified against prod since 2026-10-02 (18 saves → 7 sections, field-level).
+
+**Tests**: `test/change-detail-core.test.mjs` (6).
+
 ## v0.18.2 — 2026-10-06 (branch `refactor`) — Document prose styles in the site CSS; kit frame uses them
 
 **Site / CSS** (`css/styles.css` "DOCUMENT PROSE"; docs/systems/style-guide.md)

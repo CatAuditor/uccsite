@@ -437,6 +437,36 @@ On Amplify the file ships via `amplify.yml` (copied into `site-src/docs/`) and
 `outputFileTracingIncludes['/dev-notes']`; locally it is read from the repo. A
 missing file renders a notice, logged as `[admin] dev-notes unreadable: <code>`.
 
+## What changed (Publish & Status, 2026-10-06)
+
+Above the save log, **What will change on the live site** lists one expandable
+row per section (Team & Bios, Petition, Menus, Documents › <title>, …): a count
+summary, who saved and when; open it for field-level lines — Added / Removed /
+Edited (each field `before → after`) / Order changed — and a link to the editor.
+
+```
+lib/change-detail.js        describeChanges(client, changes, liveAt) — read-only. Per saved
+                            thing: BEFORE = the revision snapshot from just before its first
+                            unpublished save (revisions.created_at > liveAt, oldest); AFTER =
+                            the database now. Net effect, so edit-then-undo shows no change.
+lib/change-detail-core.mjs  pure diff: diffFields, diffList (items matched by slug / YouTube
+                            id / url / name…), diffNavigation (flattened menu paths),
+                            diffDocument (details, word-count delta, CSS, overrides)
+lib/publish.js              publishState() also returns `detail`
+app/page.js                 WhatChanges component; the raw save list moved into a
+                            collapsed "Save log"
+test/change-detail-core.test.mjs  6 tests
+```
+
+Splits: the homepage row is reported as **Homepage**, **Petition** or **Donation
+appeals** by group; site settings as **Site Settings**, **Donation appeals**
+(download pop-up) or **Menus**. A save with no before/after model (media,
+redirects, styles) still appears, with its saves listed. Errors describing one
+thing are logged (`[admin] what-changed: …`) and never break the dashboard.
+
+Limits: revisions keep 20 per thing — beyond 20 unpublished saves the BEFORE is
+the oldest kept. Values over 90 characters are shortened.
+
 ## Menus (2026-10-06)
 
 `/navigation` edits the header menu and footer links (`site_settings.navigation`).

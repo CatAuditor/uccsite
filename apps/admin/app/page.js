@@ -30,6 +30,55 @@ const RUN_CLASS = { noop: 'succeeded', starting: 'publishing', 'never started': 
 const requestLabel = (r) => (r.status === 'approved' ? RUN_LABEL[r.runStatus] || `Approved — publish ${r.runStatus}` : STATUS_LABEL[r.status] || r.status);
 const requestClass = (r) => (r.status === 'approved' ? `status-${RUN_CLASS[r.runStatus] || r.runStatus}` : `status-${r.status}`);
 
+// "What will change on the live site" (lib/change-detail.js): one expandable
+// row per section, its field-level before → after lines, then who saved when.
+const KIND_WORD = { added: 'added', removed: 'removed', changed: 'edited', moved: 'reordered' };
+function WhatChanges({ sections }) {
+  if (!sections?.length) return null;
+  return (
+    <div className="what-changed">
+      <h3>What will change on the live site</h3>
+      <p className="hint">Click a section to see exactly what differs from the live site.</p>
+      {sections.map((s) => {
+        const counts = Object.entries(s.lines.reduce((m, l) => (KIND_WORD[l.kind] ? { ...m, [l.kind]: (m[l.kind] || 0) + 1 } : m), {}))
+          .map(([k, n]) => `${n} ${KIND_WORD[k]}`).join(' · ');
+        const people = [...new Set(s.saves.map((v) => v.actor.replace(/@.*/, '')))].join(', ');
+        const last = s.saves.at(-1)?.at;
+        return (
+          <details key={s.name} className="what-section">
+            <summary>
+              <span className="what-name">{s.name}</span>
+              <span className="what-count">{counts || 'no visible change'}</span>
+              <span className="what-who">{people}{last ? ` · ${when(last)}` : ''}</span>
+            </summary>
+            <ul className="what-lines">
+              {s.lines.map((l, i) => (
+                <li key={i} className={`what-${l.kind}`}>
+                  {l.text}
+                  {l.fields?.length > 0 && (
+                    <dl className="what-fields">
+                      {l.fields.map((f, j) => (
+                        <div key={j}>
+                          <dt>{f.label}</dt>
+                          <dd><span className="what-before">{f.before}</span> <span aria-hidden="true">→</span><span className="sr-only"> becomes </span> <span className="what-after">{f.after}</span></dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="what-saves">
+              {s.saves.map((v, i) => <span key={i}>{v.actor.replace(/@.*/, '')} {v.what} {when(v.at)}{i < s.saves.length - 1 ? '; ' : ''}</span>)}
+              {s.href && <> · <Link href={s.href}>Open the editor →</Link></>}
+            </p>
+          </details>
+        );
+      })}
+    </div>
+  );
+}
+
 function ChangeList({ changes }) {
   if (!changes.length) return <p className="hint">No saves recorded.</p>;
   return (
@@ -47,7 +96,7 @@ export default async function Dashboard() {
   // Newsletters follow the same two-person rule but live on /mail; surface
   // the ones needing attention here so a reviewer sees them on sign-in.
   const newsletters = await withDb(pendingNewsletters);
-  const { pending, liveAt, unpublished, sinceRequest, seenThrough, requests, busy } = await publishState();
+  const { pending, liveAt, unpublished, sinceRequest, seenThrough, requests, busy, detail } = await publishState();
   const canAct = session.role !== 'viewer';
   const isRequester = pending && (pending.requestedByUser === session.username || pending.requestedBy === session.email);
   // Owners may approve their own request (lib/publish.js); editors still need a second admin.
@@ -112,14 +161,21 @@ export default async function Dashboard() {
           <h2>Publish request waiting for review</h2>
           <p><strong>{pending.requestedBy}</strong> asked to publish at {when(pending.createdAt)}.</p>
           {pending.requestNote && <blockquote>{pending.requestNote}</blockquote>}
-          <h3>What it publishes ({pending.changes.length} saves since the site last went live)</h3>
-          <ChangeList changes={pending.changes} />
+          <WhatChanges sections={detail} />
           {sinceRequest.length > 0 && (
-            <>
-              <h3>Also saved after the request ({sinceRequest.length}) — a publish takes the whole database, so these go live too</h3>
-              <ChangeList changes={sinceRequest} />
-            </>
+            <p className="notice">{sinceRequest.length} save{sinceRequest.length === 1 ? ' was' : 's were'} made after this request. A publish takes the whole database, so {sinceRequest.length === 1 ? 'it goes' : 'they go'} live too — {sinceRequest.length === 1 ? 'it is' : 'they are'} included above.</p>
           )}
+          <details className="save-log">
+            <summary>Save log ({pending.changes.length + sinceRequest.length})</summary>
+            <h3>In the request ({pending.changes.length} saves since the site last went live)</h3>
+            <ChangeList changes={pending.changes} />
+            {sinceRequest.length > 0 && (
+              <>
+                <h3>Saved after the request ({sinceRequest.length})</h3>
+                <ChangeList changes={sinceRequest} />
+              </>
+            )}
+          </details>
           {!canAct ? (
             <p className="notice">Viewer role — read-only.</p>
           ) : !canReview ? (
@@ -151,12 +207,18 @@ export default async function Dashboard() {
             {' '}Saves made before it started go live with it. This page refreshes itself; anything still listed as unpublished afterwards needs a new request.
           </p>
           <h3>Not yet live ({unpublished.length})</h3>
-          <ChangeList changes={unpublished} />
+          <WhatChanges sections={detail} />
         </section>
       ) : (
         <section className="request">
           <h2>Unpublished saves ({unpublished.length})</h2>
-          <ChangeList changes={unpublished} />
+          <WhatChanges sections={detail} />
+          {unpublished.length > 0 && (
+            <details className="save-log">
+              <summary>Save log ({unpublished.length})</summary>
+              <ChangeList changes={unpublished} />
+            </details>
+          )}
           {canAct ? (
             <ActionForm action={request}>
               <label htmlFor="request-note">Note for the reviewer (optional)</label>

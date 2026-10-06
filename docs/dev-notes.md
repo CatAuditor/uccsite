@@ -6,6 +6,20 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — Publish & Status shows exactly what will change
+
+Before anyone approves a publish, **Publish & Status** now lists **What will change
+on the live site**, one row per section — Team & Bios, Petition, Menus, News &
+Media, each document — with a count and who changed it. Click a row to see the
+detail:
+
+- **Edited: Kaden Payne** — Title: Chief Technology Officer → **Chief Technology Officer, Board of Directors**
+- **Added / Removed** news stories, team members, menu links
+- **Documents** — status changes (published → draft takes a page **off** the site), text edited (+120 words), styling changed
+
+It shows the **net** effect: something changed and then changed back shows as no
+change. The old list of individual saves is still there, folded under **Save log**.
+
 ## 2026-10-06 — Edit the menus and footer yourself
 
 New in the admin: **Menus (header & footer)**, under Site Main.

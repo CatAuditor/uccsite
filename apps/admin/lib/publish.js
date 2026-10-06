@@ -14,6 +14,7 @@ import { promoteRequestedFiles } from './files';
 import { notifyPublishRequested } from './notify';
 import { config } from './config';
 import { parseDbTime } from './when.mjs';
+import { describeChanges } from './change-detail';
 
 // The Lambda writes its 'publishing' row only AFTER rendering and diffing
 // the whole site against S3 (30-60 s; a noop run writes a row only at the
@@ -57,13 +58,17 @@ export async function publishState() {
     const liveAt = await lastLiveAt(client);
     const sinceRequest = pending ? await changesSince(client, pending.createdAt) : [];
     const requests = await recentRequests(client);
+    const unpublished = await changesSince(client, liveAt);
     return {
       pending,
       liveAt,
       // Drafts not yet on the live site (content audit rows since the last
       // successful publish); when a request is pending, the ones made after
       // it were not part of what the requester asked to publish.
-      unpublished: await changesSince(client, liveAt),
+      unpublished,
+      // Plain-English, field-level net effect of publishing everything above
+      // (lib/change-detail.js) — the expanding "What will change" list.
+      detail: await describeChanges(client, unpublished, liveAt),
       sinceRequest,
       // The newest save the reviewer can see on this render. Approve sends it
       // back; approvePublish refuses if anything was saved after it.
