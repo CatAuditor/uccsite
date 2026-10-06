@@ -6,6 +6,30 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — Privacy policy rewritten to match what the site really collects
+
+The privacy policy at utahciviccompact.org/privacy still described the old
+Airtable tipline and nothing else. It now covers every way the site collects
+information: the confidential tipline, the updates mailing list (and its
+confirmation email), petitions (including that signatures may be delivered to
+the officials a petition addresses, and that signing joins the mailing list),
+donations through Stripe (and the opt-in public donor list), plus the small
+automatic things: the bot check, the one-hour abuse rate limit, the per-issue
+open count in newsletters, YouTube embeds, and hosting on Amazon Web Services.
+It states how long each kind of record is kept and what requests we honor.
+
+- **Live now** on the site and in the admin's **Documents → Privacy Policy**.
+  Edit it there like any other document; the old wording is in its history.
+- **Two commitments in the text need a person to stand behind them** (both
+  reversible by editing the page): the petition record we deliver will not
+  include signers' email addresses or phone numbers, and a signer may ask to
+  be removed before delivery. There is no remove-a-signature button in the
+  admin; such a request goes to the developer for now.
+- **Bug found, not yet fixed:** the tip form shows an *Attachments* file picker,
+  but attached files are never sent anywhere. The policy deliberately does not
+  mention attachments. Either wire attachments up or remove the field.
+- The SES approval note in the operator runbook that said "the privacy page only
+  describes the tipline" is now closed.
 ## 2026-10-06 — Publish & Status shows exactly what will change
 
 Before anyone approves a publish, **Publish & Status** now lists **What will change

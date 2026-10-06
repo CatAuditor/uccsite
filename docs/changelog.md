@@ -4,21 +4,7 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
-## v0.19.0 — 2026-10-06 (branch `refactor`) — Publish & Status: "What will change on the live site"
-
-**Admin** (`lib/change-detail.js`, `lib/change-detail-core.mjs` new; `lib/publish.js`, `app/page.js`,
-`app/globals.css`; docs/systems/admin.md "What changed")
-- Expandable per-section summary of the net effect of publishing: BEFORE = revision snapshot from just
-  before the first unpublished save, AFTER = the database now. Field-level before → after; list items
-  matched by natural key; menus compared as flattened paths; documents by details, word count, CSS,
-  overrides. Homepage/settings rows split into Homepage / Petition / Donation appeals / Site Settings /
-  Menus. Undescribable saves (media, redirects, styles) still listed with their saves.
-- Raw save lists moved into a collapsed "Save log"; approve/seenThrough logic untouched.
-- Verified against prod since 2026-10-02 (18 saves → 7 sections, field-level).
-
-**Tests**: `test/change-detail-core.test.mjs` (6).
-
-## v0.18.2 — 2026-10-06 (branch `refactor`) — Document prose styles in the site CSS; kit frame uses them
+## v0.19.1 — 2026-10-06 (branch `refactor`) — Document prose styles in the site CSS; kit frame uses them
 
 **Site / CSS** (`css/styles.css` "DOCUMENT PROSE"; docs/systems/style-guide.md)
 - New annotated group **Document prose**: `.prose` wrapper (descendant rules for h2/h3/h4, p, ul/ol/li,
@@ -39,6 +25,50 @@ docs/systems/documents.md "Authoring kit")
 
 Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in. Needs a person: publish
 from Publish & Status so the new CSS goes live before the next document upload.
+
+## v0.18.2 — 2026-10-06 (branch `refactor`) — Privacy policy covers every collection channel
+
+**Site / legal** (`templates/privacy.html`; prod + staging `documents` row `privacy` re-imported
+from the template and published `--source db`; live at https://utahciviccompact.org/privacy)
+- Rewrote the policy, which still described only the Airtable-era tipline. Now states, per
+  channel, what is collected and why: tipline (anonymous = name not recorded; tip emails never
+  join the list), updates list (double opt-in, ZIP used for Utah/outside audience), petitions
+  (signing joins the list; public counter is Utah-only count; record may be delivered to the
+  addressed officials without email/phone), Stripe donations (what we keep; opt-in first-name +
+  amount donor list). Automatic collection: 1h rate-limit IP not linked to submissions,
+  Turnstile, per-issue open pixel + bounce/complaint records, no access logs/analytics,
+  sessionStorage uses, YouTube embeds. Storage (AWS us-west-2, encrypted, staff accounts,
+  audited, 90-day backups), sharing (processors, petition recipients, donor list, legal
+  compulsion, consent), retention per record type, request rights, children, changes, contact.
+  Verified against `docs/legal/data-handling.md`, `aws/api/routes.js`, `infra/cdk/lib/ucc-stack.js`
+  (no CloudFront logging/WAF; Cognito MFA OPTIONAL — policy does not claim MFA).
+- Utah Consumer Privacy Act (13-61-102(2)(d)) exempts nonprofits; policy grants the request
+  rights voluntarily rather than citing a statute.
+
+**Scripts** (`scripts/migrate-documents.mjs`)
+- `--only <slug[,slug]>` restricts the run (and `--overwrite`) to named documents; `--out` already
+  existed. Documented in docs/systems/documents.md "Changing one of these pages from the repo".
+
+**Docs** — dev-notes entry; for-conner §10.3 privacy soft spot closed; pending-questions:
+petition delivery excludes email/phone, pre-delivery withdrawal, tip Attachments picker is dead
+(`js/tip.js` never sends files — open bug).
+
+Open P1 at push: Stripe webhook URL unconfirmed; GITHUB_APP_* placeholders (nightly export
+skipped); TURNSTILE_SECRET_KEY placeholder; tip Attachments field dead.
+
+## v0.19.0 — 2026-10-06 (branch `refactor`) — Publish & Status: "What will change on the live site"
+
+**Admin** (`lib/change-detail.js`, `lib/change-detail-core.mjs` new; `lib/publish.js`, `app/page.js`,
+`app/globals.css`; docs/systems/admin.md "What changed")
+- Expandable per-section summary of the net effect of publishing: BEFORE = revision snapshot from just
+  before the first unpublished save, AFTER = the database now. Field-level before → after; list items
+  matched by natural key; menus compared as flattened paths; documents by details, word count, CSS,
+  overrides. Homepage/settings rows split into Homepage / Petition / Donation appeals / Site Settings /
+  Menus. Undescribable saves (media, redirects, styles) still listed with their saves.
+- Raw save lists moved into a collapsed "Save log"; approve/seenThrough logic untouched.
+- Verified against prod since 2026-10-02 (18 saves → 7 sections, field-level).
+
+**Tests**: `test/change-detail-core.test.mjs` (6).
 
 ## v0.18.1 — 2026-10-06 (branch `refactor`) — Authoring kit is one self-contained .html
 

@@ -14,6 +14,18 @@ The eight long-form pages (`alpr`, `stratos`, `weber-county`,
 The templates stay in the repo for the git/`build.js` path until cutover; on
 the database publish path a Document REPLACES the same-slug template.
 
+**Changing one of these pages from the repo after cutover** (done for the
+privacy policy 2026-10-06): edit the template, then
+`node scripts/migrate-documents.mjs --env <env> --apply --only <slug> --overwrite --out <scratch dir>`
+re-imports just that Document (`--only` limits `--overwrite` to the named
+slugs; `--out` keeps the tracked `docs/migration/documents/` artefacts
+untouched), then `scripts/publish.mjs --env <env> --source db`. Check first
+that the row still matches the template (`md5(body_html_raw)` equal on
+staging and prod, no `style_overrides`) — `--overwrite` discards admin edits
+to that document, and a `--source db` publish ships every other saved
+change too, so look at the dashboard's pending list and `publish_requests`
+before running it against prod.
+
 ## Code Map
 
 ```

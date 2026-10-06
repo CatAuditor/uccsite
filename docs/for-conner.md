@@ -469,10 +469,12 @@ Checked 2026-10-05 for anything that could sink the review: site live over
 HTTPS, join form says "No spam. Unsubscribe anytime.", every send carries a
 signed unsubscribe link + one-click headers, bounce/complaint suppression on,
 DMARC published. Two soft spots a reviewer could poke at, neither blocking:
-the privacy page only describes the tipline (not the join-list emails), and
+~~the privacy page only describes the tipline (not the join-list emails)~~
+(fixed 2026-10-06: the policy now covers the mailing list, petitions,
+donations, and the automatic bits; live on prod), and
 the email footer says "Salt Lake City, UT" rather than a full postal address
-(CAN-SPAM wants a street or PO box on the newsletter). Both are copy edits
-for an editor + the dev; fix at leisure.
+(CAN-SPAM wants a street or PO box on the newsletter) — still a copy edit
+for an editor; see §12 step 3.
 
 ### 10.4 Send code switched to SES — 2026-10-05 `[dev]` done
 

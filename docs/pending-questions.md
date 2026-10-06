@@ -34,3 +34,24 @@ telling the agent; delete the entry once applied.
    a volunteer signing people up from one phone. **Chose 20 / IP / hour.**
 7. **"Not this time" on the thank-you page** goes to `/` (homepage). The
    modal's own dismiss just closes the modal.
+
+## Privacy policy rewrite (2026-10-06, no answer possible in a hands-off session)
+
+The rewritten policy at /privacy makes two commitments nobody had stated
+before. Both chosen as the most privacy-protective, most reversible reading;
+change the page text if the org decides otherwise.
+
+1. **What goes to UDOT / the legislature with a petition?** Options:
+   (a) names + ZIP (+ street address where given), no email or phone;
+   (b) the full CSV incl. email and phone. **Chose (a)** and the policy says so.
+   The admin CSV export still contains everything, so whoever delivers it
+   must trim the email and phone columns first (or the dev adds a
+   "delivery" export).
+2. **Can a signer withdraw before delivery?** Options: (a) yes, by emailing
+   info@ (no admin button exists; the dev deletes the row); (b) no. **Chose
+   (a)**; the policy says "before delivery". Add a per-signature delete to
+   admin /petition if requests actually arrive.
+3. **Tip attachments.** The tip form shows an Attachments picker but
+   js/tip.js never sends files. Options: (a) remove the field; (b) build
+   upload to the media bucket under a private tips/ prefix. **Not chosen**
+   — left as found; the policy does not mention attachments.
