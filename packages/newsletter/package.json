@@ -1,0 +1,14 @@
+{
+  "name": "@uccsite/newsletter",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Newsletter composer: blocks + theme -> email HTML/text (docs/systems/newsletters.md). Pure ESM, dependency-free, so the admin's live preview, the admin server and the send Lambda render the same bytes.",
+  "type": "module",
+  "exports": {
+    "./render": "./render.mjs",
+    "./schedule": "./schedule.mjs"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  }
+}
