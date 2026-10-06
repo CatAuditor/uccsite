@@ -38,8 +38,7 @@ user data, or a third-party integration changes (CLAUDE.md rule).
 | Service | Data sent | Purpose |
 |---|---|---|
 | Stripe | payment + donor details (their collection); checkout metadata may carry `source` (e.g. `petition:<slug>`) | donations/memberships |
-| Amazon SES (AWS, us-west-2) | recipient email, name in greeting; bounce/complaint notifications carry the recipient address to the ops alert topic (email to operators) and to the account-level suppression list | transactional email (welcome, billing-portal link). Replaced Resend 2026-10-05 |
-| Mailgun | recipient emails | bulk periodical |
+| Amazon SES (AWS, us-west-2) | recipient email, name in greeting; bounce/complaint notifications carry the recipient address to the ops alert topic (email to operators) and to the account-level suppression list | transactional email (welcome, billing-portal link) and the bulk periodical. Replaced Resend and Mailgun 2026-10-05 |
 | Airtable | tip submissions incl. tipster email (confidential — never logged). **Cloudflare stack only**; the AWS stack stores tips in the `tips` table. The base is read out at cutover and deleted 30 days later (docs/for-conner.md §7.8) | tipline intake (legacy) |
 | Cloudflare Turnstile | client IP + challenge token | form abuse control |
 | Cognito | admin emails + credentials | admin authentication |

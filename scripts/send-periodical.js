@@ -1,4 +1,4 @@
-// Sends a periodical email to all subscribers + opted-in members via Mailgun.
+// Sends a periodical email to all subscribers + opted-in members via Amazon SES.
 //
 // Usage:
 //   $env:AWS_PROFILE='uccsite'; node --env-file=.env scripts/send-periodical.js --subject "Subject line" --html path/to/email.html [--text path/to/email.txt] [--dry-run] [--test you@example.com] [--resume sent.log] [--env staging|prod]
@@ -10,10 +10,13 @@
 // plus opted-in members, as before.
 //
 // Requires in .env (gitignored):
-//   MAILGUN_API_KEY  — Mailgun private API key
 //   TOKEN_SECRET     — same secret the API uses; signs per-recipient unsubscribe links
-// plus AWS credentials (profile uccsite) — recipients are read from the
-// environment's DSQL database (was: wrangler d1 execute against D1).
+// plus AWS credentials (profile uccsite): recipients are read from the
+// environment's DSQL database and mail goes out through SES
+// (docs/systems/email.md) — no provider API key any more. The sending
+// identity + configuration set live in the prod stack and are shared by
+// both environments, so an --env staging run still sends real mail from
+// hello@utahciviccompact.org; use --test success@simulator.amazonses.com.
 //
 // Every send is appended to sent-<timestamp>.log. If a run aborts, re-run with
 // --resume <that log> to skip addresses already sent.
@@ -21,13 +24,14 @@
 import { readFileSync, appendFileSync, existsSync } from 'node:fs';
 import { createHmac } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { resolveEnv } from './lib/stack.mjs';
+import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
+import { resolveEnv, REGION } from './lib/stack.mjs';
 
 const require = createRequire(import.meta.url);
 const { withConnection } = require('../packages/db');
 const { audienceQuery, describeFilters } = require('../packages/db/audience');
 
-const MAILGUN_DOMAIN = 'utahciviccompact.org';
+const SES_CONFIGURATION_SET = 'ucc-prod';
 const FROM_ADDRESS = 'Utah Civic Compact <hello@utahciviccompact.org>';
 const SITE_URL = 'https://utahciviccompact.org';
 const UNSUB_TTL_SECONDS = 60 * 60 * 24 * 365;
@@ -76,27 +80,28 @@ function unsubscribeUrl(secret, email, origin = SITE_URL) {
   return `${origin}/api/unsubscribe?token=${encodeURIComponent(`${b64url(payload)}.${b64url(sig)}`)}`;
 }
 
-async function sendOne(apiKey, secret, to, subject, html, text, origin) {
+const ses = new SESv2Client({ region: REGION });
+
+async function sendOne(secret, to, subject, html, text, origin) {
   const unsub = unsubscribeUrl(secret, to, origin);
-  const form = new FormData();
-  form.set('from', FROM_ADDRESS);
-  form.set('to', to);
-  form.set('subject', subject);
-  if (html) form.set('html', html.replaceAll('{{unsubscribe_url}}', unsub));
-  if (text) form.set('text', text.replaceAll('{{unsubscribe_url}}', unsub));
-  form.set('h:List-Unsubscribe', `<${unsub}>`);
-  form.set('h:List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
-
-  const auth = Buffer.from(`api:${apiKey}`).toString('base64');
-  const res = await fetch(`https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`, {
-    method: 'POST',
-    headers: { Authorization: `Basic ${auth}` },
-    body: form,
-  });
-
-  if (!res.ok) {
-    throw new Error(`Mailgun ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  }
+  const body = {};
+  if (html) body.Html = { Data: html.replaceAll('{{unsubscribe_url}}', unsub), Charset: 'UTF-8' };
+  if (text) body.Text = { Data: text.replaceAll('{{unsubscribe_url}}', unsub), Charset: 'UTF-8' };
+  await ses.send(new SendEmailCommand({
+    FromEmailAddress: FROM_ADDRESS,
+    Destination: { ToAddresses: [to] },
+    ConfigurationSetName: SES_CONFIGURATION_SET,
+    Content: {
+      Simple: {
+        Subject: { Data: subject, Charset: 'UTF-8' },
+        Body: body,
+        Headers: [
+          { Name: 'List-Unsubscribe', Value: `<${unsub}>` },
+          { Name: 'List-Unsubscribe-Post', Value: 'List-Unsubscribe=One-Click' },
+        ],
+      },
+    },
+  }));
 }
 
 async function main() {
@@ -105,11 +110,9 @@ async function main() {
   if (!args.subject) throw new Error('--subject is required');
   if (!args.htmlFile && !args.textFile) throw new Error('--html <file> or --text <file> is required');
 
-  const apiKey = process.env.MAILGUN_API_KEY;
   const secret = process.env.TOKEN_SECRET;
-  if (!args.dryRun) {
-    if (!apiKey) throw new Error('MAILGUN_API_KEY is not set. Run with: node --env-file=.env scripts/send-periodical.js ...');
-    if (!secret) throw new Error('TOKEN_SECRET is not set (needed to sign unsubscribe links).');
+  if (!args.dryRun && !secret) {
+    throw new Error('TOKEN_SECRET is not set (needed to sign unsubscribe links). Run with: node --env-file=.env scripts/send-periodical.js ...');
   }
 
   const html = args.htmlFile ? readFileSync(args.htmlFile, 'utf-8') : undefined;
@@ -140,7 +143,7 @@ async function main() {
   const failures = [];
   for (const email of recipients) {
     try {
-      await sendOne(apiKey, secret, email, args.subject, html, text, origin);
+      await sendOne(secret, email, args.subject, html, text, origin);
       appendFileSync(log, email + '\n');
       console.log(`Sent to ${email}`);
     } catch (err) {

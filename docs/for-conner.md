@@ -461,9 +461,13 @@ deletion (30-day recovery window) — nothing reads it any more.
 - [ ] `[hand]` Cancel the Resend account (resend.com → Settings → delete
   team). Nothing on AWS uses it. The old Cloudflare Pages code still names
   it but is idle; it goes away with §7.8.
-- [ ] Newsletter still goes through **Mailgun** (`scripts/send-periodical.js`).
-  Moving it to SES is a small dev step — say the word and Mailgun can be
-  cancelled too.
+- [x] Newsletter switched to SES too (2026-10-05). `MAILGUN_API_KEY` in your
+  `.env` is no longer read; only `TOKEN_SECRET` is.
+- [ ] `[hand]` Cancel the Mailgun account. Then, in Cloudflare DNS, two
+  cleanups (both optional, both safe to leave for a while):
+  - apex TXT `v=spf1 …` — remove ` include:mailgun.org` (keep the rest).
+  - `_dmarc` TXT — remove `mailto:b5510ee5@dmarc.mailgun.org,` from both
+    `rua=` and `ruf=` (OnDMARC stays and keeps reporting).
 
 ## 11. Petition: enter the real copy, then publish
 

@@ -1,11 +1,11 @@
 # Email — transactional sending (Amazon SES)
 
-Status 2026-10-05: transactional site email (welcome, billing-portal link)
-goes through **Amazon SES v2** from the API Lambda. Production access was
-granted 2026-10-05 (case 179125335500202; 50,000/day, 14/sec). Resend is
-retired from the AWS stack (the Cloudflare `functions/` copy still references
-it but is idle). The newsletter script still sends through **Mailgun** — a
-separate decision, see "Not built yet".
+Status 2026-10-05: ALL outbound site email goes through **Amazon SES v2** —
+transactional (welcome, billing-portal link) from the API Lambda, and the
+newsletter from `scripts/send-periodical.js` under the operator's `uccsite`
+profile. Production access was granted 2026-10-05 (case 179125335500202;
+50,000/day, 14/sec). Resend and Mailgun are retired from the AWS stack (the
+idle Cloudflare `functions/` copy still names Resend).
 
 ## Code Map
 
@@ -14,7 +14,7 @@ aws/api/routes.js            sesSend() — THE send path (welcome email, portal 
                              FROM_ADDRESS = 'Utah Civic Compact <hello@utahciviccompact.org>'
                              _setSesClient() — test seam only
 aws/api/secrets.js           TOKEN_SECRET (signs unsubscribe/portal links); RESEND_API_KEY removed
-scripts/send-periodical.js   newsletter sender — Mailgun (signs the same unsubscribe token format)
+scripts/send-periodical.js   newsletter sender — SESv2 SendEmail per recipient, config set ucc-prod (signs the same unsubscribe token format)
 infra/cdk/lib/ucc-stack.js   "SES sending domain" block (prod only) + ApiFunction ses:SendEmail policy (both stacks)
 docs/for-conner.md §10       the DNS records, production-access request, Resend teardown
 ```
@@ -52,7 +52,7 @@ the ops topic and reputation metrics are not tagged.
 |---|---|---|---|
 | Welcome | `POST /api/subscribe` (join form) | self-invoke job, non-blocking | `List-Unsubscribe` + `List-Unsubscribe-Post: One-Click` (RFC 8058), signed 1-year unsubscribe link |
 | Billing-portal link | `POST /api/create-portal-session` | inline after the 202 | 15-minute signed link |
-| Newsletter | operator runs `scripts/send-periodical.js` (`--audience utah\|outside\|unknown\|all`, `--donors-only`, `--petition <slug>` — the admin Mailing list's filters, packages/db/audience.js) | script | signed unsubscribe link |
+| Newsletter | operator runs `scripts/send-periodical.js` (`--audience utah\|outside\|unknown\|all`, `--donors-only`, `--petition <slug>` — the admin Mailing list's filters, packages/db/audience.js) | script: one `SendEmail` per recipient, 250 ms apart (well under the 14/sec quota), `sent-<ts>.log` + `--resume` | `List-Unsubscribe` + One-Click headers, `{{unsubscribe_url}}` substituted in the body. Needs only `TOKEN_SECRET` in `.env` + profile `uccsite` (the operator's IAM user must hold `ses:SendEmail`; admins do) |
 
 Volume is tiny (tens per month). No message bodies or recipient lists are
 ever logged (`[api] SES error: <ErrorName>` / `[api] SES sent <MessageId>` only).
@@ -91,13 +91,11 @@ data-handling row) are done — see "Send path" above. Removing
 prod's `ucc/prod/RESEND_API_KEY` is `RETAIN`ed and deleted separately
 (for-conner §10.4).
 
-## Not built yet
-
-- `scripts/send-periodical.js` still sends the newsletter through
-  **Mailgun** (org decision 2026-09-14 kept Mailgun). Moving it to SES is a
-  one-function swap (`sendOne`) plus `MAILGUN_API_KEY` retirement and the
-  apex SPF `include:mailgun.org` cleanup; the SES production-access request
-  already describes the newsletter as SES traffic, so this should follow.
+Newsletter moved from Mailgun to SES the same day (`sendOne` in
+`scripts/send-periodical.js`; `MAILGUN_API_KEY` no longer read). Remaining
+Mailgun residue is DNS only — apex SPF `include:mailgun.org` and the
+`_dmarc` `rua`/`ruf` mailgun.org reporting address — listed for the operator
+in for-conner §10.4; harmless until Mailgun is cancelled, then dead weight.
 
 ## Error handling
 

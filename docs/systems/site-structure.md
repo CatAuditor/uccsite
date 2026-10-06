@@ -52,7 +52,7 @@ scripts/migrate-schema.mjs  apply DSQL schema to an environment
 scripts/migrate-d1.mjs      one-time D1 → DSQL data migration (+ verification)
 scripts/restore-operational.mjs  restore a dated §14.3 export into DSQL
 schema.sql               D1 schema (source of truth)
-scripts/send-periodical.js   bulk email via Mailgun (see api-security.md → Signed Tokens)
+scripts/send-periodical.js   bulk email via Amazon SES (docs/systems/email.md; see api-security.md → Signed Tokens)
 dist/                    build output, gitignored — never edit
 ```
 
