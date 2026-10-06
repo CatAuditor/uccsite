@@ -4,6 +4,26 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.18.1 — 2026-10-06 (branch `refactor`) — Authoring kit is one self-contained .html
+
+**Admin / Documents** (`apps/admin/lib/authoring-kit.js`, `app/documents/authoring-kit/route.js`,
+`app/documents/page.js`, `test/authoring-kit.test.mjs`; docs/systems/documents.md "Authoring kit")
+- New `buildAuthoringKitHtml({ ...kit args, siteCss })`: renders the markdown kit with `marked` (gfm)
+  and wraps it in one page. First `<style>` = live `css/styles.css` verbatim (`</style` escaped) so the
+  page renders like the site and a machine reads each class's CSS beside the markup; second `<style>`
+  = `.kit-doc` prose styles (site sheet resets margins/bullets/underlines). `.kit-note` at the top says
+  the embedded stylesheet is for reading only: a document body never carries `<style>` or `style=`.
+- Reference fragment spliced in at `<!--KIT:LIVE-->` as a live `.kit-live` block (site CSS only) directly
+  above its escaped source. Title now "authoring and style kit".
+- 6.1 says plain prose inside `section > container` has no spacing of its own (margins reset; the real
+  reports get prose styles from per-document page CSS) and that the editor adds them on Styling.
+- Route serves `text/html` as `ucc-authoring-kit-<date>.html` (log line ends `chars html`); All documents
+  link text updated. Verified in headless Chrome (guide + rendered fragment). 25/25 admin tests.
+- Rebased onto v0.18.0 (menus) before pushing; no overlap.
+
+Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in. Open: a template rule
+or page CSS for report prose so new documents do not arrive with zero paragraph spacing.
+
 ## v0.18.0 — 2026-10-06 (branch `refactor`) — Menus: header and footer editable in the admin
 
 **Render** (`packages/render/navigation.js` new; `site.js`, `documents.js`, `newsletters.js`;
