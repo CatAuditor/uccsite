@@ -6,13 +6,14 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
-## 2026-10-05 — Email: production-access request sent to AWS (step 2 of 3)
+## 2026-10-05 — Email: AWS approved production sending (step 2 of 3)
 
 The DNS records for Amazon SES were confirmed in place and our domain is fully
-verified, so we asked AWS to take the account out of its email sandbox. That
-request is now **pending** with AWS; they usually answer within a day. The
-request lists Jarom, Conner and Kaden as contacts — if AWS emails one of you
-with questions, Jarom replies.
+verified, so we asked AWS to take the account out of its email sandbox.
+**AWS approved it the same day.** The account may now send to anyone, up to
+50,000 messages a day. In the AWS console this only shows under the
+**US West (Oregon)** region; other regions show "Get started" and that is
+normal.
 
 Also done today:
 

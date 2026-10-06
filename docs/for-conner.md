@@ -439,7 +439,9 @@ questions, answer them there (Support Center in the console).
   conner.radcliffe@, kaden.payne@). AWS may email any of those three with
   follow-up questions — **Jarom answers them** (reply in the email thread or
   Support Center → the case). Watch for the approval email too.
-- [ ] 10.3 approved (`production: true`)
+- [x] 10.3 **approved 2026-10-05** (`production: true`, case 179125335500202;
+  quota 50,000/day, 14/sec). Everything SES lives in region **US West
+  (Oregon)** — other regions show "Get started" and that is expected.
 
 Checked 2026-10-05 for anything that could sink the review: site live over
 HTTPS, join form says "No spam. Unsubscribe anytime.", every send carries a
