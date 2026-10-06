@@ -204,7 +204,11 @@ No post or update goes live on one person's say-so. `lib/publish.js` +
    the request") so the reviewer knows what they are approving (and the
    `seenThrough` check above guarantees the list was complete).
 
-"Unpublished" = content audit rows after the `started_at` of the newest
+"Unpublished" = content audit rows (`CONTENT_ACTION_RE` in
+`packages/db/publish-requests.js` — every `<collection>.save`, document, media,
+redirect, style actions, `.restore`, plus `petition.save` and `appeals.save`
+since 2026-10-05; a new save action MUST be added there or it never counts,
+test `packages/db/test/publish-requests.test.mjs`) after the `started_at` of the newest
 succeeded/noop run (the Lambda snapshots the database right after it
 starts, so a save committed during a render is still unpublished).
 `requestPublish` bumps a one-row `publish_request_gate` inside its

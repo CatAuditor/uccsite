@@ -22,6 +22,9 @@ saves and a link to Publish & Status. When an **owner** asks, nobody is
 emailed: owners approve their own requests, so there is nothing for anyone
 else to do. The Publish & Status request form behaves the same way.
 
+- **Fixed the same day:** saves on the Petition page and the Donation appeals
+  page were never counted as "unpublished", so Request publish said there was
+  nothing to publish and Publish & Status did not list them. They count now.
 - **Nothing to do** for editors or admins beyond using the new button.
 - Staging never emails real people; a developer can point it at a test
   address if they need to see the email.

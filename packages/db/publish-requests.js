@@ -41,8 +41,11 @@ const rowToRequest = (r) => ({
 // Content-affecting audit actions (what a reviewer needs to see). Account,
 // user and publish bookkeeping rows are noise here.
 // Matches every content action name the admin records (lib/collection-save.js
-// `${key}.save`, documents/actions.js, media, redirects, revisions `.restore`).
-const CONTENT_ACTION_RE = /^(settings|homepage|team|statements|issues|blog|blog-[a-z]+|projects|coverage|coverage-[a-z]+|document|media|redirect|style_rule|foreign_class)\./;
+// `${key}.save`, documents/actions.js, media, redirects, revisions `.restore`,
+// petition/page.js `petition.save`, appeals/page.js `appeals.save`). A save whose
+// action is missing here is INVISIBLE to publishing: never "unpublished", and
+// "Request publish" says there is nothing to publish (2026-10-05 petition bug).
+const CONTENT_ACTION_RE = /^(settings|homepage|team|statements|issues|blog|blog-[a-z]+|projects|coverage|coverage-[a-z]+|document|media|redirect|style_rule|foreign_class)\.|^(petition|appeals)\.save$/;
 
 // changesSince(client, sinceIso|null) → [{ actor, action, entityType, entityId, at }]
 async function changesSince(client, sinceIso) {
