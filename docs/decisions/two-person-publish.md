@@ -1,6 +1,9 @@
 # ADR: No one publishes alone — request + approval by a different admin
 
-**Date:** 2026-09-13 · **Status:** accepted
+**Date:** 2026-09-13 · **Status:** accepted — **amended 2026-10-05: owners
+may approve their own request** (org decision; the org has few admins and the
+owner is accountable for the site). The audit row carries `selfApproved:
+true`. Editors still need a different admin. `apps/admin/lib/publish.js`.
 
 ## Decision
 
@@ -9,7 +12,8 @@ act: an editor/owner **requests** a publish (note + the list of unpublished
 saves), and a **different** editor/owner **approves** it (the only admin
 code path that invokes the PublishFn Lambda) or **declines** it with a
 required note. Requester ≠ reviewer is enforced server-side by
-`cognito:username` and email; owners are not exempt. One request pends at a
+`cognito:username` and email; ~~owners are not exempt~~ (owners exempt since
+2026-10-05, see above). One request pends at a
 time; the requester can withdraw. Restore-from-revision is now a draft like
 any save. `packages/db/publish-requests.js`, `apps/admin/lib/publish.js`,
 docs/systems/admin.md "Publishing".

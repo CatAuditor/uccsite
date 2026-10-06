@@ -1,7 +1,9 @@
 // Two-person publishing (docs/systems/admin.md "Publishing"). The ONLY
 // place the admin invokes the PublishFn Lambda is approvePublish below, and
-// it refuses when the approver is the requester. Saves stay drafts in the
-// database until a request is approved by a second admin.
+// it refuses when the approver is the requester — unless the approver is an
+// OWNER (org decision 2026-10-05: owners may approve their own request; the
+// audit row says so). Saves stay drafts in the database until a request is
+// approved.
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import {
   pendingRequest, listRequests, createRequest, review, changesSince, lastLiveAt, bumpGate, runsFor, reopen,
@@ -54,7 +56,8 @@ export async function requestPublish(note) {
 }
 
 // approvePublish(id, note, seenThrough): a DIFFERENT editor/owner than the
-// requester. seenThrough = the newest save the reviewer's page listed; any
+// requester, or an OWNER approving their own (self-approval is audited as
+// such). seenThrough = the newest save the reviewer's page listed; any
 // save after it means they are approving something they have not seen, so
 // the approval is refused until they reload. Marks the request approved,
 // then invokes the Lambda (outside the transaction — a 40001 replay must
@@ -71,10 +74,12 @@ export async function approvePublish(id, note, seenThrough) {
   await withWriteTx(async (client) => {
     const open = await pendingRequest(client);
     if (!open || open.id !== id) throw new Error('That request is no longer pending.');
-    if (open.requestedByUser === s.username || open.requestedBy === s.email) {
+    const own = open.requestedByUser === s.username || open.requestedBy === s.email;
+    if (own && s.role !== 'owner') {
       console.warn(`[admin] ${s.email} tried to approve their own publish request ${id}`);
-      throw new Error('You requested this publish — a different admin has to approve it.');
+      throw new Error('You requested this publish — a different admin (or an owner) has to approve it.');
     }
+    if (own) console.log(`[admin] ${s.email} (owner) self-approving publish request ${id}`);
     const unseen = await changesSince(client, seenThrough || open.createdAt);
     if (unseen.length) {
       throw new Error(`${unseen.length} more save(s) landed since you opened this page — reload, review them, then approve.`);
@@ -82,7 +87,7 @@ export async function approvePublish(id, note, seenThrough) {
     if (!(await review(client, { id, status: 'approved', reviewedBy: s.email, reviewNote: note, publishTrigger: trigger }))) {
       throw new Error('That request was just reviewed by someone else.');
     }
-    await recordChange(client, { actor: s.email, action: 'publish.approve', entityType: 'publish_request', entityId: id, diff: { requestedBy: open.requestedBy, note: note || '', seenThrough: seenThrough || null } });
+    await recordChange(client, { actor: s.email, action: 'publish.approve', entityType: 'publish_request', entityId: id, diff: { requestedBy: open.requestedBy, note: note || '', seenThrough: seenThrough || null, selfApproved: own } });
   });
   // Project files the writer asked to publish become public HERE — on a second
   // admin's approval, never on one editor's click

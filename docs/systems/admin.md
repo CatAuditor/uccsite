@@ -165,7 +165,8 @@ No post or update goes live on one person's say-so. `lib/publish.js` +
    writer adds an optional note and submits. Refused if a request is
    already pending or there is nothing to publish. Audit `publish.request`.
 2. **Review** (a DIFFERENT editor/owner — compared by `cognito:username`
-   AND email, so an owner cannot approve their own request either):
+   AND email — **or an owner reviewing their own request** since 2026-10-05;
+   self-approvals are audited `publish.approve` with `selfApproved: true`):
    - **Approve** → the form carries `seenThrough` (the newest save the
      reviewer's page listed); inside the transaction any content audit row
      after it refuses the approval ("more saves landed since you opened

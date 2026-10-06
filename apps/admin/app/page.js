@@ -44,13 +44,15 @@ export default async function Dashboard() {
   const { pending, liveAt, unpublished, sinceRequest, seenThrough, requests, inFlight } = await publishState();
   const canAct = session.role !== 'viewer';
   const isRequester = pending && (pending.requestedByUser === session.username || pending.requestedBy === session.email);
+  // Owners may approve their own request (lib/publish.js); editors still need a second admin.
+  const canReview = pending && canAct && (!isRequester || session.role === 'owner');
 
   async function request(prev, formData) {
     'use server';
     return runAction(async () => {
       await requestPublish(String(formData.get('note') || '').trim().slice(0, 2000));
       revalidatePath('/');
-      return { ok: true, message: 'Publish requested — another admin has to approve it before anything goes live.' };
+      return { ok: true, message: 'Publish requested — approve it below (owners) or wait for another admin to approve it before anything goes live.' };
     });
   }
   async function decide(prev, formData) {
@@ -75,8 +77,9 @@ export default async function Dashboard() {
       <h1>Publish &amp; Status</h1>
       <Refresher active={Boolean(inFlight)} />
       <p className="notice">
-        Saves are drafts. The site only changes when one admin <strong>requests</strong> a publish and a
-        <strong> different</strong> admin approves it. Last live: {liveAt ? when(liveAt) : 'never'}.
+        Saves are drafts. The site only changes when an admin <strong>requests</strong> a publish and a
+        <strong> different</strong> admin approves it — or an <strong>owner</strong> approves their own.
+        Last live: {liveAt ? when(liveAt) : 'never'}.
       </p>
 
       {pending ? (
@@ -94,16 +97,17 @@ export default async function Dashboard() {
           )}
           {!canAct ? (
             <p className="notice">Viewer role — read-only.</p>
-          ) : isRequester ? (
+          ) : !canReview ? (
             <ActionForm action={decide}>
               <input type="hidden" name="id" value={pending.id} />
-              <p>This is your request. Another editor or owner has to approve it; you can take it back.</p>
+              <p>This is your request. Another editor or an owner has to approve it; you can take it back.</p>
               <button type="submit" name="decision" value="withdraw" className="secondary">Withdraw request</button>
             </ActionForm>
           ) : (
             <ActionForm action={decide}>
               <input type="hidden" name="id" value={pending.id} />
               <input type="hidden" name="seenThrough" value={seenThrough || ''} />
+              {isRequester && <p className="notice">This is your own request. As an owner you can publish it yourself — check the list above first.</p>}
               <label htmlFor="review-note">Notes to the writer (required to decline)</label>
               <textarea id="review-note" name="note" placeholder="What's wrong, or what you checked." />
               <button type="submit" name="decision" value="approve" disabled={Boolean(inFlight)}>

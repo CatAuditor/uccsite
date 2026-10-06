@@ -4,6 +4,14 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.14.4 — 2026-10-05 (branch `refactor`) — Owners self-approve publishes
+
+- `apps/admin/lib/publish.js` `approvePublish`: the requester ≠ reviewer
+  check is skipped for role `owner`; audit diff gains `selfApproved`.
+  Dashboard shows the approve form to an owner on their own request.
+  ADR two-person-publish.md amended; admin.md Publishing updated.
+- Closes the standing P1 "no second approver" — an owner can now publish alone.
+
 ## v0.14.3 — 2026-10-05 (branch `refactor`) — Hero live; hero status in the admin
 
 - **Prod published** (`operator:petition-hero-go-live`): petition hero +

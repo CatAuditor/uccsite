@@ -440,9 +440,9 @@ copy exists in production.
    provision quote, 2026-10-05) — review and edit wording; keep the slug
    `udot-alpr-permits` (or pick one; lowercase-with-dashes). **Save petition
    copy** if you change anything.
-2. `[hand]` Admin → **Publish & Status** → request a publish; a *different*
-   admin approves it. The homepage hero becomes the petition and `/petition`
-   starts taking signatures.
+2. `[hand]` Admin → **Publish & Status** → request a publish, then approve
+   it yourself (owners may, since 2026-10-05) or have another admin approve.
+   (Done 2026-10-05 by the operator publish — the hero is live.)
 3. Signatures: Admin → Petition → **Download CSV** (Utah-only, outside-only
    or both; audited). The site shows a public counter of **Utah** signatures
    — its wording is the *Signature counter* field (blank = no counter).

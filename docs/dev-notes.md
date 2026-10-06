@@ -22,6 +22,13 @@ security key first — none is set up yet. After setting a real password,
 Still open: with two owners signed in (Conner and Jarom), two-person
 publishing works on the live site for the first time.
 
+## 2026-10-05 — Owners can publish their own changes
+
+An **owner** no longer needs a second admin: request the publish as before,
+then approve it yourself on Publish & Status (the page says it is your own
+request). Editors still need a different admin to approve. Every
+self-approval is recorded in the Audit Log as such.
+
 ## 2026-10-05 — The petition hero is live; the admin now shows which hero is showing
 
 - **Published:** utahciviccompact.org now opens with the petition hero and
