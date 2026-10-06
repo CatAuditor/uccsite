@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { Inter } from 'next/font/google';
 import Nav from './nav';
 import { getSession } from '../lib/auth';
 import { withDb } from '../lib/data';
@@ -10,7 +11,12 @@ export const metadata = {
   appleWebApp: { capable: true, title: 'UCC Admin', statusBarStyle: 'default' },
 };
 // viewportFit cover: the phone tab bar pads itself with env(safe-area-inset-bottom).
-export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#16281e', viewportFit: 'cover' };
+// themeColor = the sidebar / top bar (site --navy-dark), so the browser chrome matches.
+export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#0f1e33', viewportFit: 'cover' };
+
+// The site's typeface (css/fonts.css self-hosts it for the public pages);
+// next/font downloads it at build time and serves it from the admin itself.
+const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'], display: 'swap' });
 
 // Nav grouped by section (org decision: "site main" / "reports" / …).
 // Documents ("Reports"/"Whitepapers") arrive in Phase 8.
@@ -72,7 +78,7 @@ export default async function RootLayout({ children }) {
   if (!session) {
     return (
       <html lang="en">
-        <body>
+        <body className={inter.className}>
           <main className="content login-only">{children}</main>
         </body>
       </html>
@@ -80,11 +86,11 @@ export default async function RootLayout({ children }) {
   }
   return (
     <html lang="en">
-      <body>
+      <body className={inter.className}>
         <div className="shell">
           {/* Suspense: Nav reads useSearchParams, which Next needs bounded for the
               statically prerendered error pages. */}
-          <Suspense fallback={<aside className="sidebar"><div className="sidebar-bar"><div className="brand">UCC Admin</div></div></aside>}>
+          <Suspense fallback={<aside className="sidebar"><div className="sidebar-bar"><div className="brand"><img className="brand-mark" src="/icon.png" alt="" width="30" height="30" /><span className="brand-text">UCC Admin</span></div></div></aside>}>
             <Nav groups={nav.map(({ group, items }) => ({ group, items }))} email={session.email} role={session.role} />
           </Suspense>
           <main className="content">{children}</main>

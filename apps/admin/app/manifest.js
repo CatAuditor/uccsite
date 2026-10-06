@@ -14,7 +14,7 @@ export default function manifest() {
     // Icons are the UCC mark flattened onto site navy (--navy), padded for
     // maskable launchers; background_color matches so the splash is seamless.
     background_color: '#1b2f4e',
-    theme_color: '#16281e',
+    theme_color: '#0f1e33',
     icons: [
       { src: '/icon.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
       { src: '/apple-icon.png', sizes: '180x180', type: 'image/png' },

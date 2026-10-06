@@ -6,6 +6,30 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — The admin now looks like the site
+
+**What changed.** The admin used to be a green-and-gold back office that
+shared nothing with utahciviccompact.org. It now uses the site's own look:
+the deep navy of the site's header and footer for the sidebar, phone top bar
+and tab bar; the site's red as the accent (the bar beside the page you are
+on, the ring around a publish request waiting for review, the Sign in and
+Delete buttons); the site's cream for notes and quoted messages; and the
+site's typeface, Inter. Every box — editors, the publish request, media
+cards, tables — is a white rounded card with a soft shadow, buttons and
+fields have the same rounded corners and focus glow as the site's forms, and
+the sign-in page is a centred card with the UCC mark.
+
+**Nothing moved.** Every page, button and field is where it was; only the
+appearance changed. On a phone the layout from yesterday (top bar, bottom
+tabs, menu sheet) is the same, restyled to match. Installed-app users will
+notice the status bar colour change to navy.
+
+**Not yet done.** Still not checked on a real phone — the layout was verified
+in a desktop browser at phone width. If anything looks off on your device, a
+screenshot is enough to fix it.
+
+---
+
 ## 2026-10-05 — The admin works on a phone, sessions last four hours
 
 **Phone layout.** The admin used to be a desktop-only layout: a fixed sidebar

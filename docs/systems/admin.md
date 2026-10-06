@@ -10,6 +10,10 @@ Amplify Hosting at `admin.utahciviccompact.org` at rollout.
 apps/admin/
   middleware.js            cookieless requests → /login (verification is NOT here);
                            manifest + icons pass through for the install flow
+  app/layout.js            root layout: session → nav groups, Inter via next/font (class on
+                           <body>), viewport/themeColor; signed-out = bare .login-only main
+  app/globals.css          the whole admin stylesheet — design tokens copied from the live
+                           site (see "Styling"), every component class, the phone block
   app/nav.js               navigation (client): find-a-page filter, folding sections,
                            current page; phone top bar (Section › Page) + bottom tab bar
                            + full-screen menu sheet (see "Navigation & phone use")
@@ -163,8 +167,8 @@ operator fallback.
   section label; all sections unfold while filtering), sections as `<details>`
   the user can fold, the signed-in user + Sign out as a block stuck to the
   bottom of the (scrolling) sidebar. `:focus-visible` outlines throughout.
-- Phone (≤800px, `globals.css` "Phone layout"): the sidebar becomes a 52px
-  sticky **top bar** — brand (→ `/`), `Section › Page` for the current page,
+- Phone (≤800px, `globals.css` "Phone layout"): the sidebar becomes a 54px
+  sticky **top bar** — brand mark (→ `/`), `Section › Page` for the current page,
   Menu — plus a fixed **bottom tab bar** (`TABS` in nav.js: Home = `/`,
   Documents, Mail, Tips, Menu; `env(safe-area-inset-bottom)` padding,
   `viewportFit: 'cover'`). The menu is a **full-screen sheet** under the bar:
@@ -177,8 +181,9 @@ operator fallback.
 - Verified by rendering the component's markup against `globals.css` in
   headless Chrome at 390×844 (closed, menu open) and 1280×800
   (2026-10-05); not yet on a real phone.
-- Installable: `app/manifest.js` (standalone, theme `#16281e`, splash/background
-  `#1b2f4e` = site `--navy`, start `/`),
+- Installable: `app/manifest.js` (standalone, theme `#0f1e33` = site
+  `--navy-dark` = the sidebar/top bar, splash/background `#1b2f4e` = site
+  `--navy`, start `/`),
   `app/icon.png` 512 (`purpose: any maskable`) + `app/apple-icon.png` 180: the
   transparent UCC mark (white + gold) flattened onto `--navy` `#1b2f4e` and
   padded to the inner 70% so maskable launchers and iOS (which fills alpha
@@ -192,6 +197,45 @@ operator fallback.
   `accessTokenValidity` on AdminAppClient). Sign-in on a phone goes through
   the same Cognito managed login; passkeys work in standalone mode on iOS 16+.
 - Status: built, `next build` clean; not yet verified on a real phone.
+
+## Styling (2026-10-06)
+
+- One file, `app/globals.css`, no framework (spec §15). Its `:root` tokens
+  are copied by hand from the live site's `css/styles.css` so the admin reads
+  as the same product: `--navy #1B2F4E`, `--navy-dark #0F1E33` (sidebar, phone
+  top bar, tab bar), `--red #C0392B` (accent: current-page bar, pending
+  request ring, danger buttons, sign-in button), `--cream #F5F1EA` (notices,
+  quoted notes), the site gray scale, `--radius 6px` controls / `--radius-lg
+  12px` cards, `--ring` focus halo. Change a site colour → change it here too.
+- Typeface: Inter, loaded with `next/font/google` in `app/layout.js`
+  (downloaded at build time, served by the admin itself; `inter.className`
+  on `<body>`). `--font-sans` in the CSS lists `'Inter'` first so the mock
+  pages below render the same way with a local `@font-face`.
+- Component vocabulary (all class names are unchanged from before the
+  restyle, so pages did not have to change): `button` = navy filled,
+  `.secondary` = white outline, `.danger` = red, `.linkish` = text link; the
+  compact tool buttons (`.item-tools`, `.list-tools`, `form.inline`, media /
+  picker / mail tool rows) share one white-outline rule. Cards (`form.editor`,
+  `section.request`, `.uploader`, `.media-card`, `.picker`, `.request-send`,
+  `.dev-notes article`, tables) = white, 1px `--gray-200`, 12px radius, soft
+  shadow. `.notice` cream with a navy left bar; `.error` / `.ok` red / green
+  with a matching bar; status text classes unchanged. `h1 .hint` renders as a
+  pill (Tips count). Tables use `border-collapse: separate` so the rounded
+  corners clip; the phone block still makes them `display:block;
+  overflow-x:auto`.
+- Sidebar: navy-dark, brand = `/icon.png` mark + "UCC Admin / Utah Civic
+  Compact"; links are 6px-radius rows, the current page gets a red left bar;
+  the Find box is a dark input (`.sidebar .nav-find input` — the `.sidebar`
+  prefix is what beats the generic `input[type="search"]` rule). The phone
+  tab bar marks the active tab with a red top notch.
+- Login (`app/login/page.js`): `.login-card` — mark, red eyebrow, "Admin sign
+  in", a full-width red button; errors keep `.error`.
+- Verified 2026-10-06 in headless Chrome against the real stylesheet with
+  static markup copied from the components: 1280×900 dashboard + list editor,
+  390×844 dashboard / menu sheet / editor, login. Windows Chrome clamps a
+  headless window to ~500px wide, so phone widths must be rendered inside a
+  390px `<iframe>` on a wide page (media queries and `position: fixed` follow
+  the iframe), not with `--window-size=390,…`.
 
 ## Auth
 
