@@ -40,10 +40,20 @@ apps/admin/lib/documents.js       editor data: site sources (live css from the
                                   site bucket, partials/shells from the repo /
                                   site-src), Style Kit, explainStyles rows,
                                   preview srcdoc, ruleMatchCounts
-apps/admin/app/documents/         list (by category) + create; [id]/ editor
-                                  (metadata, HTML/CSS editors + ingest report,
-                                  SEO panel with SERP preview, styling split
-                                  view), actions.js (all server actions)
+apps/admin/app/documents/         list (by category) + authoring-kit download
+                                  block + create; [id]/ editor (metadata,
+                                  HTML/CSS editors + file upload + ingest
+                                  report, SEO panel with SERP preview, styling
+                                  split view), actions.js (all server actions,
+                                  incl. convertUpload)
+apps/admin/app/documents/authoring-kit/route.js
+                                  GET: the authoring kit as a .md download,
+                                  rebuilt per request (any signed-in role)
+apps/admin/lib/authoring-kit.js   buildAuthoringKit({ kit, rules, coverageKeys })
+                                  → markdown: static voice/HTML/shape sections +
+                                  live Style Kit catalog + template rules + tokens
+apps/admin/lib/convert-upload.mjs docxToHtml (mammoth), markdownToHtml (marked),
+                                  finishHtml (image placeholders, line breaks)
 apps/admin/app/styles/            rules with match counts, foreign class map,
                                   Style Kit catalog (+ rule-form.js)
 apps/admin/app/revisions/page.js  restore path for entity_type 'document'
@@ -132,6 +142,67 @@ cannot wedge publishing.
   always dropped; the ingest report lists every kept script; every toggle
   writes a `document.allow_scripts.on/off` audit row. Adding a host means
   editing BOTH the allowlist and `SITE_CSP`.
+
+## Authoring kit (2026-10-05)
+
+The spec's authoring model is "write outside, paste in" (§1). The kit is the
+file that makes an outside tool, Claude in particular, produce something
+that lands clean: **GET `/documents/authoring-kit`** (link at the top of the
+All documents page) returns `ucc-authoring-kit-<date>.md`, built on every
+request by `lib/authoring-kit.js buildAuthoringKit` from
+
+- static text in the module: how to use it (three modes: prose only →
+  .docx/.md upload; HTML fragment → paste/upload; convert my draft), the
+  instructions-for-Claude block, the voice rules (DOs and the DON'T list of
+  machine-writing tells: em/en dashes, triplets, "it's not X it's Y",
+  signposting, stock closers, buzzwords, vague attribution, invented
+  specificity …), the page-fields block (title/slug/category/author/meta
+  description/keywords/social title), the shape of a piece, the HTML rules
+  (fragment only, allowed tags from `html-ingest ALLOWED_TAGS` minus
+  SVG/chrome/presentational tags, forbidden constructs, a skeleton), and a
+  hand-over checklist;
+- live data: the Style Kit catalog (`styleKitFor(siteCss)`; annotated
+  entries only, chrome groups such as Navigation/Forms/Donations hidden),
+  every `scope='template'` style rule ("write this tag, the editor adds this
+  class, do not add it yourself"), and the coverage keys that exist
+  (`SELECT DISTINCT report_key FROM coverage_entries`) for the
+  `{{coverage:KEY}}` token.
+
+Dynamic strings are passed through `dash()` so the file never contains an
+em/en dash (the test asserts the whole file is dash-free; the kit must obey
+its own rules). Auth: `getSession()` only, any role; 403 when signed out.
+No personal data in the file. Logged as `[documents] authoring kit for
+<email>: N classes, N template rules, N coverage keys, N chars`.
+
+No AI service is part of the product (spec §1); the kit is a document an
+author chooses to give to their own tool.
+
+## Upload a file (.html / .docx / .md) (2026-10-05)
+
+The HTML box's file input accepts `.html/.htm` (read in the browser,
+unchanged, as before), `.docx` and `.md/.markdown/.txt`. Non-HTML files go
+to the server action **`convertUpload(formData)`** (editor+, called directly
+from `html-editor.js`, not via ActionForm; 8 MB cap, matching
+`next.config.js serverActions.bodySizeLimit`):
+
+| kind | converter | notes |
+|---|---|---|
+| .docx (Word, Google Docs, Claude Docs export) | `mammoth.convertToHtml` with a style map adding Title→h1, Subtitle→p, Quote/Intense Quote→blockquote (Heading 1–6 are mammoth defaults) | mammoth's warnings (unmapped styles) are returned and shown |
+| .md / .markdown / .txt | `marked.parse` (GFM, no `breaks`) | raw HTML in the markdown passes through |
+
+`finishHtml` then replaces every `<img>` (data: URIs from embedded images,
+which the ingest rejects) with a visible numbered placeholder paragraph
+("[Image N omitted: upload it on the Media page …]") and adds a newline after
+block closers so the textarea is readable. The result is placed in the Body
+HTML field with a notice (characters, images omitted, warnings); **nothing is
+stored** until the editor saves, which runs the normal ingest, so the
+converters are not trusted and need no sanitising of their own. Errors come
+back as `{ error }` and are shown in the same notice. Logged as
+`[documents] convert <kind> "<name>" <bytes>B -> <chars> chars, <n> images
+omitted[, warnings: …]`.
+
+Dependencies (apps/admin): `mammoth` ^1.9, `marked` ^15. Tests:
+`test/convert-upload.test.mjs`, `test/authoring-kit.test.mjs`.
 
 ## Env vars (admin)
 

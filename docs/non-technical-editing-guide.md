@@ -91,8 +91,17 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
 ### Documents (long-form pages: reports, whitepapers, the privacy policy)
 - Open **All documents** → pick one, or **New document** (title + the URL
   slug, e.g. `box-elder-report` becomes utahciviccompact.org/box-elder-report).
-- Paste the page's HTML (or upload an `.html` file) into the body box. On
-  save the site cleans it: scripts, inline styles and anything unsafe are
+- **Start with the authoring kit.** At the top of All documents, download
+  the kit (one `.md` file) and give it to Claude, or to whoever is writing,
+  before the draft starts. It holds the site's voice rules (the things we
+  never publish: em dashes, "it's not X, it's Y", buzzwords and the rest),
+  the fields the admin asks for, and the HTML the editor accepts. Ask Claude
+  for prose, or for the HTML fragment; the kit explains both.
+- Fill the body box one of three ways: paste HTML; **upload a file** (a
+  `.docx` from Word, Google Docs or Claude Docs, a Markdown `.md`, or an
+  `.html`; Word and Markdown are converted to HTML for you, and any pictures
+  inside are replaced by a placeholder you swap for an image from Media); or
+  type. On save the site cleans it: scripts, inline styles and anything unsafe are
   removed and the **ingest report** tells you exactly what changed. Fix
   anything it flags (an image without alt text, two `<h1>`s, a skipped
   heading level) — a page cannot be published with those.

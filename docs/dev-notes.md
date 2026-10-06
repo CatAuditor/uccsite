@@ -6,6 +6,42 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-05 — Long-form writing: an authoring kit for Claude, and Word/Markdown upload
+
+Writing a report used to mean producing HTML by hand and pasting it into a
+document. Two changes make that easier.
+
+**The authoring kit.** At the top of All documents there is now a download
+link for one file, the authoring kit. Give it to Claude (attach it to a chat,
+or add it to a Claude Project so every chat there uses it) before you start
+writing. It tells Claude how the site writes and what it never publishes
+(em dashes, "it's not X, it's Y" framings, lists of three for rhythm,
+buzzwords, vague "experts say" attributions, invented figures, and the rest
+of the machine-writing tells), the page fields the admin asks for (title,
+slug, category, author, meta description), how a piece is shaped, and the
+exact HTML the editor accepts, including the classes that are applied
+automatically and the ones a writer may use. You then ask Claude for one of
+three things: prose only (write in Claude Docs, Word or Google Docs and save
+a .docx), the HTML fragment to paste, or a conversion of a draft you already
+wrote. The kit is rebuilt from the live stylesheet every time it is
+downloaded, so download a fresh one for each new piece.
+
+**Upload a file.** The document editor's upload box now takes a .docx (from
+Word, Google Docs or Claude Docs) or a Markdown .md file as well as .html.
+Word and Markdown are converted to clean HTML on the spot and put in the
+body box for you to review and save; the usual ingest report still runs on
+save. Pictures inside a Word file are not carried over: each one becomes a
+numbered placeholder paragraph, and you upload the image on Media and insert
+it in its place with alt text.
+
+- **Editors:** before a new piece, download the kit and hand it to the
+  writer. When the draft comes back, upload it or paste it; nothing else
+  changes. Styling, preview, SEO and the two-person publish are as before.
+- **Unfinished:** template styling rules are what make a plain draft land
+  styled; the kit lists whichever rules exist. If none exist for the report
+  template yet, add them on the Styles page (promote-to-rule from any
+  document) and the next kit download will carry them.
+
 ## 2026-10-05 — Author pages: every team member now has a page of their work
 
 Each person on the Team page now has their own page at

@@ -76,8 +76,13 @@ apps/admin/
   app/donations            staff view: every donation + contact info (addendum 2)
   app/audit                audit trail
   app/documents            Documents list/create + [id] editor (Phase 8,
-                           docs/systems/documents.md); app/styles rules/kit
+                           docs/systems/documents.md); app/styles rules/kit;
+                           documents/authoring-kit/route.js = kit .md download
   lib/documents.js         editor data, Style Kit, preview, match counts
+  lib/authoring-kit.js     the authoring kit markdown (voice rules + live Style
+                           Kit + template rules) — documents.md "Authoring kit"
+  lib/convert-upload.mjs   .docx (mammoth) / .md (marked) → HTML for the
+                           document body upload
   lib/hero-status.js       live-vs-saved hero check shown on /homepage and /petition (petition.md)
 scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 ```

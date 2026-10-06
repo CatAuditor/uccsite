@@ -20,6 +20,14 @@ export default async function DocumentsPage({ searchParams }) {
   return (
     <div>
       <h1>{category ? category : 'Long-form Documents'}</h1>
+      <div className="notice">
+        <strong>Writing a new piece?</strong> Download the authoring kit first and give it to Claude, or to whoever is
+        writing, before the draft starts. It is one file that carries the site&apos;s voice rules (what we never
+        publish), the page fields the admin asks for, the HTML the editor accepts and the current Style Kit. Ask for
+        prose and upload the finished <code>.docx</code> or <code>.md</code> into a document, or ask for the HTML
+        fragment and paste it. The kit is rebuilt from the live stylesheet every time you download it.{' '}
+        <a href="/documents/authoring-kit" download>Download the authoring kit (.md)</a>
+      </div>
       <p className="notice">
         A Document is pasted HTML plus its own page CSS and SEO fields. Saving runs the ingest
         report; the site changes when a publish request is approved on Publish &amp; Status. Categories: {categories.map((c, i) => (
