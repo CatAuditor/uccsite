@@ -469,3 +469,32 @@ test('checkout validates type and amount bounds', async () => {
     assert.equal(res.statusCode, 400, JSON.stringify(body));
   }
 });
+
+// ── Double opt-in (docs/systems/newsletters.md "Confirmed subscribers") ────
+test('confirm: a valid confirm token sets confirmed_at once; bad/expired tokens 400', async () => {
+  const db = fakeDb();
+  const token = await lib.signToken(SECRET, 'confirm', 'a@b.co', 3600);
+  let res = await routes.confirmSubscription({ event: httpEvent({ method: 'GET', path: '/api/confirm', query: { token } }), db, secrets: { TOKEN_SECRET: SECRET } });
+  assert.equal(res.statusCode, 200);
+  const upd = db.calls.find(c => c.text.includes('UPDATE subscribers SET confirmed_at = COALESCE(confirmed_at, now())'));
+  assert.deepEqual(upd.params, ['a@b.co']);
+  assert.ok(res.body.includes('Confirmed'));
+  // an UNSUBSCRIBE token must not confirm (purpose is checked)
+  const wrong = await lib.signToken(SECRET, 'unsubscribe', 'a@b.co', 3600);
+  res = await routes.confirmSubscription({ event: httpEvent({ method: 'GET', path: '/api/confirm', query: { token: wrong } }), db, secrets: { TOKEN_SECRET: SECRET } });
+  assert.equal(res.statusCode, 400);
+  res = await routes.confirmSubscription({ event: httpEvent({ method: 'GET', path: '/api/confirm', query: { token: 'garbage' } }), db, secrets: { TOKEN_SECRET: SECRET } });
+  assert.equal(res.statusCode, 400);
+});
+
+test('petition signers are confirmed at insert; join-form signups are not', async () => {
+  const db = fakeDb();
+  await routes.petitionSign(baseCtx(db, { body: { petition: 'udot-alpr-permits', firstName: 'A', lastName: 'B', email: 'a@b.co', zip: '84101' } }));
+  const sub = db.calls.find(c => c.text.includes('INSERT INTO subscribers'));
+  assert.ok(sub.text.includes('confirmed_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, now())'));
+  assert.ok(sub.text.includes('confirmed_at = COALESCE(subscribers.confirmed_at, now())'));
+  const db2 = fakeDb();
+  await routes.subscribe(baseCtx(db2, { body: { email: 'a@b.co' } }));
+  const join = db2.calls.find(c => c.text.includes('INSERT INTO subscribers'));
+  assert.ok(!join.text.includes('confirmed_at'));
+});

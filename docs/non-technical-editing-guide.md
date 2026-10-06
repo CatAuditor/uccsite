@@ -175,4 +175,22 @@ visual; a developer changes the code and publishes.
    skipped.
 
 A request freezes the email: once requested it cannot be edited until it is
-withdrawn, declined or cancelled. Only owners can delete a newsletter.
+withdrawn, declined or cancelled (the requester or an owner can still
+*change the send time* of a pending request). Only owners can delete a
+newsletter.
+
+Also useful:
+
+- **Copy** (on the list, or *Copy as a new draft* in the editor) starts a
+  new draft from any earlier email.
+- **Use this look as the default** makes the current colours, font, small
+  header line and footer the starting point for every new newsletter — set
+  it once, and put the org's postal address in the footer when there is one.
+- **Send a test to all admins** emails the saved version to the four admins.
+- **Also publish a web copy** (ticked by default) puts the sent email at
+  utahciviccompact.org/newsletters/… and adds a "View in browser" link to
+  the email. Untick it for an email that should stay email-only.
+- After a send, the page shows delivered / failed / **suppressed** counts.
+  Suppressed means the address bounced hard or marked us as spam; it is
+  skipped automatically from then on. The Mailing list page lists them,
+  along with sign-ups who have not pressed the confirm button yet.
