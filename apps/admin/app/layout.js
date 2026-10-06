@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { Suspense } from 'react';
+import Nav from './nav';
 import { getSession } from '../lib/auth';
 import { withDb } from '../lib/data';
 import './globals.css';
@@ -79,25 +80,11 @@ export default async function RootLayout({ children }) {
     <html lang="en">
       <body>
         <div className="shell">
-          <aside className="sidebar">
-            <div className="brand">UCC Admin</div>
-            <div className="session session-top">
-              <div className="session-user">{session.email}</div>
-              <div className="session-role">{session.role}</div>
-              <form action="/logout" method="post"><button type="submit" className="signout">Sign out</button></form>
-            </div>
-            {nav.map(({ group, items }) => (
-              <div key={group} className="nav-group">
-                <div className="nav-group-title">{group}</div>
-                {items.map(([href, label]) => (
-                  <Link key={href} href={href} className="nav-link">{label}</Link>
-                ))}
-              </div>
-            ))}
-            <div className="session">
-              <form action="/logout" method="post"><button type="submit" className="nav-link linkish">Sign out</button></form>
-            </div>
-          </aside>
+          {/* Suspense: Nav reads useSearchParams, which Next needs bounded for the
+              statically prerendered error pages. */}
+          <Suspense fallback={<aside className="sidebar"><div className="sidebar-bar"><div className="brand">UCC Admin</div></div></aside>}>
+            <Nav groups={nav.map(({ group, items }) => ({ group, items }))} email={session.email} role={session.role} />
+          </Suspense>
           <main className="content">{children}</main>
         </div>
       </body>

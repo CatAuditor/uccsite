@@ -16,6 +16,15 @@ button.linkish { background: none; border: 0; margin: 0; width: 100%; text-align
 .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .session-user { padding: 0 20px; font-size: 12px; word-break: break-all; }
 .session-role { padding: 0 20px 6px; font-size: 11px; color: #c8a84b; text-transform: uppercase; }
+/* Navigation (app/nav.js): current page, collapsible sections, phone drawer */
+.sidebar-body { display: flex; flex-direction: column; flex: 1; }
+.nav-toggle { display: none; margin: 0; padding: 6px 12px; font-size: 13px; background: #c8a84b; color: #16281e; font-weight: 700; }
+summary.nav-group-title { cursor: pointer; list-style: none; user-select: none; }
+summary.nav-group-title::-webkit-details-marker { display: none; }
+summary.nav-group-title::before { content: "BE"; display: inline-block; width: 12px; margin-left: -12px; font-size: 10px; transition: transform .15s; }
+.nav-group:not([open]) > summary.nav-group-title::before { transform: rotate(-90deg); }
+.nav-link.active { background: #c8a84b; color: #16281e; font-weight: 600; }
+.nav-link.active:hover { background: #dcc06a; }
 .content { flex: 1; padding: 32px 40px; max-width: 900px; }
 h1 { font-size: 22px; margin: 0 0 18px; }
 h2 { font-size: 16px; margin: 24px 0 10px; }
@@ -229,3 +238,35 @@ select { padding: 8px; border: 1px solid #c9cdc6; font: inherit; width: 100%; ba
 .inline-upload .error { flex-basis: 100%; margin: 0; }
 .inline-upload.compact input[type="text"] { padding: 6px 8px; font-size: 13px; }
 .inline-upload.compact button { padding: 6px 12px; font-size: 12px; }
+
+/* Phone layout (docs/systems/admin.md "Phone / PWA"): the sidebar becomes a
+   sticky top bar with a Menu drawer; tables scroll sideways; the two-column
+   editors stack; 16px inputs stop iOS zooming on focus. */
+@media (max-width: 800px) {
+  .shell { display: block; }
+  .sidebar { position: sticky; top: 0; z-index: 10; width: auto; height: auto; max-height: 100vh; padding: 0; }
+  .sidebar-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; }
+  .brand { padding: 0; }
+  .nav-toggle { display: inline-block; }
+  .sidebar-body { display: none; padding-bottom: 12px; border-top: 1px solid #2b4636; }
+  .sidebar.open .sidebar-body { display: flex; }
+  .sidebar .session:not(.session-top) { display: none; }
+  .session-top { margin: 12px 0; }
+  .nav-link { padding: 10px 20px; }
+  .content { padding: 18px 16px; max-width: none; }
+  .content:has(.doc-editor) { max-width: none; }
+  input[type="text"], input[type="search"], input[type="email"], input[type="url"], input[type="number"], input[type="password"], textarea, select { font-size: 16px; }
+  table { display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+  form.editor, .uploader { padding: 14px; }
+  .list-tools input[type="search"] { min-width: 0; flex: 1 1 160px; }
+  .split { grid-template-columns: 1fr; height: auto; }
+  .tree { max-height: 40vh; }
+  .preview iframe { height: 60vh; }
+  .tree-row .txt { max-width: 160px; }
+  .doc-checks { flex-wrap: wrap; gap: 10px 18px; }
+  .kit { max-height: none; }
+  .request-publish { margin-left: 0; margin-top: 8px; }
+  .mail-device iframe { height: 70vh; }
+  .mail-device.desktop iframe { height: 70vh; }
+  .login-only { margin-top: 6vh; padding: 0 16px; }
+}
