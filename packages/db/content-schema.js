@@ -34,6 +34,9 @@ const STATEMENTS = [
   `ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS download_modal_body TEXT`,
   `ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS download_modal_cta TEXT`,
   `ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS download_modal_dismiss TEXT`,
+  // Header + footer menus as JSON (docs/systems/navigation.md). NULL = the
+  // defaults in packages/render/navigation.js.
+  `ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS navigation TEXT`,
   // homepage.json's six object groups as JSON documents; press is a child list.
   `CREATE TABLE IF NOT EXISTS homepage (
     id TEXT PRIMARY KEY,

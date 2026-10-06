@@ -30,6 +30,7 @@ const FIELD_MAPS = {
     turnstile_site_key: 'turnstileSiteKey',
     download_modal_title: 'downloadModalTitle', download_modal_body: 'downloadModalBody',
     download_modal_cta: 'downloadModalCta', download_modal_dismiss: 'downloadModalDismiss',
+    navigation: 'navigation',
   },
   homepage_press: {
     outlet: 'outlet', badge_color: 'badge_color', date: 'date', headline: 'headline',
@@ -96,10 +97,15 @@ const COLLECTION_TABLES = {
 };
 const CONTENT_TABLES = [...new Set(Object.values(COLLECTION_TABLES).flat())];
 
+// Columns holding JSON text: parsed on read, serialized on write. An unreadable
+// value reads as absent (the renderer then falls back to its defaults).
+const JSON_FIELDS = { site_settings: new Set(['navigation']) };
 function rowToObject(table, row) {
   const out = {};
   for (const [col, key] of Object.entries(FIELD_MAPS[table])) {
-    if (row[col] !== null && row[col] !== undefined) out[key] = row[col];
+    if (row[col] === null || row[col] === undefined) continue;
+    if (JSON_FIELDS[table]?.has(col)) { try { out[key] = JSON.parse(row[col]); } catch { /* absent */ } continue; }
+    out[key] = row[col];
   }
   return out;
 }
@@ -217,7 +223,10 @@ function makeDbLastmod(meta) {
 // ── Write side (migration + admin) ──────────────────────────────────────────
 
 function objectToParams(table, obj) {
-  return Object.entries(FIELD_MAPS[table]).map(([, key]) => obj[key] ?? null);
+  return Object.entries(FIELD_MAPS[table]).map(([col, key]) => {
+    const v = obj[key] ?? null;
+    return v !== null && JSON_FIELDS[table]?.has(col) && typeof v !== 'string' ? JSON.stringify(v) : v;
+  });
 }
 
 // insertRow(client, table, item, extra) — one row from a JSON item plus fixed
@@ -271,7 +280,7 @@ async function replaceCollectionRows(client, table, items, { where, extraCols = 
 async function saveSettings(client, settings) {
   const cols = Object.entries(FIELD_MAPS.site_settings);
   const sets = cols.map(([col], i) => `${col} = $${i + 2}`).join(', ');
-  const params = [SINGLETON, ...cols.map(([, key]) => settings[key] ?? null)];
+  const params = [SINGLETON, ...objectToParams('site_settings', settings)];
   await client.query(
     `INSERT INTO site_settings (id, ${cols.map(([c]) => c).join(', ')})
      VALUES ($1, ${cols.map((_, i) => `$${i + 2}`).join(', ')})

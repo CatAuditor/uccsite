@@ -25,6 +25,7 @@ const NAV = [
   { group: 'Overview', items: [['/', 'Publish & Status']] },
   { group: 'Site Main', items: [
     ['/settings', 'Site Settings'],
+    ['/navigation', 'Menus (header & footer)'],
     ['/homepage', 'Homepage'],
     ['/appeals', 'Donation appeals'],
     ['/petition', 'Petition'],

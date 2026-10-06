@@ -5,6 +5,7 @@
 'use strict';
 
 const { render, mdToHtml } = require('./engine');
+const { navFields } = require('./navigation');
 
 const SITE_URL = 'https://utahciviccompact.org';
 
@@ -357,6 +358,7 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
     const page = (source ? template.split('/')[0] : template).replace(/\.html$/, '');
     const data = Object.assign(
       { page, is_home: page === 'index', current: { [page]: true } }, // used by partials for nav state
+      navFields(derived.settings, page), // header + footer menus (docs/systems/navigation.md)
       ...names.map(n => derived[n]),
       item ? { ...item, bio: mdToHtml(item.bio) } : {}
     );

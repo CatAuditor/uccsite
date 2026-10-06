@@ -77,6 +77,17 @@ puts that version back as a draft; request a publish to take it live.
 ### Site Main
 - **Site Settings** — organization name, contact email, Instagram, footer
   text, copyright line.
+- **Menus (header & footer)** — the menu at the top of every page and the
+  footer links, including **Privacy Policy** on the bottom line. Reorder with
+  the arrows; **Into dropdown** / **Out of dropdown** moves a link between the
+  top level and a dropdown such as About Us. In **Links to**, pick a page from
+  the list or type any address. To add a **new page** to the menu, create it in
+  All documents first, then pick it here. Every menu change waits for a
+  publish like anything else.
+- **Petition** — the campaign copy, the thank-you page's donation window
+  (**amounts** as dollars, e.g. `5, 10, 25`; **one-time, monthly or both**; an
+  Other amount is always offered) and the **share** message and preview
+  picture used when people post the petition link.
 - **Homepage** — hero headline/subtitle, mission quote, about paragraphs,
   join section, donate section, donation pop-up text, the press strip.
   (The featured statement card is automatic: it is always the newest

@@ -4,6 +4,34 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.18.0 — 2026-10-06 (branch `refactor`) — Menus: header and footer editable in the admin
+
+**Render** (`packages/render/navigation.js` new; `site.js`, `documents.js`, `newsletters.js`;
+`templates/partials/header.html`, `footer.html`; docs/systems/navigation.md)
+- Header menu, footer columns and footer bottom links come from `settings.navigation`, generated as
+  HTML by `navFields(settings, page)` in all three render paths. NULL or unreadable →
+  `DEFAULT_NAVIGATION` (the previous hand-written menus).
+- Defaults reproduce the old partials byte-for-byte (golden parity test unchanged) and match the live
+  site on all 19 rendered pages (header, footer columns, bottom line; CRLF ignored).
+- `normalizeNavigation` validates on save and on read: one dropdown level, styles (donate/cta) on
+  top-level links only, size caps, `safeUrl` hrefs, `//host` → `https://host`, `{email}` token.
+
+**DB** (`packages/db/content-schema.js`, `content.js`)
+- `site_settings.navigation TEXT` (JSON). `JSON_FIELDS`: parsed on read, serialized on write;
+  `saveSettings` now goes through `objectToParams`.
+
+**Admin** (`app/navigation/page.js`, `nav-editor.js` new; `app/layout.js`, `lib/collections.js`, `globals.css`)
+- Menus page: reorder, into/out of dropdown, add/remove links, dropdowns and columns, link picker
+  (built-in pages, Documents incl. drafts, homepage anchors, `mailto:{email}`).
+- Save = action `settings.navigation` (counts as unpublished; Revisions restores via `settings`).
+- `NAVIGATION_SETTINGS_FIELDS` registers the column with the site_settings drift guard.
+
+**Tests**: `packages/render/test/navigation.test.mjs` (6). **Docs**: navigation.md (new), editing
+guide, dev notes.
+
+Deploy: `migrate-schema --env prod` and `--env staging` (ALTER) before the admin build serves the
+page; `cdk deploy UccProd` so PublishFn bundles the new partials.
+
 ## v0.17.1 — 2026-10-06 (branch `refactor`) — Jarom's title: "Director of Policy" everywhere
 
 **Content / Team** (`content/team.json`; prod `team_members` row for Jarom Gillins)

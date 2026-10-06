@@ -6,6 +6,27 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — Edit the menus and footer yourself
+
+New in the admin: **Menus (header & footer)**, under Site Main.
+
+- **Header menu** — rename, reorder (arrows), add a link or a whole dropdown,
+  remove. **Into dropdown** / **Out of dropdown** moves a link between the top
+  level and a dropdown such as About Us. Each top-level link can look plain, like
+  the red **Donate** button, or like the outlined **Get Involved** button.
+- **Footer columns** — the Organization / Get Involved / Contact columns: rename,
+  add, remove, reorder, and edit their links.
+- **Footer bottom line** — where **Privacy Policy** lives. Add more links there
+  (Terms, Accessibility…).
+- **Picking where a link goes** — the **Links to** box lists every page on the site
+  (drafts are marked "not live"), or type any address.
+- **Adding a new page** — create it in **All documents**, then pick it in Menus.
+
+Nothing changes until you save and publish. The menus start out exactly as they
+are on the site today — checked against all 19 live pages.
+
+The privacy policy **text** has always been editable: All documents → **privacy**.
+
 ## 2026-10-06 — Petition: share buttons, and you control the donation ask
 
 **Sharing.** /petition and the thank-you page now have share buttons:

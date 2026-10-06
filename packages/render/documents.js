@@ -13,6 +13,7 @@ const { ingest, stripNids, replaceTextTokens } = require('@uccsite/html-ingest')
 const { applyStyles } = require('@uccsite/style-apply');
 const { parseStyleKit, classNames } = require('@uccsite/style-kit');
 const { render } = require('./engine');
+const { navFields } = require('./navigation');
 
 const TEMPLATE_KEYS = ['report'];
 const DEFAULT_OG_IMAGE = '/UCC.png';
@@ -158,6 +159,7 @@ function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss
     ...settings,
     page: doc.slug,
     current: { [doc.slug]: true },
+    ...navFields(settings, doc.slug), // header + footer menus (docs/systems/navigation.md)
     seo_block: seo.html,
     jsonld_block: jsonldBlock(doc, seo, settings, siteUrl, authors),
     page_css_link: cssKey ? `  <link rel="stylesheet" href="/${cssKey}" />` : '',

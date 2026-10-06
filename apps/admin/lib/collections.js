@@ -216,9 +216,13 @@ export const APPEAL_SETTINGS_FIELDS = [
   ['downloadModalCta', 'Button label', 'text', 'Links to the homepage donate section'],
   ['downloadModalDismiss', 'Dismiss label', 'text', 'e.g. "Not now"'],
 ];
+// Header + footer menus (JSON) — edited on the Menus page (app/navigation),
+// not Site Settings. Both other settings editors merge `before`, so it rides
+// through their saves untouched (docs/systems/navigation.md).
+export const NAVIGATION_SETTINGS_FIELDS = [['navigation', 'Menus']];
 {
   const mapped = new Set(Object.values(FIELD_MAPS.site_settings));
-  const declared = new Set([...SETTINGS_FIELDS, ...APPEAL_SETTINGS_FIELDS].map(([k]) => k));
+  const declared = new Set([...SETTINGS_FIELDS, ...APPEAL_SETTINGS_FIELDS, ...NAVIGATION_SETTINGS_FIELDS].map(([k]) => k));
   for (const k of declared) if (!mapped.has(k)) throw new Error(`SETTINGS_FIELDS: "${k}" not in FIELD_MAPS.site_settings`);
   for (const k of mapped) if (!declared.has(k)) throw new Error(`SETTINGS_FIELDS: FIELD_MAPS.site_settings key "${k}" missing — saves would wipe it`);
   for (const [k] of SETTINGS_FIELDS) if (APPEAL_SETTINGS_FIELDS.some(([a]) => a === k)) throw new Error(`"${k}" is in both SETTINGS_FIELDS and APPEAL_SETTINGS_FIELDS`);

@@ -437,6 +437,11 @@ On Amplify the file ships via `amplify.yml` (copied into `site-src/docs/`) and
 `outputFileTracingIncludes['/dev-notes']`; locally it is read from the repo. A
 missing file renders a notice, logged as `[admin] dev-notes unreadable: <code>`.
 
+## Menus (2026-10-06)
+
+`/navigation` edits the header menu and footer links (`site_settings.navigation`).
+See docs/systems/navigation.md.
+
 ## Env vars (lib/config.js)
 
 `UCC_ENV, UCC_REGION, COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_DOMAIN,

@@ -461,3 +461,22 @@ textarea.code { font: 12.5px/1.45 var(--font-mono); white-space: pre; overflow: 
   .login-only { margin-top: 6vh; padding: 0 16px; }
   .login-card { padding: 28px 22px 24px; }
 }
+
+/* Menus editor (app/navigation) */
+.nav-editor h2 { margin-top: 28px; }
+.nav-editor select { display: block; margin-top: 4px; }
+.nav-sublist { margin: 12px 0 0 14px; padding-left: 14px; border-left: 2px solid var(--gray-200); }
+.nav-row { padding: 8px 0 10px; border-bottom: 1px dashed var(--gray-200); }
+.nav-row:last-of-type { border-bottom: 0; }
+.nav-row-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.nav-row-name { font-weight: 600; font-size: 13.5px; color: var(--navy-dark); }
+.nav-link-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+.nav-link-fields label:nth-of-type(1) { grid-column: 1; grid-row: 1; }
+.nav-link-fields input:nth-of-type(1) { grid-column: 1; grid-row: 2; }
+.nav-link-fields label:nth-of-type(2) { grid-column: 2; grid-row: 1; }
+.nav-link-fields input:nth-of-type(2) { grid-column: 2; grid-row: 2; }
+.nav-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .nav-link-fields { grid-template-columns: 1fr; }
+  .nav-link-fields label, .nav-link-fields input { grid-column: 1 !important; grid-row: auto !important; }
+}

@@ -9,6 +9,7 @@
 // links to it); issue pages only for archived rows.
 const { render } = require('./engine');
 const { seoBlock } = require('./documents');
+const { navFields } = require('./navigation');
 
 const CSS_LINK = '<link rel="stylesheet" href="/css/newsletters.css" />';
 const attr = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -32,7 +33,7 @@ function buildNewsletterArchive({ newsletters = [], shell, partials = {}, settin
   const fail = (msg) => errors.push(`newsletters: ${msg}`);
   if (!shell) { fail('missing shell templates/documents/report.html'); return { files, pages, errors }; }
   const data = (seo, body) => ({
-    page: 'newsletters', current: { newsletters: true }, is_home: false, ...settings,
+    page: 'newsletters', current: { newsletters: true }, is_home: false, ...settings, ...navFields(settings, 'newsletters'),
     seo_block: seo.html, jsonld_block: '', page_css_link: CSS_LINK, body,
   });
   const seen = new Set();
