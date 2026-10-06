@@ -3,7 +3,12 @@ import { getSession } from '../lib/auth';
 import { withDb } from '../lib/data';
 import './globals.css';
 
-export const metadata = { title: 'UCC Admin' };
+export const metadata = {
+  title: 'UCC Admin',
+  // Installable on phones (app/manifest.js). appleWebApp: iOS standalone mode.
+  appleWebApp: { capable: true, title: 'UCC Admin', statusBarStyle: 'default' },
+};
+export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#16281e' };
 
 // Nav grouped by section (org decision: "site main" / "reports" / …).
 // Documents ("Reports"/"Whitepapers") arrive in Phase 8.

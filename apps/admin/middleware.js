@@ -3,7 +3,9 @@
 import { NextResponse } from 'next/server';
 import { SESSION_COOKIE } from './lib/cookies';
 
-const PUBLIC_PATHS = ['/login', '/auth/callback', '/favicon.ico'];
+// Manifest + icons: fetched by the browser's install flow, sometimes without
+// cookies — a redirect to /login there breaks "Add to Home Screen".
+const PUBLIC_PATHS = ['/login', '/auth/callback', '/favicon.ico', '/manifest.webmanifest', '/icon.png', '/apple-icon.png'];
 // /profile is a registered Cognito callback (passkeys/add returns there); it
 // is still session-gated by requireSession in the page.
 
