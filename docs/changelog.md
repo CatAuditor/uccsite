@@ -4,29 +4,7 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
-## v0.19.1 — 2026-10-06 (branch `refactor`) — Document prose styles in the site CSS; kit frame uses them
-
-**Site / CSS** (`css/styles.css` "DOCUMENT PROSE"; docs/systems/style-guide.md)
-- New annotated group **Document prose**: `.prose` wrapper (descendant rules for h2/h3/h4, p, ul/ol/li,
-  a, strong, blockquote, table/caption/th/td, figure/figcaption, img, hr, code/pre; 760px measure;
-  <720px sizes), `.callout`, `.callout-label`, `.callout-dark`. Values mirror `templates/privacy-report.html`
-  page CSS (`report-section`, `report-callout`, `report-table`). Reason: the global reset zeroes margins
-  and the migrated reports carry per-page CSS, so a kit-written document rendered as unspaced text.
-  Reaches the live site on the next publish (`COPY_FROM_ROOT` ships `css/`). Style Kit parser: 155 entries.
-
-**Admin / Documents** (`apps/admin/lib/authoring-kit.js`, `test/authoring-kit.test.mjs`;
-docs/systems/documents.md "Authoring kit")
-- Kit 6.1 frame is now `subpage-hero` + `section.section(.bg-cream) > container > prose`; skeleton and
-  reference fragment updated (prose section with callout, list, dark callout). Section 4 no longer says
-  the site prints a byline (it does not; JSON-LD only): a bylined piece writes `By Name, date` in the hero.
-- Decision (user, 2026-10-06): no automatic styling on upload in the admin; the writer's tool styles the
-  piece before upload using the kit. Verified in headless Chrome: prose section renders like the reports.
-- 25/25 admin tests; `node build.js` clean.
-
-Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in. Needs a person: publish
-from Publish & Status so the new CSS goes live before the next document upload.
-
-## v0.18.2 — 2026-10-06 (branch `refactor`) — Privacy policy covers every collection channel
+## v0.19.2 — 2026-10-06 (branch `refactor`) — Privacy policy covers every collection channel
 
 **Site / legal** (`templates/privacy.html`; prod + staging `documents` row `privacy` re-imported
 from the template and published `--source db`; live at https://utahciviccompact.org/privacy)
@@ -69,6 +47,28 @@ skipped); TURNSTILE_SECRET_KEY placeholder; tip Attachments field dead.
 - Verified against prod since 2026-10-02 (18 saves → 7 sections, field-level).
 
 **Tests**: `test/change-detail-core.test.mjs` (6).
+
+## v0.18.2 — 2026-10-06 (branch `refactor`) — Document prose styles in the site CSS; kit frame uses them
+
+**Site / CSS** (`css/styles.css` "DOCUMENT PROSE"; docs/systems/style-guide.md)
+- New annotated group **Document prose**: `.prose` wrapper (descendant rules for h2/h3/h4, p, ul/ol/li,
+  a, strong, blockquote, table/caption/th/td, figure/figcaption, img, hr, code/pre; 760px measure;
+  <720px sizes), `.callout`, `.callout-label`, `.callout-dark`. Values mirror `templates/privacy-report.html`
+  page CSS (`report-section`, `report-callout`, `report-table`). Reason: the global reset zeroes margins
+  and the migrated reports carry per-page CSS, so a kit-written document rendered as unspaced text.
+  Reaches the live site on the next publish (`COPY_FROM_ROOT` ships `css/`). Style Kit parser: 155 entries.
+
+**Admin / Documents** (`apps/admin/lib/authoring-kit.js`, `test/authoring-kit.test.mjs`;
+docs/systems/documents.md "Authoring kit")
+- Kit 6.1 frame is now `subpage-hero` + `section.section(.bg-cream) > container > prose`; skeleton and
+  reference fragment updated (prose section with callout, list, dark callout). Section 4 no longer says
+  the site prints a byline (it does not; JSON-LD only): a bylined piece writes `By Name, date` in the hero.
+- Decision (user, 2026-10-06): no automatic styling on upload in the admin; the writer's tool styles the
+  piece before upload using the kit. Verified in headless Chrome: prose section renders like the reports.
+- 25/25 admin tests; `node build.js` clean.
+
+Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in. Needs a person: publish
+from Publish & Status so the new CSS goes live before the next document upload.
 
 ## v0.18.1 — 2026-10-06 (branch `refactor`) — Authoring kit is one self-contained .html
 
