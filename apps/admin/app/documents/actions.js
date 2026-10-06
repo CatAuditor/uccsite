@@ -309,6 +309,10 @@ export async function convertUpload(formData) {
     let out;
     if (kind === 'docx') out = await docxToHtml(Buffer.from(await file.arrayBuffer()));
     else if (kind === 'markdown') out = markdownToHtml(await file.text());
+    // .html normally never reaches the server (html-editor.js reads it in the
+    // browser), but a phone picker can hand over a file whose name lost its
+    // extension while its type is still text/html — accept it as-is here too.
+    else if (kind === 'html' || file.type === 'text/html') out = { html: await file.text(), imagesOmitted: 0, warnings: [] };
     else throw new Error('Upload a .docx, .md or .html file');
     console.log(`[documents] convert ${kind} "${file.name}" ${file.size}B -> ${out.html.length} chars, ${out.imagesOmitted} images omitted${out.warnings?.length ? `, warnings: ${out.warnings.join(' | ')}` : ''}`);
     return { ok: true, html: out.html, imagesOmitted: out.imagesOmitted, warnings: out.warnings || [] };

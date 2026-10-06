@@ -24,7 +24,7 @@ export default async function DocumentsPage({ searchParams }) {
         <strong>Writing a new piece?</strong> Download the authoring kit first and give it to Claude, or to whoever is
         writing, before the draft starts. It is one file that carries the site&apos;s voice rules (what we never
         publish), the page fields the admin asks for, the HTML the editor accepts and the current Style Kit. Ask for
-        prose and upload the finished <code>.docx</code> or <code>.md</code> into a document, or ask for the HTML
+        prose and upload the finished <code>.docx</code>, <code>.md</code> or <code>.html</code> into a document, or ask for the HTML
         fragment and paste it. The kit is rebuilt from the live stylesheet every time you download it.{' '}
         <a href="/documents/authoring-kit" download>Download the authoring kit (.md)</a>
       </div>

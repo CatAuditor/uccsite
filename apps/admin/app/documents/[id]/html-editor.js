@@ -31,7 +31,7 @@ export default function HtmlEditor({ bodyHtmlRaw, pageCss, readOnly, report, orp
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (/\.html?$/i.test(file.name)) {
+    if (/\.html?$/i.test(file.name) || file.type === 'text/html') {
       const text = await file.text();
       setHtml(text);
       setLoaded(`Loaded ${file.name} (${text.length} characters) — save to ingest.`);
@@ -55,7 +55,7 @@ export default function HtmlEditor({ bodyHtmlRaw, pageCss, readOnly, report, orp
       {!readOnly && (
         <div>
           <label htmlFor="html-file">Upload a file (fills the editor below): .html as-is; .docx from Word, Google Docs or Claude Docs, or .md Markdown, converted to HTML</label>
-          <input type="file" id="html-file" accept=".html,.htm,.docx,.md,.markdown,.txt,text/html,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={onFile} />
+          <input type="file" id="html-file" accept=".html,.htm,.docx,.md,.markdown,.txt,text/html,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={onFile} />
           {loaded && <div className="notice">{loaded}</div>}
         </div>
       )}

@@ -180,7 +180,9 @@ author chooses to give to their own tool.
 ## Upload a file (.html / .docx / .md) (2026-10-05)
 
 The HTML box's file input accepts `.html/.htm` (read in the browser,
-unchanged, as before), `.docx` and `.md/.markdown/.txt`. Non-HTML files go
+unchanged, as before — also any file the browser types as `text/html`, since
+phone file pickers can drop the extension), `.docx` and `.md/.markdown/.txt`.
+Non-HTML files (and an HTML file that slipped past the browser check) go
 to the server action **`convertUpload(formData)`** (editor+, called directly
 from `html-editor.js`, not via ActionForm; 8 MB cap, matching
 `next.config.js serverActions.bodySizeLimit`):
