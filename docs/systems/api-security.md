@@ -55,10 +55,10 @@ Uses `CF-Connecting-IP`. Old rows deleted on each check. **Fails open**: if D1 e
 `webhook.js` verifies Stripe signatures using HMAC-SHA256 via Web Crypto. Constant-time compare; accepts any of multiple `v1=` signatures (secret rotation); rejects events older than 300 s. Event IDs are recorded in `processed_events` (`INSERT OR IGNORE`) so redeliveries return 200 without reprocessing; on handler error the row is removed so Stripe's retry is reprocessed.
 
 ## Billing Portal (magic link)
-1. `POST /api/create-portal-session {email}` → always `202 {ok:true}`. After responding, if the email matches a member with a real `cus_` customer ID, a 15-minute signed link is emailed via Resend. No enumeration — same response and timing whether or not the email exists.
+1. `POST /api/create-portal-session {email}` → always `202 {ok:true}`. After responding, if the email matches a member with a real `cus_` customer ID, a 15-minute signed link is emailed (AWS stack: Amazon SES via the Lambda role, `docs/systems/email.md`; Cloudflare stack: Resend). No enumeration — same response and timing whether or not the email exists.
 2. `GET /api/create-portal-session?token=` → verifies token, mints a Stripe Billing Portal session, `302` to it. Invalid/expired → `400`.
 
-Requires `STRIPE_SECRET_KEY`, `RESEND_API_KEY`, `TOKEN_SECRET`.
+Requires `STRIPE_SECRET_KEY`, `TOKEN_SECRET` (Cloudflare stack also `RESEND_API_KEY`).
 
 ## Input Handling
 - All DB queries use parameterized statements.

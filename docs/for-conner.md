@@ -452,11 +452,18 @@ the email footer says "Salt Lake City, UT" rather than a full postal address
 (CAN-SPAM wants a street or PO box on the newsletter). Both are copy edits
 for an editor + the dev; fix at leisure.
 
-### 10.4 After approval `[dev]`
+### 10.4 Send code switched to SES — 2026-10-05 `[dev]` done
 
-The developer swaps the send code from Resend to SES (`docs/systems/email.md`
-"Not built yet"), then `[hand]` you cancel the Resend account and the
-`ucc/prod/RESEND_API_KEY` secret can be deleted.
+Welcome emails and billing-portal links now go out through SES from both
+staging and prod. The `ucc/prod/RESEND_API_KEY` secret is scheduled for
+deletion (30-day recovery window) — nothing reads it any more.
+
+- [ ] `[hand]` Cancel the Resend account (resend.com → Settings → delete
+  team). Nothing on AWS uses it. The old Cloudflare Pages code still names
+  it but is idle; it goes away with §7.8.
+- [ ] Newsletter still goes through **Mailgun** (`scripts/send-periodical.js`).
+  Moving it to SES is a small dev step — say the word and Mailgun can be
+  cancelled too.
 
 ## 11. Petition: enter the real copy, then publish
 

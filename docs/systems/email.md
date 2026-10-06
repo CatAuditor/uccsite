@@ -1,22 +1,47 @@
-# Email — transactional sending (Resend today, SES prepared)
+# Email — transactional sending (Amazon SES)
 
-Status 2026-10-05: all outbound site email still goes through **Resend**
-(`aws/api/routes.js`). The AWS side of the **SES replacement is deployed**
-(domain identity, DKIM, MAIL FROM, bounce/complaint alerts) and waits on two
-things: the DNS records in Cloudflare (`docs/for-conner.md` §10) and the SES
-production-access approval. The send code swap is a separate `[dev]` step
-after both.
+Status 2026-10-05: transactional site email (welcome, billing-portal link)
+goes through **Amazon SES v2** from the API Lambda. Production access was
+granted 2026-10-05 (case 179125335500202; 50,000/day, 14/sec). Resend is
+retired from the AWS stack (the Cloudflare `functions/` copy still references
+it but is idle). The newsletter script still sends through **Mailgun** — a
+separate decision, see "Not built yet".
 
 ## Code Map
 
 ```
-aws/api/routes.js            resendSend() — THE send path (welcome email, portal link)
+aws/api/routes.js            sesSend() — THE send path (welcome email, portal link)
                              FROM_ADDRESS = 'Utah Civic Compact <hello@utahciviccompact.org>'
-aws/api/secrets.js           RESEND_API_KEY, TOKEN_SECRET placeholders (ucc/<env>/<NAME>)
-scripts/send-periodical.js   newsletter sender (signs the same unsubscribe token format)
-infra/cdk/lib/ucc-stack.js   "SES sending domain" block — prod only
-docs/for-conner.md §10       the DNS records + production-access request
+                             _setSesClient() — test seam only
+aws/api/secrets.js           TOKEN_SECRET (signs unsubscribe/portal links); RESEND_API_KEY removed
+scripts/send-periodical.js   newsletter sender — Mailgun (signs the same unsubscribe token format)
+infra/cdk/lib/ucc-stack.js   "SES sending domain" block (prod only) + ApiFunction ses:SendEmail policy (both stacks)
+docs/for-conner.md §10       the DNS records, production-access request, Resend teardown
 ```
+
+## Send path (`sesSend`)
+
+- `SendEmailCommand` with `Simple` content: HTML body, UTF-8, and the
+  `List-Unsubscribe` / `List-Unsubscribe-Post` headers passed as
+  `Content.Simple.Headers`.
+- `ConfigurationSetName` comes from env `SES_CONFIGURATION_SET`; CDK sets it
+  to `ucc-prod` on prod only. Staging sends through the same identity with no
+  set, so staging test bounces never reach the prod ops topic.
+- Auth is the Lambda role, no API key. IAM: `ses:SendEmail` on
+  `arn:aws:ses:<region>:<acct>:identity/utahciviccompact.org` (+ the
+  `configuration-set/ucc-prod` ARN on prod — SES denies a send that names a
+  set the policy does not cover), condition `ses:FromAddress =
+  hello@utahciviccompact.org`. Both stacks use the ARN string because the
+  identity is a prod-stack resource.
+- Client is lazy (first send on a container) with an 8 s request timeout.
+- Failures are logged as `[api] SES error: <ErrorName> <message>` and never
+  thrown — the calling job already swallowed errors for Resend, and the
+  user-facing response was sent long before. Recipient is never logged.
+- Success logs `[api] SES sent <MessageId> subject="…"`.
+
+Env vars: `SES_CONFIGURATION_SET` (runtime, optional; prod `ucc-prod`).
+Missing on prod = sends still work but bounces/complaints are not routed to
+the ops topic and reputation metrics are not tagged.
 
 ## What is sent
 
@@ -27,7 +52,7 @@ docs/for-conner.md §10       the DNS records + production-access request
 | Newsletter | operator runs `scripts/send-periodical.js` (`--audience utah\|outside\|unknown\|all`, `--donors-only`, `--petition <slug>` — the admin Mailing list's filters, packages/db/audience.js) | script | signed unsubscribe link |
 
 Volume is tiny (tens per month). No message bodies or recipient lists are
-ever logged (`[api] Resend error: <status>` only).
+ever logged (`[api] SES error: <ErrorName>` / `[api] SES sent <MessageId>` only).
 
 ## SES infrastructure (UccProd stack, us-west-2)
 
@@ -55,19 +80,21 @@ with Mailgun/OnDMARC reporting. SES mail will pass DMARC via DKIM alignment
 and via SPF on the MAIL FROM subdomain; `p=none` can later move to
 `quarantine` once reports show only aligned senders.
 
-## Not built yet (`[dev]`, after for-conner §10 is green)
+## Built 2026-10-05
 
-1. `aws/api/routes.js`: replace `resendSend` with `@aws-sdk/client-sesv2`
-   `SendEmail` (`ConfigurationSetName: 'ucc-prod'`, same From, same
-   `List-Unsubscribe` headers via `Headers` on the `Simple` content).
-2. API Lambda IAM: `ses:SendEmail` on the identity ARN only, with
-   `ses:FromAddress` condition `hello@utahciviccompact.org`. Staging stack
-   references the prod identity ARN by string (`arn:aws:ses:us-west-2:<acct>:identity/utahciviccompact.org`).
-3. `scripts/send-periodical.js` same swap.
-4. Drop `RESEND_API_KEY` from `aws/api/secrets.js` NAMES (the stack deletes
-   the placeholder secret; prod's is `RETAIN`ed — delete by hand, see the
-   2026-09-23 retain build-failure note).
-5. `docs/legal/data-handling.md`: replace the Resend row with SES.
+Items 1, 2, 4 and 5 of the original plan (send path, IAM, secret removal,
+data-handling row) are done — see "Send path" above. Removing
+`RESEND_API_KEY` from `NAMES` made CDK drop the staging placeholder secret;
+prod's `ucc/prod/RESEND_API_KEY` is `RETAIN`ed and deleted separately
+(for-conner §10.4).
+
+## Not built yet
+
+- `scripts/send-periodical.js` still sends the newsletter through
+  **Mailgun** (org decision 2026-09-14 kept Mailgun). Moving it to SES is a
+  one-function swap (`sendOne`) plus `MAILGUN_API_KEY` retirement and the
+  apex SPF `include:mailgun.org` cleanup; the SES production-access request
+  already describes the newsletter as SES traffic, so this should follow.
 
 ## Error handling
 

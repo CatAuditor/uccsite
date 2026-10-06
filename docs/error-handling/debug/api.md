@@ -12,8 +12,9 @@ Log group: `/aws/lambda/UccStaging-ApiFunction*` (or UccProd). Prefix: `[api]`.
 | `no member for customer …; donation … not recorded` | webhook.js | donation dropped (pre-existing behavior) — investigate the customer |
 | `subscribe DB error / unsubscribe DB error` | routes.js | 500 path |
 | `welcome email dispatch failed / portal link dispatch failed` | routes.js | async self-invoke failed; user response unaffected |
-| `welcome email failed / portal link send failed` | routes.js jobs | Resend send failed inside the async job |
-| `Resend error: <status>` | routes.js resendSend | non-2xx from Resend |
+| `welcome email failed / portal link send failed` | routes.js jobs | something other than the SES call threw inside the async job (token signing, DB lookup) |
+| `SES sent <MessageId> subject="…"` | routes.js sesSend | normal — one per delivered email; MessageId is searchable in SES console / bounce notifications |
+| `SES error: <ErrorName> <message>` | routes.js sesSend | SES rejected the send. `AccessDeniedException` = IAM (From not `hello@`, or config-set ARN missing on prod); `MessageRejected` = identity/sandbox problem; `AccountSuspendedException` = SES paused the account (ops topic will have bounce/complaint history) |
 | `tip insert failed: <ErrorName>` | routes.js tip | 500 returned; `tips` insert threw — error NAME only, never the message (pg errors echo parameter values) |
 | `petition count error: <ErrorName>` | routes.js petitionCount | 500 on the public counter; the site hides the counter — nothing user-facing breaks |
 | `petition insert failed: <ErrorName>` | routes.js petitionSign | 500 returned; the signature or subscriber upsert threw — name only (signer PII). 42501 here = `petition_signatures` grant missing (re-run migrate-schema) |

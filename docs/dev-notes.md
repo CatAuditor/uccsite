@@ -6,6 +6,20 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-05 — Email: switched from Resend to Amazon SES (step 3 of 3)
+
+The welcome email (sent when someone joins) and the billing-portal link
+(sent when a member asks to manage their donation) now go out through
+Amazon SES instead of Resend. Nothing changes for visitors: same sender
+address, same wording, same unsubscribe link. Bounced or complained-about
+messages now reach the operations alert list and are automatically kept off
+future sends.
+
+- **Conner:** cancel the Resend account; nothing uses it now. The AWS copy of
+  the Resend key is scheduled for deletion.
+- **Still on Mailgun:** the newsletter. Moving it to SES is a small follow-up
+  if we want to drop Mailgun too.
+
 ## 2026-10-05 — Email: AWS approved production sending (step 2 of 3)
 
 The DNS records for Amazon SES were confirmed in place and our domain is fully
