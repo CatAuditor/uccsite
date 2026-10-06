@@ -4,6 +4,29 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.16.7 — 2026-10-06 (branch `refactor`) — Authoring kit carries the site's full styling
+
+**Admin / Documents** (`apps/admin/lib/authoring-kit.js`, `app/documents/authoring-kit/route.js`,
+`test/authoring-kit.test.mjs`; docs/systems/documents.md "Authoring kit")
+- Section 6 rewritten so a writing tool can return HTML that lands styled (a document body is composed
+  bare between the header and footer partials): 6.1 document frame (`div.subpage-hero` eyebrow/h1/lead,
+  `section.section > div.container`, `bg-cream`), 6.2 design tokens (the `:root` block of the live
+  stylesheet, regex-extracted in the route and passed as `designTokens`), 6.3 template rules (writing
+  them yourself is now allowed; the editor merges), 6.4 **reference fragment** (`EXAMPLE_HTML`: hero,
+  mission strip, plain section, impact band, pillars on cream, issues card grid, about two-column,
+  news section with a `{{video:...}}` card; one HTML comment per block; checked at build time, listing
+  classes no longer in the stylesheet and offered classes it omits), 6.5 every offered class as a list
+  item with its CSS declarations (auto "Sets: ... (auto)" tails dropped, `<tag>` in descriptions
+  backticked).
+- `CHROME_GROUPS` narrowed to Navigation, Footer, Forms, Modal, Donations, Hero: Impact stats, Mission
+  & pillars, Policy positions, About and News & coverage are now offered (73 classes, ~42 k chars).
+- Section 1, the Claude instructions, the section 5 skeleton and the hand-over checklist now tell the
+  tool to use the frame and classes. The fragment passes `ingest()` with nothing dropped.
+- Tests: new assertions for 6.1 to 6.5 headings, CSS lines, tokens block, framed skeleton, stale and
+  unshown class lists. 24/24 admin tests pass.
+
+Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
+
 ## v0.16.6 — 2026-10-06 (branch `refactor`) — Admin PWA icons renamed so phones fetch the navy tile
 
 **Admin / PWA** (`apps/admin/app/icon1.png`, `apple-icon1.png`, `manifest.js`, `middleware.js`,
