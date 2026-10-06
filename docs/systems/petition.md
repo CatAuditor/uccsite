@@ -91,11 +91,14 @@ ZIP+4) is Utah and nothing else is — `packages/db/audience.js`
 `utahZipSql(expr)` / `isUtahZip(zip)` is the one rule everything uses.
 
 - **Public counter** (`GET /api/petition/count?petition=<slug>` →
-  `{petition, count}`): Utah signatures only. The Lambda caches per slug for
-  `COUNT_TTL_MS` (60 s) and answers `Cache-Control: public, max-age=60`;
-  CloudFront does not cache `/api/*`, so "update timing" = that one
-  constant. Rendered by `js/petition.js` into `[data-petition-count]` from
-  the `count_label` template; hidden until at least one Utahn has signed.
+  `{petition, count}`): Utah signatures only, **event-driven, never timed**
+  (org decision 2026-10-05). The page fetches once per load; the Lambda
+  answers from a per-container cache that a new Utah signature clears
+  (`petitionSign` → `invalidateCount`), so the next load recounts. No
+  browser caching (`no-store`); `COUNT_TTL_MS` (10 min) only bounds how
+  stale another warm container can be. Rendered by `js/petition.js` into
+  `[data-petition-count]` from the `count_label` template; hidden until at
+  least one Utahn has signed.
 - **Admin → Petition**: counts per slug split Utah / outside; residency
   filter on the list; CSV carries `utah_resident` (yes/no) and can be
   exported Utah-only, outside-only or both.
@@ -113,7 +116,7 @@ ZIP+4) is Utah and nothing else is — `packages/db/audience.js`
 
 `?petition=<slug>` → `200 {petition, count}` (Utah only), `400` bad slug,
 `500` DB error (`[api] petition count error: <ErrorName>`). No rate limit
-(read-only, cached, one small indexed COUNT).
+(read-only, cached until the next Utah signature, one small indexed COUNT).
 
 ## API: POST /api/petition
 

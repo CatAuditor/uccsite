@@ -20,8 +20,9 @@ telling the agent; delete the entry once applied.
 4. ~~Restrict ZIP to Utah?~~ **Answered 2026-10-05:** collect from anywhere,
    separate Utah from outside, count Utah only. Residency = ZIP 84xxx
    (`packages/db/audience.js`). Follow-on choices made without an answer:
-   the public counter hides while the Utah count is 0; it refreshes every
-   60 s (`COUNT_TTL_MS` in aws/api/routes.js — "update timing tbd");
+   the public counter hides while the Utah count is 0; **refresh: answered
+   2026-10-05 — only when someone new signs** (cache invalidated by a Utah
+   signature; no timer);
    the mailing list's residency uses the best ZIP on file (subscriber ZIP,
    else newest petition ZIP, else member ZIP) and people with no ZIP are
    their own "ZIP unknown" audience rather than lumped in with Utah.

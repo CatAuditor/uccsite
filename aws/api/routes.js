@@ -13,7 +13,7 @@ const {
   signToken, verifyToken, turnstileOr403,
 } = require('./lib');
 const { StripeError, stripePost } = require('./stripe');
-const { utahZipSql } = require('@uccsite/db/audience');
+const { utahZipSql, isUtahZip } = require('@uccsite/db/audience');
 
 const UNSUBSCRIBE_TTL = 60 * 60 * 24 * 365; // 1 year
 const LINK_TTL_SECONDS = 15 * 60;
@@ -321,17 +321,24 @@ async function petitionSign({ event, db, secrets, body }) {
     return json({ error: 'Could not record your signature. Please try again.' }, 500);
   }
 
+  // A Utah signature may have changed the public counter — drop the cached
+  // number so the next page load recounts (petitionCount below).
+  if (isUtahZip(zip)) invalidateCount(petition);
   return json({ ok: true });
 }
 
 // ── GET /api/petition/count?petition=<slug> ─────────────────────────────────
 // Public signature counter for the hero and /petition: UTAH signers only
 // (ZIP 84xxx — packages/db/audience.js utahZipSql; the org counts Utahns,
-// out-of-state supporters are kept but not shown). Per-container cache
-// (COUNT_TTL_MS) + Cache-Control max-age: the number is at most that stale.
-// Update timing is TBD by the org — change ONE constant.
-const COUNT_TTL_MS = 60_000;
+// out-of-state supporters are kept but not shown). EVENT-DRIVEN, not timed
+// (org decision 2026-10-05): the page fetches once per load, the Lambda
+// answers from a per-container cache, and a new Utah signature CLEARS that
+// cache (petitionSign → invalidateCount) so the next load is exact. The
+// TTL below is only a safety net for other warm containers that did not
+// see the signature; no response is browser-cached.
+const COUNT_TTL_MS = 10 * 60_000;
 const countCache = new Map(); // slug → { count, at }
+function invalidateCount(petition) { countCache.delete(petition); }
 
 async function petitionCount({ event, db }) {
   const petition = str(event.queryStringParameters?.petition, 64).toLowerCase();
@@ -353,7 +360,7 @@ async function petitionCount({ event, db }) {
 }
 
 function countJson(petition, count) {
-  return json({ petition, count }, 200, { 'Cache-Control': `public, max-age=${COUNT_TTL_MS / 1000}` });
+  return json({ petition, count }); // no-store: freshness comes from invalidation, not a timer
 }
 
 // ── POST /api/create-checkout-session ───────────────────────────────────────

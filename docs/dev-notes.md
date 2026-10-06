@@ -15,7 +15,7 @@ Follow-up to the petition launch below.
 - **Counter on the site.** The hero and /petition show "**N** Utahns have signed
   so far." (wording editable on Admin → Petition, field *Signature counter*).
   Only Utah signatures count; it appears once there is at least one and
-  refreshes about once a minute (easy to change later).
+  updates when someone new signs — no timed refresh.
 - **Admin → Petition** now shows Utah / outside counts per petition, a
   residency switch, a Utah column, and the CSV can be Utah-only, outside-only
   or both (new `utah_resident` column).
@@ -32,8 +32,7 @@ Follow-up to the petition launch below.
   next approved publish (or the operator's go).
 
 **Needs a person:** approve the publish that puts the petition hero on the live
-homepage. Decide later how often the counter should refresh (today: about a
-minute).
+homepage.
 
 ## 2026-10-05 — Petition: the homepage now leads with "Tell UDOT" and collects signatures
 

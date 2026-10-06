@@ -258,7 +258,7 @@ export const HOMEPAGE_GROUPS = [
     ['cta', 'Sign button label', 'text', 'e.g. Sign the petition now'],
     ['cta_secondary', 'Secondary link label', 'text', 'blank = no secondary link'],
     ['cta_secondary_url', 'Secondary link URL', 'text', 'e.g. /alpr.html'],
-    ['count_label', 'Signature counter', 'text', 'Shown under the hero buttons and on /petition once at least one Utahn has signed. {count} becomes the number of UTAH signatures (ZIP 84xxx); out-of-state signatures are kept but not counted. Blank = no counter. Refreshes about once a minute.'],
+    ['count_label', 'Signature counter', 'text', 'Shown under the hero buttons and on /petition once at least one Utahn has signed. {count} becomes the number of UTAH signatures (ZIP 84xxx); out-of-state signatures are kept but not counted. Blank = no counter. Updates as soon as a new Utah signature lands (no timed refresh).'],
     ['form_title', 'Form title (/petition)'],
     ['form_intro', 'Form intro (/petition)', 'textarea'],
     ['consent', 'Consent line under the sign button', 'textarea', 'What signers agree to — keep it true to how the list is used.'],

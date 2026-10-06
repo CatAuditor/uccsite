@@ -11,7 +11,7 @@ functions/api/
   unsubscribe.js             GET|POST ?token= — removes subscriber, sets members.newsletter_opt_in=0
   tip.js                     POST — tipline → Airtable (Cloudflare only; the AWS port writes the `tips` table — see tipline.md)
   (AWS only) /api/petition   POST — petition signature → `petition_signatures` + `subscribers` (aws/api/routes.js petitionSign; see petition.md)
-  (AWS only) /api/petition/count  GET ?petition= — public Utah-only signature count, cached 60 s in the Lambda (petitionCount)
+  (AWS only) /api/petition/count  GET ?petition= — public Utah-only signature count; Lambda cache cleared by each new Utah signature (petitionCount)
   create-checkout-session.js POST — Stripe Checkout session
   create-portal-session.js   POST (request link) / GET ?token= (open portal) — see Billing Portal
   webhook.js                 POST — Stripe events → D1

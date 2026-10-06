@@ -398,21 +398,28 @@ test('checkout carries an optional sanitized source into Stripe metadata', async
   assert.match(captured, /metadata%5Bsource%5D=petition%3Audotalprscript/);
 });
 
-test('petition count: Utah-only SQL, cached per slug, bad slug 400', async () => {
+test('petition count: Utah-only SQL, cached per slug until a Utah signature lands, bad slug 400', async () => {
   let n = 0;
   const db = fakeDb({ 'SELECT count(*)::int AS n FROM petition_signatures': () => ({ rows: [{ n: ++n * 7 }], rowCount: 1 }) });
   const ev = (slug) => ({ ...httpEvent({ method: 'GET', path: '/api/petition/count' }), queryStringParameters: { petition: slug } });
   let res = await routes.petitionCount({ event: ev('count-test-a'), db });
   assert.equal(res.statusCode, 200);
   assert.deepEqual(JSON.parse(res.body), { petition: 'count-test-a', count: 7 });
-  assert.match(res.headers['Cache-Control'], /max-age=\d+/);
+  assert.equal(res.headers['Cache-Control'], 'no-store', 'never browser-cached — freshness is event-driven');
   const q = db.calls.find(c => c.text.includes('FROM petition_signatures'));
   assert.match(q.text, /zip LIKE '84%'/);
   assert.deepEqual(q.params, ['count-test-a']);
   res = await routes.petitionCount({ event: ev('count-test-a'), db });
   assert.equal(JSON.parse(res.body).count, 7, 'second call served from cache');
+  // An out-of-state signature leaves the cache alone; a Utah one clears it.
+  await routes.petitionSign(baseCtx(db, { body: { ...signer, petition: 'count-test-a', zip: '94101', email: 'o@x.co' } }));
+  res = await routes.petitionCount({ event: ev('count-test-a'), db });
+  assert.equal(JSON.parse(res.body).count, 7, 'outside-Utah signature does not invalidate');
+  await routes.petitionSign(baseCtx(db, { body: { ...signer, petition: 'count-test-a', zip: '84321', email: 'u@x.co' } }));
+  res = await routes.petitionCount({ event: ev('count-test-a'), db });
+  assert.equal(JSON.parse(res.body).count, 14, 'Utah signature invalidates → recount');
   res = await routes.petitionCount({ event: ev('count-test-b'), db });
-  assert.equal(JSON.parse(res.body).count, 14, 'different slug queries again');
+  assert.equal(JSON.parse(res.body).count, 21, 'different slug queries again');
   res = await routes.petitionCount({ event: ev('Nope!'), db });
   assert.equal(res.statusCode, 400);
 });

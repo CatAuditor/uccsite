@@ -4,6 +4,18 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.14.2 — 2026-10-05 (branch `refactor`) — Petition copy + event-driven counter
+
+- **Copy:** hero/form quote the permit agreement's termination provision
+  ("UDOT determines that the public does not support the Company's
+  activities"). Seeded into staging (published) and prod (draft — hero not
+  yet live there; awaiting the operator's publish).
+- **Counter:** user decision — no timed refresh. `petitionSign` clears the
+  per-slug count cache on a Utah signature; `/api/petition/count` is
+  `no-store`; `COUNT_TTL_MS` 10 min is a safety net for other containers.
+  Test extended (outside-Utah sign leaves cache, Utah sign recounts).
+- **Deployed:** UccStaging + UccProd (API only).
+
 ## v0.14.1 — 2026-10-05 (branch `refactor`) — Petition: residency, counter, audiences
 
 - **Residency rule:** `packages/db/audience.js` — every 84xxx ZIP is Utah
