@@ -4,6 +4,21 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.16.6 — 2026-10-06 (branch `refactor`) — Admin PWA icons renamed so phones fetch the navy tile
+
+**Admin / PWA** (`apps/admin/app/icon1.png`, `apple-icon1.png`, `manifest.js`, `middleware.js`,
+`layout.js`, `nav.js`, `login/page.js`; docs/systems/admin.md "Phone / PWA")
+- Reinstalling the admin after v0.16.5 still showed the old transparent/cream icon: Next serves
+  `app/icon.png` with `Cache-Control: immutable, max-age=31536000` and the manifest `src` has no
+  content hash, so the phone and CloudFront kept the year-cached PNG. Renamed to the numbered
+  conventions `icon1.png` / `apple-icon1.png` (new URLs); updated manifest, middleware `PUBLIC_PATHS`
+  and the three `<img src>` uses. Rule going forward: any icon artwork change bumps the number.
+- Error log: `docs/error-handling/client-side-error/2026-10-06-pwa-icon-cached-cream.md`.
+
+Needs a person: remove and re-add the home-screen app (iOS may also need Safari website data for
+the admin domain cleared). Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom
+sign-in.
+
 ## v0.16.5 — 2026-10-06 (branch `refactor`) — Admin restyled to the live site's look
 
 **Admin / styling** (`apps/admin/app/globals.css`, `layout.js`, `nav.js`, `login/page.js`, `manifest.js`;
