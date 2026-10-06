@@ -31,9 +31,12 @@ test('index + one page per archived newsletter, inside the shell, in the sitemap
   assert.deepEqual(out.pages.map((p) => p.template), ['newsletters/2026-10-06-busy.html', 'newsletters/2026-09-01-first.html', 'newsletters.html']);
 });
 
-test('nothing archived = nothing emitted; bad slugs and missing copies are errors', () => {
-  assert.deepEqual(buildNewsletterArchive({ newsletters: [], shell, partials, settings, siteUrl: 'x' }), { files: {}, pages: [], errors: [] });
+test('nothing archived = an empty index only; bad slugs and missing copies are errors', () => {
+  const empty = buildNewsletterArchive({ newsletters: [], shell, partials, settings, siteUrl: 'x' });
+  assert.deepEqual(Object.keys(empty.files), ['newsletters.html']);
+  assert.ok(empty.files['newsletters.html'].includes('Nothing in the archive yet'));
+  assert.deepEqual(empty.errors, []);
   const out = buildNewsletterArchive({ newsletters: [{ slug: 'Bad Slug', subject: 's', webHtml: '<p>', sentAt: '' }, { slug: 'ok', subject: 's', webHtml: '', sentAt: '' }], shell, partials, settings, siteUrl: 'x' });
   assert.equal(out.errors.length, 2);
-  assert.deepEqual(Object.keys(out.files), []);
+  assert.deepEqual(Object.keys(out.files), ['newsletters.html']);
 });

@@ -5,7 +5,8 @@
 // @uccsite/newsletter/web at request time and frozen on the row (web_html),
 // so this only wraps it in the Documents shell (header/footer partials,
 // SEO block) and styles it with css/newsletters.css — no inline styles, the
-// site's CSP is style-src 'self'.
+// site's CSP is style-src 'self'. The index is always emitted (the footer
+// links to it); issue pages only for archived rows.
 const { render } = require('./engine');
 const { seoBlock } = require('./documents');
 
@@ -20,13 +21,11 @@ function dateLabel(iso) {
 
 // buildNewsletterArchive({ newsletters, shell, partials, settings, siteUrl })
 //   → { files: { 'newsletters.html', 'newsletters/<slug>.html' }, pages: [sitemap entries], errors }
-// Nothing is emitted when there are no archived newsletters (no empty index).
 function buildNewsletterArchive({ newsletters = [], shell, partials = {}, settings = {}, siteUrl }) {
   const files = {};
   const pages = [];
   const errors = [];
   const fail = (msg) => errors.push(`newsletters: ${msg}`);
-  if (!newsletters.length) return { files, pages, errors };
   if (!shell) { fail('missing shell templates/documents/report.html'); return { files, pages, errors }; }
   const data = (seo, body) => ({
     page: 'newsletters', current: { newsletters: true }, is_home: false, ...settings,
@@ -50,14 +49,15 @@ ${n.webHtml}
     pages.push({ template: `${slug}.html`, priority: '0.5', sitemap: true, lastmodAt: n.sentAt });
     items.push(`<li><a href="/${slug}">${attr(n.subject || 'Newsletter')}</a><span class="nl-date">${attr(dateLabel(n.sentAt))}</span>${n.preheader ? `<p>${attr(n.preheader)}</p>` : ''}</li>`);
   }
-  if (items.length) {
-    const seo = seoBlock({ slug: 'newsletters', title: 'Newsletters', metaDescription: 'Every newsletter Utah Civic Compact has sent — investigations, filings and what comes next.' }, settings, siteUrl);
-    errors.push(...seo.errors);
-    files['newsletters.html'] = render(shell, data(seo, `<main class="nl-page"><h1>Newsletters</h1>
+  const seo = seoBlock({ slug: 'newsletters', title: 'Newsletters', metaDescription: 'Every newsletter Utah Civic Compact has sent — investigations, filings and what comes next.' }, settings, siteUrl);
+  errors.push(...seo.errors);
+  const list = items.length
+    ? `<ul class="nl-list">${items.join('\n')}</ul>`
+    : '<p class="nl-intro">Nothing in the archive yet — the first issue lands here when it goes out.</p>';
+  files['newsletters.html'] = render(shell, data(seo, `<main class="nl-page"><h1>Newsletters</h1>
 <p class="nl-intro">What we send to the Compact, newest first. <a href="/#join">Join</a> to get the next one.</p>
-<ul class="nl-list">${items.join('\n')}</ul></main>`), partials, fail);
-    pages.push({ template: 'newsletters.html', priority: '0.6', sitemap: true, lastmodAt: newsletters[0].sentAt });
-  }
+${list}</main>`), partials, fail);
+  pages.push({ template: 'newsletters.html', priority: '0.6', sitemap: true, lastmodAt: newsletters[0]?.sentAt });
   return { files, pages, errors };
 }
 

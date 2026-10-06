@@ -157,9 +157,13 @@ publish function). The publish run (`aws/publish/render-db.js` →
 `newsletters.html` (index, newest first) and `newsletters/<slug>.html`
 inside the Documents shell (`templates/documents/report.html`: header,
 footer, SEO block; `css/newsletters.css`), adds both to the sitemap, and
-the footer links to `/newsletters`. Nothing is emitted while no newsletter
-is archived (no empty index). If the invoke fails the pages go live with
-the next publish of any kind.
+the footer links to `/newsletters`. The index is always rendered (an
+empty-state line until the first issue) so the footer link never 404s. If
+the invoke fails the pages go live with the next publish of any kind.
+
+Operator smoke on prod: `scripts/newsletter-smoke.mjs --env prod --no-archive`
+— without the flag the smoke row would publish a throwaway page to the
+live site.
 
 ### Bounces and complaints
 
