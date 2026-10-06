@@ -58,13 +58,13 @@ test('claimForSending is the approved→sending mutex; resume widens it to sendi
 });
 
 test('deliveries: the primary key is the idempotency key', async () => {
-  const c = fakeClient([{ rowCount: 1 }, { rowCount: 0 }, { rowCount: 1 }, { rows: [{ status: 'sent', n: 2 }, { status: 'failed', n: 1 }] }]);
+  const c = fakeClient([{ rowCount: 1 }, { rowCount: 0 }, { rowCount: 1 }, { rows: [{ status: 'sent', n: 2, suppressed: 0 }, { status: 'failed', n: 1, suppressed: 1 }] }]);
   assert.equal(await nl.beginDelivery(c, 'a', 'x@y'), true);
-  assert.match(c.calls[0].sql, /ON CONFLICT \(newsletter_id, email\) DO NOTHING/);
+  assert.match(c.calls[0].sql, /ON CONFLICT \(newsletter_id, email\) DO UPDATE SET status = 'sending', at = now\(\) WHERE newsletter_deliveries.status = 'sending' AND newsletter_deliveries.at < now\(\) - interval '10 minutes'/);
   assert.equal(await nl.beginDelivery(c, 'a', 'x@y'), false);
   await nl.finishDelivery(c, 'a', 'x@y', { status: 'failed', error: 'e'.repeat(900) });
   assert.equal(c.calls[2].params[4].length, 500);
-  assert.deepEqual(await nl.deliveryCounts(c, 'a'), { sent: 2, failed: 1, sending: 0 });
+  assert.deepEqual(await nl.deliveryCounts(c, 'a'), { sent: 2, failed: 1, sending: 0, suppressed: 1 });
 });
 
 test('deleteNewsletter refuses in-flight rows', async () => {

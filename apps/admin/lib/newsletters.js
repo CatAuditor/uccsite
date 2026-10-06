@@ -12,10 +12,12 @@ import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { audienceQuery, normalizeFilters, describeFilters } from '@uccsite/db/audience';
 import * as db from '@uccsite/db/newsletters';
 import { renderEmail, normalizeBlocks, normalizeTheme, fromHeader, UNSUBSCRIBE_TOKEN } from '@uccsite/newsletter/render';
+import { renderWebBody, archiveSlug } from '@uccsite/newsletter/web';
 import { parseSchedule, formatZoned } from '@uccsite/newsletter/schedule';
 import { requireRole } from './auth';
 import { withDb, withWriteTx, recordChange } from './data';
 import { notifyNewsletterRequested } from './notify';
+import { PUBLISH_REVIEWERS } from './notify-recipients.mjs';
 import { config } from './config';
 
 const UUID_RE = /^[0-9a-f-]{36}$/;
@@ -47,6 +49,20 @@ export async function petitionSlugs(client) {
   return (await client.query('SELECT DISTINCT petition FROM petition_signatures ORDER BY petition')).rows.map((r) => r.petition);
 }
 
+// blockDiff(before, after) → { added, removed, changed } counts + a short
+// list of lines for the reviewer ("what changed since the last request").
+export function blockDiff(before, after) {
+  const key = (b) => JSON.stringify(b);
+  const label = (b) => b.type === 'text' ? `Text: ${b.markdown.slice(0, 60)}${b.markdown.length > 60 ? '…' : ''}`
+    : b.type === 'heading' ? `Heading: ${b.text}` : b.type === 'button' ? `Button: ${b.label}` : b.type === 'image' ? `Image: ${b.alt || b.url}`
+    : b.type === 'quote' ? `Quote: ${b.text.slice(0, 60)}` : 'Divider';
+  const a = normalizeBlocks(before || []); const b = normalizeBlocks(after || []);
+  const aKeys = new Set(a.map(key)); const bKeys = new Set(b.map(key));
+  const removed = a.filter((x) => !bKeys.has(key(x))).map(label);
+  const added = b.filter((x) => !aKeys.has(key(x))).map(label);
+  return { added, removed, same: a.length === b.length && added.length === 0 && removed.length === 0 };
+}
+
 // newsletterPage(id) → everything /mail/[id] renders.
 export async function newsletterPage(id) {
   await requireRole('viewer');
@@ -59,7 +75,9 @@ export async function newsletterPage(id) {
     const count = await audienceCount(client, newsletter.audience);
     const petitions = await petitionSlugs(client);
     const deliveries = ['sending', 'sent', 'failed'].includes(newsletter.status) ? await db.deliveryCounts(client, newsletter.id) : null;
-    return { newsletter, names, count, petitions, deliveries };
+    const defaults = await db.getDefaults(client);
+    const diff = newsletter.status === 'pending' && newsletter.priorBlocks ? blockDiff(newsletter.priorBlocks, newsletter.requestedBlocks || newsletter.blocks) : null;
+    return { newsletter, names, count, petitions, deliveries, defaults, diff };
   });
 }
 
@@ -67,9 +85,36 @@ export async function createNewsletter(subject) {
   const s = await requireRole('editor');
   return withWriteTx(async (client) => {
     const fromName = await authorNameFor(client, s.email);
-    const id = await db.createNewsletter(client, { createdBy: s.email, fromName, subject: clip(subject, 200) });
+    const { theme } = await db.getDefaults(client);
+    const id = await db.createNewsletter(client, { createdBy: s.email, fromName, subject: clip(subject, 200), theme });
     await recordChange(client, { actor: s.email, action: 'newsletter.create', entityType: 'newsletter', entityId: id, diff: { subject: clip(subject, 200) } });
     return id;
+  });
+}
+
+// duplicateNewsletter(id) → the new draft's id (content, look, audience copied).
+export async function duplicateNewsletter(id) {
+  const s = await requireRole('editor');
+  const nid = assertId(id);
+  return withWriteTx(async (client) => {
+    const src = await db.getNewsletter(client, nid);
+    if (!src) throw new Error('That newsletter no longer exists.');
+    const fromName = await authorNameFor(client, s.email);
+    const newId = await db.duplicateNewsletter(client, { id: nid, createdBy: s.email, fromName, subject: clip(`${src.subject} (copy)`, 200) });
+    await recordChange(client, { actor: s.email, action: 'newsletter.duplicate', entityType: 'newsletter', entityId: newId, diff: { from: nid } });
+    return newId;
+  });
+}
+
+// saveDefaults(id): this newsletter's look becomes the default for new drafts.
+export async function saveDefaults(id) {
+  const s = await requireRole('editor');
+  const nid = assertId(id);
+  await withWriteTx(async (client) => {
+    const n = await db.getNewsletter(client, nid);
+    if (!n) throw new Error('That newsletter no longer exists.');
+    await db.setDefaults(client, { theme: normalizeTheme(n.theme), updatedBy: s.email });
+    await recordChange(client, { actor: s.email, action: 'newsletter.defaults', entityType: 'newsletter', entityId: nid, diff: normalizeTheme(n.theme) });
   });
 }
 
@@ -84,7 +129,7 @@ export async function saveNewsletter(id, formData) {
   const audience = normalizeFilters({ residency: formData.get('residency'), donors: formData.get('donors'), petition: formData.get('petition') });
   const fields = {
     subject: clip(formData.get('subject'), 200), preheader: clip(formData.get('preheader'), 200), headline: clip(formData.get('headline'), 200),
-    fromName: clip(formData.get('fromName'), 60), blocks, theme, audience,
+    fromName: clip(formData.get('fromName'), 60), blocks, theme, audience, publishToSite: formData.get('publishToSite') === '1',
   };
   await withWriteTx(async (client) => {
     const ok = await db.saveNewsletter(client, { id: nid, ...fields, expectedUpdatedAt: String(formData.get('updatedAt') || '') });
@@ -94,13 +139,21 @@ export async function saveNewsletter(id, formData) {
       if (row.status !== 'draft') throw new Error(`This newsletter is ${row.status} — it can only be edited as a draft (withdraw or cancel the request first).`);
       throw new Error('Someone else saved this newsletter since you opened it — reload to see their version.');
     }
-    await recordChange(client, { actor: s.email, action: 'newsletter.save', entityType: 'newsletter', entityId: nid, diff: { subject: fields.subject, blocks: blocks.length, audience: describeFilters(audience) } });
+    await recordChange(client, { actor: s.email, action: 'newsletter.save', entityType: 'newsletter', entityId: nid, snapshot: { ...fields }, diff: { subject: fields.subject, blocks: blocks.length, audience: describeFilters(audience), publishToSite: fields.publishToSite } });
   });
   return fields;
 }
 
+// renderFrozen(n, slug) → { html, text, webHtml } — the bytes a request freezes.
+function renderFrozen(n, slug) {
+  const viewUrl = n.publishToSite && slug ? `${config.publicOrigin}/newsletters/${slug}` : '';
+  const { html, text } = renderEmail(n, { mode: 'auto', viewUrl, siteUrl: config.publicOrigin, campaign: slug || n.id });
+  const webHtml = n.publishToSite ? renderWebBody(n) : '';
+  return { html, text, webHtml };
+}
+
 // requestSend(id, note, scheduleLocal) → { needsReview, notified, scheduledFor }
-// Freezes the rendered html/text and the recipient count on the row.
+// Freezes the rendered html/text/web copy, the slug and the recipient count.
 export async function requestSend(id, note, scheduleLocal) {
   const s = await requireRole('editor');
   const nid = assertId(id);
@@ -113,12 +166,14 @@ export async function requestSend(id, note, scheduleLocal) {
     if (!normalizeBlocks(n.blocks).length) throw new Error('The email has no content yet — add at least one block and save.');
     const recipients = await audienceCount(client, n.audience);
     if (!recipients) throw new Error(`Nobody matches the audience (${describeFilters(normalizeFilters(n.audience))}).`);
-    const { html, text } = renderEmail(n, { mode: 'auto' });
+    const slug = n.slug || archiveSlug(n.subject, at || new Date());
+    const { html, text, webHtml } = renderFrozen(n, slug);
     const ok = await db.requestSend(client, {
-      id: nid, requestedBy: s.email, requestedByUser: s.username, note: clip(note, NOTE_MAX), scheduledFor: at ? at.toISOString() : null, html, text, recipients,
+      id: nid, requestedBy: s.email, requestedByUser: s.username, note: clip(note, NOTE_MAX), scheduledFor: at ? at.toISOString() : null,
+      html, text, webHtml, slug, recipients, blocks: n.blocks,
     });
     if (!ok) throw new Error('This newsletter was just changed by someone else — reload.');
-    await recordChange(client, { actor: s.email, action: 'newsletter.request', entityType: 'newsletter', entityId: nid, diff: { recipients, scheduledFor: at ? at.toISOString() : null, audience: describeFilters(normalizeFilters(n.audience)) } });
+    await recordChange(client, { actor: s.email, action: 'newsletter.request', entityType: 'newsletter', entityId: nid, diff: { recipients, scheduledFor: at ? at.toISOString() : null, audience: describeFilters(normalizeFilters(n.audience)), publishToSite: n.publishToSite, slug } });
     return { recipients, subject: n.subject };
   });
   const needsReview = s.role !== 'owner';
@@ -130,6 +185,22 @@ export async function requestSend(id, note, scheduleLocal) {
 }
 
 const isOwn = (n, s) => n.requestedByUser === s.username || n.requestedBy === s.email;
+
+// rescheduleSend(id, scheduleLocal): the requester or an owner changes a
+// PENDING request's time ('' = send on approval). Audited.
+export async function rescheduleSend(id, scheduleLocal) {
+  const s = await requireRole('editor');
+  const nid = assertId(id);
+  const { at } = parseSchedule(scheduleLocal);
+  await withWriteTx(async (client) => {
+    const row = await db.getNewsletter(client, nid);
+    if (!row || row.status !== 'pending') throw new Error('Only a pending request can be rescheduled.');
+    if (!isOwn(row, s) && s.role !== 'owner') throw new Error('Only the requester (or an owner) can change the time.');
+    if (!(await db.reschedule(client, { id: nid, scheduledFor: at ? at.toISOString() : null }))) throw new Error('That request is no longer pending.');
+    await recordChange(client, { actor: s.email, action: 'newsletter.reschedule', entityType: 'newsletter', entityId: nid, diff: { from: row.scheduledFor || null, to: at ? at.toISOString() : null } });
+  });
+  return at ? formatZoned(at) : '';
+}
 
 // approveSend(id, note) → { scheduled: label | '' }. "Send now" invokes the
 // Lambda here; a scheduled send waits for the Lambda's minute tick.
@@ -224,35 +295,43 @@ export async function retrySend(id) {
   await invokeSend(nid, s.email, { reopen: false });
 }
 
-// sendTest(id) → the address mailed. Renders the CURRENT draft (or the
-// frozen body of a request — same bytes) to the signed-in admin only, through
-// the admin's own SES permission. The unsubscribe link points at the editor.
-export async function sendTest(id) {
+// sendTest(id, { all }) → the addresses mailed. Renders the CURRENT draft (or
+// the frozen body of a request — same bytes) to the signed-in admin only,
+// or to all four admins (all: true), through the admin's own SES permission.
+// The unsubscribe link points at the editor.
+export async function sendTest(id, { all = false } = {}) {
   const s = await requireRole('editor');
   const nid = assertId(id);
   const n = await withDb((client) => db.getNewsletter(client, nid));
   if (!n) throw new Error('This newsletter no longer exists.');
   if (!n.subject.trim()) throw new Error('Give the email a subject line first.');
-  const { html, text } = renderEmail(n, { mode: 'auto' });
+  const to = all ? [...new Set([s.email, ...PUBLISH_REVIEWERS])] : [s.email];
+  const { html, text } = renderFrozen(n, n.slug || archiveSlug(n.subject));
   const link = `${config.appOrigin}/mail/${nid}`;
   const client = new SESv2Client({ region: config.region, requestHandler: { requestTimeout: 8000 } });
   try {
     const res = await client.send(new SendEmailCommand({
       FromEmailAddress: fromHeader(n.fromName),
-      Destination: { ToAddresses: [s.email] },
+      Destination: { ToAddresses: to },
       ...(config.envName === 'prod' ? { ConfigurationSetName: 'ucc-prod' } : {}),
       Content: { Simple: {
         Subject: { Data: `[TEST] ${n.subject}`, Charset: 'UTF-8' },
         Body: { Html: { Data: html.replaceAll(UNSUBSCRIBE_TOKEN, link), Charset: 'UTF-8' }, Text: { Data: text.replaceAll(UNSUBSCRIBE_TOKEN, link), Charset: 'UTF-8' } },
       } },
     }));
-    console.log(`[admin] newsletter ${nid} test sent ${res.MessageId}`);
+    console.log(`[admin] newsletter ${nid} test sent ${res.MessageId} to ${to.length}`);
   } catch (err) {
     console.error(`[admin] newsletter ${nid} test SES error: ${err?.name} ${err?.message}`);
     throw new Error(`The test email could not be sent (${err?.name || 'error'}).`);
   }
-  await withWriteTx((client) => recordChange(client, { actor: s.email, action: 'newsletter.test', entityType: 'newsletter', entityId: nid }));
-  return s.email;
+  await withWriteTx((client) => recordChange(client, { actor: s.email, action: 'newsletter.test', entityType: 'newsletter', entityId: nid, diff: { to: to.length } }));
+  return to;
+}
+
+// deliveryLedger(id) → rows for the owner view / CSV (audited by the caller).
+export async function deliveryLedger(id) {
+  await requireRole('owner');
+  return withDb((client) => db.deliveriesFor(client, assertId(id)));
 }
 
 export async function deleteNewsletter(id) {

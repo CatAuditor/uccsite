@@ -20,7 +20,13 @@ packages/newsletter/render.mjs     renderEmail({subject, preheader, headline, bl
                                    → {html, text}; previewHtml(); normalizeBlocks/Theme; fromHeader(name);
                                    UNSUBSCRIBE_TOKEN '{{unsubscribe_url}}'. Pure ESM: browser preview,
                                    admin server and Lambda all render the SAME bytes.
+packages/newsletter/web.mjs        renderWebBody (archive page body, classes only), archiveSlug
 packages/newsletter/schedule.mjs   America/Denver datetime-local ⇄ UTC (DST-aware), parseSchedule (≥5 min lead)
+packages/db/email-events.js        email_events table, classify(SES event), SUPPRESSED_SQL used by audience.js
+packages/render/newsletters.js     buildNewsletterArchive — /newsletters index + pages (publish pipeline)
+aws/ses-events/handler.mjs         SesEventsFn: ops SNS topic → email_events rows
+css/newsletters.css                archive page styles
+apps/admin/app/mail/[id]/ledger/route.js  owner CSV of one send's delivery ledger
 packages/db/newsletters.js         tables newsletters + newsletter_deliveries (DDL wired into content-schema.js);
                                    conditional-update state machine; claimForSending mutex; delivery ledger
 aws/newsletter/handler.mjs         NewsletterSendFn: {id} | {id,resume} | {tick} | {id,recipientsOverride}
@@ -116,6 +122,78 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
 newsletter work never shows up as "unpublished saves" or blocks a site
 publish (test in packages/db/test/newsletters.test.mjs).
 
+## Built 2026-10-05, second pass (roadmap tiers 1-3)
+
+| Feature | Where |
+|---|---|
+| **Copy as a new draft** (list row "Copy", editor button) | `lib/newsletters.js duplicateNewsletter` → `db.duplicateNewsletter` (content, look, audience, publish flag copied; new subject "… (copy)"; audit `newsletter.duplicate`) |
+| **Default look** ("Use this look as the default") | `newsletter_defaults` singleton (`getDefaults`/`setDefaults`); `createNewsletter` seeds new drafts from it; audit `newsletter.defaults` |
+| **Send a test to all admins** | `sendTest(id, { all: true })` → the four `PUBLISH_REVIEWERS` + the sender |
+| **Bulk headers** | `List-Id: Utah Civic Compact newsletter <newsletter.utahciviccompact.org>`, `Precedence: bulk` beside List-Unsubscribe (send.js `buildMessage`) |
+| **Throttle backoff** | `sendWithRetry`: TooManyRequests/Throttling/5xx/network → 3 retries (0.5 s, 2 s, 5 s); MessageRejected and the like are final |
+| **Unknown deliveries** | `beginDelivery` reclaims a row stuck in `sending` for > 10 min (`STALE_DELIVERY_MINUTES`) on Retry / the stall re-kick — a crashed run's recipients are attempted once more (a possible duplicate beats a silent miss) |
+| **Change the time while pending** | requester or owner, `rescheduleSend` → `db.reschedule` (pending only); audit `newsletter.reschedule` |
+| **Diff on re-request** | `requestSend` copies the previous `requested_blocks` to `prior_blocks`; the review panel lists added / removed blocks (`blockDiff`) |
+| **Per-recipient ledger (owner)** | editor page → "Per-recipient delivery" → `POST /mail/[id]/ledger` CSV; audit `newsletter.ledger` |
+| **UTM tagging** | `renderEmail(doc, { siteUrl, campaign })` → `tagLinks`: every link into the site gets `utm_source=newsletter&utm_medium=email&utm_campaign=<slug>`; never `/api/` links, never the unsubscribe token, never a link that already has `utm_`. Same parameters in every copy — no per-recipient tracking. |
+| **Web archive + View in browser** | see below |
+| **Bounces and complaints** | see below |
+| **Confirmed subscribers (double opt-in)** | see below |
+
+### Web archive
+
+A newsletter with **"Also publish a web copy"** ticked (default on; column
+`publish_to_site`) gets a slug at request time (`archiveSlug`: `yyyy-mm-dd-
+subject-words`, fixed for the row's life) and a `web_html` body rendered by
+`@uccsite/newsletter/web renderWebBody` — semantic HTML with classes, no
+inline styles (the site CSP is `style-src 'self'`). The email carries a
+"View in browser" line pointing at `PUBLIC_ORIGIN/newsletters/<slug>`.
+
+When the send finishes, `finishNewsletter` sets `archived_at` (sent +
+publish_to_site + web copy present) and the Lambda invokes **PublishFn**
+(`trigger newsletter:<id>`, env `PUBLISH_FUNCTION_NAME`, IAM invoke on the
+publish function). The publish run (`aws/publish/render-db.js` →
+`packages/render/newsletters.js buildNewsletterArchive`) renders
+`newsletters.html` (index, newest first) and `newsletters/<slug>.html`
+inside the Documents shell (`templates/documents/report.html`: header,
+footer, SEO block; `css/newsletters.css`), adds both to the sitemap, and
+the footer links to `/newsletters`. Nothing is emitted while no newsletter
+is archived (no empty index). If the invoke fails the pages go live with
+the next publish of any kind.
+
+### Bounces and complaints
+
+`SesEventsFn` (`aws/ses-events`, both stacks; subscribed to the ops SNS
+topic) records the configuration set's BOUNCE / COMPLAINT / REJECT events
+in `email_events` (`packages/db/email-events.js classify`): one row per
+recipient, `suppress = 1` for a permanent bounce (incl. SES's own
+`OnAccountSuppressionList` bounce) or any complaint; transient bounces and
+rejects are recorded but not suppressing. Staging sends go through the
+prod identity's default set, so their events reach the **prod** topic and
+the prod table — one more reason staging tests use the mailbox simulator.
+
+- The audience query (`packages/db/audience.js`) excludes suppressed
+  addresses everywhere (Mailing list count/CSV, newsletter recipients,
+  `send-periodical.js`).
+- Mailing list page: counts of suppressed addresses + a "Recent bounces,
+  complaints and rejects" table.
+- Newsletter delivery panel: "N suppressed" = attempted recipients whose
+  address has since been suppressed.
+
+### Confirmed subscribers (double opt-in)
+
+`subscribers.confirmed_at` (schema.js). The join form's welcome email now
+carries a **"Yes, that's me"** button → `GET /api/confirm?token=…`
+(`aws/api/routes.js confirmSubscription`; token purpose `confirm`, 30-day
+TTL, same `@uccsite/tokens` format) which sets `confirmed_at` (idempotent)
+and shows a confirmation page. Until then the address is **not** in the
+newsletter audience (the welcome email itself still goes out). Petition
+signers are confirmed at insert (signing = consent); re-signing up never
+clears a confirmation; rows created before 2026-10-07 were grandfathered by
+the migration (`UPDATE … WHERE confirmed_at IS NULL AND created_at <
+'2026-10-07'`). The join-form success copy on the site tells people to
+press the button. Mailing list page shows "N not yet confirmed".
+
 ## Rendering
 
 - Table-based 600 px card, inline styles (Gmail strips `<style>` partially),
@@ -140,8 +218,9 @@ publish (test in packages/db/test/newsletters.test.mjs).
 |---|---|
 | Admin (`lib/config.js`) | `NEWSLETTER_FUNCTION_NAME` (runtime; `scripts/admin-env.mjs` locally, Amplify console var + `amplify.yml` grep on prod). Missing → approve "send now" / retry throw a config error; everything else works. |
 | Admin SSR role (`UccProdAdminCompute` / `admin-runtime`, hand-managed) | `lambda:InvokeFunction` on the NewsletterSendFn ARN (added 2026-10-05); `ses:SendEmail` already present for the test send |
-| Lambda env | `DSQL_ENDPOINT`, `PUBLIC_ORIGIN` (unsubscribe links), `SECRET_ARN_TOKEN_SECRET`, `SES_CONFIGURATION_SET` (prod `ucc-prod`) |
-| Lambda IAM | `dsql:DbConnectAdmin`, `ses:SendEmail` on the identity + `ucc-prod` set with the From pin, `secretsmanager:GetSecretValue` on TOKEN_SECRET, `lambda:InvokeFunction` on itself (detached policy — CDK cycle otherwise) |
+| Lambda env | `DSQL_ENDPOINT`, `PUBLIC_ORIGIN` (unsubscribe links), `SECRET_ARN_TOKEN_SECRET`, `SES_CONFIGURATION_SET` (prod `ucc-prod`), `PUBLISH_FUNCTION_NAME` (web-copy publish) |
+| SesEventsFn | env `DSQL_ENDPOINT`; IAM `dsql:DbConnectAdmin`; SNS subscription on the stack's ops topic |
+| Lambda IAM | `dsql:DbConnectAdmin`, `ses:SendEmail` on the identity + `ucc-prod` set with the From pin, `secretsmanager:GetSecretValue` on TOKEN_SECRET, `lambda:InvokeFunction` on itself (detached policy — CDK cycle otherwise) and on PublishFn |
 
 Staging sends go through the prod identity/config set like every other
 staging email (docs/systems/email.md): use the mailbox simulator.

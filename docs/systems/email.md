@@ -53,7 +53,7 @@ the ops topic and reputation metrics are not tagged.
 
 | Email | Trigger | Route | Headers |
 |---|---|---|---|
-| Welcome | `POST /api/subscribe` (join form) | self-invoke job, non-blocking | `List-Unsubscribe` + `List-Unsubscribe-Post: One-Click` (RFC 8058), signed 1-year unsubscribe link |
+| Welcome (= confirmation, double opt-in since 2026-10-05) | `POST /api/subscribe` (join form); carries a signed `GET /api/confirm` button (purpose `confirm`, 30 days) | self-invoke job, non-blocking | `List-Unsubscribe` + `List-Unsubscribe-Post: One-Click` (RFC 8058), signed 1-year unsubscribe link |
 | Billing-portal link | `POST /api/create-portal-session` | inline after the 202 | 15-minute signed link |
 | Publish request needs review | an EDITOR (not an owner) requests a publish in the admin | `apps/admin/lib/notify.js`, after the request commits; one `SendEmail` to the four admins minus the requester (list in `lib/notify-recipients.mjs`); prod only unless `PUBLISH_NOTIFY_TO` is set | none — internal; links to the admin dashboard |
 | Newsletter (admin) | an approved send request in the admin (Mail → Newsletters; docs/systems/newsletters.md) | `NewsletterSendFn` Lambda: one `SendEmail` per recipient, 100 ms apart, per-recipient delivery ledger, self-resume; From `"<Author> from Utah Civic Compact" <hello@…>` (display name only — the address is IAM-pinned) | `List-Unsubscribe` + One-Click, signed 1-year unsubscribe link per recipient |

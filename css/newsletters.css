@@ -1,0 +1,26 @@
+/* Newsletter archive pages (/newsletters, /newsletters/<slug>) — packages/render/newsletters.js */
+.nl-page { max-width: 720px; margin: 0 auto; padding: 48px 20px 64px; }
+.nl-page h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 16px; }
+.nl-intro, .nl-meta { color: #5c5c58; font-size: .95rem; margin: 0 0 28px; }
+.nl-meta a { color: inherit; }
+.nl-list { list-style: none; padding: 0; margin: 0; }
+.nl-list li { padding: 18px 0; border-top: 1px solid #e4e6e2; }
+.nl-list li a { font-size: 1.2rem; font-weight: 600; text-decoration: none; }
+.nl-list li a:hover { text-decoration: underline; }
+.nl-list .nl-date { display: block; color: #5c5c58; font-size: .9rem; margin-top: 4px; }
+.nl-list li p { margin: 8px 0 0; color: #2c2c2c; }
+.nl-article .nl-headline { font-size: 2rem; line-height: 1.25; margin: 0 0 24px; }
+.nl-article h2 { font-size: 1.4rem; margin: 32px 0 12px; }
+.nl-article h3 { font-size: 1.1rem; margin: 24px 0 8px; }
+.nl-article p, .nl-article li { font-size: 1.08rem; line-height: 1.7; }
+.nl-article ul { padding-left: 24px; }
+.nl-article hr { border: 0; border-top: 1px solid #e4e6e2; margin: 32px 0; }
+.nl-button { text-align: center; margin: 24px 0 32px; }
+.nl-button.nl-left { text-align: left; }
+.nl-figure { margin: 24px 0 28px; text-align: center; }
+.nl-figure img { max-width: 100%; height: auto; }
+.nl-figure figcaption { color: #5c5c58; font-size: .9rem; margin-top: 8px; }
+.nl-quote { margin: 24px 0; padding: 16px 20px; border-left: 4px solid #c8a84b; background: #f7f6f1; font-style: italic; }
+.nl-quote cite { display: block; margin-top: 8px; font-style: normal; color: #5c5c58; font-size: .95rem; }
+.nl-quote cite::before { content: "— "; }
+.nl-join { margin: 40px 0 0; text-align: center; }

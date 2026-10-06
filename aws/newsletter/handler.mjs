@@ -21,7 +21,7 @@ import { claimForSending, dueNewsletters, deliveryCounts, finishNewsletter } fro
 import { fromHeader } from '@uccsite/newsletter/render';
 import { sendNewsletter } from './send.js';
 
-const { DSQL_ENDPOINT, PUBLIC_ORIGIN, SES_CONFIGURATION_SET, SECRET_ARN_TOKEN_SECRET, AWS_LAMBDA_FUNCTION_NAME } = process.env;
+const { DSQL_ENDPOINT, PUBLIC_ORIGIN, SES_CONFIGURATION_SET, SECRET_ARN_TOKEN_SECRET, AWS_LAMBDA_FUNCTION_NAME, PUBLISH_FUNCTION_NAME } = process.env;
 const region = process.env.AWS_REGION;
 const STALL_MINUTES = 20;
 
@@ -77,6 +77,22 @@ async function runOne({ id, resume = false, recipientsOverride }, context) {
     return c;
   });
   console.log(`[newsletter] ${id} done sent=${counts.sent} failed=${counts.failed} unknown=${counts.sending} (this run: +${result.sent} sent, ${result.skipped} already done)`);
+  // The web copy: finishNewsletter set archived_at when the newsletter is
+  // marked "publish to the site"; a site publish renders /newsletters/<slug>
+  // so the email's "View in browser" link resolves. Async, no retries (the
+  // publish Lambda records its own run); a failure here only delays the
+  // archive to the next publish.
+  if (PUBLISH_FUNCTION_NAME && counts.sent > 0) {
+    const archived = await withConnection(db, async (client) => (await client.query('SELECT archived_at FROM newsletters WHERE id = $1', [id])).rows[0]?.archived_at);
+    if (archived) {
+      try {
+        await lambda.send(new InvokeCommand({ FunctionName: PUBLISH_FUNCTION_NAME, InvocationType: 'Event', Payload: Buffer.from(JSON.stringify({ trigger: `newsletter:${id}` })) }));
+        console.log(`[newsletter] ${id} site publish invoked for the web copy`);
+      } catch (err) {
+        console.error(`[newsletter] ${id} site publish invoke failed: ${err?.name} ${err?.message} — the web copy goes live with the next publish`);
+      }
+    }
+  }
   return { claimed: true, ...counts };
 }
 

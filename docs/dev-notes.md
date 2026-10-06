@@ -34,6 +34,36 @@ the homepage lists the team the same way.
   the pages live on production.
 - Technical detail: docs/systems/author-pages.md.
 
+## 2026-10-05 — Newsletters, round two: bounces, confirmations, web archive, quality-of-life
+
+Follow-ups to this morning's Mail section:
+
+- **Copy as a new draft** on any newsletter, and **Use this look as the
+  default** so every new draft starts with the org's colours, font and footer.
+- **Send a test to all admins** beside "Send me a test".
+- **Change the send time** of a pending request without withdrawing it, and
+  when a declined email is re-requested the reviewer sees **what changed**.
+- **Web copy.** By default each sent newsletter is also published at
+  utahciviccompact.org/newsletters/… (the email gets a "View in browser"
+  link; the footer of the site links to the archive). Untick "Also publish
+  a web copy" in the editor to keep one email-only.
+- **Bounces and spam complaints** are now recorded: addresses that hard-
+  bounce or complain are skipped automatically from then on, and the
+  Mailing list page shows them.
+- **Confirmed sign-ups.** The welcome email now has a "Yes, that's me"
+  button. Until someone presses it they get nothing but that one email.
+  People who signed a petition count as confirmed, and everyone who joined
+  before today is grandfathered in. The join form on the site tells people
+  to look for the button.
+- Behind the scenes: list-mail headers, automatic retries when Amazon
+  throttles, recipients left in limbo by an interrupted send are retried,
+  links in emails carry campaign tags (no per-person tracking), owners can
+  download one send's per-recipient delivery list.
+
+- **Conner:** two DNS edits and, a week later, one more — runbook §12. Also
+  the org's postal address for the email footer when there is one.
+- Technical detail: docs/systems/newsletters.md.
+
 ## 2026-10-05 — Upload images right where you use them
 
 Image fields no longer send you to the Media Library first. Beside the

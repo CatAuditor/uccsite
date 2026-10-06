@@ -8,7 +8,7 @@ import { listNewsletters } from '@uccsite/db/newsletters';
 import { formatZoned } from '@uccsite/newsletter/schedule';
 import { requireSession } from '../../lib/auth';
 import { withDb } from '../../lib/data';
-import { createNewsletter } from '../../lib/newsletters';
+import { createNewsletter, duplicateNewsletter } from '../../lib/newsletters';
 import { runAction } from '../../lib/actions';
 import ActionForm from '../action-form';
 import { STATUS_LABEL } from './status';
@@ -22,6 +22,13 @@ export default async function MailPage() {
   const rows = await withDb((client) => listNewsletters(client));
   const canAct = session.role !== 'viewer';
 
+  async function duplicate(prev, formData) {
+    'use server';
+    let newId;
+    const res = await runAction(async () => { newId = await duplicateNewsletter(String(formData.get('id'))); });
+    if (res.error) return res;
+    redirect(`/mail/${newId}`);
+  }
   async function create(prev, formData) {
     'use server';
     let id;
@@ -49,7 +56,7 @@ export default async function MailPage() {
       )}
 
       <table>
-        <thead><tr><th>Subject</th><th>Status</th><th>From</th><th>Audience</th><th>Created</th><th>Sent / scheduled</th></tr></thead>
+        <thead><tr><th>Subject</th><th>Status</th><th>From</th><th>Audience</th><th>Created</th><th>Sent / scheduled</th><th></th></tr></thead>
         <tbody>
           {rows.map((n) => (
             <tr key={n.id}>
@@ -62,9 +69,15 @@ export default async function MailPage() {
               <td>{describeFilters(normalizeFilters(n.audience))}{n.recipients != null ? ` · ${n.recipients}` : ''}</td>
               <td>{when(n.createdAt)} · {n.createdBy}</td>
               <td>{n.sentAt ? `${formatZoned(n.sentAt)} · ${n.sentCount ?? 0} sent` : n.scheduledFor && ['pending', 'approved'].includes(n.status) ? formatZoned(n.scheduledFor) : ''}</td>
+              <td>{canAct && (
+                <ActionForm action={duplicate} className="inline">
+                  <input type="hidden" name="id" value={n.id} />
+                  <button type="submit" className="linkish" title="Start a new draft from this one">Copy</button>
+                </ActionForm>
+              )}</td>
             </tr>
           ))}
-          {!rows.length && <tr><td colSpan="6">No newsletters yet.</td></tr>}
+          {!rows.length && <tr><td colSpan="7">No newsletters yet.</td></tr>}
         </tbody>
       </table>
     </div>

@@ -119,3 +119,25 @@ test('safeUrl', () => {
   assert.equal(safeUrl('javascript:x'), '');
   assert.equal(safeUrl('https://a.b/c d'), '');
 });
+
+test('tagLinks adds UTM to site links only, once, keeping hashes', async () => {
+  const { tagLinks } = await import('../render.mjs');
+  const html = '<a href="https://utahciviccompact.org/petition#top">p</a> <a href="https://utahciviccompact.org/x?y=1">x</a> <a href="https://utahciviccompact.org/api/unsubscribe?token=t">u</a> <a href="{{unsubscribe_url}}">u2</a> <a href="https://other.org/">o</a> <a href="https://utahciviccompact.org/z?utm_source=a">z</a> <a href="https://utahciviccompact.org">home</a>';
+  const out = tagLinks(html, 'https://utahciviccompact.org', 'oct-6');
+  assert.ok(out.includes('href="https://utahciviccompact.org/petition?utm_source=newsletter&utm_medium=email&utm_campaign=oct-6#top"'));
+  assert.ok(out.includes('href="https://utahciviccompact.org/x?y=1&amp;utm_source=newsletter'));
+  assert.ok(out.includes('href="https://utahciviccompact.org/api/unsubscribe?token=t"'));
+  assert.ok(out.includes('href="{{unsubscribe_url}}"'));
+  assert.ok(out.includes('href="https://other.org/"'));
+  assert.ok(out.includes('href="https://utahciviccompact.org/z?utm_source=a"'));
+  assert.ok(out.includes('href="https://utahciviccompact.org?utm_source=newsletter'));
+  assert.equal(tagLinks(html, '', 'c'), html);
+});
+
+test('viewUrl adds a View in browser line to html and text; campaign tags the body links', () => {
+  const { html, text } = renderEmail(doc, { viewUrl: 'https://utahciviccompact.org/newsletters/2026-10-06-x', siteUrl: 'https://utahciviccompact.org', campaign: '2026-10-06-x' });
+  assert.ok(html.includes('>View in browser</a>'));
+  assert.ok(text.startsWith('View in browser: https://utahciviccompact.org/newsletters/2026-10-06-x'));
+  assert.ok(html.includes('https://utahciviccompact.org/mida?utm_source=newsletter&utm_medium=email&utm_campaign=2026-10-06-x'));
+  assert.ok(!renderEmail(doc).html.includes('View in browser'));
+});

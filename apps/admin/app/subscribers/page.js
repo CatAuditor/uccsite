@@ -9,6 +9,7 @@
 import { audienceQuery, normalizeFilters, describeFilters, RESIDENCIES } from '@uccsite/db/audience';
 import { requireRole } from '../../lib/auth';
 import { withDb } from '../../lib/data';
+import { latestEvents } from '@uccsite/db/email-events';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,7 @@ export default async function SubscribersPage({ searchParams }) {
     donors: sp?.donors,
     petition: typeof sp?.petition === 'string' ? sp.petition : '',
   });
-  const { rows, matching, byResidency, petitions } = await withDb(async (client) => {
+  const { rows, matching, byResidency, petitions, unconfirmed, suppressed, events } = await withDb(async (client) => {
     const list = audienceQuery(filters, { limit: LIST_LIMIT });
     const count = audienceQuery(filters, { columns: 'count(*)::int AS n', orderBy: null });
     const all = audienceQuery({}, { columns: 'a.residency, count(*)::int AS n, count(*) FILTER (WHERE a.donor)::int AS donors', orderBy: null });
@@ -32,6 +33,9 @@ export default async function SubscribersPage({ searchParams }) {
       matching: (await client.query(count.sql, count.params)).rows[0].n,
       byResidency: (await client.query(all.sql + ' GROUP BY a.residency', all.params)).rows,
       petitions: (await client.query('SELECT DISTINCT petition FROM petition_signatures ORDER BY petition')).rows.map(r => r.petition),
+      unconfirmed: (await client.query('SELECT count(*)::int AS n FROM subscribers WHERE confirmed_at IS NULL')).rows[0].n,
+      suppressed: (await client.query('SELECT count(DISTINCT email)::int AS n FROM email_events WHERE suppress = 1')).rows[0].n,
+      events: await latestEvents(client, 50),
     };
   });
   const totalAll = byResidency.reduce((s, r) => s + r.n, 0);
@@ -47,6 +51,10 @@ export default async function SubscribersPage({ searchParams }) {
         (every 84xxx ZIP is Utah). Use the controls to decide who an email goes to; the CSV and the
         sender (<code>scripts/send-periodical.js --audience … --donors-only --petition …</code>) use
         the same rules. Removing someone: they use the unsubscribe link in any email.
+      </p>
+      <p className="hint">
+        Not counted above: <strong>{unconfirmed}</strong> join-form sign-up{unconfirmed === 1 ? '' : 's'} who have not pressed the confirm button in their welcome email yet,
+        and <strong>{suppressed}</strong> address{suppressed === 1 ? '' : 'es'} skipped after a hard bounce or a spam complaint.
       </p>
 
       <form method="get" action="/subscribers" className="list-tools">
@@ -91,6 +99,20 @@ export default async function SubscribersPage({ searchParams }) {
         </tbody>
       </table>
       {matching > rows.length && <p className="hint">Showing the newest {rows.length} of {matching}; the CSV has all of them.</p>}
+
+      {events.length > 0 && (
+        <details>
+          <summary>Recent bounces, complaints and rejects ({events.length})</summary>
+          <table>
+            <thead><tr><th>When</th><th>Email</th><th>Event</th><th>Detail</th><th>Skipped from now on</th></tr></thead>
+            <tbody>
+              {events.map((e, i) => (
+                <tr key={i}><td>{e.at?.slice(0, 16).replace('T', ' ')}</td><td>{e.email}</td><td>{e.type}{e.subtype ? ` (${e.subtype})` : ''}</td><td>{e.detail || ''}</td><td>{e.suppress ? 'yes' : ''}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
+      )}
     </div>
   );
 }

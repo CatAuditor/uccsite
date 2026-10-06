@@ -523,3 +523,39 @@ copy exists in production.
   admin.utahciviccompact.org. Remaining: Resend key, Stripe webhook URL check,
   Jarom sign-in, Airtable copy, GitHub App, Turnstile. Cloudflare idle until
   2026-10-30, then §7.8.
+
+## 12. Email deliverability: DMARC to quarantine, and a postal address — `[hand]`
+
+Everything the site sends is now SES (DKIM-aligned) or Zoho (your mailboxes).
+Once Mailgun is cancelled (§10.4) nothing else sends as @utahciviccompact.org,
+so DMARC can stop merely *reporting* and start *quarantining* spoofed mail.
+Do these in Cloudflare DNS, **in this order**, a week apart:
+
+1. **Now** — apex TXT (`utahciviccompact.org`), replace the SPF record with
+   exactly:
+   ```
+   v=spf1 include:spf.efwd.registrar-servers.com include:zohomail.com ~all
+   ```
+   (that is the current record minus ` include:mailgun.org`). And the
+   `_dmarc` TXT, replace with exactly:
+   ```
+   v=DMARC1; p=none; pct=100; fo=1; ri=3600; rua=mailto:c0666316@inbox.ondmarc.com; ruf=mailto:c0666316@inbox.ondmarc.com;
+   ```
+   (current record minus the two `mailto:b5510ee5@dmarc.mailgun.org,` entries).
+2. **After 7 days of OnDMARC reports showing only aligned senders** (SES
+   via `mail.utahciviccompact.org` + Zoho; no unknown sources), change
+   `p=none` to `p=quarantine`:
+   ```
+   v=DMARC1; p=quarantine; pct=100; fo=1; ri=3600; rua=mailto:c0666316@inbox.ondmarc.com; ruf=mailto:c0666316@inbox.ondmarc.com;
+   ```
+   If a legitimate sender shows up as failing in the reports (e.g. a
+   Google Workspace alias, a CRM), stop and tell the dev before step 2.
+3. **Postal address.** CAN-SPAM wants a physical or PO-box address in every
+   bulk email; the newsletter footer defaults to "Utah Civic Compact ·
+   Salt Lake City, UT". When the org has an address (a PO box is fine), an
+   editor puts it in the footer of any newsletter and presses **Use this
+   look as the default** in the admin — no developer needed.
+
+Not DNS, already done by the dev: double opt-in for the join form, bounce
+and complaint suppression, List-Id/Precedence headers, UTM tagging, the web
+archive at /newsletters.

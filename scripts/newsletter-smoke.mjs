@@ -32,7 +32,8 @@ const id = await withConnection(db, async (client) => {
   const nid = await nl.createNewsletter(client, { createdBy: 'smoke', fromName: 'Smoke Test', subject: doc.subject, theme: {} });
   const row = await nl.getNewsletter(client, nid);
   await nl.saveNewsletter(client, { id: nid, ...doc, fromName: 'Smoke Test', expectedUpdatedAt: row.updatedAt });
-  await nl.requestSend(client, { id: nid, requestedBy: 'smoke', requestedByUser: 'smoke', note: '', scheduledFor: null, html, text, recipients: 1 });
+  // web copy + slug so the archive path (archived_at → PublishFn invoke) is exercised too
+  await nl.requestSend(client, { id: nid, requestedBy: 'smoke', requestedByUser: 'smoke', note: '', scheduledFor: null, html, text, recipients: 1, webHtml: '<p>smoke</p>', slug: `smoke-${Date.now()}`, blocks: doc.blocks });
   await nl.reviewSend(client, { id: nid, approve: true, reviewedBy: 'smoke2', note: '' });
   return nid;
 });
@@ -51,12 +52,19 @@ for (let i = 0; i < 30; i++) {
   })));
   if (['sent', 'failed'].includes(row.status)) break;
 }
-console.log(`status=${row.status} sent=${row.sentCount} failed=${row.failedCount} error=${row.error || '-'}`);
+console.log(`status=${row.status} sent=${row.sentCount} failed=${row.failedCount} archived=${row.archivedAt ? 'yes' : 'no'} error=${row.error || '-'}`);
+// The finished send should have asked for a site publish (web copy).
+let publishRun = null;
+for (let i = 0; i < 10 && !publishRun; i++) {
+  await new Promise((r) => setTimeout(r, 2000));
+  publishRun = await withConnection(db, async (client) => (await client.query('SELECT status FROM publish_runs WHERE trigger_source = $1', [`newsletter:${id}`])).rows[0] || null);
+}
+console.log(`publish run for the web copy: ${publishRun ? publishRun.status : 'NOT STARTED'}`);
 for (const d of deliveries) console.log(`  ${d.email} ${d.status} ${d.message_id || ''} ${d.error || ''}`);
 
 await withConnection(db, (client) => nl.deleteNewsletter(client, id));
 console.log('cleaned up');
-if (row.status !== 'sent' || row.sentCount !== 1 || deliveries.length !== 1 || deliveries[0].status !== 'sent') {
+if (row.status !== 'sent' || row.sentCount !== 1 || deliveries.length !== 1 || deliveries[0].status !== 'sent' || !row.archivedAt || !publishRun) {
   console.error('SMOKE FAILED');
   process.exit(1);
 }

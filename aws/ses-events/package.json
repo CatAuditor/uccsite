@@ -1,0 +1,14 @@
+{
+  "name": "@uccsite/ses-events",
+  "private": true,
+  "version": "0.0.0",
+  "description": "SesEventsFn Lambda: SES bounce/complaint/reject events (via the ops SNS topic) -> email_events rows (docs/systems/newsletters.md). Lives under aws/ (NOT functions/).",
+  "type": "commonjs",
+  "main": "handler.mjs",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  },
+  "dependencies": {
+    "@uccsite/db": "*"
+  }
+}

@@ -14,6 +14,12 @@
 //   petitions  comma-separated campaign slugs signed, oldest first
 // docs/systems/petition.md "Residency and audiences".
 
+// Two exclusions (2026-10-05): a join-form subscriber counts only once they
+// confirmed (confirmed_at — double opt-in; petition signers are confirmed
+// at insert), and any address with a suppressing SES event (hard bounce /
+// complaint, packages/db/email-events.js) is skipped everywhere.
+const { SUPPRESSED_SQL } = require('./email-events');
+
 const UTAH_ZIP_PREFIX = '84';
 function isUtahZip(zip) {
   return typeof zip === 'string' && /^84\d{3}(-\d{4})?$/.test(zip.trim());
@@ -45,11 +51,14 @@ const AUDIENCE_ROWS_SQL = `
   FROM (
     SELECT s.email, s.first_name, s.last_name, s.address, s.zip, s.created_at, 'subscriber' AS via
     FROM subscribers s
+    WHERE s.confirmed_at IS NOT NULL
+      AND NOT ${SUPPRESSED_SQL('s.email')}
     UNION ALL
     SELECT mm.email, MAX(mm.first_name), MAX(mm.last_name), NULL, MAX(mm.zip), MIN(mm.created_at), 'member'
     FROM members mm
     WHERE mm.newsletter_opt_in = 1 AND mm.email IS NOT NULL
       AND mm.email NOT IN (SELECT s2.email FROM subscribers s2)
+      AND NOT ${SUPPRESSED_SQL('mm.email')}
     GROUP BY mm.email
   ) p
   CROSS JOIN LATERAL (

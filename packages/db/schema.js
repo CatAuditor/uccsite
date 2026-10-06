@@ -62,6 +62,16 @@ const STATEMENTS = [
     zip TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
   )`,
+  // Double opt-in (2026-10-05, docs/systems/newsletters.md "Confirmed
+  // subscribers"): a join-form row is mailed only once confirmed_at is set
+  // (GET /api/confirm from the welcome email). Petition signers are confirmed
+  // at insert (signing = consent). Rows older than the feature are
+  // grandfathered — the UPDATE is idempotent and bounded by the cutoff date.
+  `ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMPTZ`,
+  `UPDATE subscribers SET confirmed_at = created_at WHERE confirmed_at IS NULL AND created_at < '2026-10-07T00:00:00Z'`,
+
+  // SES bounce/complaint/reject ledger (packages/db/email-events.js).
+  ...require('./email-events').DDL,
 
   // Tipline (docs/migration/airtable-retirement-plan.md): replaces the
   // Airtable base. Column names mirror the old Airtable fields exactly.

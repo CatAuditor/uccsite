@@ -10,7 +10,8 @@ user data, or a third-party integration changes (CLAUDE.md rule).
 |---|---|---|---|
 | `members` | email, first/last name, ZIP, Stripe customer id | Stripe checkout | indefinite (donor records) |
 | `subscriptions` / `donations` | amounts + Stripe ids linked to members | Stripe webhook | indefinite |
-| `subscribers` | email, name, address, ZIP | join form; petition form (signing = consent to communications) | until unsubscribe (row deleted) |
+| `subscribers` | email, name, address, ZIP, `confirmed_at` (double opt-in timestamp; petition signers confirmed at insert) | join form; petition form (signing = consent to communications) | until unsubscribe (row deleted); unconfirmed rows receive only the welcome/confirmation email |
+| `email_events` | recipient email, SES event type/subtype (bounce, complaint, reject), SES message id, diagnostic text | SES event publishing via the ops SNS topic (SesEventsFn) | kept while the address is on the list (used to suppress further sends); no export |
 | `petition_signatures` | name, email, ZIP, optional street address and phone, signing timestamp; campaign slug | `/petition` form | indefinite (the petition record handed to UDOT / the legislature). No IP or user agent stored. Editors can read; viewers cannot. |
 | `tips` | **confidential**: tipster name (or `Anonymous`), email, subject, free-text tip which may name third parties | `/tip` form (AWS stack); Airtable rows imported at cutover | until an owner deletes it in the admin (audit keeps the deletion only, not the contents). Editors can read; viewers cannot. Never logged. |
 | `rate_limits` | client IP + endpoint | API requests | sliding 1h window, opportunistic purge |

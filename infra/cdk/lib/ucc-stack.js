@@ -18,6 +18,7 @@ const {
   aws_secretsmanager: secretsmanager,
   aws_dsql: dsql,
   aws_sns: sns,
+  aws_sns_subscriptions: subscriptions,
   aws_ses: ses,
   aws_budgets: budgets,
   aws_events: events,
@@ -678,6 +679,35 @@ class UccStack extends Stack {
       schedule: events.Schedule.rate(Duration.minutes(1)),
       targets: [new targets.LambdaFunction(newsletterFn, { event: events.RuleTargetInput.fromObject({ tick: true }) })],
     });
+    // A finished send with "publish to the site" on triggers a site publish
+    // so /newsletters/<slug> (the email's "View in browser" target) is live.
+    newsletterFn.addEnvironment('PUBLISH_FUNCTION_NAME', publishFn.functionName);
+    newsletterFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['lambda:InvokeFunction'],
+      resources: [publishFn.functionArn, `${publishFn.functionArn}:*`],
+    }));
+
+    // ── SES events → email_events (docs/systems/newsletters.md "Bounces and
+    // complaints"). The configuration set publishes BOUNCE/COMPLAINT/REJECT
+    // to the ops topic (prod stack; staging sends land there too via the
+    // identity's default set), so the PROD stack's Lambda records them in
+    // the prod database. Staging gets the same wiring against its own topic
+    // (which receives no SES events) so the code path deploys identically.
+    const sesEventsFn = new nodejs.NodejsFunction(this, 'SesEventsFn', {
+      entry: path.join(repoRoot, 'aws', 'ses-events', 'handler.mjs'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      memorySize: 256,
+      timeout: Duration.seconds(30),
+      environment: { DSQL_ENDPOINT: dsqlEndpoint },
+      bundling: { externalModules: ['pg-native'] },
+      depsLockFilePath: path.join(repoRoot, 'package-lock.json'),
+    });
+    sesEventsFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['dsql:DbConnectAdmin'],
+      resources: [cluster.attrResourceArn],
+    }));
+    alertTopic.addSubscription(new subscriptions.LambdaSubscription(sesEventsFn));
 
     // ── media-process Lambda (spec §13): S3 ObjectCreated under uploads/ →
     // sharp AVIF/WebP variants under media/ + media_assets row update.

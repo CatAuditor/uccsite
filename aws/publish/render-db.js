@@ -13,6 +13,8 @@ const { loadContent, contentMeta, makeDbLastmod } = require('@uccsite/db/content
 const { loadPublishBundle, markDocumentLive, markDocumentPublishError } = require('@uccsite/db/documents');
 const { listRedirects, kvsEntries } = require('@uccsite/db/redirects');
 const { listPublishedFiles } = require('@uccsite/db/project-files');
+const { listArchive } = require('@uccsite/db/newsletters');
+const { buildNewsletterArchive } = require('@uccsite/render/newsletters');
 const { syncRedirects } = require('./redirects-sync');
 
 // loadSiteFromDb(client) → everything renderSiteFromDb needs, in one connection.
@@ -22,13 +24,14 @@ async function loadSiteFromDb(client) {
     meta: await contentMeta(client),
     bundle: await loadPublishBundle(client),
     projectFiles: await listPublishedFiles(client),
+    newsletters: await listArchive(client),
   };
 }
 
 // renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl })
 //   → { files: { key → string }, errors: [], documentHashes: { slug → hash },
 //       documentIds: { slug → id } }
-function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl, projectFiles = {} }) {
+function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl, projectFiles = {}, newsletters = [] }) {
   const foreignClassMaps = {};
   for (const row of bundle.foreignClassMapRows) {
     const key = row.templateKey || '*';
@@ -71,9 +74,13 @@ function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl, pro
 
   // Published project files ride along as content.project_files (not part of
   // loadContent — the content export must not carry derived data).
-  const site = buildSite({ ...inputs, content: { ...content, project_files: projectFiles, documents_index: documentsIndex }, lastmod, pages, siteUrl, sitemapExtra: built.pages });
-  const errors = [...site.errors, ...built.errors];
-  const files = errors.length ? {} : { ...site.files, ...built.files };
+  // Sent newsletters with a web copy → /newsletters + /newsletters/<slug>
+  // (docs/systems/newsletters.md "Web archive"), wrapped in the report shell.
+  const archive = buildNewsletterArchive({ newsletters, shell: inputs.shells?.report, partials: inputs.partials, settings: content.settings, siteUrl });
+
+  const site = buildSite({ ...inputs, content: { ...content, project_files: projectFiles, documents_index: documentsIndex }, lastmod, pages, siteUrl, sitemapExtra: [...built.pages, ...archive.pages] });
+  const errors = [...site.errors, ...built.errors, ...archive.errors];
+  const files = errors.length ? {} : { ...site.files, ...built.files, ...archive.files };
   return {
     files, errors,
     // A run that failed anywhere writes nothing — no document went live.

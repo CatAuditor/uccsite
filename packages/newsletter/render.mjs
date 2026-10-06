@@ -167,7 +167,25 @@ export function fromHeader(name) {
 
 // renderEmail({ subject, preheader, headline, blocks, theme }, { mode }) → { html, text }
 // mode: 'auto' (sent) | 'dark' | 'light' (preview emulations).
-export function renderEmail({ subject = '', preheader = '', headline = '', blocks = [], theme: rawTheme } = {}, { mode = 'auto' } = {}) {
+// tagLinks(html, siteUrl, campaign) → html with utm_source/medium/campaign
+// appended to every link INTO the site (never the unsubscribe token, never
+// /api/ links, never a link that already carries utm_). Attribution without
+// per-recipient tracking: the parameters are the same for every copy.
+export function tagLinks(html, siteUrl, campaign) {
+  if (!siteUrl || !campaign) return html;
+  const base = siteUrl.replace(/\/$/, '');
+  const utm = `utm_source=newsletter&utm_medium=email&utm_campaign=${encodeURIComponent(campaign)}`;
+  return html.replace(/href="([^"]+)"/g, (m, href) => {
+    if (!(href === base || href.startsWith(`${base}/`)) || href.includes('/api/') || /[?&]utm_/.test(href)) return m;
+    const [path, hash = ''] = href.split('#');
+    return `href="${path}${path.includes('?') ? '&amp;' : '?'}${utm}${hash ? `#${hash}` : ''}"`;
+  });
+}
+
+// renderEmail(doc, { mode, viewUrl, siteUrl, campaign })
+//   viewUrl: the web copy (/newsletters/<slug>) → "View in browser" line
+//   siteUrl + campaign: UTM-tag links into the site (tagLinks)
+export function renderEmail({ subject = '', preheader = '', headline = '', blocks = [], theme: rawTheme } = {}, { mode = 'auto', viewUrl = '', siteUrl = '', campaign = '' } = {}) {
   const theme = normalizeTheme(rawTheme);
   const font = FONTS[theme.font];
   const dark = { bg: '#111412', card: '#1b1f1b', text: '#e9e9e3', muted: '#a9afa6', rule: '#343a34', quoteBg: '#232823' };
@@ -236,6 +254,7 @@ export function renderEmail({ subject = '', preheader = '', headline = '', block
 ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;font-size:1px;line-height:1px;">${escapeHtml(preheader)}${'&#847;&zwnj;&nbsp;'.repeat(30)}</div>` : ''}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="em-bg" style="background:#f5f5f0;padding:32px 0;">
 <tr><td align="center" style="padding:0 12px;">
+${viewUrl ? `<p class="em-muted" style="margin:0 0 10px;font-size:12px;font-family:${font};color:#6b6b66;"><a href="${escapeHtml(viewUrl)}" class="em-link" style="color:#6b6b66;text-decoration:underline;">View in browser</a></p>` : ''}
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="em-card" style="background:#ffffff;border-radius:8px;overflow:hidden;max-width:600px;width:100%;">
 <tr><td bgcolor="${theme.accent}" style="background:${theme.accent};padding:32px 36px;">
 <p style="margin:0;color:${theme.highlight};font-size:12px;letter-spacing:3px;text-transform:uppercase;font-family:${font};">${escapeHtml(theme.eyebrow)}</p>
@@ -268,8 +287,9 @@ ${parts.join('\n')}
     }
   }
   textParts.push('--', ...theme.footer.split('\n').map(inlineText), `Unsubscribe: ${UNSUBSCRIBE_TOKEN}`);
+  if (viewUrl) textParts.unshift(`View in browser: ${viewUrl}`, '');
   const text = textParts.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
-  return { html, text };
+  return { html: tagLinks(html, siteUrl, campaign), text };
 }
 
 // previewHtml(doc, mode) → html with the unsubscribe token neutralised.

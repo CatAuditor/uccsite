@@ -119,6 +119,7 @@ export default function Composer({ newsletter, names, count, petitions, readOnly
             <label className="mail-check"><input type="checkbox" name="donors" value="1" defaultChecked={Boolean(newsletter.audience.donors)} disabled={readOnly} /> donors only</label>
           </div>
           <div className="hint">Same rules as the Mailing list page. Save to refresh the count.</div>
+          <label className="mail-check"><input type="checkbox" name="publishToSite" value="1" defaultChecked={newsletter.publishToSite !== false} disabled={readOnly} /> Also publish a web copy at utahciviccompact.org/newsletters (adds a &ldquo;View in browser&rdquo; link)</label>
         </fieldset>
 
         <fieldset className="item">

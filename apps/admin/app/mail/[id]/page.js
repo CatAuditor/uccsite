@@ -13,6 +13,7 @@ import { formatZoned, ZONE_LABEL, toLocalInput } from '@uccsite/newsletter/sched
 import { requireSession } from '../../../lib/auth';
 import {
   newsletterPage, saveNewsletter, requestSend, approveSend, declineSend, withdrawSend, cancelSend, retrySend, sendTest, deleteNewsletter,
+  duplicateNewsletter, saveDefaults, rescheduleSend,
 } from '../../../lib/newsletters';
 import { runAction } from '../../../lib/actions';
 import { config } from '../../../lib/config';
@@ -30,7 +31,7 @@ export default async function NewsletterPage({ params }) {
   const { id } = await params;
   const page = await newsletterPage(id);
   if (!page) notFound();
-  const { newsletter: n, names, count, petitions, deliveries } = page;
+  const { newsletter: n, names, count, petitions, deliveries, defaults, diff } = page;
   const canAct = session.role !== 'viewer';
   const isDraft = n.status === 'draft';
   const isRequester = n.requestedByUser === session.username || n.requestedBy === session.email;
@@ -75,9 +76,31 @@ export default async function NewsletterPage({ params }) {
       return { ok: true, message };
     });
   }
-  async function test() {
+  async function test(prev, formData) {
     'use server';
-    return runAction(async () => ({ ok: true, message: `Test sent to ${await sendTest(id)} (subject starts with [TEST]).` }));
+    return runAction(async () => {
+      const to = await sendTest(id, { all: String(formData?.get('all') || '') === '1' });
+      return { ok: true, message: `Test sent to ${to.join(', ')} (subject starts with [TEST]).` };
+    });
+  }
+  async function duplicate() {
+    'use server';
+    let newId;
+    const res = await runAction(async () => { newId = await duplicateNewsletter(id); });
+    if (res.error) return res;
+    redirect(`/mail/${newId}`);
+  }
+  async function makeDefault() {
+    'use server';
+    return runAction(async () => { await saveDefaults(id); revalidatePath(path); return { ok: true, message: 'This look is now the default for new newsletters.' }; });
+  }
+  async function reschedule(prev, formData) {
+    'use server';
+    return runAction(async () => {
+      const label = await rescheduleSend(id, String(formData.get('schedule') || ''));
+      revalidatePath(path); revalidatePath('/mail'); revalidatePath('/');
+      return { ok: true, message: label ? `Now scheduled for ${label}.` : 'Now sends as soon as it is approved.' };
+    });
   }
   async function remove() {
     'use server';
@@ -106,8 +129,35 @@ export default async function NewsletterPage({ params }) {
             {n.reviewedBy && n.status !== 'pending' ? ` Approved by ${n.reviewedBy} at ${when(n.reviewedAt)}.` : ''}
           </p>
           {n.requestNote && <blockquote>{n.requestNote}</blockquote>}
+          {diff && !diff.same && (
+            <div className="notice">
+              <strong>Changed since the last request:</strong>
+              <ul>
+                {diff.added.map((l, i) => <li key={`a${i}`}>+ {l}</li>)}
+                {diff.removed.map((l, i) => <li key={`r${i}`}>− {l}</li>)}
+              </ul>
+            </div>
+          )}
+          {diff && diff.same && <p className="hint">Same content as the previous request (only the note, time or audience changed).</p>}
           {deliveries && (
-            <p><strong>{deliveries.sent}</strong> delivered to SES{deliveries.failed ? `, ${deliveries.failed} failed` : ''}{deliveries.sending ? `, ${deliveries.sending} unknown (interrupted mid-send)` : ''}{n.status === 'sending' ? ' — this page refreshes itself.' : '.'}</p>
+            <p><strong>{deliveries.sent}</strong> delivered to SES{deliveries.failed ? `, ${deliveries.failed} failed` : ''}{deliveries.suppressed ? `, ${deliveries.suppressed} suppressed (bounced or complained — skipped next time)` : ''}{deliveries.sending ? `, ${deliveries.sending} unknown (interrupted mid-send)` : ''}{n.status === 'sending' ? ' — this page refreshes itself.' : '.'}</p>
+          )}
+          {n.status === 'sent' && n.publishToSite && n.slug && (
+            <p className="hint">Web copy: <a href={`${config.publicOrigin}/newsletters/${n.slug}`} target="_blank" rel="noopener">/newsletters/{n.slug}</a>{n.archivedAt ? '' : ' (goes live with the next site publish)'}.</p>
+          )}
+          {n.status === 'pending' && canAct && (isRequester || session.role === 'owner') && (
+            <ActionForm action={reschedule} className="inline">
+              <label htmlFor="reschedule">Change the send time ({ZONE_LABEL}; empty = on approval)</label>
+              <input type="datetime-local" id="reschedule" name="schedule" defaultValue={n.scheduledFor ? toLocalInput(n.scheduledFor) : ''} />
+              <button type="submit" className="secondary">Update time</button>
+            </ActionForm>
+          )}
+          {session.role === 'owner' && ['sent', 'failed'].includes(n.status) && (
+            <details className="ledger">
+              <summary>Per-recipient delivery (owner)</summary>
+              <form action={`/mail/${n.id}/ledger`} method="post" className="inline"><button type="submit" className="secondary">Download CSV</button></form>
+              <p className="hint">Audited like the mailing-list export.</p>
+            </details>
           )}
           {n.error && <div className="error">{n.error}</div>}
           <p className="hint">The email body and audience were frozen when the send was requested; what the preview shows is exactly what goes out.</p>
@@ -156,8 +206,17 @@ export default async function NewsletterPage({ params }) {
       {canAct && (
         <div className="mail-tools">
           <ActionForm action={test} className="inline">
-            <button type="submit" className="secondary" title="Emails the saved version to you only">Send me a test ({session.email})</button>
+            <button type="submit" className="secondary" title="Emails the saved version to you only">Send me a test ({session.email})</button>{' '}
+            <button type="submit" name="all" value="1" className="secondary" title="Emails the saved version to all four admins">Send a test to all admins</button>
           </ActionForm>
+          <div className="mail-row">
+            <ActionForm action={duplicate} className="inline">
+              <button type="submit" className="secondary">Copy as a new draft</button>
+            </ActionForm>
+            <ActionForm action={makeDefault} className="inline">
+              <button type="submit" className="secondary" title={defaults.updatedBy ? `Current default set by ${defaults.updatedBy}` : 'No default saved yet — new drafts use the built-in look'}>Use this look as the default</button>
+            </ActionForm>
+          </div>
           {isDraft && (
             <ActionForm action={request} className="request-send">
               <h2>Request the send</h2>

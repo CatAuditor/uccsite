@@ -128,18 +128,26 @@ async function sesSend({ to, subject, html, headers }) {
   }
 }
 
+// Double opt-in (docs/systems/newsletters.md "Confirmed subscribers"): the
+// welcome email carries a signed confirm link; the newsletter audience only
+// includes join-form rows with confirmed_at set. The link lasts 30 days.
+const CONFIRM_TTL = 60 * 60 * 24 * 30;
+
 async function sendWelcomeEmail(secrets, origin, email, firstName) {
   const greeting = firstName ? `Hi ${escapeHtml(firstName)},` : 'Welcome,';
   let unsubscribeUrl = `${origin}/#join`;
+  let confirmUrl = '';
   if (secrets.TOKEN_SECRET) {
     const token = await signToken(secrets.TOKEN_SECRET, 'unsubscribe', email, UNSUBSCRIBE_TTL);
     unsubscribeUrl = `${origin}/api/unsubscribe?token=${encodeURIComponent(token)}`;
+    const confirmToken = await signToken(secrets.TOKEN_SECRET, 'confirm', email, CONFIRM_TTL);
+    confirmUrl = `${origin}/api/confirm?token=${encodeURIComponent(confirmToken)}`;
   }
 
   await sesSend({
     to: email,
     subject: "You're in. Here's what that means.",
-    html: buildWelcomeEmail(greeting, unsubscribeUrl),
+    html: buildWelcomeEmail(greeting, unsubscribeUrl, confirmUrl),
     headers: {
       'List-Unsubscribe': `<${unsubscribeUrl}>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
@@ -147,7 +155,18 @@ async function sendWelcomeEmail(secrets, origin, email, firstName) {
   });
 }
 
-function buildWelcomeEmail(greeting, unsubscribeUrl) {
+function buildWelcomeEmail(greeting, unsubscribeUrl, confirmUrl = '') {
+  const confirmBlock = confirmUrl ? `
+        <p style="margin:0 0 12px;color:#2c2c2c;font-size:17px;line-height:1.7;">
+          <strong>One click to confirm:</strong> press the button so we know this address is yours. Until you do, we won't send the newsletter here.
+        </p>
+        <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+          <tr><td style="background:#c8a84b;border-radius:4px;">
+            <a href="${escapeHtml(confirmUrl)}" style="display:inline-block;padding:14px 28px;color:#1a3a2a;font-family:sans-serif;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:0.5px;">
+              Yes, that's me &rarr;
+            </a>
+          </td></tr>
+        </table>` : '';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -170,7 +189,7 @@ function buildWelcomeEmail(greeting, unsubscribeUrl) {
 
       <!-- Body -->
       <tr><td style="padding:40px;">
-        <p style="margin:0 0 20px;color:#2c2c2c;font-size:17px;line-height:1.7;">${greeting}</p>
+        <p style="margin:0 0 20px;color:#2c2c2c;font-size:17px;line-height:1.7;">${greeting}</p>${confirmBlock}
         <p style="margin:0 0 20px;color:#2c2c2c;font-size:17px;line-height:1.7;">
           You didn't sign up for a newsletter. You joined a compact, and we mean that.
         </p>
@@ -218,6 +237,23 @@ function buildWelcomeEmail(greeting, unsubscribeUrl) {
 </html>`;
 }
 
+// ── GET /api/confirm?token=... ───────────────────────────────────────────────
+// Double opt-in: marks the join-form subscriber confirmed. Idempotent; an
+// expired or forged token gets the same page with a different message.
+async function confirmSubscription({ event, db, secrets }) {
+  const token = event.queryStringParameters?.token || '';
+  const email = secrets.TOKEN_SECRET ? await verifyToken(secrets.TOKEN_SECRET, 'confirm', token) : null;
+  if (!email) return unsubPage('This confirmation link is invalid or has expired. Sign up again at utahciviccompact.org and we will send a fresh one.', 400, 'Confirm');
+  try {
+    await db.query('UPDATE subscribers SET confirmed_at = COALESCE(confirmed_at, now()) WHERE email = $1', [email]);
+  } catch (err) {
+    console.error('[api] confirm DB error:', err.message);
+    return unsubPage('Something went wrong on our end. Please try the link again in a minute.', 500, 'Confirm');
+  }
+  console.log('[api] subscriber confirmed');
+  return unsubPage("Confirmed — you're on the list. Welcome to the Compact.", 200, 'Confirmed');
+}
+
 // ── GET/POST /api/unsubscribe?token=... ─────────────────────────────────────
 // POST supports RFC 8058 one-click unsubscribe from mail clients.
 async function unsubscribe({ event, db, secrets }) {
@@ -237,8 +273,8 @@ async function unsubscribe({ event, db, secrets }) {
   return unsubPage("You've been unsubscribed. Sorry to see you go.");
 }
 
-function unsubPage(message, status = 200) {
-  const body = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Unsubscribe | Utah Civic Compact</title>
+function unsubPage(message, status = 200, title = 'Unsubscribe') {
+  const body = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${title} | Utah Civic Compact</title>
 <style>body{font-family:Georgia,serif;background:#f5f5f0;color:#2c2c2c;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}main{background:#fff;padding:40px;border-radius:8px;max-width:480px;text-align:center}a{color:#1a3a2a}</style></head>
 <body><main><p>${message}</p><p><a href="/">utahciviccompact.org</a></p></main></body></html>`;
   return html(body, status);
@@ -337,13 +373,14 @@ async function petitionSign({ event, db, secrets, body }) {
       [petition, firstName, lastName, email, zip, address || null, phone || null],
     );
     await db.query(
-      `INSERT INTO subscribers (id, email, first_name, last_name, address, zip)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
+      `INSERT INTO subscribers (id, email, first_name, last_name, address, zip, confirmed_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, now())
        ON CONFLICT (email) DO UPDATE SET
          first_name = COALESCE(subscribers.first_name, excluded.first_name),
          last_name  = COALESCE(subscribers.last_name, excluded.last_name),
          address    = COALESCE(subscribers.address, excluded.address),
-         zip        = COALESCE(subscribers.zip, excluded.zip)`,
+         zip        = COALESCE(subscribers.zip, excluded.zip),
+         confirmed_at = COALESCE(subscribers.confirmed_at, now())`,
       [email, firstName, lastName, address || null, zip],
     );
   } catch (err) {
@@ -594,7 +631,7 @@ async function donationStats({ db }) {
 }
 
 module.exports = {
-  subscribe, unsubscribe, tip, petitionSign, petitionCount, createCheckoutSession,
+  subscribe, unsubscribe, confirmSubscription, tip, petitionSign, petitionCount, createCheckoutSession,
   createPortalSessionPost, createPortalSessionGet, portalLinkJob, welcomeEmailJob, donationStats,
   _setSesClient,
 };

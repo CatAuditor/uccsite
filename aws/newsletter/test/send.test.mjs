@@ -85,3 +85,25 @@ test('unsubscribeUrl encodes the token', async () => {
   const url = await unsubscribeUrl('k', 'a+b@x.y', 'https://o');
   assert.match(url, /^https:\/\/o\/api\/unsubscribe\?token=[A-Za-z0-9_.%-]+$/);
 });
+
+test('bulk headers: List-Id and Precedence', () => {
+  const m = buildMessage({ subject: 's', html: '<p>', text: '' }, { to: 'a@b.c', unsub: 'u', from: 'f' });
+  const names = m.Content.Simple.Headers.map((h) => h.Name);
+  assert.deepEqual(names, ['List-Unsubscribe', 'List-Unsubscribe-Post', 'List-Id', 'Precedence']);
+  assert.equal(m.Content.Simple.Headers[3].Value, 'bulk');
+});
+
+test('throttling is retried with backoff; final errors are not', async () => {
+  const { sendWithRetry, BACKOFF_MS } = require('../send.js');
+  const waits = [];
+  let n = 0;
+  const res = await sendWithRetry(async () => { if (n++ < 2) { const e = new Error('slow down'); e.name = 'TooManyRequestsException'; throw e; } return { MessageId: 'ok' }; }, {}, { sleep: async (ms) => waits.push(ms) });
+  assert.equal(res.MessageId, 'ok');
+  assert.deepEqual(waits, BACKOFF_MS.slice(0, 2));
+  let final = 0;
+  await assert.rejects(sendWithRetry(async () => { final++; const e = new Error('no'); e.name = 'MessageRejected'; throw e; }, {}, { sleep: async () => {} }), /no/);
+  assert.equal(final, 1);
+  let always = 0;
+  await assert.rejects(sendWithRetry(async () => { always++; const e = new Error('x'); e.$metadata = { httpStatusCode: 503 }; throw e; }, {}, { sleep: async () => {} }), /x/);
+  assert.equal(always, BACKOFF_MS.length + 1);
+});
