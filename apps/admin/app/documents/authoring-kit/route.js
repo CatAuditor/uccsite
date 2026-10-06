@@ -20,7 +20,9 @@ export async function GET() {
   }));
   const sources = await loadSiteSources();
   const kit = styleKitFor(sources.siteCss, '');
-  const md = buildAuthoringKit({ kit, rules, coverageKeys });
+  // The :root block (palette, fonts, widths) so the catalog's var(--x) reads.
+  const designTokens = (String(sources.siteCss || '').match(/:root\s*\{([^}]*)\}/) || [])[1] || '';
+  const md = buildAuthoringKit({ kit, rules, coverageKeys, designTokens });
   console.log(`[documents] authoring kit for ${session.email}: ${kit.entries.length} classes, ${rules.filter(r => r.scope === 'template').length} template rules, ${coverageKeys.length} coverage keys, ${md.length} chars`);
   return new Response(md, {
     headers: {

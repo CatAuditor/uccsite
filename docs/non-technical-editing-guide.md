@@ -101,8 +101,12 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
   the kit (one `.md` file) and give it to Claude, or to whoever is writing,
   before the draft starts. It holds the site's voice rules (the things we
   never publish: em dashes, "it's not X, it's Y", buzzwords and the rest),
-  the fields the admin asks for, and the HTML the editor accepts. Ask Claude
-  for prose, or for the HTML fragment; the kit explains both.
+  the fields the admin asks for, the HTML the editor accepts, and the site's
+  own styling: the page frame a document sits in, a sample page that shows
+  every site pattern in use, and every class Claude may use with the CSS
+  behind each one. Ask Claude for prose, or for the HTML
+  fragment; the kit explains both. The HTML fragment is the one that arrives
+  already looking like the site, so prefer it when the piece is finished.
 - Fill the body box one of three ways: paste HTML; **upload a file** (a
   `.docx` from Word, Google Docs or Claude Docs, a Markdown `.md`, or an
   `.html`; Word and Markdown are converted to HTML for you, and any pictures

@@ -6,6 +6,39 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — The authoring kit now carries the site's styling
+
+**What changed.** The authoring kit (the file you download at the top of All
+documents and hand to Claude) used to describe the site's writing rules and
+the HTML the editor accepts, but told Claude to leave styling alone and
+listed only a couple of dozen class names with one-line descriptions. It
+now carries the site's styling in full: the frame a document page sits in
+(the dark hero with the headline, then the centred content sections), the
+site's colours, fonts and spacing values, and every class Claude may use
+together with the exact CSS each one applies, grouped the way the site uses
+them (typography, buttons, stats bands, cards, utilities). Claude is told to
+use them. There is also a full worked example: one sample page, in the site's
+voice, that uses almost every one of those classes the way the site itself
+does (hero, framing line, plain section, stats band, numbered cards on cream,
+linked card grid, two-column recommendation with a quote card, press
+coverage with a video), with a note on each block saying what it is for. A
+machine reading the kit sees the use case, not just the class name. The kit
+checks the example against the live stylesheet every time it is generated
+and says which classes it leaves out.
+
+**Why.** A document's body is dropped straight between the site header and
+footer with nothing around it. HTML written without the site's classes
+therefore lands as plain, unstyled text and someone has to style it by hand
+on the Styling tab. With the styling rules in the kit, the HTML Claude hands
+back can be uploaded and look like the site on arrival.
+
+**What you do differently.** Download a fresh kit before each piece (it is
+rebuilt from the live stylesheet every time). When the draft is finished,
+ask Claude for the HTML fragment rather than prose if you want it to arrive
+styled; the prose route still works and is styled afterwards in the editor.
+
+**Nothing to finish.** No keys or decisions needed.
+
 ## 2026-10-06 — Home-screen icon: the navy tile now actually reaches phones
 
 **What changed.** Yesterday's fix put the UCC mark on a navy tile, but phones

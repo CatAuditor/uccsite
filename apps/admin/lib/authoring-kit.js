@@ -2,7 +2,10 @@
 // file an author gives to Claude, or any writing tool, before drafting a
 // long-form piece. It carries the voice rules, the page fields the admin
 // needs, the HTML the ingest accepts, the template rules that style a
-// document on arrival and the live Style Kit catalog. The static sections
+// document on arrival, the site's design tokens and the live Style Kit
+// catalog WITH each class's CSS, so the writing tool can hand back HTML
+// that already looks like the site (the body lands bare between the site
+// header and footer; nothing wraps it for the author). The static sections
 // live here; the dynamic ones are read from the live stylesheet and the
 // database at download time (app/documents/authoring-kit/route.js) so the
 // file never drifts from what the editor actually does. Pure: no I/O.
@@ -10,12 +13,19 @@ import { ALLOWED_TAGS } from '@uccsite/html-ingest';
 
 const SITE = 'https://utahciviccompact.org';
 
-// Classes the ingest accepts but an author never writes (site chrome, forms,
-// nav). The catalog hides these groups so the author sees only what can go
-// inside a document body.
-const CHROME_GROUPS = new Set(['Navigation', 'Footer', 'Forms', 'Modal', 'Donations', 'Hero', 'Mission & pillars', 'About', 'Impact stats', 'Policy positions', 'News & coverage']);
+// Classes the ingest accepts but an author never writes: site chrome, forms,
+// the donation page and the homepage hero (the report hero is subpage-hero).
+// Every other annotated group is offered, with its CSS, so the author can
+// reuse the site's section patterns (stats bands, cards, callouts) in a body.
+const CHROME_GROUPS = new Set(['Navigation', 'Footer', 'Forms', 'Modal', 'Donations', 'Hero']);
 
 const dash = (s) => String(s || '').replace(/[—–]/g, '-').replace(/\s+/g, ' ').trim();
+
+// Annotation tooling appends "Sets: <css> (auto)" to generated descriptions;
+// the CSS is printed on its own line now, so drop the duplicate.
+const describe = (e) => (dash(String(e.description || '').replace(/\s*Sets:.*\(auto\)\s*$/, '')) || dash(e.label) || e.className)
+  .replace(/<([a-z][a-z0-9]*)>/g, '`<$1>`');          // "Used on <div>" must not render as a tag
+const cssOf = (e) => dash(Array.isArray(e.declarations) ? e.declarations.join(' ') : e.declarations);
 
 function catalogSection(kit) {
   const groups = new Map();
@@ -29,9 +39,11 @@ function catalogSection(kit) {
   const out = [];
   for (const [g, entries] of [...groups.entries()].sort(([a], [b]) => a.localeCompare(b))) {
     out.push(`### ${g}`, '');
-    out.push('| class | use on | what it does |', '|---|---|---|');
     for (const e of entries.sort((a, b) => a.className.localeCompare(b.className))) {
-      out.push(`| \`${e.className}\` | ${e.applies?.length ? e.applies.map(t => `\`<${t}>\``).join(', ') : 'any'} | ${dash(e.description)} |`);
+      const on = e.applies?.length ? e.applies.map(t => `\`<${t}>\``).join(', ') : 'any element';
+      out.push(`- \`${e.className}\` on ${on}: ${describe(e)}`);
+      const css = cssOf(e);
+      if (css) out.push(`  CSS: \`${css}\``);
     }
     out.push('');
   }
@@ -39,23 +51,238 @@ function catalogSection(kit) {
   return out.join('\n');
 }
 
+// One body fragment that uses almost every offered class in the nesting the
+// site itself uses (templates/index.html, blog.html, alpr.html), with an
+// HTML comment per block saying what the pattern is for. Sample content,
+// in the site's voice. Kept by hand; buildAuthoringKit checks every class in
+// it against the live stylesheet and says which offered classes it omits.
+const EXAMPLE_HTML = `<!-- 1. Hero: the only place the <h1> goes. Eyebrow, headline, one or two lead paragraphs, optional actions. -->
+<div class="subpage-hero">
+  <div class="section-label">Surveillance investigation</div>
+  <h1>Ten cameras in one Utah county were searched 5.1 million times</h1>
+  <p>Weber County operates ten license-plate reader cameras. Records the county released under GRAMA show 3,343 agencies ran <strong>5,171,087 searches</strong> against the networks it administers between February 2022 and July 2026.</p>
+  <p><a href="https://archive.org/details/example-records" target="_blank" class="btn btn-ghost">Download the records</a></p>
+</div>
+
+<!-- 2. One-sentence framing band: mission-strip + mission-text. Use once, right after the hero, or not at all. -->
+<section class="mission-strip">
+  <div class="container">
+    <p class="mission-text">Every figure on this page comes from records Weber County released, or from documents the county published itself.</p>
+  </div>
+</section>
+
+<!-- 3. Ordinary report section: section > container, plain headings and prose. This is most of a piece. -->
+<section class="section">
+  <div class="container">
+    <h2>Where the records came from</h2>
+    <p>UCC requested the search logs on 3 February 2026 under the Government Records Access and Management Act. The county released 5,171,087 rows on 14 March 2026 and withheld the names of the officers who ran each search.</p>
+    <blockquote>
+      <p>The sheriff's office does not audit searches run by outside agencies.</p>
+    </blockquote>
+    <p>Weber County records officer, email to UCC, 14 March 2026.</p>
+
+    <h3>What one row contains</h3>
+    <table>
+      <caption>Fields in each search record, as released by Weber County</caption>
+      <thead><tr><th>Field</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>Agency</td><td>Ogden Police Department</td></tr>
+        <tr><td>Reason given</td><td>Investigation</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 4. Key figures: impact band. Three to four stats, a divider between each. impact-number is display-sized; keep the label short. -->
+<section class="impact section">
+  <div class="container">
+    <div class="impact-grid">
+      <div class="impact-stat">
+        <div class="impact-number">5,171,087</div>
+        <div class="impact-label">Searches, February 2022 to July 2026</div>
+      </div>
+      <div class="impact-divider"></div>
+      <div class="impact-stat">
+        <div class="impact-number">3,343</div>
+        <div class="impact-label">Agencies that ran at least one search</div>
+      </div>
+      <div class="impact-divider"></div>
+      <div class="impact-stat">
+        <div class="impact-number">13,100</div>
+        <div class="impact-label">Searches by Weber County's own deputies</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Cream band with a site-style section heading (eyebrow + section-title + section-sub) and a numbered card grid: pillars. Use for two to four parallel findings. -->
+<section class="pillars section bg-cream">
+  <div class="container">
+    <div class="section-label">What the records show</div>
+    <h2 class="section-title">Three findings</h2>
+    <p class="section-sub">Each finding below is drawn from the released logs and the county's published vendor contract.</p>
+    <div class="pillars-grid">
+      <div class="pillar-card">
+        <div class="pillar-number">01</div>
+        <h3>Out-of-state agencies ran most searches</h3>
+        <p>Agencies in 45 states appear in the logs. Utah agencies account for 11 percent of searches.</p>
+        <a href="#out-of-state" class="pillar-link">Read the detail</a>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-number">02</div>
+        <h3>No search was audited</h3>
+        <p>The county confirmed it has never reviewed a search run by an outside agency.</p>
+        <a href="#audits" class="pillar-link">Read the detail</a>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-number">03</div>
+        <h3>The sharing default was never changed</h3>
+        <p>The vendor contract enables nationwide sharing unless the county opts out. It did not.</p>
+        <a href="#defaults" class="pillar-link">Read the detail</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Linked card grid: issues. Each card is one <a>. issue-icon holds a short mark (the site uses an inline SVG; a number or abbreviation works). -->
+<section class="issues section">
+  <div class="container">
+    <div class="issues-header">
+      <div>
+        <div class="section-label">Agencies</div>
+        <h2 class="section-title">Who searched Weber County's cameras</h2>
+        <p class="issues-intro">The ten agencies below ran the most searches. Each card links to that agency's rows in the released data.</p>
+      </div>
+      <a href="https://archive.org/details/example-records" target="_blank" class="btn btn-outline btn-sm nowrap">Full dataset</a>
+    </div>
+    <div class="issues-grid">
+      <a class="issue-card" href="#agency-ogden">
+        <div class="issue-icon">UT</div>
+        <h3>Ogden Police Department</h3>
+        <p>412,906 searches. The only Utah agency in the top ten.</p>
+      </a>
+      <a class="issue-card" href="#agency-tx">
+        <div class="issue-icon">TX</div>
+        <h3>Texas Department of Public Safety</h3>
+        <p>1,208,331 searches, none with a stated case number.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Two-column section: about. Prose on the left with a primary button; on the right a dark quote card and a small fact grid. -->
+<section class="about section">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-text">
+        <div class="section-label">What UCC recommends</div>
+        <h2 class="section-title">Turn sharing off by default</h2>
+        <p>The county can restrict sharing to Utah agencies in the vendor's settings today, at no cost, without a vote.</p>
+        <p>UCC has asked the county commission to do so and to publish quarterly search counts by agency.</p>
+        <a href="/petition.html" class="btn btn-primary">Sign the petition</a>
+      </div>
+      <div>
+        <div class="about-card">
+          <blockquote>
+            <p>We did not know other states could see our data.</p>
+          </blockquote>
+          <div class="about-card-footer">Weber County commissioner, public meeting, 7 April 2026</div>
+        </div>
+        <div class="about-detail-grid mt-40">
+          <div class="about-detail">
+            <strong>Cameras</strong>
+            <span>10</span>
+          </div>
+          <div class="about-detail">
+            <strong>Vendor</strong>
+            <span>Flock Safety</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Press coverage: news-section. One news-card per article; video-card for a broadcast segment, where the {{video:...}} placeholder renders the responsive video-embed wrapper for you. -->
+<div class="news-section">
+  <div class="news-inner">
+    <div class="news-section-label">In the press</div>
+    <a class="news-card" href="https://example-news.test/story" target="_blank">
+      <div class="news-outlet">
+        <span class="outlet-badge">Standard-Examiner</span>
+      </div>
+      <div class="news-content">
+        <div class="news-meta">16 March 2026, Ogden</div>
+        <h3 class="news-headline">County's plate cameras searched from 45 states, records show</h3>
+        <div class="news-excerpt">A nonprofit's records request found more than five million searches against Weber County's ten cameras.</div>
+        <div class="news-read-more">Read the article</div>
+      </div>
+    </a>
+    <div class="news-section-label mt-56">On television</div>
+    <div class="video-card">
+      <div class="video-card-header">
+        <span class="outlet-badge">KSL</span>
+        <div>
+          <div class="video-meta">18 March 2026, Salt Lake City</div>
+          <h3 class="video-headline">Who is watching Weber County's cameras?</h3>
+        </div>
+      </div>
+      <p>{{video:YOUTUBE_ID}}</p>
+    </div>
+    <div class="news-more-cta">
+      <p class="mb-16">Read UCC's statement on the county's response.</p>
+      <a href="/statements.html" class="btn btn-primary btn-full">Read the statement</a>
+    </div>
+  </div>
+</div>`;
+
+function exampleSection(kit) {
+  const inStylesheet = new Set((kit.entries || []).map(e => e.className));
+  const offered = new Set((kit.entries || []).filter(e => e.description && !CHROME_GROUPS.has(e.group || 'Site stylesheet')).map(e => e.className));
+  const used = new Set();
+  for (const m of EXAMPLE_HTML.matchAll(/class="([^"]+)"/g)) for (const c of m[1].split(/\s+/)) if (c) used.add(c);
+  const gone = [...used].filter(c => inStylesheet.size && !inStylesheet.has(c)).sort();
+  const unused = [...offered].filter(c => !used.has(c)).sort();
+  const out = [
+    'One fragment that uses the site\'s classes the way the site itself does, with a comment on each block saying what the',
+    'pattern is for. Copy the blocks you need, in any order after the hero; a report rarely needs more than three or four.',
+    'The content is a sample, not a source.',
+    '',
+    '```html',
+    EXAMPLE_HTML,
+    '```',
+    '',
+  ];
+  if (gone.length) out.push(`**Not in the current stylesheet** (the example is older than the stylesheet; do not use these): ${gone.map(c => `\`${c}\``).join(', ')}.`, '');
+  if (unused.length) out.push(`**Offered in 6.5 but not shown above:** ${unused.map(c => `\`${c}\``).join(', ')}. Use them as their CSS describes, or ask the editor.`, '');
+  return out.join('\n');
+}
+
 function rulesSection(rules) {
   const tpl = (rules || []).filter(r => r.scope === 'template').sort((a, b) => a.priority - b.priority || a.selector.localeCompare(b.selector));
   if (!tpl.length) {
     return [
-      '_No template rules are defined yet, so a new document arrives unstyled and the editor applies classes',
-      'by hand on the Styling tab. Write plain semantic HTML anyway: rules are added against exactly that shape._',
+      '_No template rules are defined yet. Nothing is added on save, so the classes you write (sections 6.4 and 6.5) are the',
+      'only styling the page gets until the editor adds more on the Styling tab._',
     ].join('\n');
   }
   return [
-    'Every document on the report template gets these classes added automatically when it is saved.',
-    'Write the plain tag on the left; **do not add the class on the right yourself** (it is applied for you,',
-    'and a class written into the HTML cannot be turned off from the editor).',
+    'Every document on the report template gets these classes added automatically when it is saved. You may',
+    'write them yourself or leave them off; the editor merges the two (one difference: a class written into the',
+    'HTML cannot be switched off from the editor without re-pasting, one added by a rule can).',
     '',
     '| write this | the editor adds | note |',
     '|---|---|---|',
     ...tpl.map(r => `| \`${r.selector}\` | ${(r.classes || []).map(c => `\`${c}\``).join(' ') || '(none)'} | ${dash(r.note) || ''} |`),
   ].join('\n');
+}
+
+// Design tokens (the :root block of the live stylesheet) so the CSS in the
+// catalog reads: var(--navy-dark) means something to the author.
+function designTokensSection(designTokens) {
+  const t = dash(designTokens).replace(/;\s*/g, ';\n').trim();
+  if (!t) return '_The design tokens could not be read from the live stylesheet; the variable names in the CSS below are the site palette (navy, red, cream, grays)._';
+  return ['These are the values behind the `var(--...)` names in the CSS below. For reading only: you cannot write CSS or inline styles.', '', '```css', t, '```'].join('\n');
 }
 
 function tokensSection(coverageKeys) {
@@ -73,7 +300,7 @@ function tokensSection(coverageKeys) {
 }
 
 // buildAuthoringKit({ kit, rules, coverageKeys, generatedAt }) → markdown string
-export function buildAuthoringKit({ kit, rules = [], coverageKeys = [], generatedAt = new Date() } = {}) {
+export function buildAuthoringKit({ kit, rules = [], coverageKeys = [], designTokens = '', generatedAt = new Date() } = {}) {
   const when = generatedAt.toISOString().slice(0, 10);
   // Accepted by the ingest but not for authors: SVG geometry, site-chrome
   // wrappers, and presentational inline tags the voice rules exclude anyway.
@@ -91,16 +318,16 @@ This is everything a writing tool needs to produce a long-form page (a report, a
 | you say | you get | then you |
 |---|---|---|
 | **"Help me write / edit this piece. Prose only."** | The text, in plain prose with headings. No HTML. | Draft in Claude Docs, Word or Google Docs and export a **.docx**, or save Claude's answer as a **.md** file. In the admin, open the document and use **Upload a file** in the HTML box. The admin converts it to clean HTML for you. |
-| **"Give me the HTML fragment."** | An HTML body fragment that follows section 5. | Copy it into the **Body HTML** box, or save it as a **.html** file and upload it. |
+| **"Give me the HTML fragment."** | An HTML body fragment that follows sections 5 and 6: the site's document frame and the site's own classes, so the page arrives already styled. | Copy it into the **Body HTML** box, or save it as a **.html** file and upload it. |
 | **"Convert my draft to the HTML fragment."** (paste or attach your finished draft) | The same fragment, built from text you already wrote. | Same as above. |
 
 Whichever route, Claude must also return the **page fields** block in section 3. Those are typed into the admin by hand; they are not part of the body.
 
-What happens next is the editor's job, not yours: the admin runs the HTML through a cleaner that removes anything unsafe, applies the site's styling rules, shows a live preview on the real page design, and a second person approves the publish. You do not need to make it look right; you need to make it **correct, well structured and in the site's voice**.
+The HTML route is the one that lands styled: the body of a document is placed directly between the site's header and footer with nothing around it, so the fragment itself supplies the page frame and the classes (section 6 has all of them, with the CSS each one applies). The prose route arrives as plain tags and is styled by the editor afterwards. In both cases the admin runs the HTML through a cleaner that removes anything unsafe, shows a live preview on the real page design, and a second person approves the publish. The text must be **correct, well structured and in the site's voice**; the styling should match what section 6 describes.
 
 ### Instructions for Claude
 
-You are helping write a long-form page for Utah Civic Compact (UCC), a Utah nonprofit. The site publishes investigations built on public records, statements, and policy positions on surveillance, privacy and how Utah governments treat the people they serve. The reader is a Utah resident, a reporter or a county official: intelligent, busy, not a specialist. Everything below is binding. If the author's draft breaks a rule in section 2, fix it and say what you changed. If a request would break a rule in section 5, say so instead of producing invalid output. Never add facts, figures, names or quotes the author did not supply or that are not in the records they gave you; mark anything uncertain with \`[CHECK: ...]\` so a person resolves it before publishing.
+You are helping write a long-form page for Utah Civic Compact (UCC), a Utah nonprofit. The site publishes investigations built on public records, statements, and policy positions on surveillance, privacy and how Utah governments treat the people they serve. The reader is a Utah resident, a reporter or a county official: intelligent, busy, not a specialist. Everything below is binding. If the author's draft breaks a rule in section 2, fix it and say what you changed. If a request would break a rule in section 5, say so instead of producing invalid output. When you return HTML, use the document frame and the site classes in section 6; they are the site's real stylesheet, and HTML without them renders as unstyled text on the live page. Never add facts, figures, names or quotes the author did not supply or that are not in the records they gave you; mark anything uncertain with \`[CHECK: ...]\` so a person resolves it before publishing.
 
 ## 2. Voice: how UCC writes, and what it never does
 
@@ -184,7 +411,7 @@ Return a **body fragment**: the content that goes inside the page's \`<main>\`. 
 
 - \`style="..."\` on any element, \`<style>\` blocks, \`<script>\`, \`<iframe>\`, \`<form>\`, \`<input>\`, \`<button>\`, \`<video>\`, \`<audio>\`, \`<object>\`, \`<embed>\`, \`<link>\`, \`<meta>\`. All removed on save.
 - \`onclick\` or any \`on*\` attribute; \`javascript:\` or \`data:\` URLs. Removed.
-- Classes that are not in section 6. They are stripped and reported, so they only make work.
+- Classes that are not in the site stylesheet (section 6 lists every one an author can use). Unknown classes are stripped and reported, so they only make work. No invented class names, no Tailwind or Bootstrap classes.
 - Markdown inside the HTML (\`**bold**\`, \`# heading\`). It is published literally.
 - Font tags, \`<center>\`, \`<font>\`, \`&nbsp;\` runs for spacing, \`<br>\` to make paragraphs. Use \`<p>\`.
 - \`<h1>\` more than once, or a heading level that skips. These block publishing.
@@ -208,54 +435,79 @@ ${tokensSection(coverageKeys)}
 
 ### Skeleton
 
-Everything a report needs, and nothing it does not. Replace the bracketed text.
+Everything a report needs, and nothing it does not, inside the site's document frame (section 6.1). Replace the bracketed text.
 
 \`\`\`html
-<h1>[The finding, as a headline]</h1>
-<p>[Lead: one to three sentences stating what the records show.]</p>
+<div class="subpage-hero">
+  <div class="section-label">[Category eyebrow, e.g. Surveillance investigation]</div>
+  <h1>[The finding, as a headline]</h1>
+  <p>[Lead: one to three sentences stating what the records show.]</p>
+</div>
 
-<h2>[Where the records came from]</h2>
-<p>[Who released what, under which law, on which date; what was withheld.]</p>
+<section class="section">
+  <div class="container">
 
-<h2>[First finding]</h2>
-<p>[Evidence, attributed.]</p>
-<blockquote>
-  <p>[Quoted passage.]</p>
-</blockquote>
-<p>[Who said it, where, when.]</p>
+    <h2>[Where the records came from]</h2>
+    <p>[Who released what, under which law, on which date; what was withheld.]</p>
 
-<h3>[Supporting detail]</h3>
-<table>
-  <caption>[What this table shows and its source]</caption>
-  <thead><tr><th>[Column]</th><th>[Column]</th></tr></thead>
-  <tbody>
-    <tr><td>[Value]</td><td>[Value]</td></tr>
-  </tbody>
-</table>
+    <h2>[First finding]</h2>
+    <p>[Evidence, attributed.]</p>
+    <blockquote>
+      <p>[Quoted passage.]</p>
+    </blockquote>
+    <p>[Who said it, where, when.]</p>
 
-<h2>[Second finding]</h2>
-<p>[...]</p>
+    <h3>[Supporting detail]</h3>
+    <table>
+      <caption>[What this table shows and its source]</caption>
+      <thead><tr><th>[Column]</th><th>[Column]</th></tr></thead>
+      <tbody>
+        <tr><td>[Value]</td><td>[Value]</td></tr>
+      </tbody>
+    </table>
 
-<h2>What the county did not answer</h2>
-<p>[...]</p>
+    <h2>[Second finding]</h2>
+    <p>[...]</p>
 
-<h2>What UCC recommends</h2>
-<p>[...]</p>
+    <h2>What the county did not answer</h2>
+    <p>[...]</p>
+
+    <h2>What UCC recommends</h2>
+    <p>[...]</p>
+
+  </div>
+</section>
 \`\`\`
 
-## 6. Styling: what is applied for you, and the classes you may use
+## 6. Styling: the site's stylesheet, and how a document uses it
 
-The editor styles a document; the HTML stays plain. Two mechanisms, in this order:
+A document's body is inserted between the site header and footer with no wrapper of its own, so the fragment carries its own structure. 6.1 gives the frame, 6.4 a full reference fragment showing the classes in use, 6.5 every class with its CSS, read from the live stylesheet when this file is generated. Use them to choose patterns that fit the content: a stats band for the key figures, a cream band to set a section apart, a card grid for parallel items. Keep the writing rules in section 2 regardless of layout; a stats band does not excuse a triplet.
 
-**Template rules** match plain tags by position and add classes on save. This is why section 5 asks for plain semantic HTML: the rules are written against that shape.
+### 6.1 Document frame
+
+1. **Hero:** \`<div class="subpage-hero">\` holding an optional \`<div class="section-label">\` eyebrow, the single \`<h1>\`, and one or two \`<p>\` for the lead. The hero styles its own \`<h1>\` and \`<p>\` (dark navy gradient, white display headline).
+2. **Body:** one or more \`<section class="section">\`, each wrapping a \`<div class="container">\` that holds the content. \`section\` gives the vertical padding, \`container\` the centred max width. Alternate \`<section class="section bg-cream">\` for a cream band when a part of the piece should sit apart (the data, the recommendations).
+3. Inside the container, plain \`<h2>\`, \`<h3>\`, \`<p>\`, \`<blockquote>\`, \`<table>\`, \`<figure>\` as section 5 describes. Add \`section-label\` and \`section-title\` to a section's eyebrow and heading when it should read as a site section rather than running prose; leave them off for ordinary report headings.
+
+### 6.2 Design tokens
+
+${designTokensSection(designTokens)}
+
+### 6.3 Template rules (added for you on save)
 
 ${rulesSection(rules)}
 
-**Style Kit classes** are the only classes an author may write into the HTML, and only where a specific look is wanted that the rules do not give (a callout, a utility spacing class, a cream band). When in doubt, leave the class off and say in a note to the editor what you wanted; they can add it in two clicks and it survives re-pasting. A class written into the HTML cannot be removed from the editor without re-pasting.
+### 6.4 Reference fragment: the classes in use
+
+${exampleSection(kit)}
+
+### 6.5 Classes you may use, with the CSS each applies
+
+Use these, and only these, in \`class="..."\`. "On" lists the elements the class was written for; another element works if the CSS makes sense there. Where the CSS line shows \`/* + */\`, a further rule (a media query or a combined selector) also sets what follows. Say in a note to the editor when you want a look that no class gives; do not improvise one.
 
 ${catalogSection(kit)}
 
-Classes that exist in the stylesheet but are not listed here are either site chrome (navigation, forms, the donation page) or undocumented. The editor can see every class on the admin's Styles page; an author should not use them.
+Classes that exist in the stylesheet but are not listed here are site chrome (navigation, footer, forms, the donation page, the homepage hero) or undocumented. The editor can see every class on the admin's Styles page; an author should not use them.
 
 ## 7. Before you hand it over
 
@@ -265,7 +517,7 @@ Classes that exist in the stylesheet but are not listed here are either site chr
 - [ ] Every figure, quote and name traces to a record the author supplied. Anything else is marked \`[CHECK: ...]\`.
 - [ ] Voice self-test (end of section 2) returns zero hits.
 - [ ] No image tags; \`[IMAGE: ...]\` notes with suggested alt text instead.
-- [ ] HTML route only: fragment only, allowed tags only, no inline styles, no unlisted classes, one code block.
+- [ ] HTML route only: fragment only, inside the document frame (6.1), allowed tags only, no inline styles, classes from 6.5 only (6.4 shows them in use), one code block.
 - [ ] Prose route only: saved as .docx (from Claude Docs, Word or Google Docs) or .md, ready for **Upload a file** in the admin.
 
 The admin page is ${SITE.replace('https://', 'https://admin.')} > All documents. The live site is ${SITE}.

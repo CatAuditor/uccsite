@@ -49,9 +49,10 @@ apps/admin/app/documents/         list (by category) + authoring-kit download
 apps/admin/app/documents/authoring-kit/route.js
                                   GET: the authoring kit as a .md download,
                                   rebuilt per request (any signed-in role)
-apps/admin/lib/authoring-kit.js   buildAuthoringKit({ kit, rules, coverageKeys })
+apps/admin/lib/authoring-kit.js   buildAuthoringKit({ kit, rules, coverageKeys, designTokens })
                                   → markdown: static voice/HTML/shape sections +
-                                  live Style Kit catalog + template rules + tokens
+                                  document frame + :root tokens + template rules +
+                                  Style Kit catalog with each class's CSS
 apps/admin/lib/convert-upload.mjs docxToHtml (mammoth), markdownToHtml (marked),
                                   finishHtml (image placeholders, line breaks)
 apps/admin/app/styles/            rules with match counts, foreign class map,
@@ -162,11 +163,41 @@ request by `lib/authoring-kit.js buildAuthoringKit` from
   SVG/chrome/presentational tags, forbidden constructs, a skeleton), and a
   hand-over checklist;
 - live data: the Style Kit catalog (`styleKitFor(siteCss)`; annotated
-  entries only, chrome groups such as Navigation/Forms/Donations hidden),
-  every `scope='template'` style rule ("write this tag, the editor adds this
-  class, do not add it yourself"), and the coverage keys that exist
+  entries only, with each entry's **CSS declarations** printed under it;
+  only the true chrome groups Navigation / Footer / Forms / Modal /
+  Donations / Hero are hidden, so the section patterns (Impact stats,
+  Mission & pillars, Policy positions, About, News & coverage) are offered
+  for reuse inside a body), the **design tokens** (the `:root` block of the
+  live stylesheet, extracted by the route with a regex and passed as
+  `designTokens`), every `scope='template'` style rule ("write this tag,
+  the editor adds this class; writing it yourself is allowed, the two
+  merge"), and the coverage keys that exist
   (`SELECT DISTINCT report_key FROM coverage_entries`) for the
   `{{coverage:KEY}}` token.
+
+Section 6 (2026-10-06) is written so the writing tool can hand back HTML
+that already looks like the site. A document body is composed bare between
+the header and footer partials (`templates/documents/report.html`, no
+`<main>`/container wrapper), so the kit's skeleton and "6.1 Document frame"
+tell the author to supply `div.subpage-hero` (eyebrow `section-label`,
+`h1`, lead `p`) and `section.section > div.container` (optionally
+`bg-cream`) themselves. 6.2 design tokens, 6.3 template rules, 6.4 a
+**reference fragment** (`EXAMPLE_HTML` in the module: one body that uses
+almost every offered class in the nesting the site uses, hero, mission
+strip, plain section, impact band, pillars grid on cream, issues card grid,
+about two-column, news section with a `{{video:...}}` card, one HTML
+comment per block naming the use case; sample content in the site's voice),
+6.5 the class catalog with CSS. `exampleSection` checks the fragment against
+the live kit: classes it uses that are no longer in the stylesheet are
+listed under "Not in the current stylesheet", offered classes it omits
+under "Offered in 6.5 but not shown above" (live: about-logo-img,
+about-logo-wrap, btn-donate, is-hidden, video-embed). The fragment passes
+`ingest()` with every stylesheet class known: nothing dropped, no
+warnings. Auto-generated annotation descriptions ("Used on <div> in index.
+Sets: ... (auto)") have the "Sets:" tail dropped since the CSS is printed
+anyway. Live size: ~42 k chars, 73 classes offered. Editing the fragment:
+keep every class in it real (the test kit flags unknown ones, the live kit
+will too), keep it dash-free, and re-run `apps/admin/test`.
 
 Dynamic strings are passed through `dash()` so the file never contains an
 em/en dash (the test asserts the whole file is dash-free; the kit must obey
