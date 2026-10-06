@@ -39,6 +39,22 @@ move to AWS. Nothing broken; every change shows in the admin.
 - An out-of-date copy of the code on Conner's laptop was renamed
   `uccsite-refactor-STALE-do-not-use`; publishing from it would have
   rolled the site back to 2 October.
+## 2026-10-06 — Jarom's title is now "Director of Policy" everywhere
+
+**What changed.** Jarom Gillins' role on the Team page and his author page
+read "Senior Policy Director". The title field had already been changed to
+"Director of Policy, Board of Directors" in the admin earlier today and
+published, but the first sentence of his bio still said "Senior Policy
+Director", so the Team page, the author page and the page descriptions
+search engines show were out of step. The bio now says "Director of Policy"
+too, the site was republished, and the copy of the team list kept in the
+code and the SEO plan were updated to match.
+
+**What editors do differently.** Nothing. The change shows in Team & Bios
+as a saved-and-published edit under Jarom's account.
+
+**Left to do.** Nothing on the site. The old wording on LinkedIn, X and
+press bylines is outside the site and is Jarom's to update.
 
 ## 2026-10-06 — The authoring kit now carries the site's styling
 

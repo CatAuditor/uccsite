@@ -35,14 +35,14 @@ May MIDA/Stratos item and a Utah Privacy Commission hearing notice on page 5.
    the name queries move.
 2. **Profile links both ways.** Each member: admin → Team & Bios → Public
    profile links (LinkedIn, X, personal/campaign site). Then put the author
-   page URL in those profiles' *website* field and the title "Senior Policy
-   Director, Utah Civic Compact" (or equivalent) in the headline. Two-way links
+   page URL in those profiles' *website* field and the title "Director of
+   Policy, Utah Civic Compact" (or equivalent) in the headline. Two-way links
    are what merge the entities.
 3. **Jarom's bio** — draft below. Lead with the UCC role and the ALPR work;
    the campaign becomes one sentence of history. Paste into Team & Bios when
    ready.
 4. **Press attribution.** When quoted, ask the reporter for "Jarom Gillins,
-   Senior Policy Director at Utah Civic Compact" with a link to
+   Director of Policy at Utah Civic Compact" with a link to
    utahciviccompact.org (ideally the author page or the report). One linked
    mention in Utah News Dispatch or KSL outweighs any on-page change.
 5. **Campaign site.** jaromforcongress.com is parked. Either point it (301) at
@@ -61,12 +61,12 @@ May MIDA/Stratos item and a Utah Privacy Commission hearing notice on page 5.
 
 ## Jarom Gillins — bio draft (edit here first, then paste into Team & Bios)
 
-Field: **Title / Role** — keep `Senior Policy Director, Board of Directors`.
+Field: **Title / Role** — keep `Director of Policy, Board of Directors`.
 
 Field: **Bio** (markdown; blank line = new paragraph):
 
 ```
-Jarom Gillins is Senior Policy Director at Utah Civic Compact and a member of its Board of Directors. He wrote the Compact's policy paper on Utah's license plate reader law, *If Weber County Followed the Law, How Did This Happen?*, which reads the Automatic License Plate Reader System Act against the Weber County–Flock Safety agreement and shows where the statute stops short of the system actually in use. He has spoken on surveillance and privacy before the Utah Privacy Commission.
+Jarom Gillins is Director of Policy at Utah Civic Compact and a member of its Board of Directors. He wrote the Compact's policy paper on Utah's license plate reader law, *If Weber County Followed the Law, How Did This Happen?*, which reads the Automatic License Plate Reader System Act against the Weber County–Flock Safety agreement and shows where the statute stops short of the system actually in use. He has spoken on surveillance and privacy before the Utah Privacy Commission.
 
 Jarom is a troubleshooter by trade and by temperament. A U.S. Army veteran, he has worked as an underwater welder and a wind turbine technician — jobs where you find the fault, understand why it happened, and fix it so it stays fixed. He brings the same method to policy: read the actual document, trace what it permits and what it fails to name, and propose the specific change that closes the gap.
 
@@ -91,4 +91,4 @@ Notes on the draft:
 
 ### One-line version (for press, social bios, the LinkedIn headline)
 
-> Jarom Gillins — Senior Policy Director, Utah Civic Compact. Army veteran and tradesman; author of the Compact's policy paper on Utah's license plate reader law.
+> Jarom Gillins — Director of Policy, Utah Civic Compact. Army veteran and tradesman; author of the Compact's policy paper on Utah's license plate reader law.
