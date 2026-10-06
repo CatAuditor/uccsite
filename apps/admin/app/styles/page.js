@@ -7,6 +7,7 @@ import { withDb } from '../../lib/data';
 import { loadSiteSources, styleKitFor, ruleMatchCounts, parsedDocuments } from '../../lib/documents';
 import { rootedTree } from '@uccsite/style-apply';
 import ActionForm from '../action-form';
+import RequestPublish from '../request-publish';
 import RuleForm from './rule-form';
 import { removeRule, mapForeignClass, unmapForeignClass } from '../documents/actions';
 
@@ -97,7 +98,7 @@ export default async function StylesPage() {
           <label htmlFor="templateKey">Template (blank = all)</label>
           <input type="text" id="templateKey" name="templateKey" list="template-keys" />
           <datalist id="template-keys">{TEMPLATE_KEYS.map(t => <option key={t} value={t} />)}</datalist>
-          <button type="submit">Save mapping</button>
+          <button type="submit">Save mapping</button><RequestPublish />
         </ActionForm>
       )}
 

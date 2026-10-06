@@ -180,3 +180,8 @@ select { padding: 8px; border: 1px solid #c9cdc6; font: inherit; width: 100%; ba
 .dev-notes article h3 { margin: 28px 0 6px; padding-top: 18px; border-top: 1px solid #e3e6e0; }
 .dev-notes article h2 { margin-top: 8px; }
 .dev-notes article code { background: #eef0ec; padding: 1px 4px; font-size: .9em; }
+/* "Request publish" beside a Save button (app/request-publish.js) */
+.request-publish { display: inline-flex; align-items: center; gap: 10px; margin-left: 8px; flex-wrap: wrap; }
+.request-publish .error, .request-publish .ok { margin: 0; padding: 6px 10px; }
+.media-alt .request-publish button, .picker-tools .request-publish button, .promote .request-publish button { margin-top: 8px; padding: 6px 12px; font-size: 12px; }
+.picker-tools .request-publish button { margin-top: 0; }

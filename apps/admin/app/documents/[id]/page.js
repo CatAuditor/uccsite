@@ -9,6 +9,7 @@ import { withDb } from '../../../lib/data';
 import { editorData } from '../../../lib/documents';
 import { STATUSES, TEMPLATE_KEYS } from '@uccsite/db/documents';
 import ActionForm from '../../action-form';
+import RequestPublish from '../../request-publish';
 import HtmlEditor from './html-editor';
 import StyleEditor from './style-editor';
 import { saveDocument, deleteDocument } from '../actions';
@@ -129,7 +130,7 @@ export default async function DocumentEditorPage({ params }) {
           </div>
         </fieldset>
 
-        {!readOnly && <button type="submit">Save document</button>}
+        {!readOnly && <><button type="submit">Save document</button><RequestPublish /></>}
       </ActionForm>
 
       <StyleEditor

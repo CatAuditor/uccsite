@@ -27,6 +27,10 @@ apps/admin/
   lib/publish.js           two-person publishing: request / approve / decline /
                            withdraw; the ONLY admin code that invokes PublishFn
   app/action-form.js       client form wrapper rendering that result
+  app/request-publish.js   "Request publish" button beside every Save button (client);
+                           calls app/publish-actions.js requestPublishInline
+  lib/notify.js            review-request email via SES (lib/notify-recipients.mjs:
+                           pure recipient list + body, tested)
   app/error.js             backstop error boundary
   lib/media.js             media library server helpers (docs/systems/media.md)
   lib/files.js             project files server helpers (docs/systems/files.md)
@@ -162,8 +166,18 @@ No post or update goes live on one person's say-so. `lib/publish.js` +
 
 1. **Request** (editor+): the dashboard lists the content audit rows since
    the last `succeeded`/`noop` publish run ("unpublished saves"); the
-   writer adds an optional note and submits. Refused if a request is
-   already pending or there is nothing to publish. Audit `publish.request`.
+   writer adds an optional note and submits — or presses **Request
+   publish** beside any Save button (`app/request-publish.js`, same
+   `requestPublish`, no note). Refused if a request is already pending or
+   there is nothing to publish. Audit `publish.request`. **Email (2026-10-05):**
+   after the commit, `lib/notify.js` mails the four admins (fixed list in
+   `lib/notify-recipients.mjs`, minus the requester) **only when the request
+   needs someone else** — an owner's request mails nobody since owners
+   approve their own. Off prod nothing is sent unless `PUBLISH_NOTIFY_TO`
+   (comma list) is set, so staging test editors never page real people. A
+   mail failure is logged (`[admin] publish notify SES error`) and never
+   fails the request; the success message tells the writer whether anyone
+   was emailed.
 2. **Review** (a DIFFERENT editor/owner — compared by `cognito:username`
    AND email — **or an owner reviewing their own request** since 2026-10-05;
    self-approvals are audited `publish.approve` with `selfApproved: true`):
@@ -289,15 +303,20 @@ missing file renders a notice, logged as `[admin] dev-notes unreadable: <code>`.
 `UCC_ENV, UCC_REGION, COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_DOMAIN,
 DSQL_ENDPOINT, PUBLISH_FUNCTION_NAME, MEDIA_BUCKET, SITE_BUCKET, PUBLIC_ORIGIN,
 APP_ORIGIN` (+ `SITE_SRC_ROOT` on Amplify). Missing →
-loud throw at first use. `UCC_ACCOUNT_ID` (local only, from the stack ARN):
+loud throw at first use. Optional: `PUBLISH_NOTIFY_TO` (comma list) overrides
+the publish-request email recipients — unset on prod (fixed list), set to the
+SES mailbox simulator to test on staging. `UCC_ACCOUNT_ID` (local only, from the stack ARN):
 when set, `lib/aws-account.js` calls STS once per process and refuses every
 DB use — and logs at boot via `instrumentation.js` — if the resolved
 credentials belong to another account (the "forgot AWS_PROFILE" failure,
 docs/error-handling/client-side-error/2026-09-13-admin-dev-wrong-aws-profile.md).
 Leave it unset on Amplify. AWS credentials: local = `AWS_PROFILE=uccsite`;
 Amplify Hosting = the app's SSR compute role (wire-up pending; it needs
-`dsql:DbConnectAdmin`, `lambda:InvokeFunction` on PublishFn, and
-`s3:PutObject/GetObject/DeleteObject` on the media bucket).
+`dsql:DbConnectAdmin`, `lambda:InvokeFunction` on PublishFn,
+`s3:PutObject/GetObject/DeleteObject` on the media bucket, and `ses:SendEmail`
+on the domain identity + `ucc-prod` configuration set, From pinned to
+hello@utahciviccompact.org — role `UccProdAdminCompute`, inline policy
+`admin-runtime`, hand-managed per docs/for-conner.md §8.3).
 
 ## Verified (2026-09-13, staging)
 
@@ -332,7 +351,9 @@ unchanged); second approve → "no longer pending".
 3. SSR compute role (App settings → IAM roles, trust `amplify.amazonaws.com`):
    `dsql:DbConnectAdmin` on the cluster, `lambda:InvokeFunction` on
    PublishFn, `s3:PutObject/GetObject/DeleteObject` on `<MediaBucketName>/*`,
-   `s3:GetObject` on `<SiteBucketName>/css/styles.css` (Style Kit), and on
+   `s3:GetObject` on `<SiteBucketName>/css/styles.css` (Style Kit),
+   `ses:SendEmail` on `identity/utahciviccompact.org` + `configuration-set/ucc-prod`
+   with `ses:FromAddress = hello@utahciviccompact.org` (publish-request email), and on
    the user pool: `cognito-idp:ListUsers, AdminGetUser, AdminListGroupsForUser,
    AdminCreateUser, AdminAddUserToGroup, AdminRemoveUserFromGroup,
    AdminDisableUser, AdminEnableUser, AdminResetUserPassword,

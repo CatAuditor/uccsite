@@ -12,6 +12,7 @@ import { sanitizeItems, CONFLICT_MESSAGE } from '../../lib/collection-save';
 import { runAction } from '../../lib/actions';
 import ListEditor from '../list-editor';
 import ActionForm from '../action-form';
+import RequestPublish from '../request-publish';
 import { draftHero, liveHero, HeroStatus } from '../../lib/hero-status';
 
 export const dynamic = 'force-dynamic';
@@ -89,7 +90,7 @@ export default async function HomepagePage() {
         <h2>Press strip</h2>
         <ListEditor fields={HOMEPAGE_PRESS_FIELDS} items={homepage.press || []}
           itemLabelField="headline" readOnly={readOnly} name="press" maxItems={3} />
-        {!readOnly && <button type="submit">Save Homepage</button>}
+        {!readOnly && <><button type="submit">Save Homepage</button><RequestPublish /></>}
       </ActionForm>
     </div>
   );

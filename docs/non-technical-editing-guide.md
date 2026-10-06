@@ -42,13 +42,16 @@ Every editor page has a **Save** button. Saving changes the database only;
 it is a draft. **Nobody can put something on the public site alone.**
 Going live takes two people:
 
-1. The writer opens **Publish & Status**. It lists every save since the
-   site last went live. They add a short note for the reviewer and press
-   **Request publish**.
+1. The writer presses **Request publish** — it sits beside every **Save**
+   button, or on **Publish & Status**, which lists every save since the
+   site last went live and takes an optional note for the reviewer. Save
+   first: the request covers what has been saved, not what is still in the
+   form. If the writer is not an owner, the other admins get an email
+   saying a request is waiting.
 2. **Any other editor or owner** opens the same page, reads the list and
    the note, and presses **Approve & publish** — or **Decline with notes**
-   (a note is required, so the writer knows what to fix). You cannot
-   approve your own request, owners included.
+   (a note is required, so the writer knows what to fix). Editors cannot
+   approve their own request; owners can.
 3. Approving renders every page from the database and pushes what changed;
    it takes about a minute and the page shows "Publishing…" then "Live".
 

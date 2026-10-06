@@ -18,6 +18,7 @@ import { HOMEPAGE_GROUPS } from '../../lib/collections';
 import { CONFLICT_MESSAGE } from '../../lib/collection-save';
 import { runAction } from '../../lib/actions';
 import ActionForm from '../action-form';
+import RequestPublish from '../request-publish';
 import { draftHero, liveHero, HeroStatus } from '../../lib/hero-status';
 
 export const dynamic = 'force-dynamic';
@@ -166,7 +167,7 @@ export default async function PetitionPage({ searchParams }) {
             );
           })}
         </fieldset>
-        <button type="submit">Save petition copy</button>
+        <button type="submit">Save petition copy</button><RequestPublish />
       </ActionForm>
       <p className="notice">
         Signed in as {session.email}. Not editable here: the payment modal's $10/$25/$50/$100 amounts and the

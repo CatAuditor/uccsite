@@ -9,6 +9,7 @@ import { loadCollectionItems, loadCollectionBaseline } from '../../lib/collectio
 import { mediaOptionsFor } from '../../lib/media';
 import { COLLECTIONS } from '../../lib/collections';
 import ActionForm from '../action-form';
+import RequestPublish from '../request-publish';
 import TotpSetup from './totp-setup';
 import { changeOwnPassword, turnOffTotp, removePasskey, saveOwnProfile } from './actions';
 
@@ -103,7 +104,7 @@ export default async function ProfilePage() {
           <label htmlFor="bio">Bio</label>
           <textarea id="bio" name="bio" defaultValue={me.bio || ''} rows={8} />
           <div className="hint">Supports **bold**, *italic*, [link text](https://url). Blank line = new paragraph.</div>
-          <button type="submit">Save my bio</button>
+          <button type="submit">Save my bio</button><RequestPublish />
         </ActionForm>
       ) : (
         <p className="notice">No team bio is linked to {session.email}. An editor can set your admin email on your entry in the Team editor; after that you can edit your bio and headshot here.</p>

@@ -6,6 +6,27 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-05 — "Request publish" beside every Save button, and an email when a request needs a reviewer
+
+Editors no longer have to walk over to Publish & Status to ask for a
+publish: every Save button in the admin now has a **Request publish**
+button next to it (collections, homepage, appeals, petition copy, settings,
+documents, style rules and mappings, redirects, media alt text, your own
+bio). It asks to publish everything saved so far — save first, then press
+it. The message that appears tells you what happens next.
+
+When the person asking is an **editor**, the other admins (Jarom, Conner,
+Clark, Kaden — minus whoever asked) get an email from
+hello@utahciviccompact.org saying a request is waiting, with the list of
+saves and a link to Publish & Status. When an **owner** asks, nobody is
+emailed: owners approve their own requests, so there is nothing for anyone
+else to do. The Publish & Status request form behaves the same way.
+
+- **Nothing to do** for editors or admins beyond using the new button.
+- Staging never emails real people; a developer can point it at a test
+  address if they need to see the email.
+- Technical detail: docs/systems/admin.md "Publishing" and docs/systems/email.md.
+
 ## 2026-10-05 — Email: all sending moved to Amazon SES (step 3 of 3)
 
 Every email the site sends now goes through Amazon SES: the welcome email

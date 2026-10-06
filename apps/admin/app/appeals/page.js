@@ -14,6 +14,7 @@ import { HOMEPAGE_GROUPS, APPEAL_SETTINGS_FIELDS } from '../../lib/collections';
 import { CONFLICT_MESSAGE } from '../../lib/collection-save';
 import { runAction } from '../../lib/actions';
 import ActionForm from '../action-form';
+import RequestPublish from '../request-publish';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,7 +112,7 @@ export default async function AppealsPage() {
             </div>
           ))}
         </fieldset>
-        {!readOnly && <button type="submit">Save appeals</button>}
+        {!readOnly && <><button type="submit">Save appeals</button><RequestPublish /></>}
       </ActionForm>
       <p className="notice">
         Not editable here: the "Donate" links in the nav and footer, the donate form's button, and the

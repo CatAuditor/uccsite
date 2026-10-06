@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { setOverrides, previewRule, saveRule } from '../actions';
+import RequestPublish from '../../request-publish';
 
 export default function StyleEditor({ documentId, rows, kit, undocumented, rules, preview, unstyledCount, readOnly, templateKey }) {
   const router = useRouter();
@@ -196,6 +197,7 @@ export default function StyleEditor({ documentId, rows, kit, undocumented, rules
               : <>Matches {promote.count} element{promote.count === 1 ? '' : 's'}: {promote.perDocument.map(d => `${d.slug} (${d.count})`).join(', ')}</>}
           </div>
           <button type="button" onClick={savePromote} disabled={pending || typeof promote.count !== 'number'}>Save rule</button>
+          <RequestPublish />
           <button type="button" onClick={() => setPromote(null)}>Cancel</button>
         </div>
       )}

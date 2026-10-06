@@ -8,6 +8,7 @@ import { ACCEPTED_MIMES, MAX_UPLOAD_BYTES } from '@uccsite/db/media';
 import Refresher from '../refresher';
 import Uploader from './uploader';
 import ActionForm from '../action-form';
+import RequestPublish from '../request-publish';
 import { saveAlt, removeAsset } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -62,7 +63,7 @@ export default async function MediaPage() {
                 <input type="text" id={`alt-${a.id}`} name="alt" defaultValue={a.alt}
                   placeholder="Describe the image for screen readers" disabled={readOnly} />
                 {!a.alt && <div className="hint media-warn">No alt text — not available to editors yet.</div>}
-                {!readOnly && <button type="submit">Save alt</button>}
+                {!readOnly && <><button type="submit">Save alt</button><RequestPublish /></>}
               </ActionForm>
               {!readOnly && (
                 <ActionForm action={removeAsset}>

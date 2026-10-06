@@ -8,6 +8,7 @@ import { mediaOptionsFor } from '../lib/media';
 import { runAction } from '../lib/actions';
 import ListEditor from './list-editor';
 import ActionForm from './action-form';
+import RequestPublish from './request-publish';
 
 export function makeCollectionPage(...keys) {
   return async function CollectionPage() {
@@ -55,7 +56,7 @@ export function makeCollectionPage(...keys) {
                   mediaOptions={mediaOptions}
                   sortable={Boolean(spec.nested || spec.sortable)}
                 />
-                {!readOnly && <button type="submit">Save {spec.title}</button>}
+                {!readOnly && <><button type="submit">Save {spec.title}</button><RequestPublish /></>}
               </ActionForm>
             </div>
           );

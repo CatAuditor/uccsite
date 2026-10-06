@@ -11,6 +11,7 @@ import { SETTINGS_FIELDS } from '../../lib/collections';
 import { runAction } from '../../lib/actions';
 import { CONFLICT_MESSAGE } from '../../lib/collection-save';
 import ActionForm from '../action-form';
+import RequestPublish from '../request-publish';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,7 +57,7 @@ export default async function SettingsPage() {
             <input type="text" id={key} name={key} defaultValue={settings[key] ?? ''} disabled={readOnly} />
           </div>
         ))}
-        {!readOnly && <button type="submit">Save</button>}
+        {!readOnly && <><button type="submit">Save</button><RequestPublish /></>}
       </ActionForm>
       <p className="notice">Save keeps this as a draft in the database. It goes live when a publish request is approved on Publish &amp; Status — nothing to rebuild by hand. Donation copy (including the download modal) is under Donation appeals.</p>
     </div>

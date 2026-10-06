@@ -5,6 +5,7 @@ import { listRedirects, STATUSES } from '@uccsite/db/redirects';
 import { requireSession } from '../../lib/auth';
 import { withDb } from '../../lib/data';
 import ActionForm from '../action-form';
+import RequestPublish from '../request-publish';
 import { saveRedirect, removeRedirect } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -71,7 +72,7 @@ export default async function RedirectsPage() {
             <label htmlFor="rd-note">Note</label>
             <input type="text" id="rd-note" name="note" placeholder="why this exists" />
             <label><input type="checkbox" name="active" value="1" defaultChecked /> active</label>
-            <button type="submit">Save redirect</button>
+            <button type="submit">Save redirect</button><RequestPublish />
           </ActionForm>
         </>
       )}

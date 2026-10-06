@@ -5,6 +5,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { previewRule, saveRule } from '../documents/actions';
+import RequestPublish from '../request-publish';
 
 export default function RuleForm({ templateKeys, documents, kit }) {
   const router = useRouter();
@@ -69,6 +70,7 @@ export default function RuleForm({ templateKeys, documents, kit }) {
         {count && (count.error ? <span className="error">{count.error}</span>
           : <span className="hint">{count.total} element{count.total === 1 ? '' : 's'}: {count.perDocument.map(d => `${d.slug} (${d.count})`).join(', ') || 'no documents'}</span>)}
         <button type="button" onClick={save} disabled={pending || !count || count.error}>Save rule</button>
+        <RequestPublish />
       </div>
     </div>
   );
