@@ -40,3 +40,13 @@ test('nothing archived = an empty index only; bad slugs and missing copies are e
   assert.equal(out.errors.length, 2);
   assert.deepEqual(Object.keys(out.files), ['newsletters.html']);
 });
+
+test('every sitemap entry has a content list and a valid ISO lastmodAt (the publish pipeline needs both)', () => {
+  const out = buildNewsletterArchive({ newsletters: [{ slug: 'ok', subject: 's', webHtml: '<p>', sentAt: 'not a date' }], shell, partials, settings, siteUrl: 'x' });
+  for (const p of out.pages) {
+    assert.deepEqual(p.content, []);
+    assert.equal(new Date(p.lastmodAt).toISOString(), p.lastmodAt);
+  }
+  const empty = buildNewsletterArchive({ newsletters: [], shell, partials, settings, siteUrl: 'x' });
+  assert.equal(new Date(empty.pages[0].lastmodAt).toISOString(), empty.pages[0].lastmodAt);
+});

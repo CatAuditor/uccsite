@@ -13,6 +13,10 @@ const { seoBlock } = require('./documents');
 const CSS_LINK = '<link rel="stylesheet" href="/css/newsletters.css" />';
 const attr = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,99}$/;
+// Sitemap entries must carry a VALID lastmodAt: buildSite's lastmod falls
+// back to iterating page.content when it is missing, and makeSitemap calls
+// toISOString on it (2026-10-06 publish failure "page.content is not iterable").
+const validIso = (iso) => (iso && !Number.isNaN(new Date(iso).getTime()) ? new Date(iso).toISOString() : new Date().toISOString());
 
 function dateLabel(iso) {
   const d = new Date(iso);
@@ -46,7 +50,7 @@ ${n.webHtml}
 <p class="nl-join"><a class="btn" href="/#join">Get the next one by email</a></p>
 </article></main>`;
     files[`${slug}.html`] = render(shell, data(seo, body), partials, fail);
-    pages.push({ template: `${slug}.html`, priority: '0.5', sitemap: true, lastmodAt: n.sentAt });
+    pages.push({ template: `${slug}.html`, content: [], priority: '0.5', sitemap: true, lastmodAt: validIso(n.sentAt) });
     items.push(`<li><a href="/${slug}">${attr(n.subject || 'Newsletter')}</a><span class="nl-date">${attr(dateLabel(n.sentAt))}</span>${n.preheader ? `<p>${attr(n.preheader)}</p>` : ''}</li>`);
   }
   const seo = seoBlock({ slug: 'newsletters', title: 'Newsletters', metaDescription: 'Every newsletter Utah Civic Compact has sent — investigations, filings and what comes next.' }, settings, siteUrl);
@@ -57,7 +61,7 @@ ${n.webHtml}
   files['newsletters.html'] = render(shell, data(seo, `<main class="nl-page"><h1>Newsletters</h1>
 <p class="nl-intro">What we send to the Compact, newest first. <a href="/#join">Join</a> to get the next one.</p>
 ${list}</main>`), partials, fail);
-  pages.push({ template: 'newsletters.html', priority: '0.6', sitemap: true, lastmodAt: newsletters[0]?.sentAt });
+  pages.push({ template: 'newsletters.html', content: [], priority: '0.6', sitemap: true, lastmodAt: validIso(newsletters[0]?.sentAt) });
   return { files, pages, errors };
 }
 
