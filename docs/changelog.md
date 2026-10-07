@@ -14,6 +14,26 @@ of each push.
 
 **Open P1 at push:** unchanged.
 
+## v0.21.3 — 2026-10-06 (branch `refactor`) — Sharing: petition preview title from the form title; navy default share image
+
+**Site / sharing** (`packages/render/site.js`, `packages/render/documents.js`, `templates/*.html`,
+`assets/share-default.png`; commit 11d4e74)
+- Fix: /petition's `<title>`, `og:title` and `twitter:title` were hard-coded "Sign the Petition",
+  so the admin's **Form title** never reached link previews. `derivePetitionShare` now sets
+  `share.page_title` = `form_title` (tags stripped, blank = "Sign the petition") + " | Utah Civic
+  Compact"; the template renders it, keeping the old text as the petition-off fallback.
+- Fix: `/UCC.png` (transparent) let iMessage/Facebook/X paint their own background behind the
+  logo. New `assets/share-default.png` — white lockup on navy `#1B2F4E`, 1200×630, logo inside
+  the centre square — is the default `og:image`/`twitter:image` for the petition (card now always
+  `summary_large_image`), every other template (card type unchanged), and the Documents renderer
+  (`DEFAULT_OG_IMAGE`). `UCC.png` is still shipped (homepage about image, JSON-LD logo).
+- Admin hints: `form_title` (also the page/preview title), `share_image`, document `ogImage`.
+- Tests: `petition-share.test.mjs` — default image/card, `page_title` derivation (27 render tests pass).
+- Deploy: templates/assets ship via `cdk deploy UccProd` then a prod publish (see
+  docs/systems/publish-pipeline.md); done in this session — see the next entry if any.
+
+Open P1 at push: unchanged from v0.21.2.
+
 ## v0.21.2 — 2026-10-06 (branch `refactor`) — Users: reset works for invited users; remove a user
 
 **Admin / users** (`apps/admin/app/users/{page,actions}.js`, `apps/admin/lib/account.js`; commit 4434b26)
