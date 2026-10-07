@@ -13,6 +13,7 @@ import {
 } from '@uccsite/db/documents';
 import { loadSettings, list } from '@uccsite/db/content';
 import { config } from './config';
+import { listProjects } from './files';
 
 let s3 = null;
 const getS3 = () => (s3 ??= new S3Client({ region: config.region }));
@@ -100,6 +101,7 @@ export async function editorData(client, id) {
   const overrides = await listOverrides(client, id);
   const foreignClassMap = await loadForeignClassMap(client, doc.templateKey);
   const settings = await loadSettings(client);
+  const projects = await listProjects(client); // the Project chooser (docs/systems/projects.md "Nesting")
   const sources = await loadSiteSources();
   const kit = styleKitFor(sources.siteCss, doc.pageCss);
   const docRules = compose.rulesFor(doc, rules);
@@ -133,7 +135,7 @@ export async function editorData(client, id) {
       .replace('</body>', () => `${PREVIEW_SCRIPT}</body>`);
   }
   return {
-    doc, rules: docRules, allRules: rules, overrides, orphans, kit, rows, preview,
+    doc, rules: docRules, allRules: rules, overrides, orphans, kit, rows, preview, projects,
     unstyledCount: rows.filter(r => r.unstyled).length,
     foreignClassMap,
     siteCssDrift: siteCssDrift(sources),

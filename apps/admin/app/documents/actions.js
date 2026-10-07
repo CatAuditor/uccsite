@@ -40,13 +40,15 @@ export async function createDocument(prevState, formData) {
     const title = str(formData, 'title', 200);
     const slug = str(formData, 'slug', 80).toLowerCase();
     const category = str(formData, 'category', 60) || 'Reports';
+    const projectSlug = str(formData, 'projectSlug', 80);
+    if (projectSlug && !SLUG_RE.test(projectSlug)) throw new Error('Bad project');
     if (!title) throw new Error('Title is required');
     if (!SLUG_RE.test(slug)) throw new Error('Slug must be lowercase letters, digits and dashes');
     if (RESERVED_SLUGS.has(slug)) throw new Error(`"${slug}" is a fixed page or reserved path`);
     await withWriteTx(async (client) => {
       if (await getDocument(client, { slug })) throw new Error(`A document with slug "${slug}" already exists`);
-      newId = await upsertDocument(client, { title, slug, category, templateKey: 'report', status: 'draft', sortOrder: 0, bodyHtmlRaw: '', pageCss: '' });
-      await recordChange(client, { actor: s.email, action: 'document.create', entityType: 'document', entityId: newId, diff: { slug, title } });
+      newId = await upsertDocument(client, { title, slug, category, projectSlug, templateKey: 'report', status: 'draft', sortOrder: 0, bodyHtmlRaw: '', pageCss: '' });
+      await recordChange(client, { actor: s.email, action: 'document.create', entityType: 'document', entityId: newId, diff: { slug, title, project: projectSlug } });
     });
   });
   if (result.ok && newId) redirect(`/documents/${newId}`);
@@ -90,6 +92,7 @@ export async function saveDocument(prevState, formData) {
       const next = {
         ...current,
         title: str(formData, 'title', 200), slug, category: str(formData, 'category', 60), author: str(formData, 'author', 120), templateKey, status,
+        projectSlug: str(formData, 'projectSlug', 80), // projects.slug soft link (docs/systems/projects.md "Nesting")
         sortOrder: Number(str(formData, 'sortOrder', 10) || 0),
         bodyHtmlRaw: String(formData.get('bodyHtmlRaw') ?? ''),
         pageCss: String(formData.get('pageCss') ?? ''),
@@ -101,6 +104,7 @@ export async function saveDocument(prevState, formData) {
         jsonldType: str(formData, 'jsonldType', 60), jsonldOverrides, allowScripts,
         sitemapPriority: str(formData, 'sitemapPriority', 5),
       };
+      if (next.projectSlug && !SLUG_RE.test(next.projectSlug)) throw new Error('Bad project');
       if (next.sitemapPriority && !/^(0(\.\d)?|1(\.0)?)$/.test(next.sitemapPriority)) {
         throw new Error('Sitemap priority must be 0.0–1.0 (e.g. 0.7) or blank');
       }

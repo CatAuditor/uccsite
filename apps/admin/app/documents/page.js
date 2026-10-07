@@ -2,6 +2,8 @@
 // with status, live state and the last publish error; plus "new document".
 import Link from 'next/link';
 import { listDocuments } from '@uccsite/db/documents';
+import { projectOf } from '@uccsite/render';
+import { listProjects } from '../../lib/files';
 import { requireSession } from '../../lib/auth';
 import { withDb } from '../../lib/data';
 import ActionForm from '../action-form';
@@ -11,19 +13,26 @@ export const dynamic = 'force-dynamic';
 
 export default async function DocumentsPage({ searchParams }) {
   const session = await requireSession();
-  const { category, status } = await searchParams;
-  const everything = await withDb((client) => listDocuments(client));
+  const { category, status, project } = await searchParams;
+  // Sequential: one pg Client cannot run two queries at once.
+  const { everything, projects } = await withDb(async (client) => ({ everything: await listDocuments(client), projects: await listProjects(client) }));
+  // Nesting (docs/systems/projects.md): a document's project is its Project
+  // field, or the project whose button opens the page.
+  const projectFor = (d) => projectOf(d, projects);
+  const projectName = projects.find(p => p.slug === project)?.name || project;
   // Archived documents are off the site; they live under ?status=archived only.
   const showArchived = status === 'archived';
   const archivedCount = everything.filter(d => d.status === 'archived').length;
   const all = everything.filter(d => (d.status === 'archived') === showArchived);
   const categories = [...new Set(everything.filter(d => d.status !== 'archived').map(d => d.category || 'Uncategorized'))];
-  const docs = category ? all.filter(d => (d.category || 'Uncategorized') === category) : all;
+  const byCategory = category ? all.filter(d => (d.category || 'Uncategorized') === category) : all;
+  const docs = project ? byCategory.filter(d => projectFor(d)?.slug === project) : byCategory;
+  const projectCounts = new Map(projects.map(p => [p.slug, all.filter(d => projectFor(d) === p).length]));
   const readOnly = session.role === 'viewer';
 
   return (
     <div>
-      <h1>{showArchived ? 'Archived documents' : category ? category : 'Long-form Documents'}</h1>
+      <h1>{showArchived ? 'Archived documents' : project ? `${projectName} — documents` : category ? category : 'Long-form Documents'}</h1>
       {showArchived && (
         <p className="notice">
           These are off the site: not rendered, listed or in the sitemap, and each address answers &quot;410 Gone&quot; once the
@@ -48,14 +57,22 @@ export default async function DocumentsPage({ searchParams }) {
         ))}{category && <> · <Link href="/documents">all</Link></>}
         {archivedCount > 0 && !showArchived && <> · <Link href="/documents?status=archived">Archived ({archivedCount})</Link></>}
       </p>
+      {projects.length > 0 && (
+        <p className="notice">
+          By project: {projects.map((p, i) => (
+            <span key={p.slug}>{i ? ' · ' : ''}<Link href={`/documents?project=${encodeURIComponent(p.slug)}`}>{p.name} ({projectCounts.get(p.slug) || 0})</Link></span>
+          ))}{project && <> · <Link href="/documents">all</Link></>}. A document's project is set in its editor; a project's own button page counts automatically.
+        </p>
+      )}
       <table>
-        <thead><tr><th>Title</th><th>Slug</th><th>Category</th><th>Status</th><th>Live</th><th>Updated</th></tr></thead>
+        <thead><tr><th>Title</th><th>Slug</th><th>Category</th><th>Project</th><th>Status</th><th>Live</th><th>Updated</th></tr></thead>
         <tbody>
           {docs.map((d) => (
             <tr key={d.id}>
               <td><Link href={`/documents/${d.id}`}>{d.title}</Link></td>
               <td><code>/{d.slug}</code></td>
               <td>{d.category}</td>
+              <td>{(() => { const p = projectFor(d); return !p ? '' : d.projectSlug ? p.name : <span title="Via the project's button, which opens this page">{p.name} *</span>; })()}</td>
               <td className={d.status === 'published' ? 'status-succeeded' : d.status === 'archived' ? 'status-failed' : 'status-noop'}>{d.status}</td>
               <td>
                 {d.lastPublishError ? <span className="status-failed" title={d.lastPublishError}>publish error</span>
@@ -66,7 +83,7 @@ export default async function DocumentsPage({ searchParams }) {
               <td>{d.updatedAt?.slice(0, 16).replace('T', ' ')}</td>
             </tr>
           ))}
-          {!docs.length && <tr><td colSpan="6">No documents{category ? ' in this category' : ''}.</td></tr>}
+          {!docs.length && <tr><td colSpan="7">No documents{project ? ' under this project' : category ? ' in this category' : ''}.</td></tr>}
         </tbody>
       </table>
 
@@ -82,6 +99,12 @@ export default async function DocumentsPage({ searchParams }) {
             <label htmlFor="new-category">Category</label>
             <input type="text" id="new-category" name="category" list="doc-categories" defaultValue="Reports" />
             <datalist id="doc-categories">{categories.map(c => <option key={c} value={c} />)}</datalist>
+            <label htmlFor="new-project">Project</label>
+            <select id="new-project" name="projectSlug" defaultValue={project || ''}>
+              <option value="">— none —</option>
+              {projects.map(p => <option key={p.slug} value={p.slug}>{p.name}</option>)}
+            </select>
+            <div className="hint">Optional. Lists the page under that project on /projects; change it any time in the editor.</div>
             <button type="submit">Create draft</button>
           </ActionForm>
         </>

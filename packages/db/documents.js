@@ -7,7 +7,7 @@ const { withRetry } = require('./index');
 // column → object key. Every editable column is here; adding one is a
 // migration (content-schema.js) + an entry here + the editor field.
 const DOCUMENT_FIELDS = {
-  slug: 'slug', title: 'title', category: 'category', author: 'author', template_key: 'templateKey',
+  slug: 'slug', title: 'title', category: 'category', author: 'author', project_slug: 'projectSlug', template_key: 'templateKey',
   status: 'status', sort_order: 'sortOrder',
   body_html_raw: 'bodyHtmlRaw', body_html_normalized: 'bodyHtmlNormalized', ingest_report: 'ingestReport',
   page_css: 'pageCss',

@@ -54,13 +54,16 @@ function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl, pro
     foreignClassMaps,
     coverage: withColorClasses(content).content.coverage, // badge_class for the strips
     authors: authorIndex(content.team?.members, siteUrl), // Person @id per team member (author pages)
+    projects: content.projects?.projects || [], // "part of <project>" bar (packages/render/projects.js)
   });
 
   // Author pages list every published Document whose `author` is the member
-  // (packages/render/site.js deriveTeam reads content.documents_index). Date
+  // (packages/render/site.js deriveTeam reads content.documents_index); the
+  // projects page nests each one under its project (packages/render/projects.js). Date
   // is the JSON-LD override's datePublished when set, else the publish date.
   const documentsIndex = bundle.documents.map(d => ({
     slug: d.slug, title: d.title, author: d.author || '', category: d.category || '', summary: d.metaDescription || '',
+    projectSlug: d.projectSlug || '', // nests the document under its project on /projects (deriveProjectDocuments)
     date: (d.jsonldOverrides && d.jsonldOverrides.datePublished) || (d.publishedAt ? String(d.publishedAt).slice(0, 10) : ''),
   }));
 

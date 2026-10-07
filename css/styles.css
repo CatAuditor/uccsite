@@ -2478,3 +2478,24 @@ input, textarea, select { font: inherit; }
    @group Forms
    @desc Red asterisk marking a required field. */
 .req-star { color: var(--red); }
+
+/* Document → project link bar (templates/documents/report.html; docs/systems/projects.md "Nesting") */
+/* @class doc-breadcrumb
+   @label Project link bar
+   @applies nav
+   @group Navigation
+   @desc Developer-owned strip under a Document that links back to its project on /projects. */
+.doc-breadcrumb {
+  background: var(--cream);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  padding: 20px 48px;
+  font-size: 14px;
+  color: var(--gray-600);
+}
+.doc-breadcrumb a {
+  color: var(--navy-dark);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 768px) { .doc-breadcrumb { padding: 16px 24px; } }

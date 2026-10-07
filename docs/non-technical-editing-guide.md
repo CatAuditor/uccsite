@@ -151,6 +151,12 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
   **Restore as draft** to bring it back (then publish it again as usual).
   Prefer Archive over Delete for anything that has ever been live.
 - Re-pasting a revised version keeps the styling you applied.
+- **Project**: pick the project a page belongs to and it is listed under
+  that project's block on the site's Projects page, with a "This page is
+  part of …" link at the foot of the page back to the project. The page a
+  project's own button opens counts automatically. On All documents, the
+  "By project" line filters the list, and the Projects page links to each
+  project's documents and files.
 
 ### Operations
 - **Redirects** — when a page moves or is retired, send the old address to

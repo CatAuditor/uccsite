@@ -39,9 +39,13 @@ packages/db/redirects.js          kvsEntries(rows, { goneSlugs }) → redirect +
 infra/cdk/cf-fn/viewer-request.js edge: KVS {"status":410} → 410 Gone ("Archiving")
 packages/render/documents.js      composeDocument / buildDocuments: ingest →
                                   applyStyles → stripNids → tokens → shell; SEO
-                                  block + JSON-LD generation; pageCssKey
+                                  block + JSON-LD generation; pageCssKey;
+                                  project_name/project_href for the shell's
+                                  "part of <project>" bar (projects.md "Nesting")
+packages/render/projects.js       projectOf — which project a document is under
 templates/documents/report.html   the 'report' shell (developer-owned head/body
-                                  wrapper; header/footer partials carry <main>)
+                                  wrapper; header/footer partials carry <main>;
+                                  .doc-breadcrumb project bar under the body)
 templates/partials/coverage-strip.html  rendered by the {{coverage:key}} token
 packages/html-ingest              §5 sanitize/nids/partition/a11y (allowlist
                                   widened: docs/decisions/ingest-allowlist-widening.md)
@@ -119,6 +123,11 @@ cannot wedge publishing.
 
 ## Admin editor
 
+- **Project** (`project_slug`, select): the project the page is nested under
+  (docs/systems/projects.md "Nesting") — listed under that project's block on
+  /projects and linked back from the foot of the page. Blank = the project
+  whose button opens this page, if any, else none. Also on the New document
+  form (defaulted from the list's `?project=` filter).
 - **Save** (`saveDocument`): one transaction — baseline (`updated_at`) lost-
   update check, slug uniqueness/reserved check, canonical on-site / og:image
   https / sitemap priority validation, ingest with the template's
@@ -386,7 +395,8 @@ are read; default = monorepo root from `apps/admin`; Amplify copies them to
 
 ## Data
 
-`documents` columns: see content-schema.js. Nothing personal. Revisions for
+`documents` columns: see content-schema.js (`project_slug` added 2026-10-06,
+soft link to `projects.slug`). Nothing personal. Revisions for
 `entity_type='document'` carry the full raw body (§9) — the 20-per-entity
 prune keeps them bounded.
 

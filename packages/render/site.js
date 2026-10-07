@@ -158,6 +158,7 @@ function withColorClasses(content) {
 }
 
 const { parseFreeDate } = require('./dates');
+const { deriveProjectDocuments } = require('./projects');
 
 // deriveProjectFilters(content) → content with project_statuses /
 // project_regions (distinct, in first-seen order) and per-project date_ts
@@ -357,7 +358,7 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
   if (errors.length) return { files: {}, errors };
 
   const colored = withColorClasses(content);
-  const teamed = deriveTeam(deriveProjectFiles(deriveProjectFilters(derivePetitionShare(deriveHomepage(colored.content), siteUrl))), siteUrl);
+  const teamed = deriveTeam(deriveProjectDocuments(deriveProjectFiles(deriveProjectFilters(derivePetitionShare(deriveHomepage(colored.content), siteUrl)))), siteUrl);
   const authors = authorIndex(teamed.team?.members || [], siteUrl);
   // Wrapped like every content file ({ statements: { statements: [...] } }): a
   // page's data merges each content object's keys, so the template reads writing.items.

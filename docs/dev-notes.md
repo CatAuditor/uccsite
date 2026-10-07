@@ -6,6 +6,28 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — Projects now link to the documents under them, and back
+
+Reports, complaints and other long-form pages that belong to a project were
+only reachable through the project's one button, and the admin had no way to
+see which pages or files went with which project. Now a project is the parent
+of its pages:
+
+- **On the site**, each project's block on the Projects page lists the
+  documents under it (a "Documents" list above "Files"), and every one of
+  those pages ends with "This page is part of <project> · All projects",
+  which jumps back to that project's block.
+- **In the admin**, a document has a **Project** field (in its editor and on
+  the New document form). The page a project's own button opens counts as
+  that project's automatically, so the existing reports are already nested
+  without anyone doing anything. All documents has a Project column and a
+  "By project" filter line; the Projects page starts with each project's
+  Documents, Files and on-the-site links.
+
+What to do: nothing for the existing reports. For a new page that belongs to
+a project, pick the project in the editor. The site shows the lists after the
+next approved publish.
+
 ## 2026-10-06 — Mailing list: see who is still subscribed, remove people, search and filter
 
 The Mailing list page used to show only the people an email would reach, and

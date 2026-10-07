@@ -34,11 +34,13 @@ function assertId(id) {
   return String(id);
 }
 
-// listProjects(client) → [{ slug, name }] in site order, for the project
-// chooser and the move/upload selects.
+// listProjects(client) → [{ slug, name, ctaUrl }] in site order, for the
+// project choosers (files, documents) and the move/upload selects. ctaUrl lets
+// the Documents pages show the project a page belongs to through the
+// project's button (packages/render/projects.js projectOf).
 export async function listProjects(client) {
-  const res = await client.query(`SELECT slug, name FROM projects WHERE slug IS NOT NULL AND slug <> '' ORDER BY sort_order`);
-  return res.rows.map(r => ({ slug: r.slug, name: r.name || r.slug }));
+  const res = await client.query(`SELECT slug, name, cta_url FROM projects WHERE slug IS NOT NULL AND slug <> '' ORDER BY sort_order`);
+  return res.rows.map(r => ({ slug: r.slug, name: r.name || r.slug, ctaUrl: r.cta_url || '' }));
 }
 
 // listFiles(client) → every row newest first, each with downloadUrl

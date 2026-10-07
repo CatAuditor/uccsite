@@ -61,7 +61,7 @@
 
     <div id="project-list">
     {{#projects}}
-    <div class="project-block" data-name="{{name}}" data-status="{{status_key}}" data-region="{{region_key}}" data-date="{{date_ts}}">
+    <div class="project-block" id="{{anchor}}" data-name="{{name}}" data-status="{{status_key}}" data-region="{{region_key}}" data-date="{{date_ts}}">
       <div class="project-block-inner">
 
         <div class="project-meta-row">
@@ -77,6 +77,16 @@
         <div class="project-cta">
           <a href="{{cta_url}}" class="btn btn-primary">{{cta_text}}</a>
         </div>
+
+        {{#documents.length}}<div class="project-media-label">Documents</div>
+        <ul class="project-files">
+          {{#documents}}
+          <li class="project-file">
+            <a href="{{url}}">{{title}}</a>{{#category}}<span class="project-file-meta">{{category}}</span>{{/category}}
+            {{#summary}}<div class="project-file-note">{{summary}}</div>{{/summary}}
+          </li>
+          {{/documents}}
+        </ul>{{/documents.length}}
 
         {{#files.length}}<div class="project-media-label">Files</div>
         <ul class="project-files">

@@ -21,16 +21,21 @@ apps/admin/lib/collection-save.js  sanitizeItems recurses into list fields;
                                 loadProjects/replaceProjects for nested specs
 apps/admin/app/list-editor.js   recursive editor (nested lists inside an item),
                                 top-level filter box, Sort A–Z / newest first
-apps/admin/app/projects/page.js makeCollectionPage('projects')
 apps/admin/app/revisions/page.js  restore of a projects snapshot → replaceProjects
+packages/render/projects.js     projectOf(doc, projects), projectAnchor(slug),
+                                deriveProjectDocuments (see "Nesting")
 packages/render/site.js         deriveProjectFilters: project_statuses,
                                 project_regions (distinct, first-seen order),
                                 date_ts per project (Date.parse of the free-text
                                 date; '' when unparseable)
 templates/projects.html         filter/sort controls (hidden until JS runs),
-                                data-name/status/region/date on each block;
-                                {{#files}} list of published project files
-                                (docs/systems/files.md — DB render only)
+                                data-name/status/region/date on each block,
+                                id="project-<slug>" (the anchor Documents link
+                                back to); {{#documents}} nested Documents and
+                                {{#files}} published project files (both DB
+                                render only — docs/systems/files.md)
+apps/admin/app/projects/page.js per-project links (Documents / Files / on the
+                                site) above makeCollectionPage('projects')
 js/projects.js                  client-side filter (status, region) + sort
                                 (featured order = admin order, newest, A–Z)
 css/pages/projects.css          control styling
@@ -52,6 +57,48 @@ dropped on save. `PROJECT_CHILDREN` in packages/db/content.js is the single
 mapping of child list → table; the collections drift guard asserts the
 editor's list fields equal it and every child field matches `FIELD_MAPS`.
 
+## Nesting (2026-10-06)
+
+A project is the parent of its Documents and its published files, and the
+site and the admin both let a reader move between them.
+
+- **Which project a Document belongs to** — `packages/render/projects.js`
+  `projectOf(doc, projects)`: the document's `project_slug` (a soft link
+  to `projects.slug`, like `project_files.project_slug`; no FK because
+  projects are re-inserted with new ids on every save) or, when that is
+  blank, the project whose `cta_url` is `/<slug>` or `/<slug>.html`. The
+  fallback is what nests the migrated reports with no backfill, and it means
+  the page a project's button opens can never be unlinked from it. An
+  orphan `project_slug` (project deleted or renamed) nests nowhere.
+- **Site, /projects** — `deriveProjectDocuments` (in the buildSite derive
+  chain after `deriveProjectFiles`) gives every project `anchor`
+  (`project-<slug>`, the block's id) and `documents`: the published
+  Documents under it from `content.documents_index` (render-db.js adds
+  `projectSlug` to each entry), minus the one the CTA already opens, as
+  `{ title, url: /<slug>, category, summary }` in document list order. The
+  template renders them as a "Documents" list above "Files" (same
+  `.project-file` styling). The git/local build has no index, so the list
+  is empty there.
+- **Site, the Document page** — `composeDocument` takes `projects` and sets
+  `project_name` / `project_href` (`/projects#project-<slug>`); the report
+  shell renders a `<nav class="doc-breadcrumb">` "This page is part of
+  <project> · All projects" bar under the body (above the footer — the hero
+  sits under the fixed nav, so a bar above it would be hidden). CSS in
+  `css/styles.css` (Style Kit group Navigation, so the authoring kit does
+  not offer it). Newsletters use the same shell with no project fields, so
+  no bar.
+- **Admin** — the document editor's **Project** select (none / each project
+  by name; the blank option says "<name> (via its button)" when the fallback
+  applies; an orphan slug is kept as an extra option); the Documents list
+  has a Project column (`*` = via the button), a "By project" filter line
+  (`?project=<slug>`), and the New document form takes a project (defaulted
+  from the filter); the Projects page lists, above the editor, each
+  project's Documents (count, → `/documents?project=`), Files (count,
+  → `/files?project=`) and its block on the site. `listProjects` in
+  `apps/admin/lib/files.js` now carries `ctaUrl` for the fallback.
+- No per-project detail page: the project's block on /projects (its anchor)
+  is the hub. Tests: `packages/render/test/projects.test.mjs`.
+
 ## Site behaviour
 
 Without JavaScript the page is the plain featured-order list (controls stay
@@ -70,6 +117,6 @@ state serialized into the `payload` hidden input, and saves log through
 ## Status
 
 Built 2026-09-13; staging published, parity OK. Published project files
-(admin Files page) list under each block since 2026-09-13. Not yet:
-per-project detail pages (projects link to their report Document via
-`cta_url`).
+(admin Files page) list under each block since 2026-09-13; nested Documents
+since 2026-10-06 ("Nesting"). Not yet: per-project detail pages (projects
+link to their report Document via `cta_url`; the block anchor is the hub).

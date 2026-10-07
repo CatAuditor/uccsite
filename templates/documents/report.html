@@ -16,7 +16,8 @@
 <body>
 {{> header}}
 {{{body}}}
-{{> footer}}
+{{#project_href}}<nav class="doc-breadcrumb" aria-label="Project">This page is part of <a href="{{project_href}}">{{project_name}}</a> · <a href="/projects">All projects</a></nav>
+{{/project_href}}{{> footer}}
   <script src="/js/main.js"></script>
 </body>
 </html>

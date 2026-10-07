@@ -14,6 +14,7 @@ const { applyStyles } = require('@uccsite/style-apply');
 const { parseStyleKit, classNames } = require('@uccsite/style-kit');
 const { render } = require('./engine');
 const { navFields } = require('./navigation');
+const { projectOf, projectAnchor } = require('./projects');
 
 const TEMPLATE_KEYS = ['report'];
 const DEFAULT_OG_IMAGE = '/assets/share-default.png'; // logo on navy (transparent UCC.png let apps paint their own background)
@@ -136,7 +137,9 @@ function overridesFor(doc, overrides) {
 
 // composeDocument({ doc, shell, partials, settings, siteUrl, siteCss, rules,
 //   overrides, foreignClassMap, coverage }) → { html, cssKey, css, ingestResult, errors }
-function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss = '', rules = [], overrides = [], foreignClassMap = {}, coverage = {}, authors = {} }) {
+// projects: content.projects.projects — the document's project (projects.js
+// projectOf) becomes the "part of" bar under the body (templates/documents/report.html).
+function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss = '', rules = [], overrides = [], foreignClassMap = {}, coverage = {}, authors = {}, projects = [] }) {
   const errors = [];
   const fail = (m) => errors.push(`document ${doc.slug}: ${m}`);
 
@@ -155,6 +158,7 @@ function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss
   errors.push(...seo.errors);
   const css = doc.pageCss || '';
   const cssKey = css ? pageCssKey(doc.slug, css) : null;
+  const project = projectOf(doc, projects);
   const data = {
     ...settings,
     page: doc.slug,
@@ -164,6 +168,8 @@ function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss
     jsonld_block: jsonldBlock(doc, seo, settings, siteUrl, authors),
     page_css_link: cssKey ? `  <link rel="stylesheet" href="/${cssKey}" />` : '',
     body,
+    project_name: project ? project.name : '',
+    project_href: project ? `/projects#${projectAnchor(project.slug)}` : '',
   };
   const html = render(shell, data, partials, fail);
   return { html, cssKey, css, ingestResult, errors };
@@ -173,7 +179,7 @@ function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss
 //   rules, overrides, foreignClassMaps, coverage }) →
 //   { files: { '<slug>.html', 'css/pages/…' }, errors: [], pages: [{template, priority, lastmodAt}] , hashes: {slug: contentHash} }
 // pages entries feed the sitemap through the same makeSitemap as fixed pages.
-function buildDocuments({ documents = [], shells, partials, settings, siteUrl, siteCss, rules, overrides, foreignClassMaps = {}, coverage, authors = {} }) {
+function buildDocuments({ documents = [], shells, partials, settings, siteUrl, siteCss, rules, overrides, foreignClassMaps = {}, coverage, authors = {}, projects = [] }) {
   const files = {};
   const errors = [];
   const pages = [];
@@ -189,7 +195,7 @@ function buildDocuments({ documents = [], shells, partials, settings, siteUrl, s
     slugs.add(doc.slug);
     const out = composeDocument({
       doc, shell: shells[doc.templateKey], partials, settings, siteUrl, siteCss, rules, overrides,
-      foreignClassMap: foreignClassMaps[doc.templateKey] || {}, coverage, authors,
+      foreignClassMap: foreignClassMaps[doc.templateKey] || {}, coverage, authors, projects,
     });
     errors.push(...out.errors);
     if (out.errors.length) continue;

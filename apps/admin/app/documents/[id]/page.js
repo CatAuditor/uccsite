@@ -8,6 +8,7 @@ import { requireSession } from '../../../lib/auth';
 import { withDb } from '../../../lib/data';
 import { editorData } from '../../../lib/documents';
 import { STATUSES, TEMPLATE_KEYS } from '@uccsite/db/documents';
+import { projectOf } from '@uccsite/render';
 import ActionForm from '../../action-form';
 import RequestPublish from '../../request-publish';
 import HtmlEditor from './html-editor';
@@ -45,7 +46,10 @@ export default async function DocumentEditorPage({ params }) {
   const { id } = await params;
   const data = await withDb((client) => editorData(client, id));
   if (!data) notFound();
-  const { doc, rows, kit, preview, overrides, orphans, unstyledCount, rules, foreignClassMap, siteCssDrift } = data;
+  const { doc, rows, kit, preview, overrides, orphans, unstyledCount, rules, foreignClassMap, siteCssDrift, projects } = data;
+  // Nesting (docs/systems/projects.md): explicit project, or the project whose button opens this page.
+  const impliedProject = !doc.projectSlug ? projectOf(doc, projects) : null;
+  const orphanProject = doc.projectSlug && !projects.some(p => p.slug === doc.projectSlug) ? doc.projectSlug : '';
   const readOnly = session.role === 'viewer';
   const archived = doc.status === 'archived';
   const report = doc.ingestReport || null;
@@ -85,6 +89,15 @@ export default async function DocumentEditorPage({ params }) {
             <div>
               <label htmlFor="author">Author</label>
               <input type="text" id="author" name="author" defaultValue={doc.author} disabled={readOnly} placeholder="Team member's full name" />
+            </div>
+            <div>
+              <label htmlFor="projectSlug">Project</label>
+              <select id="projectSlug" name="projectSlug" defaultValue={doc.projectSlug} disabled={readOnly}>
+                <option value="">{impliedProject ? `${impliedProject.name} (via its button)` : '— none —'}</option>
+                {projects.map(p => <option key={p.slug} value={p.slug}>{p.name}</option>)}
+                {orphanProject && <option value={orphanProject}>{orphanProject} (project no longer exists)</option>}
+              </select>
+              <div className="hint">Lists this page under the project on /projects and adds a link back at the foot of the page.</div>
             </div>
             <div>
               <label htmlFor="status">Status</label>

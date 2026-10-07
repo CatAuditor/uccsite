@@ -93,7 +93,10 @@ apps/admin/
   app/documents            Documents list/create + [id] editor (Phase 8,
                            docs/systems/documents.md); app/styles rules/kit;
                            documents/authoring-kit/route.js = kit .md download
-  lib/documents.js         editor data, Style Kit, preview, match counts
+  lib/documents.js         editor data, Style Kit, preview, match counts,
+                           the Project chooser's project list
+  app/projects             projects editor + per-project Documents / Files /
+                           site links (docs/systems/projects.md "Nesting")
   lib/authoring-kit.js     the authoring kit markdown (voice rules + live Style
                            Kit + template rules) — documents.md "Authoring kit"
   lib/convert-upload.mjs   .docx (mammoth) / .md (marked) → HTML for the

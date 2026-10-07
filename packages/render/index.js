@@ -5,4 +5,5 @@ const site = require('./site');
 
 const documents = require('./documents');
 const dates = require('./dates');
-module.exports = { ...engine, ...site, ...dates, documents };
+const projects = require('./projects');
+module.exports = { ...engine, ...site, ...dates, ...projects, documents };
