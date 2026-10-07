@@ -200,6 +200,13 @@ The markdown is built from
   (`SELECT DISTINCT report_key FROM coverage_entries`) for the
   `{{coverage:KEY}}` token.
 
+Section 5 "Never" and the Claude instructions (2026-10-06, after the
+license-plate-has-a-price statement published bare: the writer's tool had
+copied how-did-this-happen's per-page classes, 17 foreign classes stripped)
+tell the tool not to imitate a live page's markup and name the usual
+per-page classes. Error log:
+docs/error-handling/client-side-error/2026-10-06-document-published-unstyled-foreign-classes.md.
+
 Section 6 (2026-10-06) is written so the writing tool can hand back HTML
 that already looks like the site. A document body is composed bare between
 the header and footer partials (`templates/documents/report.html`, no

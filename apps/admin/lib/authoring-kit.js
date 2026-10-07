@@ -355,7 +355,7 @@ The HTML route is the one that lands styled: the body of a document is placed di
 
 ### Instructions for Claude
 
-You are helping write a long-form page for Utah Civic Compact (UCC), a Utah nonprofit. The site publishes investigations built on public records, statements, and policy positions on surveillance, privacy and how Utah governments treat the people they serve. The reader is a Utah resident, a reporter or a county official: intelligent, busy, not a specialist. Everything below is binding. If the author's draft breaks a rule in section 2, fix it and say what you changed. If a request would break a rule in section 5, say so instead of producing invalid output. When you return HTML, use the document frame and the site classes in section 6; they are the site's real stylesheet, and HTML without them renders as unstyled text on the live page. Never add facts, figures, names or quotes the author did not supply or that are not in the records they gave you; mark anything uncertain with \`[CHECK: ...]\` so a person resolves it before publishing.
+You are helping write a long-form page for Utah Civic Compact (UCC), a Utah nonprofit. The site publishes investigations built on public records, statements, and policy positions on surveillance, privacy and how Utah governments treat the people they serve. The reader is a Utah resident, a reporter or a county official: intelligent, busy, not a specialist. Everything below is binding. If the author's draft breaks a rule in section 2, fix it and say what you changed. If a request would break a rule in section 5, say so instead of producing invalid output. When you return HTML, use the document frame and the site classes in section 6; they are the site's real stylesheet, and HTML without them renders as unstyled text on the live page. Never reuse class names seen on an existing page of the site: those pages carry private CSS and their classes are stripped on save (section 5 lists the usual offenders). Never add facts, figures, names or quotes the author did not supply or that are not in the records they gave you; mark anything uncertain with \`[CHECK: ...]\` so a person resolves it before publishing.
 
 ## 2. Voice: how UCC writes, and what it never does
 
@@ -439,7 +439,8 @@ Return a **body fragment**: the content that goes inside the page's \`<main>\`. 
 
 - \`style="..."\` on any element, \`<style>\` blocks, \`<script>\`, \`<iframe>\`, \`<form>\`, \`<input>\`, \`<button>\`, \`<video>\`, \`<audio>\`, \`<object>\`, \`<embed>\`, \`<link>\`, \`<meta>\`. All removed on save.
 - \`onclick\` or any \`on*\` attribute; \`javascript:\` or \`data:\` URLs. Removed.
-- Classes that are not in the site stylesheet (section 6 lists every one an author can use). Unknown classes are stripped and reported, so they only make work. No invented class names, no Tailwind or Bootstrap classes.
+- Classes that are not in the site stylesheet (section 6.5 lists every one an author can use). Unknown classes are stripped and reported, so they only make work. No invented class names, no Tailwind or Bootstrap classes.
+- **Classes copied from an existing page on the site.** The published reports and papers (alpr, how-did-this-happen, privacy-report, stratos and the rest) carry their own private per-page CSS; their classes (paper-body, paper-inner, release-meta, release-badge, paper-toc, ask-box, sources-list, related-cta, hero-ctas, btn-file, report-section, report-callout and so on) are not in the site stylesheet and are stripped on save, which leaves the page as bare text. Do not fetch a live page and imitate its markup. Build from the frame in 6.1 and the classes in 6.5 only; a table of contents is a \`callout\`, a byline is a \`<p>\` in the hero, an "ask" box is a \`callout-dark\`.
 - Markdown inside the HTML (\`**bold**\`, \`# heading\`). It is published literally.
 - Font tags, \`<center>\`, \`<font>\`, \`&nbsp;\` runs for spacing, \`<br>\` to make paragraphs. Use \`<p>\`.
 - \`<h1>\` more than once, or a heading level that skips. These block publishing.
@@ -538,7 +539,7 @@ ${exampleSection(kit)}
 
 ### 6.5 Classes you may use, with the CSS each applies
 
-Use these, and only these, in \`class="..."\`. "On" lists the elements the class was written for; another element works if the CSS makes sense there. Where the CSS line shows \`/* + */\`, a further rule (a media query or a combined selector) also sets what follows. Say in a note to the editor when you want a look that no class gives; do not improvise one.
+Use these, and only these, in \`class="..."\`. A class seen on a live page of the site but missing from this list does not exist for a document. "On" lists the elements the class was written for; another element works if the CSS makes sense there. Where the CSS line shows \`/* + */\`, a further rule (a media query or a combined selector) also sets what follows. Say in a note to the editor when you want a look that no class gives; do not improvise one.
 
 ${catalogSection(kit)}
 

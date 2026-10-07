@@ -132,6 +132,26 @@ as a saved-and-published edit under Jarom's account.
 **Left to do.** Nothing on the site. The old wording on LinkedIn, X and
 press bylines is outside the site and is Jarom's to update.
 
+## 2026-10-06 — Why "Your license plate has a price" published as bare text
+
+**What happened.** The statement was built with the authoring kit, but the
+HTML that came back copied the structure of an existing paper on the site
+(how-did-this-happen): classes such as paper-body, release-meta, paper-toc,
+ask-box and btn-file. Those belong to that page's private stylesheet, not
+to the site's, so the editor removed all seventeen of them on save (the
+ingest report listed each one) and the page went live as unstyled text
+under a correct hero. No page frame or prose wrapper was used either.
+
+**What changed.** The kit now says in three places not to imitate a live
+page's markup, names the usual offending classes, and repeats that a class
+seen on the site but missing from the kit's list does not exist for a
+document.
+
+**Needs a person.** The statement itself still needs its body rebuilt on
+the kit's frame (hero, then section > container > prose, with the table of
+contents and the "ask" box as callouts). Either paste a fresh fragment from
+Claude using the new kit, or ask for the rewrite to be applied directly.
+
 ## 2026-10-06 — New documents can look like the site's reports without any CSS
 
 **What changed.** The site's stylesheet had no styles for the running text

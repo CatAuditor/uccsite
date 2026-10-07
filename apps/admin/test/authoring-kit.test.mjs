@@ -34,6 +34,7 @@ test('kit carries the static sections and the dynamic catalog, rules and tokens'
   assert.ok(!md.includes('nav-links'), 'chrome groups are hidden from authors');
   assert.ok(!md.includes('`undoc`'), 'unannotated classes are not offered');
   assert.match(md, /Keys that exist today: `alpr`/);
+  assert.match(md, /\*\*Classes copied from an existing page on the site\.\*\*[^\n]*paper-body[^\n]*release-meta/, 'warns against reusing per-page classes from live pages');
   assert.match(md, /`blockquote`, `code`/);
   assert.ok(!md.includes('`svg`') && !md.includes('`header`'), 'svg/chrome tags are not offered');
 });
