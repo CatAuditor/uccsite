@@ -4,6 +4,43 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.22.1 — 2026-10-06 (branch ) — Projects: documents nested under their project (site + admin)
+
+**Model** (, , ; commit 8d3befd)
+-  (ADD COLUMN; soft link to  like , no FK).
+  : the explicit slug, else the project whose  is  or
+   — the migrated reports nest with no backfill.  = .
+  Schema migrated on staging and prod. Test:  (render 30 pass).
+
+**Site** (, , ,
+, , )
+-  in the buildSite chain: every project gets  and  (published
+  Documents under it from , which now carries ; the CTA page excluded).
+  /projects:  on each block + a "Documents" list above "Files" (same  styling).
+-  /  take ; the report shell renders   "This page is part of <project> · All projects" under the body (Style Kit group Navigation, hidden from the
+  authoring kit). Newsletters (same shell) get no bar.  reason for projects.html extended.
+- Published: staging and prod  (prod 37 changed; no pending publish requests, every
+  recent save already approved). Live: anchors on the three blocks, bars on /alpr, /stratos, /weber-county, none on
+  /theory, /privacy, /newsletters. Deployed  (114 s) and  (57 s: PublishFn + ExportContentFn)
+  from a clean worktree at 8d3befd.
+
+**Admin** (, , , ,
+)
+- Editor: **Project** select (blank option reads "<name> (via its button)" when the fallback applies; an orphan slug
+  is kept as an option);  /  store  (slug-validated).
+- All documents: Project column ( = via the button), "By project" filter line (, heading
+  "<name> — documents"), New document form takes a project (defaulted from the filter).
+- Projects page: per-project Documents (count → ), Files (count → ) and
+  on-the-site links above the collection editor.  now returns . Admin  green.
+
+**Docs:** projects.md "Nesting" + Code Map, documents.md, admin.md, editing guide, dev-notes.
+
+**Known failing, pre-existing:**  tests "unsubscribe: valid token deletes subscriber" and "petition signers
+are confirmed at insert" (2 of 36) fail at HEAD before this change (mailing-list commit 2982fd1 changed unsubscribe
+semantics); untouched here.
+
+Open P1 at push: unchanged.
+
 ## v0.21.4 — 2026-10-06 (branch `refactor`) — Documents: archive a page (off the site, 410 Gone at the edge)
 
 **Documents / data** (`packages/db/documents.js`, `packages/db/redirects.js`; commit 91ed2bb)
