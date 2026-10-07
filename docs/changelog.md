@@ -41,6 +41,42 @@ guide (Documents), dev-notes.
 
 Open P1 at push: unchanged from v0.21.2.
 
+## v0.22.0 — 2026-10-06 (branch `refactor`) — Mailing list management: status, remove / restore / erase, filters, delivery metadata
+
+**DB** (`packages/db/schema.js`; applied to staging + prod via `scripts/migrate-schema.mjs`)
+- `subscribers.unsubscribed_at TIMESTAMPTZ`, `subscribers.unsubscribed_by TEXT` (`'self'` = the
+  unsubscribe link, else the removing admin's email). Unsubscribe is now soft: the row stays.
+
+**API** (`aws/api/routes.js`; deployed `cdk deploy UccProd` from a clean worktree at 2982fd1 —
+diff: ApiFunction + NewsletterSendFn code only, 65 s; `/api/unsubscribe?token=bogus` → 400 after)
+- `GET|POST /api/unsubscribe`: `UPDATE subscribers SET unsubscribed_at = COALESCE(…, now()),
+  unsubscribed_by = COALESCE(…, 'self')` instead of `DELETE`; still clears `members.newsletter_opt_in`.
+- `POST /api/subscribe` upsert clears both stamps and resets `confirmed_at` to NULL when the row
+  was unsubscribed (re-confirm from the new welcome email). Petition sign upsert clears both stamps.
+
+**Audience** (`packages/db/audience.js`, tests in `packages/db/test/audience.test.mjs`)
+- One `peopleRowsSql(everyone)` template → `AUDIENCE_ROWS_SQL` (recipients; adds
+  `unsubscribed_at IS NULL`) and `DIRECTORY_ROWS_SQL` (everyone we hold, with `status`
+  subscribed / unconfirmed / unsubscribed / suppressed, `confirmed_at`, `unsubscribed_*`).
+- `directoryQuery` / `normalizeDirectoryFilters`: audience filters + `status` (default
+  `subscribed`, `all`) + `q` (ILIKE on email / name, parameter-bound, backslash-escaped);
+  `deliveries: true` LEFT JOIN LATERAL over `newsletter_deliveries` → `sent_count`,
+  `failed_count`, `last_sent_at`.
+
+**Admin / Mailing list** (`apps/admin/app/subscribers/{page,actions}.js`, `globals.css`)
+- Table is the directory: status chip + detail (unsubscribed date and by whom; hard bounce vs
+  complaint; confirmed date), ZIP + residency, newsletters received / last sent / failed. Status
+  counts strip; status + search filters alongside residency / donors / petition. The "going to N"
+  line and the CSV keep using the audience filters only (table note says so when they differ).
+- Actions (editor+, `withWriteTx` + audit `subscriber/<email>`): **Remove** (`subscribers.remove`;
+  opted-in member with no row gets a stamped row), **Undo removal** (`subscribers.restore`; refuses
+  `unsubscribed_by = 'self'`), **Erase a record** (`subscribers.erase`; hard delete, retype address).
+
+**Docs:** newsletters.md "Mailing list management", admin.md Code Map + role table, petition.md,
+legal/data-handling.md (`subscribers` row), editing guide, error-handling/debug/admin.md, dev-notes.
+
+**Open P1 at push:** unchanged.
+
 ## v0.21.3 — 2026-10-06 (branch `refactor`) — Users page: session-length wording
 
 **Admin / users** (`apps/admin/app/users/{page,actions}.js`)
