@@ -4,6 +4,22 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.20.2 — 2026-10-06 (branch `refactor`) — Kit forbids reusing per-page classes from live pages
+
+**Admin / Documents** (`apps/admin/lib/authoring-kit.js`, `test/authoring-kit.test.mjs`)
+- Cause of `/license-plate-has-a-price` publishing unstyled: raw body used `hero-ctas`, `hero-secondary`,
+  `paper-body`, `paper-inner`, `release-meta`, `release-badge`, `release-date`, `release-author`,
+  `paper-toc`, `paper-toc-label`, `ask-box`, `ask-box-label`, `sources-list`, `related-cta`, `btn-file`
+  (how-did-this-happen's private CSS), no `page_css`, no `section > container > prose`; ingest stripped
+  all 17 (`ingest_report.foreignClasses`). Kit section 5 "Never", the Claude instructions and 6.5 now say
+  not to fetch a live page and imitate its markup, name those classes and give site equivalents.
+- Error log: `docs/error-handling/client-side-error/2026-10-06-document-published-unstyled-foreign-classes.md`.
+- 31/31 admin tests. The statement's body itself is not rewritten (content edit; user's call).
+
+Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in. Open: rebuild the
+license-plate statement's body on the kit frame; consider a louder editor warning when a save strips
+foreign classes.
+
 ## v0.20.1 — 2026-10-06 (branch `refactor`) — Prod redeployed and published so the prose CSS is live; error log
 
 **Ops / Publish** (no code; `UccProd` stack, publish Lambda)
