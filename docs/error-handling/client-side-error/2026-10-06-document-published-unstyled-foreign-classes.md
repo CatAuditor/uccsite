@@ -33,11 +33,16 @@ either, so even the surviving text had no prose styling.
 - Kit (`apps/admin/lib/authoring-kit.js`): section 5 "Never" gains a bullet
   naming the per-page classes and the rule "do not fetch a live page and
   imitate its markup"; the Claude instructions and 6.5 repeat it.
-- The document body still has to be rebuilt on the frame (not done here;
-  content edit, user's call): hero `<p>` for the byline, `callout` with
-  `callout-label` for "In this statement", `callout-dark` for the ask box,
-  plain `<ol>` for sources, `btn btn-ghost` in the hero, `btn btn-outline
-  btn-sm` for the source links.
+- Body rebuilt on the frame (user asked, 2026-10-06 19:30 MDT) with a
+  one-off script mirroring `saveDocument` (ingest with the live CSS, upsert,
+  revision snapshot, audit row `via: scripts/_save-lp.mjs`, script not kept):
+  hero `<p>` byline + `btn btn-ghost` links; `section.section.bg-cream >
+  div.container > div.prose`; `callout` + `callout-label` for the table of
+  contents and the "For lawmakers" ask (the `<h2 id="ask">` moved above the
+  box because `.prose h2` is navy on navy inside `callout-dark`); plain
+  `<ol>` for sources; `callout` with `btn btn-outline btn-sm` links for the
+  related paper. Ingest: 0 removed / 0 foreign / 0 a11y. Publish Lambda
+  invoked: 2 changed. Previous body is revision `2026-10-06 19:29 MDT`.
 
 ## What would catch it earlier
 

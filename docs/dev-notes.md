@@ -147,10 +147,13 @@ page's markup, names the usual offending classes, and repeats that a class
 seen on the site but missing from the kit's list does not exist for a
 document.
 
-**Needs a person.** The statement itself still needs its body rebuilt on
-the kit's frame (hero, then section > container > prose, with the table of
-contents and the "ask" box as callouts). Either paste a fresh fragment from
-Claude using the new kit, or ask for the rewrite to be applied directly.
+**Fixed the same evening.** The statement's body was rebuilt on the kit's
+frame (hero with the byline and two ghost buttons, then the cream content
+band with the prose wrapper; the table of contents, the "For lawmakers" ask
+and the "paper this follows" box are callouts; the sources are a plain
+numbered list), saved as a new revision under Jarom's name, and published.
+The previous version is in the document's revision history. Nothing in the
+text changed.
 
 ## 2026-10-06 — New documents can look like the site's reports without any CSS
 
