@@ -4,6 +4,25 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.21.0 — 2026-10-06 (branch `refactor`) — Admin guards against publishing an unstyled document
+
+**Admin / Documents** (`apps/admin/lib/documents.js`, `lib/authoring-kit.js`, `app/documents/authoring-kit/route.js`,
+`app/documents/[id]/html-editor.js`, `app/documents/[id]/page.js`, `app/styles/page.js`; docs/systems/documents.md
+"Editor guards", env `SITE_BUCKET`)
+- `loadSiteSources()` now also reads `SITE_SRC_ROOT/css/styles.css` and sets `siteCssStale` when the bucket copy
+  differs (CRLF-normalised), logging `[documents] live css/styles.css (N chars) differs from the admin build's
+  repo copy (M chars): deploy + publish pending`. `siteCssDrift(sources)` → one sentence, shown as a red banner
+  on the Documents editor (`editorData().siteCssDrift`), on the Styles page, and as the first block of the kit
+  (`buildAuthoringKitHtml({ notice })`, `.kit-warn`; kit log line gains `STALE live stylesheet`).
+- HTML editor, before save: `.error` when the raw HTML uses a migrated report's per-page classes
+  (`LIVE_PAGE_CLASSES`) and the document has no page CSS; `.notice` when the body has no
+  `prose`/`section`/`container` and no page CSS. Ingest report's foreign-class block is now `.error` and says not
+  to request publish until clean. No server-side block; two-person publish review remains the gate.
+- Verified: `next build` passes; 32/32 admin tests; live stylesheet currently identical to the repo copy, so no
+  banner shows today; Amplify job 50 (kit rule) succeeded earlier.
+
+Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
+
 ## v0.20.3 — 2026-10-06 (branch `refactor`) — license-plate-has-a-price rebuilt on the kit frame, republished
 
 **Content / Documents** (prod DB, no code; error log updated)
