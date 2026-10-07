@@ -4,6 +4,25 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.20.1 — 2026-10-06 (branch `refactor`) — Prod redeployed and published so the prose CSS is live; error log
+
+**Ops / Publish** (no code; `UccProd` stack, publish Lambda)
+- v0.18.2's stylesheet change never reached prod: the publish Lambda bundles `css/` at `cdk deploy`
+  (`infra/cdk/copy-site-src.js`), and prod had been published at 01:34 MDT with the old bundle, so the
+  admin stripped `prose`/`callout` on save and the kit listed them as missing.
+- `cdk deploy UccProd` (diff: PublishFn + MediaProcessFn code assets; 67 s), then invoked
+  `UccProd-PublishFnB0C9E186-WouF4oexSmRN` with `{"trigger":"manual"}` → succeeded, 34 changed, 0
+  removed, invalidation issued. Verified: bucket `css/styles.css` 69,967 bytes with the group; live
+  `https://utahciviccompact.org/css/styles.css` serves it (CloudFront hit).
+
+**Docs**
+- `docs/error-handling/client-side-error/2026-10-06-kit-classes-stripped-stale-bucket-css.md`.
+- `docs/systems/publish-pipeline.md` Code Map and `docs/systems/documents.md` env vars: any change under
+  `css/ js/ assets/ templates/` needs `cdk deploy <stack>` then a publish; a push alone changes nothing live.
+- dev-notes: stylesheet is live; re-download the kit (admin caches the bucket stylesheet 5 minutes).
+
+Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
+
 ## v0.20.0 — 2026-10-07 (branch `refactor`) — /writing page and Writing menu; payment-options proposal
 
 **Site** (`packages/render/writing.js` new, `site.js`, `navigation.js`; `templates/writing.html`,
