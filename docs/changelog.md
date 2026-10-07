@@ -4,6 +4,43 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.21.4 — 2026-10-06 (branch `refactor`) — Documents: archive a page (off the site, 410 Gone at the edge)
+
+**Documents / data** (`packages/db/documents.js`, `packages/db/redirects.js`; commit 91ed2bb)
+- New status `archived` (STATUSES = draft | published | archived; TEXT column, no DDL). Entered and
+  left only through the audited actions below; `saveDocument` refuses a status change into or out of it.
+- `archivedSlugs(client)`; `kvsEntries(rows, { goneSlugs })` emits `/<slug>` → `{"status":410}` per
+  archived slug, an active redirect from the same path taking precedence.
+  Test: `packages/db/test/redirects.test.mjs` (3 tests; db 17 pass).
+
+**Admin / documents** (`apps/admin/app/documents/{actions,page}.js`, `[id]/page.js`,
+`app/revisions/page.js`, `lib/change-detail.js`)
+- `archiveDocument` / `unarchiveDocument` (editor+): status + `updated_at`, audit
+  `document.archive` / `document.unarchive` with the pre-change snapshot and `{ slug, status, was }`.
+  Editor: "Take down" fieldset (Archive this document | Restore as draft | Delete), archived
+  notice, status shown as a fixed field; the select never offers `archived`. List hides archived
+  rows behind **Archived (N)** (`?status=archived`). Delete's refusal for a published document
+  now says to archive first. A revision restored onto an archived document comes back as a draft.
+  Audit words: archived / restored as a draft.
+
+**Publish / edge** (`aws/publish/render-db.js`, `infra/cdk/cf-fn/viewer-request.js`)
+- `publishRedirects` writes the 410 entries with the redirect sync (logged
+  `redirects: N archived document(s) → 410 Gone: …`; the empty-table guard skips them too).
+  The page and its page CSS already drop out of the render (published only), so the run deletes
+  and invalidates them, and the slug stays in `allSlugs` so no fixed template resurrects.
+- Viewer-request function: KVS value `{"status":410}` → `gone()`: 410, `cache-control: public,
+  max-age=300`, small inline HTML body (noindex, link home; no inline style because the site CSP
+  may apply). Function-generated responses bypass the distribution's custom error pages.
+- Deployed: `cdk deploy UccProd` from a clean worktree at 91ed2bb (diff: ViewerRequestFn code,
+  PublishFn + ExportContentFn bundles only; 106 s). Live check after deploy: `/` `/alpr` `/theory`
+  200, unknown path 404, `/alpr.html` 308. No site publish needed (no content changed). The 410
+  path is exercised the first time a document is archived and published.
+
+**Docs:** documents.md "Archiving" + Code Map, publish-pipeline.md (KVS section), the editing
+guide (Documents), dev-notes.
+
+Open P1 at push: unchanged from v0.21.2.
+
 ## v0.21.3 — 2026-10-06 (branch `refactor`) — Users page: session-length wording
 
 **Admin / users** (`apps/admin/app/users/{page,actions}.js`)
