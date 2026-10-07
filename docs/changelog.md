@@ -4,6 +4,29 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.21.2 — 2026-10-06 (branch `refactor`) — Users: reset works for invited users; remove a user
+
+**Admin / users** (`apps/admin/app/users/{page,actions}.js`, `apps/admin/lib/account.js`; commit 4434b26)
+- Fix: **Reset password** failed for every user still in `FORCE_CHANGE_PASSWORD` (Cognito
+  refuses `AdminResetUserPassword` before first sign-in; 4 of 7 prod accounts) and for
+  disabled users, and `friendly()` showed the self-service "Current password is incorrect"
+  text for it. `sendPasswordReset` now reads the user first: disabled → clear error;
+  never signed in → `AdminCreateUser MessageAction=RESEND` (fresh invite, audit
+  `user.invite_resent`, button reads **Resend invite**); otherwise the reset. Admin-API
+  `NotAuthorizedException` messages pass through unchanged.
+  Log: docs/error-handling/client-side-error/2026-10-06-admin-reset-password-force-change.md.
+- New: **Remove a user** (owner): select + type-the-email confirm → `AdminUserGlobalSignOut`
+  then `AdminDeleteUser`; audit `user.delete` with `{ email, name, role, status }`.
+  Self-removal refused. No DB column references the Cognito user (actor / `*_by` /
+  `documents.author` / `team_members.email` are text), so attribution is untouched.
+
+**IAM (hand-managed)** — `cognito-idp:AdminDeleteUser` appended to the `AdminUsers`
+statement of `UccProdAdminCompute` / `admin-runtime` (docs/for-conner.md §8.3,
+docs/systems/admin.md).
+
+**Open P1 at push:** unchanged — RESEND_API_KEY placeholder (SES production access
+pending), Stripe webhook URL unconfirmed.
+
 ## v0.21.1 — 2026-10-06 (branch `refactor`) — Privacy policy: drop admin-access wording
 
 **Site / legal** (`templates/privacy.html`; prod + staging `documents` row `privacy` re-imported
