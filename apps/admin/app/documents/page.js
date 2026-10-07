@@ -11,15 +11,26 @@ export const dynamic = 'force-dynamic';
 
 export default async function DocumentsPage({ searchParams }) {
   const session = await requireSession();
-  const { category } = await searchParams;
-  const all = await withDb((client) => listDocuments(client));
-  const categories = [...new Set(all.map(d => d.category || 'Uncategorized'))];
+  const { category, status } = await searchParams;
+  const everything = await withDb((client) => listDocuments(client));
+  // Archived documents are off the site; they live under ?status=archived only.
+  const showArchived = status === 'archived';
+  const archivedCount = everything.filter(d => d.status === 'archived').length;
+  const all = everything.filter(d => (d.status === 'archived') === showArchived);
+  const categories = [...new Set(everything.filter(d => d.status !== 'archived').map(d => d.category || 'Uncategorized'))];
   const docs = category ? all.filter(d => (d.category || 'Uncategorized') === category) : all;
   const readOnly = session.role === 'viewer';
 
   return (
     <div>
-      <h1>{category ? category : 'Long-form Documents'}</h1>
+      <h1>{showArchived ? 'Archived documents' : category ? category : 'Long-form Documents'}</h1>
+      {showArchived && (
+        <p className="notice">
+          These are off the site: not rendered, listed or in the sitemap, and each address answers &quot;410 Gone&quot; once the
+          archive has been published. Open one and use <strong>Restore as draft</strong> to bring it back.{' '}
+          <Link href="/documents">Back to all documents</Link>
+        </p>
+      )}
       <div className="notice">
         <strong>Writing a new piece?</strong> Download the authoring and style kit first and give it to Claude, or to
         whoever is writing, before the draft starts. It is one web page that carries the site&apos;s voice rules (what we
@@ -35,6 +46,7 @@ export default async function DocumentsPage({ searchParams }) {
         report; the site changes when a publish request is approved on Publish &amp; Status. Categories: {categories.map((c, i) => (
           <span key={c}>{i ? ' · ' : ''}<Link href={`/documents?category=${encodeURIComponent(c)}`}>{c}</Link></span>
         ))}{category && <> · <Link href="/documents">all</Link></>}
+        {archivedCount > 0 && !showArchived && <> · <Link href="/documents?status=archived">Archived ({archivedCount})</Link></>}
       </p>
       <table>
         <thead><tr><th>Title</th><th>Slug</th><th>Category</th><th>Status</th><th>Live</th><th>Updated</th></tr></thead>
@@ -44,7 +56,7 @@ export default async function DocumentsPage({ searchParams }) {
               <td><Link href={`/documents/${d.id}`}>{d.title}</Link></td>
               <td><code>/{d.slug}</code></td>
               <td>{d.category}</td>
-              <td className={d.status === 'published' ? 'status-succeeded' : 'status-noop'}>{d.status}</td>
+              <td className={d.status === 'published' ? 'status-succeeded' : d.status === 'archived' ? 'status-failed' : 'status-noop'}>{d.status}</td>
               <td>
                 {d.lastPublishError ? <span className="status-failed" title={d.lastPublishError}>publish error</span>
                   : !d.liveAt ? '—'

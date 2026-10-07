@@ -62,6 +62,8 @@ export async function saveDocument(prevState, formData) {
     const baseline = str(formData, 'baseline', 80);
     const status = str(formData, 'status', 20);
     if (!STATUSES.includes(status)) throw new Error('Bad status');
+    // 'archived' is entered and left only through archiveDocument /
+    // unarchiveDocument (each audited): the status select never offers it.
     const templateKey = str(formData, 'templateKey', 40) || 'report';
     if (!TEMPLATE_KEYS.includes(templateKey)) throw new Error('Unknown template');
     const slug = str(formData, 'slug', 80).toLowerCase();
@@ -79,6 +81,8 @@ export async function saveDocument(prevState, formData) {
       const current = await getDocument(client, { id });
       if (!current) throw new Error('Document not found');
       if (baseline && current.updatedAt !== baseline) throw new Error(CONFLICT_MESSAGE);
+      if (status === 'archived' && current.status !== 'archived') throw new Error('Use the Archive button to archive a document.');
+      if (status !== 'archived' && current.status === 'archived') throw new Error('This document is archived. Use "Restore as draft" to bring it back.');
       const other = await getDocument(client, { slug });
       if (other && other.id !== id) throw new Error(`Slug "${slug}" is used by "${other.title}"`);
       const before = await snapshotOf(client, id);
@@ -152,12 +156,52 @@ export async function deleteDocument(prevState, formData) {
     await withWriteTx(async (client) => {
       const before = await snapshotOf(client, id);
       if (!before) throw new Error('Document not found');
-      if (before.status === 'published') throw new Error('Unpublish (save as draft) before deleting.');
+      if (before.status === 'published') throw new Error('Archive the document (or save it as a draft) before deleting.');
       await deleteDocumentRow(client, id);
       await recordChange(client, { actor: s.email, action: 'document.delete', entityType: 'document', entityId: id, snapshot: before });
     });
     revalidatePath('/documents');
     redirect('/documents');
+  });
+}
+
+// archiveDocument: take a document down for good (docs/systems/documents.md
+// "Archiving"). Sets status 'archived' and nothing else; the next approved
+// publish deletes the page and its page CSS from the site bucket, invalidates
+// them at the edge, drops the page from the sitemap, author pages and the
+// Writing page, and writes a 410 Gone for /<slug> into the KeyValueStore.
+// The slug stays reserved (the fixed template never resurrects, §3.2) and
+// the body, styling and revisions are kept so the piece can be restored.
+async function setArchived(formData, archived) {
+  const s = await requireRole('editor');
+  const id = str(formData, 'id', 80);
+  await withWriteTx(async (client) => {
+    const before = await snapshotOf(client, id);
+    if (!before) throw new Error('Document not found');
+    if (archived && before.status === 'archived') throw new Error('Already archived.');
+    if (!archived && before.status !== 'archived') throw new Error('This document is not archived.');
+    await client.query(`UPDATE documents SET status = $2, updated_at = now() WHERE id = $1`, [id, archived ? 'archived' : 'draft']);
+    await recordChange(client, {
+      actor: s.email, action: archived ? 'document.archive' : 'document.unarchive', entityType: 'document', entityId: id,
+      snapshot: before, diff: { slug: before.slug, status: archived ? 'archived' : 'draft', was: before.status },
+    });
+  });
+  revalidatePath(`/documents/${id}`);
+  revalidatePath('/documents');
+  return id;
+}
+
+export async function archiveDocument(prevState, formData) {
+  return runAction(async () => {
+    await setArchived(formData, true);
+    return { ok: true, message: 'Archived. The page comes off the site, and /slug answers "410 Gone", when the next publish request is approved.' };
+  });
+}
+
+export async function unarchiveDocument(prevState, formData) {
+  return runAction(async () => {
+    await setArchived(formData, false);
+    return { ok: true, message: 'Restored as a draft. Set it to published and request a publish to put it back on the site.' };
   });
 }
 

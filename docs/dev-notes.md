@@ -6,6 +6,39 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — Documents: archive a page for good
+
+Every document now has a **Take down** block at the bottom with an
+**Archive this document** button. Archiving is for a page that should not be
+on the site any more, as opposed to setting it back to draft while you work
+on it.
+
+What archiving does, once the next publish request is approved:
+
+- The page and its styling are deleted from the site and cleared from the
+  cache, so the old copy stops being served everywhere within a minute or so.
+- It leaves the sitemap, the author's page and the Writing list.
+- Its web address answers "410 Gone" with a short "this page has been
+  removed" message. That is the signal search engines treat as "drop this
+  from results now", and it tells anyone with an old link that the removal
+  was on purpose. A plain draft, by contrast, shows the ordinary "page not
+  found".
+- The address stays reserved, so nothing older can reappear there.
+
+Nothing is lost on the admin side: the text, styling, settings and revision
+history stay. Archived documents are hidden from the All documents list
+behind an **Archived (N)** link. Open one and press **Restore as draft** to
+bring it back; it returns to the site only when you set it to published and
+a publish is approved again. Restoring an older revision of an archived
+document also brings it back as a draft, never straight to live.
+
+Delete still refuses a published document: archive first. Prefer Archive
+over Delete for anything that has ever been live.
+
+Left to do by a person: none for editors. The "410 Gone" answer needs one
+infrastructure deploy; until that is done an archived page shows the normal
+"page not found" instead, which is just as unreachable.
+
 ## 2026-10-06 — Petition link: the preview headline follows the form title, and the share picture is now on navy
 
 Two sharing fixes.

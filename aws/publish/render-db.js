@@ -10,7 +10,7 @@
 // Document with that slug is published the database wins.
 const { buildSite, PAGES, withColorClasses, authorIndex, documents: docs } = require('@uccsite/render');
 const { loadContent, contentMeta, makeDbLastmod } = require('@uccsite/db/content');
-const { loadPublishBundle, markDocumentLive, markDocumentPublishError } = require('@uccsite/db/documents');
+const { loadPublishBundle, markDocumentLive, markDocumentPublishError, archivedSlugs } = require('@uccsite/db/documents');
 const { listRedirects, kvsEntries } = require('@uccsite/db/redirects');
 const { listPublishedFiles } = require('@uccsite/db/project-files');
 const { listArchive } = require('@uccsite/db/newsletters');
@@ -102,17 +102,21 @@ async function recordDocumentPublish(client, { documentIds, documentHashes, erro
 // publishRedirects({ client, kvsArn, region, log }) — DB rows → KeyValueStore.
 // Called after the site files are live; a failure here is reported but
 // does not un-publish the pages (the previous redirect set stays in force).
+// Archived documents ride along as 410 Gone entries (docs/systems/documents.md
+// "Archiving"): their pages were deleted from S3 by this same run.
 async function publishRedirects({ client, kvsArn, region, log }) {
   if (!kvsArn) { log('redirects: no KeyValueStore configured — skipped'); return null; }
   const rows = await listRedirects(client);
+  const goneSlugs = await archivedSlugs(client);
   if (!rows.length) {
     // An empty table on an environment whose store was seeded from
     // infra/cdk/kvs/redirects.json means migrate-redirects.mjs never ran —
     // deleting the seeded keys would silently drop live redirects.
-    log('redirects: table is empty — store left untouched (run scripts/migrate-redirects.mjs first)');
+    log(`redirects: table is empty — store left untouched (run scripts/migrate-redirects.mjs first)${goneSlugs.length ? `; ${goneSlugs.length} archived document(s) not written as 410` : ''}`);
     return { put: 0, deleted: 0, skipped: 'empty table' };
   }
-  return syncRedirects({ kvsArn, entries: kvsEntries(rows.filter(r => r.active)), region, log });
+  if (goneSlugs.length) log(`redirects: ${goneSlugs.length} archived document(s) → 410 Gone: ${goneSlugs.map(s => '/' + s).join(', ')}`);
+  return syncRedirects({ kvsArn, entries: kvsEntries(rows.filter(r => r.active), { goneSlugs }), region, log });
 }
 
 module.exports = { loadSiteFromDb, renderSiteFromDb, recordDocumentPublish, publishRedirects };

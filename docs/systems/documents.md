@@ -31,9 +31,12 @@ before running it against prod.
 ```
 packages/db/content-schema.js     documents, style_rules, style_overrides,
                                   foreign_class_map DDL
-packages/db/documents.js          DOCUMENT_FIELDS, row⇄object, list/get/upsert/
-                                  delete, rules/overrides/foreign-map CRUD,
-                                  loadPublishBundle, markDocumentLive/PublishError
+packages/db/documents.js          DOCUMENT_FIELDS, STATUSES (draft/published/archived),
+                                  row⇄object, list/get/upsert/delete, rules/overrides/
+                                  foreign-map CRUD, loadPublishBundle, archivedSlugs,
+                                  markDocumentLive/PublishError
+packages/db/redirects.js          kvsEntries(rows, { goneSlugs }) → redirect + 410 entries
+infra/cdk/cf-fn/viewer-request.js edge: KVS {"status":410} → 410 Gone ("Archiving")
 packages/render/documents.js      composeDocument / buildDocuments: ingest →
                                   applyStyles → stripNids → tokens → shell; SEO
                                   block + JSON-LD generation; pageCssKey
@@ -52,12 +55,15 @@ apps/admin/lib/documents.js       editor data: site sources (live css from the
                                   site bucket, partials/shells from the repo /
                                   site-src), Style Kit, explainStyles rows,
                                   preview srcdoc, ruleMatchCounts
-apps/admin/app/documents/         list (by category) + authoring-kit download
+apps/admin/app/documents/         list (by category; archived under
+                                  ?status=archived) + authoring-kit download
                                   block + create; [id]/ editor (metadata,
                                   HTML/CSS editors + file upload + ingest
                                   report, SEO panel with SERP preview, styling
-                                  split view), actions.js (all server actions,
-                                  incl. convertUpload)
+                                  split view, Take down block: archive /
+                                  restore / delete), actions.js (all server
+                                  actions, incl. convertUpload, archiveDocument,
+                                  unarchiveDocument)
 apps/admin/app/documents/authoring-kit/route.js
                                   GET: the authoring and style kit as ONE .html
                                   download, rebuilt per request (any signed-in role)
@@ -259,6 +265,55 @@ No personal data in the file. Logged as `[documents] authoring kit for
 
 No AI service is part of the product (spec §1); the kit is a document an
 author chooses to give to their own tool.
+
+## Archiving (2026-10-06)
+
+A third status, `archived`, takes a document off the site for good unless
+it is restored. It is entered and left only through two audited server
+actions in `app/documents/actions.js` (editor+; the status select never
+offers it and `saveDocument` refuses a status change into or out of it):
+
+- **`archiveDocument`** (editor's "Take down" block, any status) → `status='archived'`,
+  `updated_at=now()`, audit `document.archive` with the pre-archive snapshot
+  and `{ slug, status: 'archived', was }`. Body, page CSS, overrides, page
+  rules and revisions are untouched.
+- **`unarchiveDocument`** ("Restore as draft", archived only) → `status='draft'`,
+  audit `document.unarchive`. The editor then sets published and requests a
+  publish as for any draft.
+
+The audit row makes the archive a pending change on the dashboard (what
+changed: "Status: published → archived", action word "archived"). It takes
+effect with the next APPROVED publish, like every other change, and that one
+run does all of this:
+
+| where | what happens | by |
+|---|---|---|
+| site bucket | `<slug>.html` and `css/pages/<slug>.<hash>.css` are not rendered (only `status='published'` documents are), so the diff lists them as removed: deleted from S3 and CloudFront-invalidated | `aws/publish/core.js` (existing removed-keys path) |
+| fixed templates | `allSlugs` in the publish bundle includes archived rows, so a migrated report's old template never resurrects | `render-db.js` (existing) |
+| sitemap, author pages, Writing | built from `bundle.documents` (published only), so the page drops out of all three | existing |
+| edge | `publishRedirects` adds every archived slug as a KeyValueStore entry `/<slug>` → `{"status":410}` (`redirects.js kvsEntries(rows, { goneSlugs })`, slugs from `documents.js archivedSlugs`); the viewer-request function answers `410 Gone` with a small self-contained HTML body (`noindex`, link home, `cache-control: public, max-age=300`) instead of letting the path fall through to the 404 page. An ACTIVE redirect from the same path wins, so an admin can send readers elsewhere instead. Restoring removes the entry on the next publish (the sync deletes keys not wanted). | `render-db.js`, `packages/db/redirects.js`, `infra/cdk/cf-fn/viewer-request.js` |
+
+Why 410 and not just the 404 the deleted object already produces: 410 tells
+search engines the removal was deliberate (dropped from the index faster) and
+tells a reader with an old link the page is not coming back at that address.
+Why not delete: delete loses the slug reservation (a migrated slug would
+resurrect its template), the 410, the revisions and the text; the editor
+says "prefer Archive for anything that has been live" and Delete still
+refuses a published document.
+
+Admin surfaces: the list hides archived rows by default and shows an
+**Archived (N)** link (`/documents?status=archived`, red status cell, a
+notice with the way back); the editor shows an "Archived" notice, the status
+as a fixed field, and the Take down block with Restore / Delete. A revision
+restored onto an archived document comes back as a **draft**, never straight
+to published (`app/revisions/page.js applySnapshot`).
+
+Infra dependency: the edge 410 needs the CloudFront Function change deployed
+(`cdk deploy`); until then an archived page 404s, which is still unreachable.
+The empty-redirects-table guard in `publishRedirects` also skips the 410
+entries (logged), so prod needs at least one redirect row (it has `/auth`).
+
+Test: `packages/db/test/redirects.test.mjs` (kvsEntries shapes).
 
 ## Editor guards against an unstyled publish (2026-10-06)
 

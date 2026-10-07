@@ -54,6 +54,24 @@ function redirect(to, status, request) {
   };
 }
 
+// 410 for an archived Document. A function-generated response bypasses the
+// distribution's custom error pages, so it carries its own small body.
+function gone() {
+  return {
+    statusCode: 410,
+    statusDescription: 'Gone',
+    headers: {
+      'content-type': { value: 'text/html; charset=utf-8' },
+      'cache-control': { value: 'public, max-age=300' },
+    },
+    body: '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Page removed | Utah Civic Compact</title>'
+      + '<meta name="robots" content="noindex"><meta name="viewport" content="width=device-width, initial-scale=1"></head>'
+      + '<body>' // no inline style: the site CSP (style-src 'self') may apply to this response too
+      + '<h1>This page has been removed</h1><p>The Utah Civic Compact took this page down. It is not coming back at this address.</p>'
+      + '<p><a href="/">Go to the home page</a></p></body></html>',
+  };
+}
+
 async function handler(event) {
   const request = event.request;
   const uri = request.uri;
@@ -69,11 +87,15 @@ async function handler(event) {
     }
   }
 
-  // Redirect map — exact path match. Values are JSON: {"to": "...", "status": 302}
+  // Redirect map — exact path match. Values are JSON: {"to": "...", "status": 302}.
+  // An archived Document is {"status": 410}: answered here with 410 Gone (no
+  // page exists for it in S3 any more), so links and search engines learn
+  // the page was removed on purpose rather than seeing a 404.
   try {
     const raw = await kvs.get(uri);
     if (raw) {
       const rule = JSON.parse(raw);
+      if (rule.status === 410) return gone();
       return redirect(rule.to, rule.status || 302, request);
     }
   } catch (e) {

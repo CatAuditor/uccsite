@@ -28,6 +28,7 @@ const ACTION_SECTION = {
 const ACTION_WORDS = {
   save: 'saved', create: 'created', delete: 'deleted', restore: 'restored a revision of', upload: 'uploaded',
   navigation: 'saved', alt: 'edited alt text of', publish: 'published',
+  archive: 'archived', unarchive: 'restored as a draft',
 };
 const humanAction = (action) => ACTION_WORDS[action.split('.').pop()] || action;
 const labelMap = (pairs) => Object.fromEntries(pairs.map((f) => (Array.isArray(f) ? [f[0], f[1]] : [f.name, f.label])));

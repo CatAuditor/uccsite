@@ -13,7 +13,7 @@ import RequestPublish from '../../request-publish';
 import HtmlEditor from './html-editor';
 import StyleEditor from './style-editor';
 import ImageUrlField from '../../media/image-url-field';
-import { saveDocument, deleteDocument } from '../actions';
+import { saveDocument, deleteDocument, archiveDocument, unarchiveDocument } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,12 +47,20 @@ export default async function DocumentEditorPage({ params }) {
   if (!data) notFound();
   const { doc, rows, kit, preview, overrides, orphans, unstyledCount, rules, foreignClassMap, siteCssDrift } = data;
   const readOnly = session.role === 'viewer';
+  const archived = doc.status === 'archived';
   const report = doc.ingestReport || null;
   const serp = serpWarnings(doc);
 
   return (
     <div className="doc-editor">
       <h1>{doc.title} <span className="hint">/{doc.slug} · {doc.status}</span></h1>
+      {archived && (
+        <div className="notice">
+          <strong>Archived.</strong> This document is off the site: it is not rendered, listed or in the sitemap, and
+          /{doc.slug} answers &quot;410 Gone&quot; once the archive has been published. Edits here are kept but change nothing
+          on the site. Use <strong>Restore as draft</strong> at the bottom to bring it back.
+        </div>
+      )}
       {doc.lastPublishError && <div className="error">Last publish failed for this document: {doc.lastPublishError}</div>}
       {siteCssDrift && <div className="error"><strong>Live stylesheet is behind the code.</strong> {siteCssDrift}</div>}
       {readOnly && <p className="notice">Viewer role — read-only.</p>}
@@ -80,9 +88,11 @@ export default async function DocumentEditorPage({ params }) {
             </div>
             <div>
               <label htmlFor="status">Status</label>
-              <select id="status" name="status" defaultValue={doc.status} disabled={readOnly}>
-                {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              {archived
+                ? <><input type="hidden" name="status" value="archived" /><input type="text" id="status" value="archived" disabled readOnly /></>
+                : <select id="status" name="status" defaultValue={doc.status} disabled={readOnly}>
+                    {STATUSES.filter(s => s !== 'archived').map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>}
             </div>
             <div>
               <label htmlFor="templateKey">Template</label>
@@ -153,11 +163,38 @@ export default async function DocumentEditorPage({ params }) {
         templateKey={doc.templateKey}
       />
 
-      {!readOnly && doc.status !== 'published' && (
-        <ActionForm action={deleteDocument}>
-          <input type="hidden" name="id" value={doc.id} />
-          <button type="submit" className="danger">Delete this draft</button>
-        </ActionForm>
+      {!readOnly && (
+        <fieldset className="item">
+          <legend>Take down</legend>
+          {archived ? (
+            <>
+              <p className="hint">Restoring makes this a draft again. It returns to the site only when you set it to published and a publish request is approved.</p>
+              <ActionForm className="inline" action={unarchiveDocument}>
+                <input type="hidden" name="id" value={doc.id} />
+                <button type="submit">Restore as draft</button>
+              </ActionForm>
+            </>
+          ) : (
+            <>
+              <p className="hint">
+                <strong>Archive</strong> removes the page from the site for good unless it is restored: the page and its styling are
+                deleted and cleared from the cache, it leaves the sitemap, the author page and Writing, and its address answers
+                &quot;410 Gone&quot; so links and search engines drop it. Takes effect when the next publish request is approved.
+                The text, styling and revisions stay here. Prefer this over Delete for anything that has been live.
+              </p>
+              <ActionForm className="inline" action={archiveDocument}>
+                <input type="hidden" name="id" value={doc.id} />
+                <button type="submit" className="danger">Archive this document</button>
+              </ActionForm>
+            </>
+          )}
+          {doc.status !== 'published' && (
+            <ActionForm className="inline" action={deleteDocument}>
+              <input type="hidden" name="id" value={doc.id} />
+              <button type="submit" className="danger">Delete this {archived ? 'archived document' : 'draft'}</button>
+            </ActionForm>
+          )}
+        </fieldset>
       )}
     </div>
   );

@@ -19,7 +19,11 @@ const DOCUMENT_FIELDS = {
 };
 const JSON_COLS = new Set(['ingest_report', 'jsonld_overrides']);
 const INT_COLS = new Set(['noindex', 'nofollow', 'allow_scripts', 'sort_order']);
-const STATUSES = ['draft', 'published'];
+// 'archived': taken down for good unless restored — not rendered, not in the
+// sitemap or author pages, its slug still blocks the fixed template, and the
+// publish writes a 410 Gone for /<slug> into the edge KeyValueStore
+// (docs/systems/documents.md "Archiving"). Set only by archiveDocument.
+const STATUSES = ['draft', 'published', 'archived'];
 const TEMPLATE_KEYS = ['report'];
 
 const SELECT_COLS = `id, ${Object.keys(DOCUMENT_FIELDS).join(', ')},
@@ -214,6 +218,12 @@ async function loadExportBundle(client) {
   };
 }
 
+// archivedSlugs(client) → ['slug', …] of every archived document; the publish
+// turns each into a 410 Gone KeyValueStore entry (redirects.js kvsEntries).
+async function archivedSlugs(client) {
+  return (await client.query(`SELECT slug FROM documents WHERE status = 'archived' ORDER BY slug`)).rows.map(r => r.slug);
+}
+
 // loadPublishBundle(client) → everything the publish path needs in one shot.
 // allSlugs: every document row regardless of status — a slug that exists as a
 // document (even a draft) must never fall back to the old fixed template.
@@ -234,5 +244,5 @@ module.exports = {
   listStyleRules, upsertStyleRule, deleteStyleRule,
   listOverrides, setOverride, replaceOverrides,
   loadForeignClassMap, listForeignClassMap, setForeignClassMapping, deleteForeignClassMapping,
-  loadPublishBundle, loadExportBundle,
+  loadPublishBundle, loadExportBundle, archivedSlugs,
 };

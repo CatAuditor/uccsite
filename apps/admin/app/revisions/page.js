@@ -55,6 +55,10 @@ async function applySnapshot(client, entityType, snapshot, entityId, session) {
     if (Number(next.allowScripts) !== Number(current?.allowScripts || 0)) {
       await recordChange(client, { actor: session.email, action: next.allowScripts ? 'document.allow_scripts.on' : 'document.allow_scripts.off', entityType: 'document', entityId, diff: { via: 'restore' } });
     }
+    // A revision restored onto an ARCHIVED document comes back as a draft,
+    // never straight to published: the archive was a deliberate take-down
+    // (docs/systems/documents.md "Archiving"); an editor re-publishes it knowingly.
+    if (current?.status === 'archived') next.status = 'draft';
     const sources = await loadSiteSources();
     const result = runIngest(next, { siteCss: sources.siteCss, foreignClassMap: await loadForeignClassMap(client, next.templateKey) });
     next.bodyHtmlNormalized = result.bodyHtmlNormalized;

@@ -115,6 +115,13 @@ for prod:** `node scripts/migrate-redirects.mjs --env prod` once, so the
 seeded `/auth` key is in the table; the admin's Redirects page is the source
 of truth afterwards.
 
+**Archived documents (2026-10-06):** the same sync also writes one
+`/<slug>` → `{"status":410}` entry per `documents.status='archived'` row
+(`archivedSlugs` + `kvsEntries(rows, { goneSlugs })`); the viewer-request
+function answers those with 410 Gone and a small inline body. An active
+redirect from the same path takes precedence. The empty-table guard above
+skips these too (logged). Details: docs/systems/documents.md "Archiving".
+
 ## Publish mutex (review fix 2026-09-13)
 
 The admin's in-flight check (`inFlightPublish`: freshest 'publishing' row

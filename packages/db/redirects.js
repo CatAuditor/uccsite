@@ -75,10 +75,19 @@ async function replaceRedirects(client, list) {
   for (const r of list) await upsertRedirect(client, { ...r, id: null });
 }
 
-// kvsEntries(redirects) → [{ key, value }] in the viewer function's format
-// ({"to": …, "status": …}) — only active rows.
-function kvsEntries(redirects) {
-  return redirects.filter(r => r.active).map(r => ({ key: r.fromPath, value: JSON.stringify({ to: r.toUrl, status: r.statusCode }) }));
+// kvsEntries(redirects, { goneSlugs }) → [{ key, value }] in the viewer
+// function's format: active rows as {"to": …, "status": …}; each archived
+// document slug (documents.js archivedSlugs) as {"status": 410}, which the
+// function answers with 410 Gone. An active redirect from the same path
+// wins — an admin may deliberately send an archived page's readers elsewhere.
+function kvsEntries(redirects, { goneSlugs = [] } = {}) {
+  const entries = redirects.filter(r => r.active).map(r => ({ key: r.fromPath, value: JSON.stringify({ to: r.toUrl, status: r.statusCode }) }));
+  const taken = new Set(entries.map(e => e.key));
+  for (const slug of goneSlugs) {
+    const key = `/${slug}`;
+    if (!taken.has(key)) entries.push({ key, value: JSON.stringify({ status: 410 }) });
+  }
+  return entries;
 }
 
 module.exports = { DDL, STATUSES, validateRedirect, listRedirects, upsertRedirect, deleteRedirect, replaceRedirects, kvsEntries };

@@ -139,7 +139,17 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
   from the site's Style Kit. "Promote to template rule" makes that styling
   apply to every future document automatically.
 - Set **Status: published** and save; the page goes live with the next
-  approved publish (section 2). Set it back to draft to take it down.
+  approved publish (section 2). Set it back to draft to take it down for
+  now (the address then shows the site's "page not found").
+- **Archive** (the Take down block at the bottom of a document) is for taking
+  a page down for good: with the next approved publish the page is deleted
+  and cleared from the cache, it leaves the sitemap, the author page and
+  Writing, and its address answers "410 Gone", which tells search engines
+  and anyone with an old link that it was removed on purpose. The text,
+  styling and revisions stay in the admin. Archived documents are hidden
+  from All documents behind the **Archived (N)** link; open one and press
+  **Restore as draft** to bring it back (then publish it again as usual).
+  Prefer Archive over Delete for anything that has ever been live.
 - Re-pasting a revised version keeps the styling you applied.
 
 ### Operations
