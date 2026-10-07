@@ -4,6 +4,18 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.21.1 — 2026-10-06 (branch `refactor`) — Privacy policy: drop admin-access wording
+
+**Site / legal** (`templates/privacy.html`; prod + staging `documents` row `privacy` re-imported
+with `migrate-documents.mjs --only privacy --overwrite`, published `--source db`)
+- User correction: the admin (Cognito groups, staff accounts, audit log, owner role) is internal
+  and not part of the public policy. The storage paragraph no longer mentions staff accounts,
+  access logging, or the "organization owner" role; it says access is limited to staff who need
+  it and tips are seen only by editorial staff and leadership.
+
+Open P1 at push: unchanged from v0.19.2 (Stripe webhook URL, GITHUB_APP_* / TURNSTILE_SECRET_KEY
+placeholders, tip Attachments field dead).
+
 ## v0.21.0 — 2026-10-06 (branch `refactor`) — Admin guards against publishing an unstyled document
 
 **Admin / Documents** (`apps/admin/lib/documents.js`, `lib/authoring-kit.js`, `app/documents/authoring-kit/route.js`,

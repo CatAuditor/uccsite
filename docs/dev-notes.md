@@ -36,6 +36,10 @@ It states how long each kind of record is kept and what requests we honor.
 
 - **Live now** on the site and in the admin's **Documents → Privacy Policy**.
   Edit it there like any other document; the old wording is in its history.
+- **Later the same day:** the storage paragraph briefly described how staff
+  sign in to the admin. Removed — the admin is internal and not something the
+  public policy should describe. It now says only that access is limited to
+  staff who need it and that tips are seen only by editorial staff and leadership.
 - **Two commitments in the text need a person to stand behind them** (both
   reversible by editing the page): the petition record we deliver will not
   include signers' email addresses or phone numbers, and a signer may ask to
