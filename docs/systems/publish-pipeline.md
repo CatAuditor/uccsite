@@ -38,7 +38,11 @@ aws/publish/handler.mjs     PUBLISH LAMBDA (Phase 7): the admin's Publish
                             releases it in finally; content from DSQL
                             (packages/db/content loadContent), site sources
                             bundled into the asset via infra/cdk/
-                            copy-site-src.js (list = inputs.js SITE_SRC_*),
+                            copy-site-src.js (list = inputs.js SITE_SRC_*)
+                            — so ANY change under css/ js/ assets/
+                            templates/ needs `cdk deploy <stack>` THEN a
+                            publish; a push alone changes nothing live
+                            (2026-10-06 error log: kit classes stripped),
                             sitemap lastmod from content updated_at
                             (makeDbLastmod). Known limitation: template-only
                             changes don't advance lastmod, and removing the

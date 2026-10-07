@@ -284,7 +284,12 @@ Dependencies (apps/admin): `mammoth` ^1.9, `marked` ^15. Tests:
 
 ## Env vars (admin)
 
-`SITE_BUCKET` (live `css/styles.css` for the Style Kit; falls back to the
+`SITE_BUCKET` (live `css/styles.css` for the Style Kit, 5-minute cache.
+**A stylesheet change reaches that copy only after `cdk deploy` of the
+stack, which bundles `css/` into the publish Lambda, AND a publish**; until
+then the admin strips the new classes on save and the kit lists them as
+missing. See docs/error-handling/client-side-error/2026-10-06-kit-classes-stripped-stale-bucket-css.md.
+Falls back to the
 repo copy with a warning), `PUBLIC_ORIGIN` (preview `<base>`),
 `SITE_SRC_ROOT` (where `templates/partials`, `templates/documents`, `css/`
 are read; default = monorepo root from `apps/admin`; Amplify copies them to

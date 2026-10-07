@@ -154,8 +154,11 @@ end of the hero.
 tool styles the piece before it is uploaded, and the editor adjusts on the
 Styling tab if needed.
 
-**Needs a publish.** The stylesheet change reaches the live site with the
-next publish from Publish & Status.
+**Published.** The new stylesheet is live on utahciviccompact.org and in
+the admin as of about 1:50am on 6 October (the site's stylesheet only
+changes when the system is redeployed and then published; both were done).
+If you downloaded the kit before then, download it again: it now lists the
+Document prose classes and the sample page uses them.
 
 ## 2026-10-06 — The authoring kit now carries the site's styling
 
