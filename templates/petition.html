@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign the Petition | Utah Civic Compact</title>
+  <title>{{#petition.share}}{{petition.share.page_title}}{{/petition.share}}{{^petition.share}}Sign the Petition | Utah Civic Compact{{/petition.share}}</title>
   <meta name="description" content="{{petition.body}}" />
   <link rel="canonical" href="https://utahciviccompact.org/petition" />
 
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://utahciviccompact.org/petition" />
-  <meta property="og:title" content="Sign the Petition | Utah Civic Compact" />
+  <meta property="og:title" content="{{#petition.share}}{{petition.share.page_title}}{{/petition.share}}{{^petition.share}}Sign the Petition | Utah Civic Compact{{/petition.share}}" />
   <meta property="og:description" content="{{petition.body}}" />
   <meta property="og:site_name" content="Utah Civic Compact" />
   {{#petition.share}}<meta property="og:image" content="{{petition.share.image}}" />
   <meta name="twitter:card" content="{{petition.share.card}}" />
   <meta name="twitter:image" content="{{petition.share.image}}" />{{/petition.share}}{{^petition.share}}<meta name="twitter:card" content="summary" />{{/petition.share}}
-  <meta name="twitter:title" content="Sign the Petition | Utah Civic Compact" />
+  <meta name="twitter:title" content="{{#petition.share}}{{petition.share.page_title}}{{/petition.share}}{{^petition.share}}Sign the Petition | Utah Civic Compact{{/petition.share}}" />
   <meta name="twitter:description" content="{{petition.body}}" />
 
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />

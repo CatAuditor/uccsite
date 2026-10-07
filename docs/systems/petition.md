@@ -55,7 +55,7 @@ scripts/seed-homepage-group.mjs copy a content/homepage.json group into an env's
 | `cta` | hero button, form submit button | |
 | `cta_secondary`, `cta_secondary_url` | hero + /petition secondary link | blank label = no link; url passes `safeUrl` |
 | `count_label` | hero + /petition counter | `{count}` → number of **Utah** signatures; blank = no counter; hidden while 0 |
-| `form_title`, `form_intro` | /petition panel | |
+| `form_title`, `form_intro` | /petition panel; `form_title` is also the page `<title>` / `og:title` (the link-preview headline) | blank = "Sign the petition" |
 | `consent` | under the sign button | the "future communications" line |
 | `thanks_title`, `thanks_body`, `thanks_cta`, `thanks_dismiss` | /petition-thanks | `thanks_dismiss` also labels the modal's dismiss |
 
@@ -194,8 +194,17 @@ off. `js/petition.js` adds the phone share sheet (`navigator.share`) and
   appended automatically; Facebook ignores pre-filled text and uses the
   page's Open Graph preview.
 - **Preview** (`og:image`, `twitter:card`/`twitter:image` on /petition):
-  `share_image` if it is a `/media/…` or `/assets/…` png/jpg/webp →
-  `summary_large_image`; anything else falls back to `/UCC.png` as `summary`.
+  `share_image` if it is a `/media/…` or `/assets/…` png/jpg/webp; anything
+  else falls back to `/assets/share-default.png` (the white logo lockup on
+  navy `#1B2F4E`, 1200×630 — `UCC.png` is transparent, so apps painted
+  their own background behind it). Always `summary_large_image`. The same
+  file is the `og:image` of every other template and the Documents default
+  (`packages/render/documents.js` DEFAULT_OG_IMAGE). Regenerate with sharp:
+  `logo-lockup-transparent.png` resized to 560 wide, centred on a 1200×630
+  navy canvas (fits inside the centre square, so `summary` crops keep it).
+- **Preview headline** (`<title>`, `og:title`, `twitter:title`):
+  `share.page_title` = `form_title` (tags stripped, default "Sign the
+  petition") + " | Utah Civic Compact". Off → "Sign the Petition | …".
 - **Heading**: `share_title`, default "Share the petition".
 - Absent entirely when the petition is off (headline blank).
 

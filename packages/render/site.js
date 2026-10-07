@@ -68,7 +68,9 @@ function deriveHomepage(content) {
 // preview tags (og:image) are in the HTML that Facebook, iMessage and X fetch.
 // Text: share_text, else the headline with its <em> markup stripped. Image: a
 // site path to a png/jpg/webp under /media or /assets (1200×630 → large card),
-// else the logo as a small card. Absent when the petition is switched off.
+// else the logo on navy (assets/share-default.png, 1200×630). Title: the form
+// title drives <title>/og:title too, so the admin's one field names the page in
+// every link preview. Absent when the petition is switched off.
 const SHARE_IMAGE = /^\/(media|assets)\/[\w./-]+\.(png|jpe?g|webp)$/i;
 function derivePetitionShare(content, siteUrl = SITE_URL) {
   const p = content.homepage && content.homepage.petition;
@@ -79,9 +81,10 @@ function derivePetitionShare(content, siteUrl = SITE_URL) {
   const custom = SHARE_IMAGE.test(String(p.share_image || '').trim());
   const share = {
     title: p.share_title || 'Share the petition',
+    page_title: `${String(p.form_title || '').replace(/<[^>]+>/g, '').trim() || 'Sign the petition'} | Utah Civic Compact`,
     url, text,
-    image: custom ? `${siteUrl}${String(p.share_image).trim()}` : `${siteUrl}/UCC.png`,
-    card: custom ? 'summary_large_image' : 'summary',
+    image: `${siteUrl}${custom ? String(p.share_image).trim() : '/assets/share-default.png'}`,
+    card: 'summary_large_image',
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${e(url)}`,
     x: `https://twitter.com/intent/tweet?text=${e(text)}&url=${e(url)}`,
     bluesky: `https://bsky.app/intent/compose?text=${e(`${text} ${url}`)}`,

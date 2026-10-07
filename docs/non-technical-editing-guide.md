@@ -90,7 +90,8 @@ puts that version back as a draft; request a publish to take it live.
 - **Petition** — the campaign copy, the thank-you page's donation window
   (**amounts** as dollars, e.g. `5, 10, 25`; **one-time, monthly or both**; an
   Other amount is always offered) and the **share** message and preview
-  picture used when people post the petition link.
+  picture used when people post the petition link. The **Form title** is
+  also the headline apps show on that link; blank = Sign the petition.
 - **Homepage** — hero headline/subtitle, mission quote, about paragraphs,
   join section, donate section, donation pop-up text, the press strip.
   (The featured statement card is automatic: it is always the newest

@@ -25,7 +25,7 @@ const SEO_FIELDS = [
   ['ogType', 'og:type', 'blank = article'],
   ['ogTitle', 'og:title', 'blank = meta title'],
   ['ogDescription', 'og:description', 'blank = meta description'],
-  ['ogImage', 'og:image URL', 'blank = /UCC.png'],
+  ['ogImage', 'og:image URL', 'blank = the logo on navy (/assets/share-default.png)'],
   ['twitterCard', 'twitter:card', 'summary or summary_large_image (blank = summary)'],
   ['jsonldType', 'JSON-LD @type', 'e.g. Article; blank = no JSON-LD'],
 ];

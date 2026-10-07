@@ -23,7 +23,8 @@ js/main.js               nav, animations, join form, donate form, donation track
 js/tip.js                tipline form controller
 js/petition.js           petition form, thank-you payment modal, signature counter (index too; petition.md)
 static/                  copied verbatim into dist/: admin/, _headers, _redirects
-assets/, UCC.png, favicon.svg, robots.txt, llms.txt   copied verbatim (COPY_FROM_ROOT in build.js)
+assets/, UCC.png, favicon.svg, robots.txt, llms.txt   copied verbatim (COPY_FROM_ROOT in build.js);
+                                                      assets/share-default.png = every page's default og:image (logo on navy)
 functions/api/           Cloudflare Pages Functions (see api-security.md)
 workers/auth/            Decap OAuth worker (see cms.md)
 packages/html-ingest/    Document sanitize/nid/a11y pipeline (AWS rebuild §5; pure)

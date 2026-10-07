@@ -6,6 +6,24 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — Petition link: the preview headline follows the form title, and the share picture is now on navy
+
+Two sharing fixes.
+
+- **Headline on the link.** When the petition link was posted or texted, apps
+  showed "Sign the Petition" no matter what was typed in the admin, because
+  that headline was fixed in the page itself. It now follows the **Form title**
+  on the Petition page (today: "Get The Flock Off Our Streets"), which is also
+  the browser-tab title. Blank = Sign the petition.
+- **Share picture.** The logo file has a see-through background, so each app
+  painted its own (white, grey, black) behind it. The default picture is now
+  the white logo on the site's navy, sized for a wide preview card. It is the
+  default for every page on the site and for documents, not only the petition.
+  A picture chosen in **Share: preview image** still wins on the petition.
+
+Nothing to do for editors. Apps cache link previews, so a link already posted
+may keep the old look until the app refreshes it.
+
 ## 2026-10-06 — Users page: password reset fixed for invited people, and a way to remove someone
 
 **Reset password** looked broken. It failed, with a confusing message about

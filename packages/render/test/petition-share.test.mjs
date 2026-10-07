@@ -19,15 +19,21 @@ test('share_text overrides the headline; no petition means no share block', () =
   assert.equal(withPetition({ headline: '' }).share, undefined);
 });
 
-test('preview image: only a /media or /assets picture, else the logo as a small card', () => {
+test('preview image: only a /media or /assets picture, else the logo on navy', () => {
   const ok = withPetition({ headline: 'H', share_image: '/media/abc/1200.jpg' }).share;
   assert.equal(ok.image, 'https://utahciviccompact.org/media/abc/1200.jpg');
   assert.equal(ok.card, 'summary_large_image');
   for (const bad of ['javascript:alert(1)', 'https://evil.example/x.jpg', '/media/x.svg', '']) {
     const s = withPetition({ headline: 'H', share_image: bad }).share;
-    assert.equal(s.image, 'https://utahciviccompact.org/UCC.png', bad);
-    assert.equal(s.card, 'summary', bad);
+    assert.equal(s.image, 'https://utahciviccompact.org/assets/share-default.png', bad);
+    assert.equal(s.card, 'summary_large_image', bad);
   }
+});
+
+test('page title (and the link preview headline) follows the form title', () => {
+  assert.equal(withPetition({ headline: 'H', form_title: 'Get The Flock Off Our Streets' }).share.page_title, 'Get The Flock Off Our Streets | Utah Civic Compact');
+  assert.equal(withPetition({ headline: 'H', form_title: ' <b>x</b> ' }).share.page_title, 'x | Utah Civic Compact');
+  assert.equal(withPetition({ headline: 'H' }).share.page_title, 'Sign the petition | Utah Civic Compact');
 });
 
 test('donate amounts: dollars, bounds, de-dupe, cap of six, fallback', () => {

@@ -266,7 +266,7 @@ export const HOMEPAGE_GROUPS = [
     ['cta_secondary', 'Secondary link label', 'text', 'blank = no secondary link'],
     ['cta_secondary_url', 'Secondary link URL', 'text', 'e.g. /alpr.html'],
     ['count_label', 'Signature counter', 'text', 'Shown under the hero buttons and on /petition once at least one Utahn has signed. {count} becomes the number of UTAH signatures (ZIP 84xxx); out-of-state signatures are kept but not counted. Blank = no counter. Updates as soon as a new Utah signature lands (no timed refresh).'],
-    ['form_title', 'Form title (/petition)'],
+    ['form_title', 'Form title (/petition)', 'text', 'Heading of the sign-up panel. Also the page title and the headline of the link preview when /petition is shared. Blank = Sign the petition'],
     ['form_intro', 'Form intro (/petition)', 'textarea'],
     ['consent', 'Consent line under the sign button', 'textarea', 'What signers agree to — keep it true to how the list is used.'],
     ['thanks_title', 'Thank-you page title', 'textarea'],
@@ -286,7 +286,7 @@ export const HOMEPAGE_GROUPS = [
     // Sharing (packages/render/site.js derivePetitionShare).
     ['share_title', 'Share: heading', 'text', 'Above the share buttons on /petition and the thank-you page. Blank = Share the petition'],
     ['share_text', 'Share: message', 'textarea', 'Pre-filled in X, Bluesky, texts and emails (Facebook uses the page preview). Blank = the headline. The link is added automatically.'],
-    ['share_image', 'Share: preview image', 'text', 'The picture shown when the link is posted. A Media Library path, e.g. /media/…/1200.jpg — 1200×630 works best. Blank = the logo, as a small card.'],
+    ['share_image', 'Share: preview image', 'text', 'The picture shown when the link is posted. A Media Library path, e.g. /media/…/1200.jpg — 1200×630 works best. Blank = the logo on navy.'],
   ]},
 ];
 

@@ -16,7 +16,7 @@ const { render } = require('./engine');
 const { navFields } = require('./navigation');
 
 const TEMPLATE_KEYS = ['report'];
-const DEFAULT_OG_IMAGE = '/UCC.png';
+const DEFAULT_OG_IMAGE = '/assets/share-default.png'; // logo on navy (transparent UCC.png let apps paint their own background)
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 
