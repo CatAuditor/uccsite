@@ -20,8 +20,19 @@ const getS3 = () => (s3 ??= new S3Client({ region: config.region }));
 // Site sources the editor needs: the live stylesheet + partials + shells.
 // Cached for the process lifetime (a publish changes them rarely; restart the
 // admin or wait for a new instance to pick up a new stylesheet).
-const cache = { at: 0, siteCss: '', partials: null, shells: null };
+const cache = { at: 0, siteCss: '', partials: null, shells: null, repoCss: '', siteCssStale: false };
 const SITE_SRC_TTL_MS = 5 * 60 * 1000;
+
+// siteCssDrift(sources) → null | string. The live stylesheet only changes
+// after a cdk deploy of the site stack AND a publish; until then classes
+// added in the repo do not exist for documents (the ingest strips them) and
+// the kit cannot list them. Surfaced on the Documents editor, the Styles
+// page and in the kit (docs/error-handling/client-side-error/
+// 2026-10-06-kit-classes-stripped-stale-bucket-css.md).
+export function siteCssDrift(sources) {
+  if (!sources?.siteCssStale) return null;
+  return `The live site stylesheet (${sources.siteCss.length.toLocaleString()} characters) differs from the stylesheet in this admin build (${sources.repoCss.length.toLocaleString()} characters). Classes added in the repo do not exist for documents until the site stack is redeployed (cdk deploy) and a publish runs; until then the editor strips them on save and the authoring kit cannot list them.`;
+}
 
 async function getObjectText(key) {
   const res = await getS3().send(new GetObjectCommand({ Bucket: config.siteBucket, Key: key }));
@@ -43,12 +54,17 @@ export async function loadSiteSources() {
   const root = config.siteSrcRoot;
   cache.partials = readDir(join(root, 'templates', 'partials'));
   cache.shells = readDir(join(root, 'templates', 'documents'));
+  cache.repoCss = existsSync(join(root, 'css', 'styles.css')) ? readFileSync(join(root, 'css', 'styles.css'), 'utf8') : '';
   try {
     cache.siteCss = await getObjectText('css/styles.css');
   } catch (err) {
     console.warn(`[documents] could not read css/styles.css from the site bucket (${err.name}); falling back to the repo copy`);
-    cache.siteCss = existsSync(join(root, 'css', 'styles.css')) ? readFileSync(join(root, 'css', 'styles.css'), 'utf8') : '';
+    cache.siteCss = cache.repoCss;
   }
+  // Compare without line endings: the Amplify checkout may be CRLF, the bucket LF.
+  const norm = (s) => String(s || '').replace(/\r\n?/g, '\n').trim();
+  cache.siteCssStale = Boolean(cache.repoCss) && norm(cache.siteCss) !== norm(cache.repoCss);
+  if (cache.siteCssStale) console.warn(`[documents] live css/styles.css (${cache.siteCss.length} chars) differs from the admin build's repo copy (${cache.repoCss.length} chars): deploy + publish pending`);
   cache.at = Date.now();
   return cache;
 }
@@ -120,6 +136,7 @@ export async function editorData(client, id) {
     doc, rules: docRules, allRules: rules, overrides, orphans, kit, rows, preview,
     unstyledCount: rows.filter(r => r.unstyled).length,
     foreignClassMap,
+    siteCssDrift: siteCssDrift(sources),
   };
 }
 

@@ -22,10 +22,19 @@ function Removed({ removed }) {
   );
 }
 
+// Per-page classes of the migrated reports: the usual sign that a writer's
+// tool imitated a live page instead of using the authoring kit's frame.
+const LIVE_PAGE_CLASSES = /\b(paper-body|paper-inner|release-meta|release-badge|release-date|release-author|paper-toc|ask-box|sources-list|related-cta|hero-ctas|hero-secondary|btn-file|report-body|report-section|report-callout|report-table|briefing-body|briefing-inner|acknowledgment|stats-grid|stat-card)\b/;
+
 export default function HtmlEditor({ bodyHtmlRaw, pageCss, readOnly, report, orphans }) {
   const [html, setHtml] = useState(bodyHtmlRaw || '');
   const [css, setCss] = useState(pageCss || '');
   const [loaded, setLoaded] = useState('');
+  // A body with no page frame publishes as bare text under the hero (the
+  // site stylesheet resets every margin). Documents with their own page CSS
+  // (the migrated reports) carry their own frame and are exempt.
+  const unframed = html.trim() && !css.trim() && !/class="[^"]*\b(prose|section|container)\b/.test(html);
+  const copiedFromLivePage = html.trim() && !css.trim() && LIVE_PAGE_CLASSES.test(html);
 
   async function onFile(e) {
     const file = e.target.files?.[0];
@@ -62,6 +71,20 @@ export default function HtmlEditor({ bodyHtmlRaw, pageCss, readOnly, report, orp
       <label htmlFor="bodyHtmlRaw">Body HTML (a fragment — no &lt;html&gt;/&lt;head&gt;; a full document is trimmed to its body)</label>
       <textarea id="bodyHtmlRaw" name="bodyHtmlRaw" className="code" rows={22} value={html} disabled={readOnly}
         onChange={(e) => setHtml(e.target.value)} spellCheck={false} />
+      {copiedFromLivePage && (
+        <div className="error">
+          <strong>This HTML uses classes from another page on the site</strong> (paper-body, release-meta, ask-box and the like). Those belong to that
+          page's private stylesheet, not the site's: they are stripped on save and the page publishes as bare text. Rebuild the body on the
+          authoring kit's frame (hero, then <code>section &gt; container &gt; prose</code>, callouts for boxes) before saving.
+        </div>
+      )}
+      {!copiedFromLivePage && unframed && (
+        <div className="notice">
+          <strong>No page frame.</strong> This body has no <code>section</code>, <code>container</code> or <code>prose</code> wrapper, so it will publish as
+          plain unspaced text under the hero. Wrap the running text as the authoring kit's section 6.1 shows (<code>&lt;section class="section bg-cream"&gt;&lt;div
+          class="container"&gt;&lt;div class="prose"&gt;…</code>), or give the document its own page CSS below.
+        </div>
+      )}
       <div className="hint">
         Allowed: structural/text tags, lists, tables, images (alt required), links, details/summary, decorative inline SVG.
         Stripped: script, style, iframe, forms, inline style attributes, event handlers, javascript:/data: URLs.
@@ -83,10 +106,14 @@ export default function HtmlEditor({ bodyHtmlRaw, pageCss, readOnly, report, orp
             </div>
           )}
           {report.foreignClasses?.length > 0 && (
-            <div className="notice">
-              <strong>{report.foreignClasses.length} class{report.foreignClasses.length === 1 ? '' : 'es'} removed that aren’t in your stylesheet:</strong>{' '}
+            <div className="error">
+              <strong>{report.foreignClasses.length} class{report.foreignClasses.length === 1 ? '' : 'es'} removed on save. The page will publish without their styling:</strong>{' '}
               {[...new Set(report.foreignClasses.map(f => f.className || f.class || f))].join(', ')}
-              <div className="hint">Map them once on the Styles page and the same substitution happens on every future paste.</div>
+              <div className="hint">
+                These names are not in the site stylesheet. If they came from another page on the site, rebuild the body on the authoring kit's frame
+                (section 6.1) using only the classes the kit lists (6.5). If they come from an outside system you paste from regularly, map them once on the
+                Styles page and the same substitution happens on every future paste. Do not request publish until this report is clean.
+              </div>
             </div>
           )}
           {report.warnings?.length > 0 && <div className="notice">{report.warnings.map((w, i) => <div key={i}>{w}</div>)}</div>}

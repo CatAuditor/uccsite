@@ -44,6 +44,10 @@ of the publish can still show the old catalog; download again after that.
 
 ## What would catch it earlier
 
+- Done 2026-10-06 evening: `loadSiteSources` compares the bucket stylesheet
+  with the admin build's repo copy and the difference is shown as a red
+  banner on the Documents editor and the Styles page and as the first block
+  of the downloaded kit (`siteCssDrift`, docs/systems/documents.md).
 - Any change under `css/`, `js/`, `assets/` or `templates/` is a **deploy +
   publish**, not a push. Noted in `docs/systems/publish-pipeline.md` and
   `docs/systems/documents.md` (Style Kit source). A future improvement: the

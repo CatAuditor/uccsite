@@ -583,6 +583,7 @@ const KIT_CSS = `
 .kit-doc input[type="checkbox"] { margin-right: 6px; }
 .kit-note { background: var(--cream); border-left: 4px solid var(--red); padding: 16px 20px; border-radius: 6px; margin: 0 0 24px; }
 .kit-note p:last-child { margin-bottom: 0; }
+.kit-warn { background: #fdecea; border-left-color: var(--red); }
 .kit-live { max-width: 1240px; margin: 0 auto 24px; border: 2px dashed var(--red); border-radius: 8px; overflow: hidden; }
 .kit-live-label { background: var(--red); color: var(--white); font: 700 12px/1 var(--font-sans); letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 16px; }
 .kit-live-label span { font-weight: 400; text-transform: none; letter-spacing: 0; margin-left: 10px; }
@@ -593,8 +594,10 @@ const FILE_NOTE = `<div class="kit-note">
 <p><strong>The stylesheet in this file is for reading, not copying.</strong> The <code>&lt;style&gt;</code> block in this page's head is the site's live stylesheet, embedded so this page renders the way the site does and so a machine can read each class's CSS beside the markup that uses it. On the site itself a document body never carries a <code>&lt;style&gt;</code> block or a <code>style="..."</code> attribute: the editor strips both on save and the page's security policy blocks inline styles. Styling is done with the classes in sections 6.1 to 6.5, nothing else.</p>
 </div>`;
 
-// buildAuthoringKitHtml({ kit, rules, coverageKeys, designTokens, siteCss, generatedAt }) → one .html document
-export function buildAuthoringKitHtml({ siteCss = '', ...rest } = {}) {
+// buildAuthoringKitHtml({ kit, rules, coverageKeys, designTokens, siteCss, notice, generatedAt }) → one .html document
+// notice: optional plain-text warning shown first (the live stylesheet lags the repo, so this kit may be missing classes).
+export function buildAuthoringKitHtml({ siteCss = '', notice = '', ...rest } = {}) {
+  const warning = notice ? `<div class="kit-note kit-warn"><p><strong>Warning: this kit may be incomplete.</strong> ${esc(notice)} Download it again after the deploy and publish.</p></div>\n` : '';
   const md = buildAuthoringKit(rest);
   const title = (md.match(/^# (.+)$/m) || [])[1] || 'Utah Civic Compact: authoring and style kit';
   const body = marked.parse(md, { gfm: true, breaks: false, async: false });
@@ -616,7 +619,7 @@ ${safeCss}
 </head>
 <body>
 <div class="kit-doc">
-${FILE_NOTE}
+${warning}${FILE_NOTE}
 ${before}
 </div>
 ${live}

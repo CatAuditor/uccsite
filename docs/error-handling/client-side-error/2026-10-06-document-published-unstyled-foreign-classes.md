@@ -46,7 +46,11 @@ either, so even the surviving text had no prose styling.
 
 ## What would catch it earlier
 
-The ingest report already listed the 17 foreign classes on the Documents
-editor; a save with foreign classes could show a louder banner ("17 classes
-removed; the page will render unstyled") and the Request-publish button
-could ask for confirmation when `foreignClasses.length > 0`.
+Done 2026-10-06 evening (`app/documents/[id]/html-editor.js`): the foreign
+class block is now a red error ("removed on save; the page will publish
+without their styling; do not request publish until clean"); before the
+save, a red warning fires when the raw HTML uses a migrated report's
+per-page classes and a notice fires when the body has no
+`prose`/`section`/`container` frame and no page CSS. Not done: a
+server-side block on Request publish; the two-person review remains the
+gate.

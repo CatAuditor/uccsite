@@ -4,7 +4,7 @@
 import { listStyleRules, listForeignClassMap, listDocuments, TEMPLATE_KEYS } from '@uccsite/db/documents';
 import { requireSession } from '../../lib/auth';
 import { withDb } from '../../lib/data';
-import { loadSiteSources, styleKitFor, ruleMatchCounts, parsedDocuments } from '../../lib/documents';
+import { loadSiteSources, styleKitFor, ruleMatchCounts, parsedDocuments, siteCssDrift } from '../../lib/documents';
 import { rootedTree } from '@uccsite/style-apply';
 import ActionForm from '../action-form';
 import RequestPublish from '../request-publish';
@@ -103,6 +103,7 @@ export default async function StylesPage() {
       )}
 
       <h2>Style Kit <span className="hint">{kit.entries.length} classes · {kit.undocumented.length} undocumented</span></h2>
+      {siteCssDrift(sources) && <div className="error"><strong>Live stylesheet is behind the code.</strong> {siteCssDrift(sources)}</div>}
       <p className="hint">Parsed from the live <code>css/styles.css</code>. Document a class with a <code>/* @class name @label … @applies p @group … @desc … */</code> comment above its rule — a developer task, once per stylesheet.</p>
       <table>
         <thead><tr><th>Class</th><th>Label</th><th>Applies to</th><th>Group</th><th>Declarations</th></tr></thead>

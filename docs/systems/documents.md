@@ -260,6 +260,24 @@ No personal data in the file. Logged as `[documents] authoring kit for
 No AI service is part of the product (spec §1); the kit is a document an
 author chooses to give to their own tool.
 
+## Editor guards against an unstyled publish (2026-10-06)
+
+After `/license-plate-has-a-price` published as bare text
+(docs/error-handling/client-side-error/2026-10-06-document-published-unstyled-foreign-classes.md),
+`app/documents/[id]/html-editor.js` warns before the save as well as after:
+
+- **Copied from a live page** (`.error`, client-side on the raw HTML): the
+  body uses one of the migrated reports' per-page classes
+  (`LIVE_PAGE_CLASSES`: paper-body, release-meta, ask-box, btn-file,
+  report-section, briefing-body, stats-grid ...) and has no page CSS of its
+  own. Tells the editor to rebuild on the kit frame.
+- **No page frame** (`.notice`): body has no `prose`, `section` or
+  `container` class and no page CSS, so it would publish as unspaced text.
+- The ingest report's foreign-class block is now `.error` ("removed on
+  save; the page will publish without their styling") and says not to
+  request publish until the report is clean. Nothing is blocked server-side:
+  the two-person publish review stays the gate.
+
 ## Upload a file (.html / .docx / .md) (2026-10-05)
 
 The HTML box's file input accepts `.html/.htm` (read in the browser,
@@ -296,6 +314,14 @@ Dependencies (apps/admin): `mammoth` ^1.9, `marked` ^15. Tests:
 stack, which bundles `css/` into the publish Lambda, AND a publish**; until
 then the admin strips the new classes on save and the kit lists them as
 missing. See docs/error-handling/client-side-error/2026-10-06-kit-classes-stripped-stale-bucket-css.md.
+Guard (2026-10-06): `loadSiteSources()` also reads the admin build's repo
+copy (`SITE_SRC_ROOT/css/styles.css`), sets `siteCssStale` when the two
+differ (CRLF-normalised) and logs `[documents] live css/styles.css (...)
+differs from the admin build's repo copy (...): deploy + publish pending`;
+`siteCssDrift(sources)` turns that into one sentence shown as a red banner
+on the Documents editor (`editorData().siteCssDrift`), on the Styles page,
+and as the first block of the downloaded kit (`buildAuthoringKitHtml({
+notice })`, `.kit-warn`; the kit log line ends `STALE live stylesheet`).
 Falls back to the
 repo copy with a warning), `PUBLIC_ORIGIN` (preview `<base>`),
 `SITE_SRC_ROOT` (where `templates/partials`, `templates/documents`, `css/`

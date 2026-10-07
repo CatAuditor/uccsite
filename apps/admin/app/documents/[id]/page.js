@@ -45,7 +45,7 @@ export default async function DocumentEditorPage({ params }) {
   const { id } = await params;
   const data = await withDb((client) => editorData(client, id));
   if (!data) notFound();
-  const { doc, rows, kit, preview, overrides, orphans, unstyledCount, rules, foreignClassMap } = data;
+  const { doc, rows, kit, preview, overrides, orphans, unstyledCount, rules, foreignClassMap, siteCssDrift } = data;
   const readOnly = session.role === 'viewer';
   const report = doc.ingestReport || null;
   const serp = serpWarnings(doc);
@@ -54,6 +54,7 @@ export default async function DocumentEditorPage({ params }) {
     <div className="doc-editor">
       <h1>{doc.title} <span className="hint">/{doc.slug} · {doc.status}</span></h1>
       {doc.lastPublishError && <div className="error">Last publish failed for this document: {doc.lastPublishError}</div>}
+      {siteCssDrift && <div className="error"><strong>Live stylesheet is behind the code.</strong> {siteCssDrift}</div>}
       {readOnly && <p className="notice">Viewer role — read-only.</p>}
 
       <ActionForm className="editor doc-form" action={saveDocument} successMessage="Saved.">

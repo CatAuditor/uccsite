@@ -70,3 +70,11 @@ test('the .html download is one self-contained page: site CSS embedded, fragment
   assert.match(html, /<table>[\s\S]*<code>main &gt; h1<\/code>/, 'rules table rendered');
   assert.equal((html.match(/<div class="kit-doc">/g) || []).length, 2, 'guide text wrapped before and after the live block');
 });
+
+test('the .html download carries a stale-stylesheet warning first when the route passes a notice', () => {
+  const html = buildAuthoringKitHtml({ kit, notice: 'The live site stylesheet differs from the admin build.' });
+  const warn = html.indexOf('<div class="kit-note kit-warn">'), note = html.indexOf('<div class="kit-note">');
+  assert.ok(warn > 0 && warn < note, 'warning precedes the file note');
+  assert.match(html, /Warning: this kit may be incomplete\.<\/strong> The live site stylesheet differs/);
+  assert.ok(!buildAuthoringKitHtml({ kit }).includes('<div class="kit-note kit-warn">'), 'no warning without a notice');
+});

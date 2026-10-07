@@ -7,7 +7,7 @@
 import { listStyleRules } from '@uccsite/db/documents';
 import { getSession } from '../../../lib/auth';
 import { withDb } from '../../../lib/data';
-import { loadSiteSources, styleKitFor } from '../../../lib/documents';
+import { loadSiteSources, styleKitFor, siteCssDrift } from '../../../lib/documents';
 import { buildAuthoringKitHtml } from '../../../lib/authoring-kit';
 
 export const dynamic = 'force-dynamic';
@@ -23,8 +23,9 @@ export async function GET() {
   const kit = styleKitFor(sources.siteCss, '');
   // The :root block (palette, fonts, widths) so the catalog's var(--x) reads.
   const designTokens = (String(sources.siteCss || '').match(/:root\s*\{([^}]*)\}/) || [])[1] || '';
-  const html = buildAuthoringKitHtml({ kit, rules, coverageKeys, designTokens, siteCss: sources.siteCss });
-  console.log(`[documents] authoring kit for ${session.email}: ${kit.entries.length} classes, ${rules.filter(r => r.scope === 'template').length} template rules, ${coverageKeys.length} coverage keys, ${html.length} chars html`);
+  const notice = siteCssDrift(sources) || '';
+  const html = buildAuthoringKitHtml({ kit, rules, coverageKeys, designTokens, siteCss: sources.siteCss, notice });
+  console.log(`[documents] authoring kit for ${session.email}: ${kit.entries.length} classes, ${rules.filter(r => r.scope === 'template').length} template rules, ${coverageKeys.length} coverage keys, ${html.length} chars html${notice ? ', STALE live stylesheet' : ''}`);
   return new Response(html, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',

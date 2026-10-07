@@ -132,6 +132,32 @@ as a saved-and-published edit under Jarom's account.
 **Left to do.** Nothing on the site. The old wording on LinkedIn, X and
 press bylines is outside the site and is Jarom's to update.
 
+## 2026-10-06 — Guards so a document cannot quietly publish unstyled again
+
+**What changed.** Three warnings now fire in the admin before a page can go
+out looking like plain text:
+
+- On a document's HTML box, before you save: a red warning if the HTML uses
+  classes copied from one of the site's existing reports (those belong to
+  that page alone and are removed on save), and a softer notice if the body
+  has no page frame at all (no section, container or prose wrapper).
+- In the ingest report after a save: "N classes removed, the page will
+  publish without their styling" is now red, lists the names, and says not
+  to request publish until the report is clean.
+- On the Documents editor, the Styles page and at the very top of the
+  downloaded authoring kit: a red banner whenever the live site's stylesheet
+  is older than the code (that is what caused this evening's trouble: the
+  new styles had been written but not yet deployed and published, so the
+  editor could not know them). It says exactly what is pending.
+
+**What you do differently.** Nothing, unless a banner appears. If the kit
+opens with the red "may be incomplete" warning, ask for a deploy and publish
+before writing, or download it again afterwards.
+
+**Also checked.** The admin deployed with the new kit rules (build 50
+succeeded) and the live stylesheet now matches the code, so none of the
+banners should be showing today.
+
 ## 2026-10-06 — Why "Your license plate has a price" published as bare text
 
 **What happened.** The statement was built with the authoring kit, but the
