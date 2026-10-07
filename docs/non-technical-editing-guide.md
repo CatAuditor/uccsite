@@ -105,6 +105,9 @@ puts that version back as a draft; request a publish to take it live.
 - **Media Library** — upload images. **Alt text is required** before an
   image can be placed on a page (describe the image for screen readers).
   Pick an image in any "Headshot" field from the drop-down.
+  Or upload straight from the Headshot field: a window lets you drag and
+  zoom the photo inside a square so the face sits where you want it; only
+  what is inside the square is uploaded.
 
 Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
 `[link text](https://…)`, blank line for a new paragraph.

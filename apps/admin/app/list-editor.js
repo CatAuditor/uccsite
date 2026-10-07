@@ -154,7 +154,7 @@ function Items({ fields, items, onChange, itemLabelField, readOnly, idPrefix, me
                       <option value="">Pick from Media Library…</option>
                       {(mediaOptions[f.name] || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
-                    {!readOnly && <InlineImageUpload targetWidth={f.targetWidth || 800} compact onDone={(path) => update(i, f.name, path)} />}
+                    {!readOnly && <InlineImageUpload targetWidth={f.targetWidth || 800} crop={f.crop || 0} compact onDone={(path) => update(i, f.name, path)} />}
                   </div>
                 ) : (
                   <input type="text" id={id} value={item[f.name] ?? ''} disabled={readOnly}

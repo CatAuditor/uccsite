@@ -57,8 +57,8 @@ path for the field's `targetWidth`. Used by:
 
 | Field | Where | targetWidth | stores |
 |---|---|---|---|
-| Team headshot (and any future `widget: 'media'` collection field) | `app/list-editor.js` media widget | field's `targetWidth` (400) | variant path |
-| Own headshot | `/profile` (`app/profile/headshot-field.js`) | 400 | variant path |
+| Team headshot (and any future `widget: 'media'` collection field) | `app/list-editor.js` media widget | field's `targetWidth` (400) | variant path; `crop: 1` → crop step |
+| Own headshot | `/profile` (`app/profile/headshot-field.js`) | 400 | variant path; `crop={1}` → crop step |
 | Newsletter image block | `app/mail/[id]/composer.js` (`InlineImageUpload` inside the block; alt copied into the block) | 1200 | **absolute** URL `PUBLIC_ORIGIN + path` (email needs it) |
 | Document og:image | `app/documents/[id]/page.js` via `app/media/image-url-field.js` | 1200 | variant path |
 
@@ -66,6 +66,20 @@ The asset appears in the Media Library like any other; delete still refuses
 while a field references it. Processing failures surface in the widget
 (`failed` status message); a timeout tells the editor to find the asset on
 the Media page once ready.
+
+### Crop step (2026-10-06)
+
+`InlineImageUpload crop={aspect}` (a collection field declares `crop: 1`)
+inserts a fit-to-frame dialog (`app/media/crop-dialog.js`, `react-easy-crop`)
+between the file pick and the PUT: the editor drags/zooms the picture inside a
+frame of that aspect ratio (1 = the square the team pages render with
+`object-fit: cover`), and the framed region is drawn to a canvas (longest side
+capped at 1600 px, PNG transparency flattened to white) and uploaded as
+`<name>.jpg`. The original never leaves the browser; the Lambda pipeline is
+unchanged (it just receives a square JPEG). In crop mode the file picker
+accepts only browser-decodable types (JPEG/PNG/WebP/AVIF — no GIF/TIFF).
+Headshots uploaded on the `/media` page itself are NOT cropped; the site's
+CSS centre-crops those at render time.
 
 ## Data flow
 

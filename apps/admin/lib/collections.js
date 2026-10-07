@@ -31,7 +31,7 @@ export const COLLECTIONS = {
     fields: [
       { name: 'name', label: 'Full Name' },
       { name: 'title', label: 'Title / Role' },
-      { name: 'photo', label: 'Headshot', widget: 'media', targetWidth: 400,
+      { name: 'photo', label: 'Headshot', widget: 'media', targetWidth: 400, crop: 1,
         hint: 'Pick from the Media Library (only assets with alt text are offered) or type a path such as /assets/team/name.jpg' },
       { name: 'bio', label: 'Bio', widget: 'textarea', hint: MD_HINT },
       { name: 'slug', label: 'Author page URL slug', hint: 'optional; blank = made from the name (e.g. jarom-gillins → utahciviccompact.org/team/jarom-gillins)' },

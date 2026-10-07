@@ -6,6 +6,30 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — Headshots: fit the picture to the frame before uploading
+
+Headshots on the site sit in a square frame, and until now the site just
+took the middle of whatever was uploaded. A tall phone photo could lose the
+top of someone's head; an off-centre shot could cut a face in half, and
+there was no way to fix it except re-editing the photo elsewhere.
+
+Now, when you upload a headshot (on the Team editor or on **My profile**), a
+small window opens first: drag the picture around and zoom in or out until
+the face sits where you want it inside the square, then click **Use this
+crop**. Only what is inside the square is uploaded, so the site shows exactly
+what you framed — the same way a profile-photo picker works on social media.
+
+- Works on phones (drag with a finger, pinch to zoom).
+- The original photo never leaves your device; the cropped square goes up as
+  a JPEG and is processed like any other image.
+- Picking an existing Media Library image, or uploading straight on the
+  **Media** page, does NOT crop — those behave as before (the site shows the
+  centre). Upload through the Headshot field if you want to frame it.
+- Existing headshots are untouched. Re-upload one through the field to
+  reframe it.
+
+Nothing is needed from anyone; the change is live once this deploys.
+
 ## 2026-10-06 — Projects now link to the documents under them, and back
 
 Reports, complaints and other long-form pages that belong to a project were

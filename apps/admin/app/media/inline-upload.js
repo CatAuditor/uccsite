@@ -4,18 +4,22 @@
 // to S3, the media-process Lambda makes the variants — but the editor never
 // leaves the form: alt text is asked FIRST (the placement gate), the widget
 // polls until the asset is ready, then hands the variant path to the field
-// via onDone(path, { alt, id }). Nothing here is authorization; every server
+// via onDone(path, { alt, id }). With `crop` (an aspect ratio, 1 = square)
+// the editor first fits the picture to a frame (./crop-dialog.js) and only
+// the framed region is uploaded. Nothing here is authorization; every server
 // action re-checks the role.
 import { useEffect, useRef, useState } from 'react';
 import { beginUpload, finishUpload, assetReady } from './actions';
+import CropDialog from './crop-dialog';
 
 const POLL_MS = 2000;
 const POLL_LIMIT = 45; // 90 s — the Lambda normally takes 2-10 s
 
-export default function InlineImageUpload({ targetWidth = 800, accept, maxBytes, onDone, label = 'Upload a new image', compact = false, disabled = false }) {
+export default function InlineImageUpload({ targetWidth = 800, accept, maxBytes, onDone, label = 'Upload a new image', compact = false, disabled = false, crop = 0 }) {
   const [alt, setAlt] = useState('');
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
+  const [cropping, setCropping] = useState(null); // File awaiting the crop step
   const fileRef = useRef(null);
   const cancelled = useRef(false);
   useEffect(() => () => { cancelled.current = true; }, []);
@@ -28,6 +32,11 @@ export default function InlineImageUpload({ targetWidth = 800, accept, maxBytes,
     const altText = alt.trim();
     if (!altText) { setError('Describe the image first (alt text) — it is required before an image can be placed.'); return; }
     if (maxBytes && file.size > maxBytes) { setError(`${file.name} is larger than ${Math.round(maxBytes / 1024 / 1024)} MB`); return; }
+    if (crop) { setCropping(file); return; }
+    await upload(file, altText);
+  }
+
+  async function upload(file, altText) {
     try {
       setBusy(`Uploading ${file.name}…`);
       const begun = await beginUpload({ filename: file.name, mime: file.type, bytes: file.size });
@@ -62,8 +71,10 @@ export default function InlineImageUpload({ targetWidth = 800, accept, maxBytes,
     <div className={`inline-upload${compact ? ' compact' : ''}`}>
       <input type="text" value={alt} onChange={(e) => setAlt(e.target.value)} placeholder="Alt text: what the image shows (required)" maxLength={300} disabled={disabled || Boolean(busy)} aria-label="Alt text for the new image" />
       <button type="button" className="secondary" onClick={() => fileRef.current?.click()} disabled={disabled || Boolean(busy)}>{busy || label}</button>
-      <input ref={fileRef} type="file" accept={accept || 'image/jpeg,image/png,image/webp,image/avif,image/gif,image/tiff'} onChange={onFile} hidden />
+      <input ref={fileRef} type="file" accept={accept || (crop ? 'image/jpeg,image/png,image/webp,image/avif' : 'image/jpeg,image/png,image/webp,image/avif,image/gif,image/tiff')} onChange={onFile} hidden />
       {error && <div className="error" role="alert">{error}</div>}
+      {cropping && <CropDialog file={cropping} aspect={crop} onCancel={() => setCropping(null)}
+        onDone={(cropped) => { setCropping(null); upload(cropped, alt.trim()); }} />}
     </div>
   );
 }
