@@ -6,6 +6,37 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — Mailing list: see who is still subscribed, remove people, search and filter
+
+The Mailing list page used to show only the people an email would reach, and
+the only way off the list was the unsubscribe link in an email. Now:
+
+- **Status next to every name.** Subscribed, not confirmed yet (they have not
+  pressed the button in their welcome email), unsubscribed (with the date and
+  whether it was their own link or someone here), or bounced / complained.
+  The counts at the top show how many of each we hold.
+- **Remove and undo.** A **Remove** button on each row takes the person off
+  the list, the same as if they had clicked unsubscribe. A removal made here
+  can be undone with **Undo removal**; a person's own unsubscribe cannot be
+  undone by staff — they sign up again. **Erase a record** at the bottom of
+  the page deletes someone's mailing-list record for good, for a "please
+  forget me" request. Every one of these is written to the audit log.
+- **Filters and search.** Filter by status (the default is "Subscribed", which
+  is exactly who an email goes to), search by email or name, and keep the
+  residency / donor / petition controls. The "This email is going to N
+  people" line and the CSV still describe recipients only, whatever the
+  table is showing.
+- **More detail per person.** Confirmed date, how many newsletters they have
+  received and when the last one went out, failed sends, and whether a
+  bounced address was a hard bounce or a spam complaint.
+- Behind the scenes, unsubscribing no longer deletes the person's row; it
+  marks it, so the page can show who left. Someone who unsubscribes and later
+  signs up again has to confirm again from the new welcome email.
+
+Nothing for editors to set up. The database change is already applied to
+staging and production. The unsubscribe-link behaviour on the public site
+changes when the API is next deployed.
+
 ## 2026-10-06 — Documents: archive a page for good
 
 Every document now has a **Take down** block at the bottom with an

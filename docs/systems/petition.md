@@ -37,7 +37,7 @@ apps/admin/app/petition/        Petition page: campaign copy editor + signatures
 apps/admin/app/petition/export/route.js   POST → CSV (audited `petition.export`)
 apps/admin/lib/hero-status.js   draftHero/liveHero/HeroStatus — "which hero is showing" block on
                                 the Homepage and Petition editors
-apps/admin/app/subscribers/       Mailing list: residency / donors / petition filters → list + CSV
+apps/admin/app/subscribers/       Mailing list: status / search / residency / donors / petition filters → list + CSV; remove / restore / erase
 apps/admin/lib/collections.js   HOMEPAGE_GROUPS entry `petition` (page: 'petition')
 aws/export-operational/         nightly export includes petition_signatures
 scripts/restore-operational.mjs restore includes petition_signatures
@@ -105,7 +105,9 @@ ZIP+4) is Utah and nothing else is — `packages/db/audience.js`
   filter on the list; CSV carries `utah_resident` (yes/no) and can be
   exported Utah-only, outside-only or both.
 - **Admin → Mailing list** (`/subscribers`): everyone an email can reach =
-  `subscribers` ∪ opted-in `members`, each labelled `residency`
+  confirmed, still-subscribed, non-bounced `subscribers` ∪ opted-in
+  `members` (the page also lists the rest with a status — see
+  docs/systems/newsletters.md "Mailing list management"), each labelled `residency`
   (utah / outside / unknown from the best ZIP we hold: subscriber ZIP, else
   newest petition ZIP, else member ZIP), `donor`, `petitions`, `via`. Filters
   residency × donors-only × signed-petition drive the list, the "This email

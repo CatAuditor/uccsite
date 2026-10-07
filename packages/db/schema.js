@@ -69,6 +69,13 @@ const STATEMENTS = [
   // grandfathered — the UPDATE is idempotent and bounded by the cutoff date.
   `ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMPTZ`,
   `UPDATE subscribers SET confirmed_at = created_at WHERE confirmed_at IS NULL AND created_at < '2026-10-07T00:00:00Z'`,
+  // Soft unsubscribe (2026-10-06, docs/systems/newsletters.md "Mailing list
+  // management"): the unsubscribe link and the admin's "Remove from list"
+  // stamp unsubscribed_at instead of deleting the row, so the admin can see
+  // who left and when. unsubscribed_by = 'self' (their link) or the admin's
+  // email. Signing up again / signing a petition clears both (fresh consent).
+  `ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS unsubscribed_at TIMESTAMPTZ`,
+  `ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS unsubscribed_by TEXT`,
 
   // Campaign-level newsletter opens (docs/systems/newsletters.md "Opens"):
   // one anonymous row per pixel hit — newsletter id + time, nothing else.

@@ -179,8 +179,9 @@ the prod table — one more reason staging tests use the mailbox simulator.
 - The audience query (`packages/db/audience.js`) excludes suppressed
   addresses everywhere (Mailing list count/CSV, newsletter recipients,
   `send-periodical.js`).
-- Mailing list page: counts of suppressed addresses + a "Recent bounces,
-  complaints and rejects" table.
+- Mailing list page: a "suppressed" status count/filter (each row says hard
+  bounce vs spam complaint) + a "Recent bounces, complaints and rejects"
+  table.
 - Newsletter delivery panel: "N suppressed" = attempted recipients whose
   address has since been suppressed.
 
@@ -196,7 +197,48 @@ signers are confirmed at insert (signing = consent); re-signing up never
 clears a confirmation; rows created before 2026-10-07 were grandfathered by
 the migration (`UPDATE … WHERE confirmed_at IS NULL AND created_at <
 '2026-10-07'`). The join-form success copy on the site tells people to
-press the button. Mailing list page shows "N not yet confirmed".
+press the button. Mailing list page shows them as status "Not confirmed
+yet" (filterable).
+
+### Mailing list management (2026-10-06)
+
+`/subscribers` (editor+) is both the audience dashboard and the list manager.
+Two row sets come from ONE template in `packages/db/audience.js`
+(`peopleRowsSql`):
+
+| | Rows | Used by |
+|---|---|---|
+| `AUDIENCE_ROWS_SQL` / `audienceQuery` | recipients only: `confirmed_at` set, `unsubscribed_at` null, no suppressing SES event; plus opted-in members with no `subscribers` row | "This email is going to N", CSV, newsletter sender, `send-periodical.js` |
+| `DIRECTORY_ROWS_SQL` / `directoryQuery` | everyone we hold a row for, each with `status` (`subscribed` · `unconfirmed` · `unsubscribed` · `suppressed`, in that precedence), `confirmed_at`, `unsubscribed_at`, `unsubscribed_by`; `deliveries: true` adds `sent_count` / `failed_count` / `last_sent_at` from `newsletter_deliveries` | the page's table and status counts |
+
+`status = 'subscribed'` is exactly the audience. Directory filters
+(`normalizeDirectoryFilters`): the audience filters + `status`
+(default `subscribed`; `all` = everyone) + `q` (email/name substring, bound
+and backslash-escaped for ILIKE). A member with ANY `subscribers` row is
+represented by that row alone in both sets.
+
+**Soft unsubscribe.** `subscribers.unsubscribed_at` / `unsubscribed_by`
+(schema.js). `GET|POST /api/unsubscribe` now UPDATEs (`unsubscribed_by =
+'self'`) instead of DELETE, and still clears `members.newsletter_opt_in`.
+Signing up again (`/api/subscribe`) clears both and resets `confirmed_at`
+to NULL when the row was unsubscribed (they re-confirm from the new welcome
+email); signing a petition clears both and leaves `confirmed_at` as is
+(signing = consent). A member-only unsubscribe (no `subscribers` row) just
+clears the opt-in, so the person leaves the directory.
+
+**Actions** (`apps/admin/app/subscribers/actions.js`, editor+, each one
+`withWriteTx` + `recordChange` entityType `subscriber`, entityId = email):
+
+| Action | audit `action` | Effect | Refuses when |
+|---|---|---|---|
+| Remove | `subscribers.remove` | stamps `unsubscribed_at = now()`, `unsubscribed_by = <admin email>`; an opted-in member with no row gets an INSERTed, stamped row so the removal stays visible; `members.newsletter_opt_in = 0` | already unsubscribed; address unknown |
+| Undo removal | `subscribers.restore` | clears both stamps, `confirmed_at = COALESCE(confirmed_at, now())` | `unsubscribed_by = 'self'` (a person's own unsubscribe is never reversed by staff) or not unsubscribed |
+| Erase record | `subscribers.erase` | `DELETE FROM subscribers`, `newsletter_opt_in = 0`; `email_events`, `members`, `donations`, `petition_signatures` untouched | confirm field differs from the address; address unknown |
+
+The page renders a row-level `ActionForm` for Remove / Undo removal and a
+separate Erase form (retype the address). Errors come back inline
+(`runAction`). Logs: `[admin] <actor> subscribers.<action> subscriber` (no
+address in the log line).
 
 ### Opens (campaign-level, 2026-10-06)
 

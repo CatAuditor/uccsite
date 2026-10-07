@@ -52,7 +52,12 @@ async function subscribe(ctx) {
          first_name = excluded.first_name,
          last_name  = excluded.last_name,
          address    = excluded.address,
-         zip        = excluded.zip`,
+         zip        = excluded.zip,
+         -- Someone who unsubscribed and signs up again starts over: back on
+         -- the list once they press the confirm button in the new welcome email.
+         confirmed_at = CASE WHEN subscribers.unsubscribed_at IS NULL THEN subscribers.confirmed_at END,
+         unsubscribed_at = NULL,
+         unsubscribed_by = NULL`,
       [email, firstName || null, lastName || null, address || null, zip || null],
     );
   } catch (err) {
@@ -287,8 +292,11 @@ async function unsubscribe({ event, db, secrets }) {
 
   if (!email) return unsubPage('This unsubscribe link is invalid or has expired.', 400);
 
+  // Soft: the row stays, stamped unsubscribed_at / unsubscribed_by = 'self',
+  // so the admin's Mailing list shows who left and when (the audience query
+  // skips it). The admin's "Erase record" is the hard delete.
   try {
-    await db.query('DELETE FROM subscribers WHERE email = $1', [email]);
+    await db.query(`UPDATE subscribers SET unsubscribed_at = COALESCE(unsubscribed_at, now()), unsubscribed_by = COALESCE(unsubscribed_by, 'self') WHERE email = $1`, [email]);
     await db.query('UPDATE members SET newsletter_opt_in = 0 WHERE email = $1', [email]);
   } catch (err) {
     console.error('[api] unsubscribe DB error:', err.message);
@@ -405,7 +413,9 @@ async function petitionSign({ event, db, secrets, body }) {
          last_name  = COALESCE(subscribers.last_name, excluded.last_name),
          address    = COALESCE(subscribers.address, excluded.address),
          zip        = COALESCE(subscribers.zip, excluded.zip),
-         confirmed_at = COALESCE(subscribers.confirmed_at, now())`,
+         confirmed_at = COALESCE(subscribers.confirmed_at, now()),
+         unsubscribed_at = NULL,
+         unsubscribed_by = NULL`,
       [email, firstName, lastName, address || null, zip],
     );
   } catch (err) {

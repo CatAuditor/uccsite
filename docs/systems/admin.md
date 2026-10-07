@@ -57,10 +57,13 @@ apps/admin/
   app/mail, app/mail/[id]  Newsletters: block composer + phone/desktop light/dark preview,
                            test send, two-person send request/approve, schedule
                            (docs/systems/newsletters.md; lib/newsletters.js)
-  app/subscribers          Mailing list (editor+): subscribers ∪ opted-in members with
-                           residency / donor / petitions labels, "who is this email going
-                           to" filters, audited CSV; query = packages/db/audience.js (shared
-                           with the sender) — docs/systems/petition.md
+  app/subscribers          Mailing list (editor+): everyone we hold with a status
+                           (subscribed / unconfirmed / unsubscribed / suppressed), residency /
+                           donor / petitions labels, per-person newsletter counts, status +
+                           search + "who is this email going to" filters, audited CSV;
+                           actions.js = Remove / Undo removal / Erase record (audited);
+                           query = packages/db/audience.js (shared with the sender) —
+                           docs/systems/newsletters.md "Mailing list management"
   app/petition             Petition (editor+): campaign copy (homepage.petition group,
                            page: 'petition'), signatures per slug, audited CSV export
                            (docs/systems/petition.md)
@@ -111,7 +114,7 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | The petition campaign: hero takeover, /petition copy, thank-you ask, public Utah-only counter; signatures split Utah / outside + CSV | Petition |
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
 | Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |
-| Donors; the mailing list with audience controls (residency, donors, petition signers) + CSV | Donations, Mailing list |
+| Donors; the mailing list with audience controls (residency, donors, petition signers) + CSV; remove / restore / erase people on the list | Donations, Mailing list |
 | Newsletters: write, preview (phone, light/dark), test, request → approve → send (now or scheduled) | Mail → Newsletters (docs/systems/newsletters.md) |
 | Confidential tips: read, triage status, delete | Tips (editor+; delete is owner) |
 | Accounts, roles, MFA, security keys | Users (owners), My profile (everyone) |

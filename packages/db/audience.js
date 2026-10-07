@@ -13,11 +13,24 @@
 //   donor      ≥1 recorded donation or a non-canceled subscription
 //   petitions  comma-separated campaign slugs signed, oldest first
 // docs/systems/petition.md "Residency and audiences".
-
-// Two exclusions (2026-10-05): a join-form subscriber counts only once they
-// confirmed (confirmed_at — double opt-in; petition signers are confirmed
-// at insert), and any address with a suppressing SES event (hard bounce /
-// complaint, packages/db/email-events.js) is skipped everywhere.
+//
+// Two row sets come out of ONE template (peopleRowsSql):
+//   AUDIENCE_ROWS_SQL  — the recipients: status = 'subscribed' only.
+//   DIRECTORY_ROWS_SQL — everyone we hold a row for, each with a `status`
+//                        (admin Mailing list page; docs/systems/newsletters.md
+//                        "Mailing list management"). status is, in order:
+//     unsubscribed  subscribers.unsubscribed_at set (their link, or an admin
+//                   removed them — unsubscribed_by says which)
+//     suppressed    a suppressing SES event (hard bounce / complaint,
+//                   packages/db/email-events.js)
+//     unconfirmed   join-form row whose confirm button was never pressed
+//                   (double opt-in; petition signers are confirmed at insert)
+//     subscribed    everything else — exactly the audience
+//   Opted-in members with no subscribers row are 'subscribed' (or
+//   'suppressed'); a member with ANY subscribers row is represented by that
+//   row only, so unsubscribing (which also clears newsletter_opt_in) is final
+//   until the person signs up / signs a petition again or an admin restores
+//   an admin removal.
 const { SUPPRESSED_SQL } = require('./email-events');
 
 const UTAH_ZIP_PREFIX = '84';
@@ -30,9 +43,27 @@ function utahZipSql(expr) {
 }
 
 const RESIDENCIES = ['utah', 'outside', 'unknown'];
+const STATUSES = ['subscribed', 'unconfirmed', 'unsubscribed', 'suppressed'];
 
-// The base row set. Callers wrap it: SELECT … FROM (${AUDIENCE_ROWS_SQL}) a WHERE …
-const AUDIENCE_ROWS_SQL = `
+const STATUS_SQL = `CASE WHEN p.unsubscribed_at IS NOT NULL THEN 'unsubscribed'
+              WHEN ${SUPPRESSED_SQL('p.email')} THEN 'suppressed'
+              WHEN p.confirmed_at IS NULL THEN 'unconfirmed'
+              ELSE 'subscribed' END`;
+
+// peopleRowsSql(everyone) — everyone=false: only the recipients (the audience);
+// everyone=true: every row we hold, plus status / confirmed_at /
+// unsubscribed_at / unsubscribed_by columns for the admin page.
+function peopleRowsSql(everyone) {
+  const subscriberWhere = everyone ? '' : `
+    WHERE s.confirmed_at IS NOT NULL
+      AND s.unsubscribed_at IS NULL
+      AND NOT ${SUPPRESSED_SQL('s.email')}`;
+  const memberWhere = everyone ? '' : `
+      AND NOT ${SUPPRESSED_SQL('mm.email')}`;
+  const extra = everyone ? `,
+         ${STATUS_SQL} AS status,
+         p.confirmed_at::text AS confirmed_at, p.unsubscribed_at::text AS unsubscribed_at, p.unsubscribed_by` : '';
+  return `
   SELECT p.email, p.first_name, p.last_name, p.address, p.zip, p.created_at::text AS created_at, p.via,
          CASE WHEN ${utahZipSql('z.best_zip')} THEN 'utah'
               WHEN z.best_zip IS NULL OR z.best_zip = '' THEN 'unknown'
@@ -47,18 +78,17 @@ const AUDIENCE_ROWS_SQL = `
          COALESCE((
            SELECT string_agg(ps.petition, ', ' ORDER BY ps.created_at)
            FROM petition_signatures ps WHERE ps.email = p.email
-         ), '') AS petitions
+         ), '') AS petitions${extra}
   FROM (
-    SELECT s.email, s.first_name, s.last_name, s.address, s.zip, s.created_at, 'subscriber' AS via
-    FROM subscribers s
-    WHERE s.confirmed_at IS NOT NULL
-      AND NOT ${SUPPRESSED_SQL('s.email')}
+    SELECT s.email, s.first_name, s.last_name, s.address, s.zip, s.created_at, 'subscriber' AS via,
+           s.confirmed_at, s.unsubscribed_at, s.unsubscribed_by
+    FROM subscribers s${subscriberWhere}
     UNION ALL
-    SELECT mm.email, MAX(mm.first_name), MAX(mm.last_name), NULL, MAX(mm.zip), MIN(mm.created_at), 'member'
+    SELECT mm.email, MAX(mm.first_name), MAX(mm.last_name), NULL, MAX(mm.zip), MIN(mm.created_at), 'member',
+           MIN(mm.created_at), NULL, NULL
     FROM members mm
     WHERE mm.newsletter_opt_in = 1 AND mm.email IS NOT NULL
-      AND mm.email NOT IN (SELECT s2.email FROM subscribers s2)
-      AND NOT ${SUPPRESSED_SQL('mm.email')}
+      AND mm.email NOT IN (SELECT s2.email FROM subscribers s2)${memberWhere}
     GROUP BY mm.email
   ) p
   CROSS JOIN LATERAL (
@@ -68,6 +98,22 @@ const AUDIENCE_ROWS_SQL = `
       (SELECT m2.zip FROM members m2 WHERE m2.email = p.email AND m2.zip IS NOT NULL AND m2.zip <> '' ORDER BY m2.created_at DESC LIMIT 1)
     ) AS best_zip
   ) z`;
+}
+
+// The base row set. Callers wrap it: SELECT … FROM (${AUDIENCE_ROWS_SQL}) a WHERE …
+const AUDIENCE_ROWS_SQL = peopleRowsSql(false);
+const DIRECTORY_ROWS_SQL = peopleRowsSql(true);
+
+// Per-person delivery history for the admin page (newsletter_deliveries,
+// packages/db/newsletters.js): how many newsletters reached them, when the
+// last one did, and how many sends failed.
+const DELIVERY_STATS_SQL = `
+  LEFT JOIN LATERAL (
+    SELECT count(*) FILTER (WHERE nd.status = 'sent')::int AS sent_count,
+           count(*) FILTER (WHERE nd.status = 'failed')::int AS failed_count,
+           max(nd.at) FILTER (WHERE nd.status = 'sent')::text AS last_sent_at
+    FROM newsletter_deliveries nd WHERE nd.email = a.email
+  ) dl ON true`;
 
 // normalizeFilters(raw) → { residency: 'all'|'utah'|'outside'|'unknown', donors: bool, petition: ''|slug }
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -78,19 +124,54 @@ function normalizeFilters(raw = {}) {
   return { residency, donors, petition };
 }
 
-// audienceQuery(filters, { columns, orderBy }) → { sql, params }
-// columns: the SELECT list over the alias `a` (default: everything).
-function audienceQuery(filters, { columns = 'a.*', orderBy = 'a.created_at DESC', limit } = {}) {
-  const f = normalizeFilters(filters);
+// Shared WHERE fragments over the alias `a` for the audience filters.
+function audienceWhere(f, params) {
   const where = [];
-  const params = [];
   if (f.residency !== 'all') { params.push(f.residency); where.push(`a.residency = $${params.length}`); }
   if (f.donors) where.push('a.donor');
   if (f.petition) {
     params.push(f.petition);
     where.push(`EXISTS (SELECT 1 FROM petition_signatures px WHERE px.email = a.email AND px.petition = $${params.length})`);
   }
+  return where;
+}
+
+// audienceQuery(filters, { columns, orderBy }) → { sql, params }
+// columns: the SELECT list over the alias `a` (default: everything).
+function audienceQuery(filters, { columns = 'a.*', orderBy = 'a.created_at DESC', limit } = {}) {
+  const f = normalizeFilters(filters);
+  const params = [];
+  const where = audienceWhere(f, params);
   const sql = `SELECT ${columns} FROM (${AUDIENCE_ROWS_SQL}) a`
+    + (where.length ? ` WHERE ${where.join(' AND ')}` : '')
+    + (orderBy ? ` ORDER BY ${orderBy}` : '')
+    + (limit ? ` LIMIT ${Number(limit)}` : '');
+  return { sql, params, filters: f };
+}
+
+// normalizeDirectoryFilters(raw) → audience filters + { status: 'all'|STATUSES, q: search text }
+// q matches email or name (case-insensitive substring, bound as a parameter).
+function normalizeDirectoryFilters(raw = {}) {
+  const status = STATUSES.includes(raw.status) ? raw.status : raw.status === 'all' ? 'all' : 'subscribed';
+  const q = typeof raw.q === 'string' ? raw.q.trim().slice(0, 100) : '';
+  return { ...normalizeFilters(raw), status, q };
+}
+
+// directoryQuery(filters, { columns, orderBy, limit, deliveries }) → { sql, params, filters }
+// Every row we hold, narrowed by status / search / the audience filters.
+// deliveries: true adds sent_count, failed_count, last_sent_at per row.
+function directoryQuery(filters, { columns = 'a.*', orderBy = 'a.created_at DESC', limit, deliveries = false } = {}) {
+  const f = normalizeDirectoryFilters(filters);
+  const params = [];
+  const where = audienceWhere(f, params);
+  if (f.status !== 'all') { params.push(f.status); where.push(`a.status = $${params.length}`); }
+  if (f.q) {
+    params.push(`%${f.q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
+    where.push(`(a.email ILIKE $${params.length} OR COALESCE(a.first_name, '') || ' ' || COALESCE(a.last_name, '') ILIKE $${params.length})`);
+  }
+  const cols = deliveries && columns === 'a.*' ? 'a.*, dl.sent_count, dl.failed_count, dl.last_sent_at' : columns;
+  const sql = `SELECT ${cols} FROM (${DIRECTORY_ROWS_SQL}) a`
+    + (deliveries ? DELIVERY_STATS_SQL : '')
     + (where.length ? ` WHERE ${where.join(' AND ')}` : '')
     + (orderBy ? ` ORDER BY ${orderBy}` : '')
     + (limit ? ` LIMIT ${Number(limit)}` : '');
@@ -109,4 +190,7 @@ function describeFilters(filters) {
   return parts.length ? parts.join(' · ') : 'everyone';
 }
 
-module.exports = { UTAH_ZIP_PREFIX, RESIDENCIES, isUtahZip, utahZipSql, AUDIENCE_ROWS_SQL, normalizeFilters, audienceQuery, describeFilters };
+module.exports = {
+  UTAH_ZIP_PREFIX, RESIDENCIES, STATUSES, isUtahZip, utahZipSql, AUDIENCE_ROWS_SQL, DIRECTORY_ROWS_SQL,
+  normalizeFilters, audienceQuery, normalizeDirectoryFilters, directoryQuery, describeFilters,
+};

@@ -242,3 +242,11 @@ Also useful:
   Suppressed means the address bounced hard or marked us as spam; it is
   skipped automatically from then on. The Mailing list page lists them,
   along with sign-ups who have not pressed the confirm button yet.
+- **Mailing list** (Mail → Mailing list) shows everyone we hold with a
+  status: subscribed, not confirmed yet, unsubscribed (and whether it was
+  their link or someone here), or bounced / complained. Filter by status,
+  search by email or name, and see how many newsletters each person has
+  received. **Remove** takes someone off the list (reversible with **Undo
+  removal** while it was done here; a person's own unsubscribe cannot be
+  undone — they sign up again). **Erase a record** at the bottom deletes
+  their mailing-list record for good, for a "forget me" request.
