@@ -4,38 +4,39 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
-## v0.22.1 — 2026-10-06 (branch ) — Projects: documents nested under their project (site + admin)
+## v0.22.1 — 2026-10-06 (branch `refactor`) — Projects: documents nested under their project (site + admin)
 
-**Model** (, , ; commit 8d3befd)
--  (ADD COLUMN; soft link to  like , no FK).
-  : the explicit slug, else the project whose  is  or
-   — the migrated reports nest with no backfill.  = .
-  Schema migrated on staging and prod. Test:  (render 30 pass).
+**Model** (`packages/db/content-schema.js`, `packages/db/documents.js`, `packages/render/projects.js`; commit 8d3befd)
+- `documents.project_slug TEXT` (ADD COLUMN; soft link to `projects.slug` like `project_files`, no FK).
+  `projectOf(doc, projects)`: the explicit slug, else the project whose `cta_url` is `/<slug>` or
+  `/<slug>.html` — the migrated reports nest with no backfill. `projectAnchor(slug)` = `project-<slug>`.
+  Schema migrated on staging and prod. Test: `packages/render/test/projects.test.mjs` (render 30 pass).
 
-**Site** (, , ,
-, , )
--  in the buildSite chain: every project gets  and  (published
-  Documents under it from , which now carries ; the CTA page excluded).
-  /projects:  on each block + a "Documents" list above "Files" (same  styling).
--  /  take ; the report shell renders   "This page is part of <project> · All projects" under the body (Style Kit group Navigation, hidden from the
-  authoring kit). Newsletters (same shell) get no bar.  reason for projects.html extended.
-- Published: staging and prod  (prod 37 changed; no pending publish requests, every
+**Site** (`packages/render/site.js`, `packages/render/documents.js`, `aws/publish/render-db.js`,
+`templates/projects.html`, `templates/documents/report.html`, `css/styles.css`)
+- `deriveProjectDocuments` in the buildSite chain: every project gets `anchor` and `documents` (published
+  Documents under it from `content.documents_index`, which now carries `projectSlug`; the CTA page excluded).
+  /projects: `id="project-<slug>"` on each block + a "Documents" list above "Files" (same `.project-file` styling).
+- `composeDocument` / `buildDocuments` take `projects`; the report shell renders `<nav class="doc-breadcrumb">`
+  "This page is part of <project> · All projects" under the body (Style Kit group Navigation, hidden from the
+  authoring kit). Newsletters (same shell) get no bar. `expected-diffs.json` reason for projects.html extended.
+- Published: staging and prod `publish.mjs --source db` (prod 37 changed; no pending publish requests, every
   recent save already approved). Live: anchors on the three blocks, bars on /alpr, /stratos, /weber-county, none on
-  /theory, /privacy, /newsletters. Deployed  (114 s) and  (57 s: PublishFn + ExportContentFn)
+  /theory, /privacy, /newsletters. Deployed `UccStaging` (114 s) and `UccProd` (57 s: PublishFn + ExportContentFn)
   from a clean worktree at 8d3befd.
 
-**Admin** (, , , ,
-)
+**Admin** (`apps/admin/app/documents/{page,actions}.js`, `[id]/page.js`, `app/projects/page.js`, `lib/documents.js`,
+`lib/files.js`)
 - Editor: **Project** select (blank option reads "<name> (via its button)" when the fallback applies; an orphan slug
-  is kept as an option);  /  store  (slug-validated).
-- All documents: Project column ( = via the button), "By project" filter line (, heading
+  is kept as an option); `saveDocument` / `createDocument` store `projectSlug` (slug-validated).
+- All documents: Project column (`*` = via the button), "By project" filter line (`?project=<slug>`, heading
   "<name> — documents"), New document form takes a project (defaulted from the filter).
-- Projects page: per-project Documents (count → ), Files (count → ) and
-  on-the-site links above the collection editor.  now returns . Admin  green.
+- Projects page: per-project Documents (count → `/documents?project=`), Files (count → `/files?project=`) and
+  on-the-site links above the collection editor. `listProjects` now returns `ctaUrl`. Admin `next build` green.
 
 **Docs:** projects.md "Nesting" + Code Map, documents.md, admin.md, editing guide, dev-notes.
 
-**Known failing, pre-existing:**  tests "unsubscribe: valid token deletes subscriber" and "petition signers
+**Known failing, pre-existing:** `aws/api` tests "unsubscribe: valid token deletes subscriber" and "petition signers
 are confirmed at insert" (2 of 36) fail at HEAD before this change (mailing-list commit 2982fd1 changed unsubscribe
 semantics); untouched here.
 
