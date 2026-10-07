@@ -6,6 +6,29 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-06 — Users page: password reset fixed for invited people, and a way to remove someone
+
+**Reset password** looked broken. It failed, with a confusing message about
+*your own* password, whenever it was pressed for someone who had been invited
+but never signed in. That is most people on the list today. The cause: there
+is no password to reset until the person finishes their first sign-in, so the
+sign-in service refuses. Also refused: a disabled account.
+
+- For someone who has not signed in yet the button now reads **Resend
+  invite** and sends them a fresh temporary password instead.
+- For a disabled account the button is greyed out: enable them first.
+- Any other refusal now shows the real reason instead of the wrong message.
+
+**Remove a user** is a new section at the bottom of the Users page. Pick the
+person, type their email to confirm, and their sign-in is deleted for good
+(Disable remains the reversible pause). Nothing they did is lost: edits,
+publish approvals, uploads, newsletter approvals and the audit log all keep
+their name, because those records store the name itself and not a link to the
+account. The audit log also records who was removed and what role they had.
+You cannot remove yourself; another owner has to.
+
+Nothing is left for a person to do.
+
 ## 2026-10-07 — New Writing page, and a Writing menu
 
 **utahciviccompact.org/writing** lists everything we have published — reports,

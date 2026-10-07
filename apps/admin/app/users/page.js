@@ -1,10 +1,11 @@
 // Users & roles (owner only, spec §11): invite, role, disable/enable, force
-// password reset, remove authenticator MFA, sign out everywhere. Backed by
+// password reset (or re-send the invite for someone who never signed in),
+// remove authenticator MFA, sign out everywhere, remove access. Backed by
 // the Cognito admin APIs (lib/account.js); every action is audited.
 import { requireRole } from '../../lib/auth';
 import { listUsers, ROLES } from '../../lib/account';
 import ActionForm from '../action-form';
-import { inviteUser, changeRole, toggleEnabled, sendPasswordReset, clearMfa, signOutUser } from './actions';
+import { inviteUser, changeRole, toggleEnabled, sendPasswordReset, clearMfa, signOutUser, removeUser } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,7 @@ export default async function UsersPage() {
                   </ActionForm>
                   <ActionForm action={sendPasswordReset} className="inline">
                     <input type="hidden" name="username" value={u.username} />
-                    <button type="submit">Reset password</button>
+                    <button type="submit" disabled={!u.enabled}>{u.status === 'FORCE_CHANGE_PASSWORD' ? 'Resend invite' : 'Reset password'}</button>
                   </ActionForm>
                   <ActionForm action={clearMfa} className="inline">
                     <input type="hidden" name="username" value={u.username} />
@@ -70,7 +71,7 @@ export default async function UsersPage() {
           {!users.length && !error && <tr><td colSpan="6">No users.</td></tr>}
         </tbody>
       </table>
-      <p className="hint">Status: CONFIRMED = active; FORCE_CHANGE_PASSWORD = invited, has not signed in; RESET_REQUIRED = must set a new password at next sign-in. Security keys are managed by each person on their own profile page. Admin sessions are 1-hour cookies: a role change or sign-out applies at their next sign-in, or immediately if you also “Sign out everywhere”.</p>
+      <p className="hint">Status: CONFIRMED = active; FORCE_CHANGE_PASSWORD = invited, has not signed in (a password that was never set cannot be reset, so the button re-sends the invite); RESET_REQUIRED = must set a new password at next sign-in. Security keys are managed by each person on their own profile page. Admin sessions are 1-hour cookies: a role change or sign-out applies at their next sign-in, or immediately if you also “Sign out everywhere”.</p>
 
       <h2>Invite a user</h2>
       <ActionForm className="editor" action={inviteUser}>
@@ -81,6 +82,19 @@ export default async function UsersPage() {
         <label htmlFor="inv-role">Role</label>
         <select id="inv-role" name="role" defaultValue="editor">{ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select>
         <button type="submit">Send invite</button>
+      </ActionForm>
+
+      <h2>Remove a user</h2>
+      <p className="hint">Deletes their sign-in for good (Disable is the reversible pause). Everything they did stays on record under their name: edits, publish approvals, uploads and the audit log store the email as text, not a link to the account. To remove yourself, ask another owner.</p>
+      <ActionForm className="editor" action={removeUser}>
+        <label htmlFor="rm-user">User</label>
+        <select id="rm-user" name="username" required defaultValue="">
+          <option value="" disabled>Choose a user…</option>
+          {users.filter(u => u.username !== session.username).map(u => <option key={u.username} value={u.username}>{u.email}{u.role ? ` (${u.role})` : ''}</option>)}
+        </select>
+        <label htmlFor="rm-confirm">Type their email to confirm</label>
+        <input type="text" id="rm-confirm" name="confirm" required autoComplete="off" />
+        <button type="submit" className="danger">Remove access</button>
       </ActionForm>
     </div>
   );

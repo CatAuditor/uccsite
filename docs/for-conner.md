@@ -367,7 +367,9 @@ Until this exists the admin runs only on a developer machine (`npm run dev
    on the user pool: `cognito-idp:ListUsers, AdminGetUser,
    AdminListGroupsForUser, AdminCreateUser, AdminAddUserToGroup,
    AdminRemoveUserFromGroup, AdminDisableUser, AdminEnableUser,
-   AdminResetUserPassword, AdminSetUserMFAPreference, AdminUserGlobalSignOut`.
+   AdminResetUserPassword, AdminSetUserMFAPreference, AdminUserGlobalSignOut,
+   AdminDeleteUser` (`AdminDeleteUser` added to the live `AdminUsers`
+   statement 2026-10-06 for the Users page's "Remove a user").
 4. `[agent]` register the URL with Cognito + S3 CORS: put the branch URL in
    `infra/cdk/cdk.json` as `"stagingAdminOrigin"` and `npx cdk deploy
    UccStaging --profile uccsite`. Without it: `redirect_mismatch` on

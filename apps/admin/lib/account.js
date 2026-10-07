@@ -8,14 +8,15 @@
 //   owner — user administration through the pool's admin APIs with the
 //     app's AWS credentials (local profile / Amplify SSR role): list, create
 //     (invite email with a temporary password), group changes, disable /
-//     enable, password reset, MFA removal, global sign-out.
+//     enable, password reset / invite resend, MFA removal, global sign-out,
+//     delete.
 import {
   CognitoIdentityProviderClient, ChangePasswordCommand, GetUserCommand,
   AssociateSoftwareTokenCommand, VerifySoftwareTokenCommand, SetUserMFAPreferenceCommand,
   ListWebAuthnCredentialsCommand, DeleteWebAuthnCredentialCommand,
   ListUsersCommand, AdminGetUserCommand, AdminListGroupsForUserCommand, AdminCreateUserCommand,
   AdminAddUserToGroupCommand, AdminRemoveUserFromGroupCommand, AdminDisableUserCommand, AdminEnableUserCommand,
-  AdminResetUserPasswordCommand, AdminSetUserMFAPreferenceCommand, AdminUserGlobalSignOutCommand,
+  AdminResetUserPasswordCommand, AdminSetUserMFAPreferenceCommand, AdminUserGlobalSignOutCommand, AdminDeleteUserCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { config } from './config';
 
@@ -25,8 +26,17 @@ let client = null;
 const cognito = () => (client ??= new CognitoIdentityProviderClient({ region: config.region }));
 
 const friendly = (err) => {
+  if (err?.name === 'NotAuthorizedException') {
+    // Self-service calls (access token): wrong current password or an expired
+    // session. The admin APIs raise the same name with their own clear text
+    // ("User password cannot be reset in the current state.", "User is
+    // disabled.") — pass that through, or the Users page shows an owner a
+    // message about THEIR password (2026-10-06).
+    return /access token|incorrect username/i.test(err.message || '')
+      ? 'Current password is incorrect, or your session has expired — sign out and back in.'
+      : err.message;
+  }
   const map = {
-    NotAuthorizedException: 'Current password is incorrect, or your session has expired — sign out and back in.',
     InvalidPasswordException: 'Password does not meet the policy (12+ characters, upper/lower case, number, symbol).',
     LimitExceededException: 'Too many attempts — wait a few minutes and try again.',
     EnableSoftwareTokenMFAException: 'That code was not accepted. Codes rotate every 30 seconds — enter the current one.',
@@ -153,8 +163,30 @@ export async function setEnabled(username, enabled) {
     : new AdminDisableUserCommand({ UserPoolId: config.poolId, Username: username }));
   if (!enabled) await run(new AdminUserGlobalSignOutCommand({ UserPoolId: config.poolId, Username: username }));
 }
+// getUser(username) → { username, email, name, enabled, status, role }
+export async function getUser(username) {
+  const u = await run(new AdminGetUserCommand({ UserPoolId: config.poolId, Username: username }));
+  const groups = (await run(new AdminListGroupsForUserCommand({ UserPoolId: config.poolId, Username: username }))).Groups?.map(g => g.GroupName) || [];
+  return { username: u.Username, email: attr(u, 'email'), name: attr(u, 'name'), enabled: u.Enabled !== false, status: u.UserStatus, role: ROLES.find(r => groups.includes(r)) || null };
+}
 export async function resetPassword(username) {
-  await run(new AdminResetUserPasswordCommand({ UserPoolId: config.poolId, Username: username })); // emails a code; next sign-in must set a new password
+  // Emails a code; next sign-in must set a new password. Cognito refuses this
+  // for a user who never completed first sign-in (FORCE_CHANGE_PASSWORD:
+  // "User password cannot be reset in the current state") — use resendInvite.
+  await run(new AdminResetUserPasswordCommand({ UserPoolId: config.poolId, Username: username }));
+}
+// resendInvite(email) — re-sends the invite (a fresh temporary password) to a
+// user still in FORCE_CHANGE_PASSWORD. Username is the email alias.
+export async function resendInvite(email) {
+  await run(new AdminCreateUserCommand({ UserPoolId: config.poolId, Username: email, MessageAction: 'RESEND', DesiredDeliveryMediums: ['EMAIL'] }));
+}
+// deleteUser(username) — revokes their tokens, then removes the Cognito
+// account. Nothing in the database references the Cognito user: audit_log
+// .actor, the *_by columns and documents.author hold the email / name as
+// text, so everything they did keeps its attribution.
+export async function deleteUser(username) {
+  await run(new AdminUserGlobalSignOutCommand({ UserPoolId: config.poolId, Username: username }));
+  await run(new AdminDeleteUserCommand({ UserPoolId: config.poolId, Username: username }));
 }
 export async function removeMfa(username) {
   await run(new AdminSetUserMFAPreferenceCommand({ UserPoolId: config.poolId, Username: username, SoftwareTokenMfaSettings: { Enabled: false, PreferredMfa: false } }));

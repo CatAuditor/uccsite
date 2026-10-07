@@ -50,8 +50,9 @@ apps/admin/
                            owner user administration
   app/profile              My profile & security: change password, authenticator
                            MFA, security keys / passkeys, own bio + headshot
-  app/users                owner-only: invite, role, disable, reset password,
-                           remove MFA, sign out everywhere
+  app/users                owner-only: invite, role, disable, reset password
+                           (resend invite before first sign-in), remove MFA,
+                           sign out everywhere, remove access (delete)
   app/redirects            redirects table → CloudFront KeyValueStore on publish
   app/mail, app/mail/[id]  Newsletters: block composer + phone/desktop light/dark preview,
                            test send, two-person send request/approve, schedule
@@ -147,10 +148,30 @@ operator fallback.
 - Owners manage users on `/users`: invite (Cognito emails a temporary
   password), role (owner/editor/viewer group), disable/enable (+ global
   sign-out), force password reset, remove authenticator MFA, sign out
-  everywhere. Admin cookies last four hours: a role change or sign-out takes
-  effect at the next sign-in unless the user is signed out everywhere and
-  their cookie has expired. Every action writes an `audit_log` row
-  (`user.*`, `account.*`).
+  everywhere, remove access. Admin cookies last four hours: a role change or
+  sign-out takes effect at the next sign-in unless the user is signed out
+  everywhere and their cookie has expired. Every action writes an `audit_log`
+  row (`user.*`, `account.*`).
+- **Reset password** (2026-10-06): Cognito's `AdminResetUserPassword` refuses a
+  user who has never completed first sign-in (`FORCE_CHANGE_PASSWORD` —
+  "User password cannot be reset in the current state") and a disabled user.
+  The action reads the user first: not enabled → clear error; never signed
+  in → `AdminCreateUser MessageAction=RESEND` (a fresh temporary-password
+  invite, audited `user.invite_resent`, button reads **Resend invite**);
+  otherwise the reset (`user.password_reset`). `lib/account.js friendly()`
+  passes the admin APIs' own `NotAuthorizedException` text through; only the
+  self-service token errors become "Current password is incorrect…" — see
+  docs/error-handling/client-side-error/2026-10-06-admin-reset-password-force-change.md.
+- **Remove a user** (2026-10-06): owner picks the user and types their email
+  to confirm; the action is `removeUser` → `AdminUserGlobalSignOut` then
+  `AdminDeleteUser` (`lib/account.js deleteUser`), audited `user.delete` with
+  `{ email, name, role, status }` in the diff. Self-removal refused. Nothing
+  in DSQL references the Cognito user — `audit_log.actor`, every `*_by`
+  column, `documents.author` and `team_members.email` hold the email or name
+  as text — so their history, approvals and bylines keep their attribution.
+  `publish_requests.requested_by_user` (cognito:username) is display-only.
+  Needs `cognito-idp:AdminDeleteUser` on the SSR role (added to
+  `UccProdAdminCompute`/`admin-runtime` 2026-10-06; local profile has it).
 - CLI equivalent for the first owner: `node scripts/admin-user.mjs --env
   staging --email … --name "…" --group owner`.
 
@@ -531,7 +552,7 @@ unchanged); second approve → "no longer pending".
    the user pool: `cognito-idp:ListUsers, AdminGetUser, AdminListGroupsForUser,
    AdminCreateUser, AdminAddUserToGroup, AdminRemoveUserFromGroup,
    AdminDisableUser, AdminEnableUser, AdminResetUserPassword,
-   AdminSetUserMFAPreference, AdminUserGlobalSignOut` (Users page).
+   AdminSetUserMFAPreference, AdminUserGlobalSignOut, AdminDeleteUser` (Users page).
 4. Put the branch URL in `infra/cdk/cdk.json` as `stagingAdminOrigin` and
    `cdk deploy UccStaging` — that registers the Cognito callback/logout
    URLs and the S3 CORS origin. Without it: `redirect_mismatch` on sign-in

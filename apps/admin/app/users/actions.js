@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { requireRole } from '../../lib/auth';
 import { withWriteTx, recordChange } from '../../lib/data';
 import { runAction } from '../../lib/actions';
-import { createUser, setRole, setEnabled, resetPassword, removeMfa, signOutEverywhere, ROLES } from '../../lib/account';
+import { createUser, setRole, setEnabled, resetPassword, resendInvite, removeMfa, signOutEverywhere, getUser, deleteUser, ROLES } from '../../lib/account';
 
 const str = (fd, k, n = 200) => String(fd.get(k) ?? '').trim().slice(0, n);
 
@@ -55,9 +55,36 @@ export async function toggleEnabled(prevState, formData) {
 
 export async function sendPasswordReset(prevState, formData) {
   return runAction(async () => {
+    await requireRole('owner');
     const username = str(formData, 'username');
+    const u = await getUser(username);
+    if (!u.enabled) throw new Error('Enable the user first — Cognito will not reset a disabled account.');
+    // Never signed in: Cognito refuses AdminResetUserPassword in that state
+    // (there is no password to reset yet). Re-send the invite instead.
+    if (u.status === 'FORCE_CHANGE_PASSWORD') {
+      await audited('user.invite_resent', username, { email: u.email }, async () => { await resendInvite(u.email); });
+      return { ok: true, message: `${u.email} has not signed in yet, so Cognito re-sent their invite (a new temporary password) instead of a reset code.` };
+    }
     await audited('user.password_reset', username, null, async () => { await resetPassword(username); });
-    return { ok: true, message: `${username} must set a new password at next sign-in (Cognito emailed a code).` };
+    return { ok: true, message: `${u.email} must set a new password at next sign-in (Cognito emailed a code).` };
+  });
+}
+
+// Removes the Cognito account outright (Disable is the reversible pause).
+// Attribution survives: every *_by / actor / author column stores the email
+// or name as text, never the Cognito id. The audit row keeps who they were.
+export async function removeUser(prevState, formData) {
+  return runAction(async () => {
+    await requireRole('owner');
+    const username = str(formData, 'username');
+    const confirm = str(formData, 'confirm').toLowerCase();
+    const u = await getUser(username);
+    if (confirm !== u.email.toLowerCase()) throw new Error(`Type ${u.email} exactly to confirm.`);
+    await audited('user.delete', username, { email: u.email, name: u.name, role: u.role, status: u.status }, async (s) => {
+      if (username === s.username) throw new Error('You cannot remove your own access.');
+      await deleteUser(username);
+    });
+    return { ok: true, message: `${u.email} removed. Their edits, approvals, uploads and audit entries keep their name; any session they still have ends when its cookie expires (up to 4 h).` };
   });
 }
 
