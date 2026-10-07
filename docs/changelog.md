@@ -4,6 +4,18 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.20.3 — 2026-10-06 (branch `refactor`) — license-plate-has-a-price rebuilt on the kit frame, republished
+
+**Content / Documents** (prod DB, no code; error log updated)
+- Body of document `fd028a95…` rewritten from how-did-this-happen's private classes to the site frame:
+  hero `<p>` byline + `btn btn-ghost`; `section.section.bg-cream > container > prose`; `callout` +
+  `callout-label` for the table of contents and the "For lawmakers" ask (`<h2 id="ask">` moved above the
+  box); plain `<ol>` sources; `callout` with `btn btn-outline btn-sm` for the related paper. Text unchanged.
+- Saved through a one-off script mirroring `saveDocument` (ingest 0/0/0, revision snapshot, audit row),
+  then the publish Lambda invoked: 2 changed. Live page verified in headless Chrome.
+
+Open P1 (unchanged): Resend key deletion pending; Stripe webhook; Jarom sign-in.
+
 ## v0.20.2 — 2026-10-06 (branch `refactor`) — Kit forbids reusing per-page classes from live pages
 
 **Admin / Documents** (`apps/admin/lib/authoring-kit.js`, `test/authoring-kit.test.mjs`)
