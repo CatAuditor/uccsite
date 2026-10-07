@@ -4,6 +4,21 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.22.2 — 2026-10-06 (branch `refactor`) — Headshots: fit-to-frame crop before upload
+
+**Admin** (`apps/admin/app/media/crop-dialog.js` new, `inline-upload.js`, `list-editor.js`,
+`profile/headshot-field.js`, `lib/collections.js`, `globals.css`; commit 8253b62)
+- `InlineImageUpload` takes `crop` (aspect ratio). When set, the picked file opens `CropDialog`
+  (`react-easy-crop` ^6.2.4, new dep): drag/zoom inside a frame of that aspect; the framed region is
+  drawn to a canvas (longest side ≤ 1600 px, transparency → white) and uploaded as `<name>.jpg`.
+  Original never leaves the browser. Crop mode restricts the picker to JPEG/PNG/WebP/AVIF.
+- Team `photo` field declares `crop: 1` (list-editor passes `f.crop`); `/profile` headshot passes `crop={1}`.
+- Media Lambda, `/media` page upload and library picker unchanged (those still centre-crop via site CSS).
+
+**Docs**: `docs/systems/media.md` (Crop step), `docs/non-technical-editing-guide.md`, `docs/dev-notes.md`.
+
+Open P1s: unchanged from v0.22.1.
+
 ## v0.22.1 — 2026-10-06 (branch `refactor`) — Projects: documents nested under their project (site + admin)
 
 **Model** (`packages/db/content-schema.js`, `packages/db/documents.js`, `packages/render/projects.js`; commit 8d3befd)
