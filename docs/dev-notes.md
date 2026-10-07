@@ -27,6 +27,11 @@ their name, because those records store the name itself and not a link to the
 account. The audit log also records who was removed and what role they had.
 You cannot remove yourself; another owner has to.
 
+Also corrected the note at the bottom of the page: admin sessions last four
+hours, not one, and signing someone out everywhere stops new sign-ins at once
+but does not cut a session they already have open; that ends when its cookie
+expires.
+
 Nothing is left for a person to do.
 
 ## 2026-10-07 — New Writing page, and a Writing menu

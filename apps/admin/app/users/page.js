@@ -71,7 +71,7 @@ export default async function UsersPage() {
           {!users.length && !error && <tr><td colSpan="6">No users.</td></tr>}
         </tbody>
       </table>
-      <p className="hint">Status: CONFIRMED = active; FORCE_CHANGE_PASSWORD = invited, has not signed in (a password that was never set cannot be reset, so the button re-sends the invite); RESET_REQUIRED = must set a new password at next sign-in. Security keys are managed by each person on their own profile page. Admin sessions are 1-hour cookies: a role change or sign-out applies at their next sign-in, or immediately if you also “Sign out everywhere”.</p>
+      <p className="hint">Status: CONFIRMED = active; FORCE_CHANGE_PASSWORD = invited, has not signed in (a password that was never set cannot be reset, so the button re-sends the invite); RESET_REQUIRED = must set a new password at next sign-in. Security keys are managed by each person on their own profile page. Admin sessions are 4-hour cookies: a role change, disable or “Sign out everywhere” blocks any new sign-in at once, but a session they already have keeps working until its cookie expires (up to 4 h).</p>
 
       <h2>Invite a user</h2>
       <ActionForm className="editor" action={inviteUser}>

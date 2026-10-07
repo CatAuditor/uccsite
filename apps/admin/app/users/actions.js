@@ -37,7 +37,7 @@ export async function changeRole(prevState, formData) {
       if (username === s.username && role !== 'owner') throw new Error('You cannot remove your own owner role.');
       await setRole(username, role);
     });
-    return { ok: true, message: `${username} is now ${role}. Their current admin session keeps the old role until it expires (up to 1 h); it applies at their next sign-in.` };
+    return { ok: true, message: `${username} is now ${role}. Their current admin session keeps the old role until it expires (up to 4 h); it applies at their next sign-in.` };
   });
 }
 
@@ -100,6 +100,6 @@ export async function signOutUser(prevState, formData) {
   return runAction(async () => {
     const username = str(formData, 'username');
     await audited('user.global_sign_out', username, null, async () => { await signOutEverywhere(username); });
-    return { ok: true, message: `${username} signed out everywhere (their admin cookie stops working within the hour).` };
+    return { ok: true, message: `${username} signed out everywhere (they cannot sign in again until they do; a session they already have ends when its cookie expires, up to 4 h).` };
   });
 }

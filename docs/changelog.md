@@ -4,6 +4,16 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.21.3 — 2026-10-06 (branch `refactor`) — Users page: session-length wording
+
+**Admin / users** (`apps/admin/app/users/{page,actions}.js`)
+- The status hint and the role-change / sign-out-everywhere messages said admin sessions
+  last 1 h and that a global sign-out applies "immediately". Sessions have been 4 h
+  since 2026-10-05, and the cookie carries the ID token (verified locally, not against
+  Cognito), so an existing session survives until the cookie expires. Wording now says so.
+
+**Open P1 at push:** unchanged.
+
 ## v0.21.2 — 2026-10-06 (branch `refactor`) — Users: reset works for invited users; remove a user
 
 **Admin / users** (`apps/admin/app/users/{page,actions}.js`, `apps/admin/lib/account.js`; commit 4434b26)
