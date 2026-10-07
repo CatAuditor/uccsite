@@ -29,8 +29,10 @@ of each push.
   (`DEFAULT_OG_IMAGE`). `UCC.png` is still shipped (homepage about image, JSON-LD logo).
 - Admin hints: `form_title` (also the page/preview title), `share_image`, document `ogImage`.
 - Tests: `petition-share.test.mjs` — default image/card, `page_title` derivation (27 render tests pass).
-- Deploy: templates/assets ship via `cdk deploy UccProd` then a prod publish (see
-  docs/systems/publish-pipeline.md); done in this session — see the next entry if any.
+- Deployed: `cdk deploy UccProd` from a clean worktree at 11d4e74 (diff: PublishFn code +
+  ViewerRequestFn comment-only em-dash re-encoding), then `publish.mjs --env prod --source db`
+  (44 changed, invalidation IEYA5LJAJQAPDZ8MFQ533CMU8N). Verified live: /petition title/og:title
+  "Get The Flock Off Our Streets | Utah Civic Compact", og:image share-default.png on every page.
 
 Open P1 at push: unchanged from v0.21.2.
 
