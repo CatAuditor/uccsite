@@ -393,7 +393,7 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
 
 function makeSitemap(pages, lastmod, siteUrl) {
   return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schema/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${pages.filter(p => p.sitemap !== false).map(p => {
   // Clean URLs: the live site serves pages extensionless (Cloudflare Pages
   // 308s *.html → clean; CloudFront reproduces that). Sitemap lists the

@@ -80,6 +80,9 @@ test('sitemap: structure, exclusions, priorities, injected lastmod', () => {
   const { files } = buildSite({ ...loadInputs(), lastmod: FIXED_LASTMOD });
   const xml = files['sitemap.xml'];
   assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
+  // The exact namespace Google requires — a one-letter typo ("schema") made
+  // Search Console reject the sitemap with "Incorrect namespace" (2026-10-07).
+  assert.match(xml, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/);
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
   // tip + success excluded
   assert.ok(!locs.some(l => /tip|success|404/.test(l)), 'tip/success/404 must not be in the sitemap');

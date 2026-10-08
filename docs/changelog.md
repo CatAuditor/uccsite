@@ -4,6 +4,15 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.22.3 — 2026-10-07 (branch `refactor`) — Sitemap namespace fix
+
+**Site** (`packages/render/site.js` makeSitemap; `packages/render/test/parity.test.mjs`)
+- `urlset` namespace `http://www.sitemaps.org/schema/sitemap/0.9` → `…/schemas/sitemap/0.9`. Search Console
+  reported "Incorrect namespace" (line 2, tag urlset). Test now asserts the exact namespace.
+- Error log: docs/error-handling/client-side-error/2026-10-07-sitemap-incorrect-namespace.md
+
+Deploy: `cdk deploy UccProd` (PublishFn renders the sitemap), publish, then resubmit in Search Console.
+
 ## v0.22.2 — 2026-10-06 (branch `refactor`) — Headshots: fit-to-frame crop before upload
 
 **Admin** (`apps/admin/app/media/crop-dialog.js` new, `inline-upload.js`, `list-editor.js`,

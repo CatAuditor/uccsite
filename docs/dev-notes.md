@@ -6,6 +6,13 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-07 — Sitemap fixed for Google Search Console
+
+Search Console said the sitemap had an "Incorrect namespace". One letter was
+wrong in a web address inside the file (`schema` instead of `schemas`). Fixed,
+and a test now checks it. After the next publish, open Search Console →
+Sitemaps → **Resubmit**. Google still found all 21 pages in the meantime.
+
 ## 2026-10-06 — Headshots: fit the picture to the frame before uploading
 
 Headshots on the site sit in a square frame, and until now the site just
