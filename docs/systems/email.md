@@ -22,8 +22,12 @@ aws/api/emails.js            the thank-you bodies (pure): buildPetitionThanksEma
 aws/api/webhook.js           checkout.session.completed → self-invoke 'donation-thanks'
 packages/db/newsletters.js   TRIGGERS (petition-thanks, donation-thanks: label, when, placeholders, required),
                              newsletters.kind, transactional_emails table, attach/detach/listAttachments
-apps/admin/lib/transactional.js  createTransactional, attachEmail (renders + freezes), detachEmail, listSlots, transactionalState
-apps/admin/app/mail/          Outgoing emails: Automatic emails (slots + drafts) and Newsletters; [id] editor "Send automatically" panel
+apps/admin/lib/transactional.js  createTransactional, automaticEmails, transactionalSlot, chooseEmail (the dropdown's action),
+                             attachEmail (renders + freezes), detachEmail, listSlots, transactionalState
+apps/admin/app/automatic-email-picker.js  THE dropdown: "Built-in email" + every automatic email → chooseEmail; on the
+                             Petition page (petition-thanks) and the Appeals page (donation-thanks)
+apps/admin/app/mail/          Outgoing emails: Automatic emails (slots + drafts) and Newsletters; [id] editor shows where
+                             an automatic email is in use (the choice itself is made on Petition / Appeals)
 aws/api/index.mjs            JOBS: welcome-email, portal-link, petition-thanks, donation-thanks
 aws/api/secrets.js           TOKEN_SECRET (signs unsubscribe/portal links); RESEND_API_KEY removed
 aws/newsletter/              NewsletterSendFn — the newsletter send path (docs/systems/newsletters.md)
@@ -82,15 +86,20 @@ ever logged (`[api] SES error: <ErrorName>` / `[api] SES sent <MessageId>` only)
 Either thank-you can be replaced by an email **composed in the admin's
 newsletter builder**. Admin → Mail → **Outgoing emails** → *Automatic emails*:
 "New automatic email" creates a `newsletters` row with `kind = 'transactional'`
-(same composer, preview, test send; no audience, no send request). The editor
-page's **Send automatically** panel attaches it to a trigger:
+(same composer, preview, test send; no audience, no send request). The choice
+of WHICH automatic email goes out is made where the trigger lives — the
+**Petition** page ("Thank-you email") and the **Appeals** page ("Thank-you
+email after a donation") — with one dropdown each (`AutomaticEmailPicker` →
+`chooseEmail`): "Built-in email" or any automatic email, swap any time, no
+publish. The editor page only reports where an email is in use:
 
 | trigger | fires | placeholders (filled per recipient) | required |
 |---|---|---|---|
 | `petition-thanks` | first signature of an address on the live petition | `{first_name}` `{headline}` `{project_name}` | — |
 | `donation-thanks` | every completed checkout (one-time, first monthly charge) | `{first_name}` `{amount}` `{type}` `{date}` `{receipt}` | `{receipt}` — the amount/type/date table AND the 501(c)(4) not-tax-deductible line (`emails.js receiptHtml`) |
 
-`attachEmail` renders the saved draft with the newsletter renderer
+`chooseEmail(trigger, id)` → `attachEmail` (or `detachEmail` for "Built-in
+email"). `attachEmail` renders the saved draft with the newsletter renderer
 (`renderEmail`, UTM campaign = the trigger key), refuses without a subject, a
 block or a required placeholder, and upserts `transactional_emails`
 (`trigger` PK, `newsletter_id`, frozen `subject/html/text`, `attached_by/_at`)
@@ -107,19 +116,16 @@ donation email has none. A failed read logs `attached email lookup failed
 (<trigger>): <ErrorName>` and falls back to the built-in body. No two-person
 review on attach (docs/pending-questions.md 2026-10-09 #5).
 
-### Admin copy for the thank-yous
+### Built-in bodies
 
-When nothing is attached, both thank-you emails read their subject and message from the homepage
-singleton at send time (the API role has read-only `SELECT` on `homepage`
-and `projects` — docs/systems/api-security.md). The text is plain: a blank
-line starts a paragraph, `{first_name}` / `{headline}` / `{amount}` are
-filled in, everything the admin typed is HTML-escaped. A blank field means
-the default in `aws/api/emails.js`. The copy is read from the SAVED draft,
-not the published site — a saved-but-unpublished subject goes out at once.
-The petition job uses the campaign copy only while `homepage.petition.slug`
-equals the slug signed; while an editor drafts the next campaign, signers of
-the still-live one get the generic copy (never the draft's headline). The
-lookup is cached per Lambda container for 5 minutes.
+When nothing is chosen, the fixed bodies in `aws/api/emails.js` go out (the
+admin text fields `email_subject` / `email_body` / `thanks_email_*` that
+existed for a few hours on 2026-10-09 were removed — the composed email IS
+the way to change the wording). The petition job still reads
+`homepage.petition` (API role: `SELECT` on `homepage` + `projects`) for the
+headline and the project; it uses them only while `homepage.petition.slug`
+equals the slug signed, so signers of the live campaign never get a draft's
+headline. The lookup is cached per Lambda container for 5 minutes.
 
 ## SES infrastructure (UccProd stack, us-west-2)
 

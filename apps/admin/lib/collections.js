@@ -207,10 +207,6 @@ export const HOMEPAGE_GROUPS = [
   ]},
   { key: 'donate', title: 'Homepage donate section', page: 'appeals', fields: [
     ['label', 'Label'], ['title', 'Title'], ['body', 'Body', 'textarea'],
-    // Donation thank-you email (aws/api/emails.js; docs/systems/email.md). Sent
-    // by the Stripe webhook after every completed checkout, one-time or monthly.
-    ['thanks_email_subject', 'Thank-you email: subject', 'text', 'Sent right after a donation. {amount} becomes the amount (e.g. $25.00), {first_name} the donor\'s first name. Blank = "Thank you for your {amount} donation" (monthly: "Thank you \u2014 your {amount}/month membership is active").'],
-    ['thanks_email_body', 'Thank-you email: message', 'textarea', 'Plain text; a blank line starts a new paragraph. {first_name} and {amount} are filled in. The receipt table (amount, type, date) and the fixed "not tax-deductible" 501(c)(4) line are added automatically underneath. Blank = the standard message.'],
   ]},
   { key: 'modal', title: 'Homepage timed modal (7.5 s after arrival)', page: 'appeals', fields: [
     ['badge', 'Badge'], ['title', 'Title'], ['body', 'Body', 'textarea'], ['cta', 'CTA label'],
@@ -235,10 +231,6 @@ export const HOMEPAGE_GROUPS = [
     ['thanks_body', 'Thank-you page body (the donation ask)', 'textarea'],
     ['thanks_cta', 'Thank-you page: help button label', 'text', 'e.g. I can help — opens the $10/25/50/100 payment modal'],
     ['thanks_dismiss', 'Thank-you page: decline label', 'text', 'e.g. Not this time'],
-    // Thank-you email (aws/api/emails.js; docs/systems/email.md): sent once per
-    // address per campaign, on the first signature only.
-    ['email_subject', 'Thank-you email: subject', 'text', 'Sent to each signer once, right after their first signature. {headline} becomes the headline (without formatting), {first_name} the signer\'s first name. Blank = "Thank you for signing: {headline}".'],
-    ['email_body', 'Thank-you email: message', 'textarea', 'Plain text; a blank line starts a new paragraph. {first_name} and {headline} are filled in. Underneath, the email adds the project link (if a project is set), a Share button (/petition), a Chip in button (the thank-you page) and the unsubscribe line. Blank = the standard message.'],
     // Payment modal on the thank-you page (packages/render/site.js petitionDonate).
     ['donate_title', 'Payment window: title', 'text', 'Blank = "Carry this fight through the legislature"'],
     ['donate_body', 'Payment window: text', 'textarea', "Blank = \"Choose an amount. You'll finish on our secure Stripe checkout page.\""],

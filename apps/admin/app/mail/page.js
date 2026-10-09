@@ -66,8 +66,8 @@ export default async function MailPage() {
       <p className="notice">
         Two kinds of email leave the site. <strong>Newsletters</strong> go to the <Link href="/subscribers">mailing list</Link> after a
         <strong> different</strong> admin approves the send (owners can approve their own). <strong>Automatic emails</strong> go to one
-        person right after they do something — sign the petition, donate — and are attached to that moment here; without one, a
-        built-in email goes out. Every email is sent as &ldquo;<em>Your name</em> from Utah Civic Compact&rdquo; &lt;hello@utahciviccompact.org&gt;.
+        person right after they do something — sign the petition, donate. Write them here; choose which one goes out on the
+        Petition page (after signing) or the Appeals page (after a donation); without a choice, a built-in email goes out. Every email is sent as &ldquo;<em>Your name</em> from Utah Civic Compact&rdquo; &lt;hello@utahciviccompact.org&gt;.
       </p>
 
       <h2>Automatic emails</h2>
@@ -79,7 +79,8 @@ export default async function MailPage() {
               <td><strong>{s.label}</strong><br /><span className="hint">{s.when}</span></td>
               <td>{s.attachment
                 ? <Link href={`/mail/${s.attachment.newsletterId}`}>{s.attachment.currentSubject || s.attachment.subject || '(no subject)'}</Link>
-                : <span className="hint">Built-in email (text editable on {s.key === 'petition-thanks' ? <Link href="/petition">Petition</Link> : <Link href="/appeals">Appeals</Link>})</span>}</td>
+                : <span className="hint">Built-in email</span>}
+                {' '}<span className="hint">· choose on {s.key === 'petition-thanks' ? <Link href="/petition">Petition</Link> : <Link href="/appeals">Appeals</Link>}</span></td>
               <td>{s.attachment ? `${when(s.attachment.attachedAt)} · ${s.attachment.attachedBy}` : '—'}</td>
             </tr>
           ))}

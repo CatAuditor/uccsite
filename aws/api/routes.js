@@ -488,10 +488,11 @@ async function petitionSign({ event, db, secrets, body, origin, selfInvoke }) {
 // ── Campaign lookup (homepage.petition) ─────────────────────────────────────
 // The API role may SELECT the homepage singleton and the projects table
 // (read-only, public content — docs/systems/api-security.md). Returns the
-// petition group when its slug is the one asked for, with `project` ({name,
-// url}) resolved from project_slug; null for any other slug (an editor may
-// be drafting the next campaign while the live one is still being signed)
-// and on any error (logged by name — the caller falls back to generic copy).
+// petition group when its slug is the one asked for (headline for the email,
+// project_slug to file the signature), with `project` ({name, url}) resolved
+// from project_slug; null for any other slug (an editor may be drafting the
+// next campaign while the live one is still being signed) and on any error
+// (logged by name — the caller falls back to generic copy).
 // Cached per container for CAMPAIGN_TTL_MS: it is read on every signature.
 const CAMPAIGN_TTL_MS = 5 * 60_000;
 let campaignCache = null; // { at, group, project }
@@ -553,18 +554,6 @@ async function petitionCampaign(db, slug) {
   }
 }
 
-// homepage.donate — the donation thank-you's editable subject/body. Null on
-// any error (defaults apply).
-async function donateCopy(db) {
-  try {
-    const { loadHomepage } = require('@uccsite/db/content');
-    return (await loadHomepage(db)).donate || null;
-  } catch (err) {
-    console.error('[api] donate copy lookup failed:', err?.name || 'Error');
-    return null;
-  }
-}
-
 // Runs from the self-invocation (index.mjs JOBS 'petition-thanks').
 async function petitionThanksJob({ db, secrets, email, firstName, petition, origin }) {
   try {
@@ -607,8 +596,7 @@ async function donationThanksJob({ db, email, firstName, amountCents, recurring,
         { first_name: firstName || 'there', amount: amount || 'gift', type: donationType(Boolean(recurring)), date },
         { receipt: receiptHtml({ amount, recurring: Boolean(recurring), date }) });
     } else {
-      const copy = await donateCopy(db);
-      built = buildDonationThanksEmail({ firstName, amountCents, recurring: Boolean(recurring), copy, origin });
+      built = buildDonationThanksEmail({ firstName, amountCents, recurring: Boolean(recurring), origin });
     }
     await sesSend({ to: email, ...built });
   } catch (err) {

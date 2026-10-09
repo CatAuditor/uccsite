@@ -62,7 +62,6 @@ scripts/patch-homepage-group.mjs set single fields inside a saved group (--set p
 |---|---|---|
 | `slug` | form (`data-petition`), API, admin filter, CSV | `^[a-z0-9][a-z0-9-]{0,63}$`; **changing it starts a new petition** |
 | `project_slug` | project hub (the petition card), /petition ("Part of our … project"), API (copied onto every new signature), thank-you email (project link), admin | a `projects.slug`; dropdown on the admin page; blank = no project. See "Project" |
-| `email_subject`, `email_body` | the thank-you email (docs/systems/email.md) | `{first_name}`, `{headline}` substituted; blank = defaults in `aws/api/emails.js` |
 | `label` | hero eyebrow, /petition | e.g. "Unofficial Petition" |
 | `headline` | hero, /petition | HTML allowed (`<em>` = red). **Blank = petition off** |
 | `body` | hero sub, /petition, meta description | the provision + the ask |
@@ -182,7 +181,10 @@ written (NULL before the column / no project); the schema backfills
   homepage singleton; audit `petition.save`; refuses a bad slug while the
   headline is set; refuses a `project_slug` that is not a project). The
   **Project** field is a dropdown of the projects tree (`listProjects`,
-  widget `'project'`). Editor+.
+  widget `'project'`). Editor+. Above the copy editor, **Thank-you email**
+  (`app/automatic-email-picker.js`, trigger `petition-thanks`): dropdown of
+  the automatic emails written under Mail → Outgoing emails, or the built-in
+  email — docs/systems/email.md "Attached emails".
 - **Project workspace** (`/projects/<slug>` → Overview): one line saying
   whether the live campaign is filed here and the signature counts per
   campaign slug carrying this project (`workspace()` → `petitions`,
@@ -286,10 +288,12 @@ the featured one — noted in docs/pending-questions.md.
 
 ## Thank-you email (2026-10-09)
 
-See docs/systems/email.md "What is sent". Summary: first signature only,
-self-invoke job, campaign copy from the saved draft (generic when the slug is
-not the live campaign), project link, Share + Chip in buttons, one-click
-unsubscribe headers. Tests: `aws/api/test/api.test.mjs` "petition-thanks job".
+See docs/systems/email.md "What is sent" / "Attached emails". Summary: first
+signature only, self-invoke job; the email chosen on the Petition page (an
+automatic email composed under Outgoing emails) or the built-in body with the
+campaign headline (generic when the slug is not the live campaign), project
+link, Share + Chip in buttons, one-click unsubscribe headers. Tests:
+`aws/api/test/api.test.mjs` "petition-thanks job".
 
 ## Not built (deliberate)
 

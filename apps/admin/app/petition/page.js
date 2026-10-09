@@ -21,6 +21,7 @@ import { runAction } from '../../lib/actions';
 import ActionForm from '../action-form';
 import RequestPublish from '../request-publish';
 import { draftHero, liveHero, HeroStatus } from '../../lib/hero-status';
+import AutomaticEmailPicker from '../automatic-email-picker';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,7 +113,7 @@ export default async function PetitionPage({ searchParams }) {
           ? <>Filed under the project <strong><a href={`/projects/${project.slug}`}>{project.name}</a></strong>: its page on the site shows the petition, and every new signature carries that project.</>
           : <>Not filed under a project — set <strong>Project</strong> below so the project page shows the petition and signatures are filed under it.</>}
         {' '}Copy changes go live on the next approved publish; signatures arrive here instantly.
-        Each signer gets one thank-you email (first signature only) — the subject and message are the two “Thank-you email” fields below.
+        Each signer gets one thank-you email (first signature only) — choose which one under <strong>Thank-you email</strong> below.
         The public counter on the site shows <strong>Utah signatures only</strong> (ZIP 84xxx), refreshed about once a minute;
         out-of-state signatures are kept, listed and exportable here but never counted publicly.
       </p>
@@ -159,6 +160,9 @@ export default async function PetitionPage({ searchParams }) {
         </tbody>
       </table>
       {shown > rows.length && <p className="hint">Showing the newest {rows.length} of {shown}; the CSV has all of them.</p>}
+
+      <h2>Thank-you email</h2>
+      <AutomaticEmailPicker trigger="petition-thanks" readOnly={false} revalidate={['/petition']} />
 
       <h2>Campaign copy</h2>
       <ActionForm className="editor" action={save} successMessage="Petition copy saved. Publish to make it live.">

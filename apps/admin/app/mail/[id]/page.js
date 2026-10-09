@@ -15,7 +15,7 @@ import {
   newsletterPage, saveNewsletter, requestSend, approveSend, declineSend, withdrawSend, cancelSend, retrySend, sendTest, deleteNewsletter,
   duplicateNewsletter, saveDefaults, rescheduleSend,
 } from '../../../lib/newsletters';
-import { transactionalState, attachEmail, detachEmail, TRIGGERS } from '../../../lib/transactional';
+import { transactionalState, TRIGGERS } from '../../../lib/transactional';
 import { runAction } from '../../../lib/actions';
 import { config } from '../../../lib/config';
 import ActionForm from '../../action-form';
@@ -120,23 +120,6 @@ export default async function NewsletterPage({ params }) {
       const label = await rescheduleSend(id, String(formData.get('schedule') || ''));
       revalidatePath(path); revalidatePath('/mail'); revalidatePath('/');
       return { ok: true, message: label ? `Now scheduled for ${label}.` : 'Now sends as soon as it is approved.' };
-    });
-  }
-  async function attach(prev, formData) {
-    'use server';
-    return runAction(async () => {
-      const trigger = String(formData.get('trigger') || '');
-      const { label, replaced } = await attachEmail(id, trigger);
-      revalidatePath(path); revalidatePath('/mail');
-      return { ok: true, message: `Attached — this email now goes out ${label}.${replaced ? ' It replaces the one that was attached before.' : ''}` };
-    });
-  }
-  async function detach(prev, formData) {
-    'use server';
-    return runAction(async () => {
-      await detachEmail(String(formData.get('trigger') || ''), id);
-      revalidatePath(path); revalidatePath('/mail');
-      return { ok: true, message: 'Detached — the built-in email is used again.' };
     });
   }
   async function remove() {
@@ -268,35 +251,20 @@ export default async function NewsletterPage({ params }) {
 
       {isTx && (
         <section className="request-send">
-          <h2>Send automatically</h2>
+          <h2>Where it is used</h2>
           {tx.attached ? (
             <p>
-              Attached to <strong>{tx.attached.label}</strong> since {when(tx.attached.attachedAt)} by {tx.attached.attachedBy || 'an admin'}:
-              it goes out {tx.attached.when}. The live copy was frozen when it was attached — after editing, <strong>save, then attach again</strong> to update what goes out.
+              This is the live email for <strong>{tx.attached.label}</strong> (chosen {when(tx.attached.attachedAt)} by {tx.attached.attachedBy || 'an admin'}; it goes out {tx.attached.when}).
+              The copy that goes out was frozen when it was chosen — after editing, save here, then pick it again on the {tx.attached.trigger === 'petition-thanks' ? <Link href="/petition">Petition</Link> : <Link href="/appeals">Appeals</Link>} page to send the new version.
             </p>
           ) : (
-            <p>Not attached yet: the built-in email goes out. Choose when this email should be sent and attach it. The <em>Audience</em> fieldset above is ignored for automatic emails — each one goes to the person who just acted.</p>
+            <p>Not in use yet. Choose it on the <Link href="/petition">Petition</Link> page (thank-you after signing) or the <Link href="/appeals">Appeals</Link> page (thank-you after a donation). The <em>Audience</em> fieldset above is ignored for automatic emails — each one goes to the person who just acted.</p>
           )}
           <p className="hint">
-            Type these anywhere in the text and they are filled in for each recipient:{' '}
+            Placeholders, filled in for each recipient:{' '}
             {TRIGGERS.map((t) => <span key={t.key}><strong>{t.label}</strong>: {t.placeholders.map((p) => `{${p}}`).join(' ')}{t.required.length ? ` (${t.required.map((p) => `{${p}}`).join(' ')} is required — it carries the amount, date and the not-tax-deductible line)` : ''}. </span>)}
             The Unsubscribe link in the footer is filled in automatically.
           </p>
-          {canAct && (
-            <ActionForm action={attach} className="inline">
-              <label htmlFor="trigger">Send this email</label>
-              <select id="trigger" name="trigger" defaultValue={tx.attached?.trigger || TRIGGERS[0].key}>
-                {TRIGGERS.map((t) => <option key={t.key} value={t.key}>{t.label} — {t.when}{tx.slots[t.key] && tx.slots[t.key].newsletterId !== n.id ? ` (currently: ${tx.slots[t.key].subject})` : ''}</option>)}
-              </select>
-              <button type="submit">{tx.attached ? 'Attach again (update the live copy)' : 'Attach — make it live'}</button>
-            </ActionForm>
-          )}
-          {canAct && tx.attached && (
-            <ActionForm action={detach} className="inline">
-              <input type="hidden" name="trigger" value={tx.attached.trigger} />
-              <button type="submit" className="secondary">Detach (back to the built-in email)</button>
-            </ActionForm>
-          )}
         </section>
       )}
 

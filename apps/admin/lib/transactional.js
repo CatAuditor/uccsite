@@ -56,6 +56,36 @@ export async function transactionalState(id) {
   return { attached, slots };
 }
 
+// automaticEmails() → [{ id, subject, updatedAt }] — every kind='transactional' draft, newest first.
+export async function automaticEmails() {
+  await requireRole('viewer');
+  const rows = await withDb((client) => db.listNewsletters(client, 200));
+  return rows.filter((n) => n.kind === 'transactional').map((n) => ({ id: n.id, subject: n.subject, updatedAt: n.updatedAt }));
+}
+
+// transactionalSlot(trigger) → the trigger + its attachment (or null).
+export async function transactionalSlot(trigger) {
+  const t = db.triggerOf(trigger);
+  if (!t) throw new Error('Unknown trigger');
+  const slots = await listSlots();
+  return slots.find((s) => s.key === t.key);
+}
+
+// chooseEmail(trigger, id|'') → { label, builtIn }: the dropdown's action.
+// '' = detach whatever is attached (built-in email again).
+export async function chooseEmail(trigger, id) {
+  const t = db.triggerOf(trigger);
+  if (!t) throw new Error('Unknown trigger');
+  if (!id) {
+    const slot = await transactionalSlot(t.key);
+    if (slot.attachment) await detachEmail(t.key, slot.attachment.newsletterId);
+    return { label: '', builtIn: true };
+  }
+  await attachEmail(id, t.key);
+  const n = await withDb((client) => db.getNewsletter(client, assertId(id)));
+  return { label: n?.subject || '', builtIn: false };
+}
+
 // attachEmail(id, trigger) → { label, replaced }. Renders the saved draft
 // exactly as a newsletter request would (same renderer, UTM campaign = the
 // trigger key) and freezes it for the trigger. Refuses without a subject, a

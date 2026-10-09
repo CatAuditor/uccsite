@@ -15,6 +15,7 @@ import { CONFLICT_MESSAGE } from '../../lib/collection-save';
 import { runAction } from '../../lib/actions';
 import ActionForm from '../action-form';
 import RequestPublish from '../request-publish';
+import AutomaticEmailPicker from '../automatic-email-picker';
 
 export const dynamic = 'force-dynamic';
 
@@ -114,6 +115,8 @@ export default async function AppealsPage() {
         </fieldset>
         {!readOnly && <><button type="submit">Save appeals</button><RequestPublish /></>}
       </ActionForm>
+      <h2>Thank-you email after a donation</h2>
+      <AutomaticEmailPicker trigger="donation-thanks" readOnly={readOnly} revalidate={['/appeals']} />
       <p className="notice">
         Not editable here: the "Donate" links in the nav and footer, the donate form's button, and the
         501(c)(4) legal line — those live in the templates.

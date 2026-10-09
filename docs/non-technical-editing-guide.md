@@ -94,15 +94,12 @@ puts that version back as a draft; request a publish to take it live.
   signature is filed under that project), the thank-you page's donation window
   (**amounts** as dollars, e.g. `5, 10, 25`; **one-time, monthly or both**; an
   Other amount is always offered), the **share** message and preview
-  picture used when people post the petition link, and the **thank-you
-  email** each signer gets once (subject + message; `{first_name}` and
-  `{headline}` are filled in; blank = the standard wording; takes effect on
-  save, no publish needed). The **Form title** is
+  picture used when people post the petition link, and the **Thank-you
+  email** dropdown: which automatic email (written under Outgoing emails)
+  each signer gets once, or the built-in one. The **Form title** is
   also the headline apps show on that link; blank = Sign the petition.
-- **Appeals → Homepage donate section** also holds the **thank-you email**
-  every donor receives after checkout (subject + message; `{first_name}` and
-  `{amount}`; the receipt table and the not-tax-deductible line are added
-  automatically).
+- **Appeals** also holds the **Thank-you email after a donation** dropdown
+  (same idea; a donation email must contain `{receipt}`).
 - **Homepage** — hero headline/subtitle, mission quote, about paragraphs,
   join section, donate section, donation pop-up text, the press strip.
   (The featured statement card is automatic: it is always the newest
@@ -260,11 +257,13 @@ the whole mailing list after a second admin approves them.
   *Donation received*) and which email is attached to it. With nothing
   attached, a built-in email goes out; its wording is edited on the Petition
   page (petition) and the Appeals page (donation).
-- To replace one with your own design: **New automatic email**, write it
-  exactly like a newsletter (blocks, look, preview, *Save & send me a test*),
-  then in **Send automatically** choose the moment and press **Attach — make
-  it live**. It goes out from then on. Edits do not go live until you save and
-  press *Attach again*. **Detach** goes back to the built-in email.
+- To use your own design: **New automatic email**, write it exactly like a
+  newsletter (blocks, look, preview, *Save & send me a test*). Then go to the
+  **Petition** page (Thank-you email) or the **Appeals** page (Thank-you email
+  after a donation) and pick it from the dropdown — **Use this email**. It
+  goes out from then on; swap to another one or back to *Built-in email* any
+  time, no publish needed. Edits to the email do not go live until you pick
+  it again (the page says "edited since" when that is the case).
 - Type `{first_name}` where the person's first name should appear. Petition
   emails can also use `{headline}` and `{project_name}`. Donation emails can
   use `{amount}`, `{type}` and `{date}`, and **must** contain `{receipt}` —

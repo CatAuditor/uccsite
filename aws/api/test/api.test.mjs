@@ -621,7 +621,7 @@ test('petition-thanks job: campaign copy, project link, share + chip-in buttons,
   assert.equal(headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
 });
 
-test('petition-thanks job: unknown campaign → generic copy, no project; admin copy + placeholders filled and escaped', async () => {
+test('petition-thanks job: unknown campaign → generic copy, no project; live campaign without a project → no projects read', async () => {
   routes._resetCampaignCache();
   let sent = fakeSes();
   try {
@@ -634,13 +634,13 @@ test('petition-thanks job: unknown campaign → generic copy, no project; admin 
 
   routes._resetCampaignCache();
   sent = fakeSes();
-  const db = fakeDb({ 'SELECT * FROM homepage': homepageRow({ ...campaign, project_slug: '', email_subject: 'You did it, {first_name}', email_body: 'Line one\n\nSecond <para> about {headline}' }) });
+  const db = fakeDb({ 'SELECT * FROM homepage': homepageRow({ ...campaign, project_slug: '' }) });
   try {
     await routes.petitionThanksJob({ db, secrets: {}, email: 'a@b.co', firstName: 'Ada', petition: 'udot-alpr-permits', origin: 'https://x.test' });
   } finally { routes._setSesClient(null); routes._resetCampaignCache(); }
-  assert.equal(sent[0].Content.Simple.Subject.Data, 'You did it, Ada');
-  assert.match(sent[0].Content.Simple.Body.Html.Data, /<p style="[^"]+">Line one<\/p>/);
-  assert.match(sent[0].Content.Simple.Body.Html.Data, /Second &lt;para&gt; about Tell UDOT: no cameras/);
+  assert.equal(sent[0].Content.Simple.Subject.Data, 'Thank you for signing: Tell UDOT: no cameras');
+  assert.match(sent[0].Content.Simple.Body.Html.Data, /Hi Ada,/);
+  assert.ok(!sent[0].Content.Simple.Body.Html.Data.includes('/projects/'));
   assert.ok(!db.calls.some(c => c.text.includes('FROM projects'))); // no project_slug → no projects read
 });
 
@@ -665,7 +665,7 @@ test('checkout.session.completed dispatches the donation thank-you (amount, recu
   assert.equal(res.statusCode, 200);
 });
 
-test('donation-thanks job: receipt (amount, type, date), the not-tax-deductible line, no unsubscribe headers; monthly wording; admin copy', async () => {
+test('donation-thanks job: receipt (amount, type, date), the not-tax-deductible line, no unsubscribe headers; monthly wording', async () => {
   let sent = fakeSes();
   try {
     await routes.donationThanksJob({ db: fakeDb(), email: 'd@e.f', firstName: 'Dee', amountCents: 2500, recurring: false, origin: 'https://x.test' });
@@ -679,13 +679,13 @@ test('donation-thanks job: receipt (amount, type, date), the not-tax-deductible 
   assert.equal(sent[0].Content.Simple.Headers, undefined);
 
   sent = fakeSes();
-  const db = fakeDb({ 'SELECT * FROM homepage': homepageRow(null, { thanks_email_subject: 'Welcome aboard, {first_name} ({amount})', thanks_email_body: 'Thanks <3 {first_name}' }) });
+  const db = fakeDb();
   try {
     await routes.donationThanksJob({ db, email: 'd@e.f', firstName: 'Dee', amountCents: 1000, recurring: true, origin: 'https://x.test' });
   } finally { routes._setSesClient(null); }
-  assert.equal(sent[0].Content.Simple.Subject.Data, 'Welcome aboard, Dee ($10.00)');
+  assert.equal(sent[0].Content.Simple.Subject.Data, 'Thank you — your $10.00/month membership is active');
   body = sent[0].Content.Simple.Body.Html.Data;
-  assert.match(body, /Thanks &lt;3 Dee/);
+  assert.ok(!db.calls.some(c => c.text.includes('FROM homepage'))); // built-in donation email reads no content
   assert.match(body, /Monthly membership/);
   assert.match(body, /\$10\.00 \/ month/);
   assert.match(body, /info@utahciviccompact\.org/);

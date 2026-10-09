@@ -15,12 +15,16 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
   right after signing the petition or donating) and **Newsletters** (what the
   whole list gets after a second admin approves).
 - An automatic email can now be **one you design in the newsletter builder**
-  instead of the built-in one. Write it like any newsletter, preview it, send
-  yourself a test, then **attach** it to the moment it should go out
-  (*Petition signed* or *Donation received*). Only one email is attached per
-  moment; attaching another replaces it, and **Detach** goes back to the
-  built-in email. What goes out is frozen when you attach — after editing,
-  save and attach again.
+  instead of the built-in one. Write it under Outgoing emails like any
+  newsletter, preview it, send yourself a test. Then **choose it where it is
+  used**: the Petition page has a *Thank-you email* dropdown, the Appeals page
+  a *Thank-you email after a donation* dropdown. Pick one of your automatic
+  emails or *Built-in email*; swap any time to rotate them. What goes out is
+  frozen when you pick it — after editing, pick it again (the page flags
+  "edited since").
+- The two "Thank-you email" text fields added earlier today on the Petition
+  and Appeals pages are gone: writing the email as an automatic email is the
+  one way to change its wording; the built-in email is fixed.
 - Placeholders: `{first_name}` everywhere; `{headline}` and `{project_name}`
   for the petition; `{amount}`, `{type}`, `{date}` for donations, which must
   also contain `{receipt}` — the amount/date table and the required
@@ -30,9 +34,8 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 **What editors do differently**
 
 - Look for the Mail tab under its new name. Nothing changes for newsletters.
-- To change the look of a thank-you email, build it as an automatic email and
-  attach it; to change only its words, the fields on the Petition and Appeals
-  pages still work for the built-in version.
+- To change a thank-you email, build it as an automatic email under Outgoing
+  emails, then select it on the Petition or Appeals page.
 
 **Left to do**
 

@@ -5,10 +5,10 @@
 // and sesSend() delivers. One layout so every message the site sends looks
 // like the welcome email (whose body stays in routes.js, copy unchanged).
 //
-// Copy is admin-editable (homepage.petition.email_* / homepage.donate.
-// thanks_email_*): plain text, blank lines = paragraphs, with {first_name},
-// {headline} (petition) and {amount} (donation) substituted. Everything the
-// admin types is HTML-escaped; only our own markup is raw.
+// These are the BUILT-IN bodies; an admin can replace either with an email
+// composed in the admin (docs/systems/email.md "Attached emails"). Copy here
+// is plain text, blank lines = paragraphs, with {first_name}, {headline}
+// (petition) and {amount} (donation) substituted and HTML-escaped.
 const { escapeHtml } = require('./lib');
 
 const P = 'margin:0 0 20px;color:#2c2c2c;font-size:17px;line-height:1.7;';
@@ -111,8 +111,8 @@ Two things move the needle right now: send the petition to one person who should
 function buildPetitionThanksEmail({ firstName, campaign, project, origin, unsubscribeUrl }) {
   const headline = plain(campaign?.headline);
   const vars = { first_name: firstName || 'there', headline };
-  const subject = fill(headline ? (campaign?.email_subject || PETITION_SUBJECT) : PETITION_SUBJECT_GENERIC, vars);
-  const body = paragraphs(campaign?.email_body || PETITION_BODY, vars);
+  const subject = fill(headline ? PETITION_SUBJECT : PETITION_SUBJECT_GENERIC, vars);
+  const body = paragraphs(PETITION_BODY, vars);
   const projectLine = project ? `
         <p style="${P}">This petition is part of our <a href="${escapeHtml(`${origin}${project.url}`)}" style="color:#1a3a2a;">${escapeHtml(project.name)}</a> project — the reports, records and coverage behind it live there.</p>` : '';
   const html = layout({
@@ -130,8 +130,7 @@ function buildPetitionThanksEmail({ firstName, campaign, project, origin, unsubs
 // ── Donation thank-you ──────────────────────────────────────────────────────
 // A receipt as well as a thank-you: amount, date, one-time vs monthly, and
 // the fixed 501(c)(4) line — contributions are NOT tax-deductible, and the
-// receipt must say so. `copy` is homepage.donate (thanks_email_subject /
-// thanks_email_body) or null.
+// receipt must say so.
 const DONATION_SUBJECT_ONETIME = 'Thank you for your {amount} donation';
 const DONATION_SUBJECT_MONTHLY = 'Thank you — your {amount}/month membership is active';
 const DONATION_BODY = `Hi {first_name},
@@ -167,11 +166,11 @@ function receiptHtml({ amount, recurring, date }) {
         </p>`;
 }
 
-function buildDonationThanksEmail({ firstName, amountCents, recurring, copy, origin, when = new Date() }) {
+function buildDonationThanksEmail({ firstName, amountCents, recurring, origin, when = new Date() }) {
   const amount = formatAmount(amountCents);
   const vars = { first_name: firstName || 'there', amount: amount || 'gift' };
-  const subject = fill(copy?.thanks_email_subject || (recurring ? DONATION_SUBJECT_MONTHLY : DONATION_SUBJECT_ONETIME), vars);
-  const body = paragraphs(copy?.thanks_email_body || DONATION_BODY, vars);
+  const subject = fill(recurring ? DONATION_SUBJECT_MONTHLY : DONATION_SUBJECT_ONETIME, vars);
+  const body = paragraphs(DONATION_BODY, vars);
   const date = formatDate(when);
   const receipt = receiptHtml({ amount, recurring, date });
   const html = layout({
