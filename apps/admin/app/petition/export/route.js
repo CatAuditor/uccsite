@@ -33,7 +33,7 @@ export async function POST(request) {
   if (residency === 'utah') where.push(utahZipSql('zip'));
   if (residency === 'outside') where.push(`NOT ${utahZipSql('zip')}`);
   const rows = await withDb(async (client) => (await client.query(
-    `SELECT petition, first_name, last_name, email, zip, (${utahZipSql('zip')}) AS utah, address, phone,
+    `SELECT petition, project_slug, first_name, last_name, email, zip, (${utahZipSql('zip')}) AS utah, address, phone,
             to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS signed_at
      FROM petition_signatures ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY created_at`,
     params)).rows);
@@ -41,8 +41,8 @@ export async function POST(request) {
     actor: session.email, action: 'petition.export', diff: { petition: petition || 'all', residency, rows: rows.length },
   }));
 
-  const header = 'petition,first_name,last_name,email,zip,utah_resident,address,phone,signed_at_utc';
-  const body = rows.map(r => [r.petition, r.first_name, r.last_name, r.email, r.zip, r.utah ? 'yes' : 'no', r.address, r.phone, r.signed_at].map(cell).join(',')).join('\r\n');
+  const header = 'petition,project,first_name,last_name,email,zip,utah_resident,address,phone,signed_at_utc';
+  const body = rows.map(r => [r.petition, r.project_slug, r.first_name, r.last_name, r.email, r.zip, r.utah ? 'yes' : 'no', r.address, r.phone, r.signed_at].map(cell).join(',')).join('\r\n');
   const name = `petition-${petition || 'all'}-${residency}-${new Date().toISOString().slice(0, 10)}.csv`;
   return new Response(`${header}\r\n${body}\r\n`, {
     headers: {

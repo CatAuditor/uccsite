@@ -130,7 +130,8 @@ which also creates the role and maps it to the Lambda's IAM role via
 | `processed_events` | SELECT, INSERT, DELETE | webhook idempotency |
 | `tips` | **INSERT only** | `/api/tip` (write-only from the internet, docs/systems/tipline.md) |
 | `petition_signatures` | SELECT, INSERT, UPDATE | `/api/petition` upsert (docs/systems/petition.md); never DELETE |
-| content tables, `audit_log`, `revisions`, … | nothing | — |
+| `homepage`, `projects` | **SELECT only** (2026-10-09) | `/api/petition` reads the live campaign (`homepage.petition`: project to file the signature under, thank-you copy) and the project's name/parent for its URL; the donation thank-you reads `homepage.donate`. Public-site content, read-only — the one content exception |
+| other content tables, `audit_log`, `revisions`, … | nothing | — |
 
 A route that needs more fails with SQLSTATE 42501 `permission denied for
 table …`: extend `API_GRANTS`, re-run `migrate-schema.mjs`. Never grant the

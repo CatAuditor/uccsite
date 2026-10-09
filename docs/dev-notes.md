@@ -6,6 +6,58 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-09 — Thank-you emails for signers and donors; petitions filed under a project
+
+Until now the site sent only two emails on its own: the welcome email when
+someone joins the list, and the billing-portal link. Signing the petition or
+donating produced nothing in the inbox.
+
+**What changed**
+
+- **Everyone who signs the petition gets a thank-you email** right after their
+  first signature (a second signature with the same address sends nothing, so
+  nobody can use the form to flood an inbox). It carries the petition
+  headline, a link to the project it belongs to, a Share button and a Chip in
+  button, and the usual unsubscribe link, since signing also joins the list.
+- **Everyone who donates gets a thank-you and receipt** right after checkout,
+  one-time or the first monthly charge (monthly renewals do not send). It shows
+  the amount, one-time vs monthly and the date, and always states that
+  Utah Civic Compact is a 501(c)(4) and contributions are not tax-deductible.
+  Monthly donors are told to email info@ to change or cancel.
+- **The wording of both emails is yours to edit.** Petition page → the two
+  "Thank-you email" fields (subject and message). Appeals → Homepage donate
+  section → the two "Thank-you email" fields. Use `{first_name}`, `{headline}`
+  (petition) and `{amount}` (donation) where you want them filled in; a blank
+  line starts a new paragraph. Blank fields use a standard message. The copy
+  is read from what is SAVED, so an email wording change goes out immediately,
+  no publish needed.
+- **The petition is filed under a project.** The Petition page has a new
+  **Project** dropdown (the UDOT ALPR petition is filed under the license-plate
+  investigation). The project's page on the site now shows the petition with
+  its own sign button, /petition says "Part of our … project", every new
+  signature records which project it belonged to (visible in the signature
+  list and the CSV, and backfilled for the existing signatures), and the
+  project's workspace in the admin shows its signature counts.
+- **Who signed what** was already tracked per person: the Mailing list shows
+  every petition each person has signed and can be filtered by petition. No
+  change there; it now also survives the move to the next campaign.
+
+**What editors do differently**
+
+- When starting a new petition, pick its **Project** on the Petition page.
+- Edit the thank-you wording in the two new fields if you want it to say
+  something specific to the campaign.
+
+**Left to do**
+
+- Nothing needs the account owner. Staging and production have the new
+  database column and permissions; the site was republished so project pages
+  show the petition. First real sends should be checked once in the SES
+  console (bounces land on the ops alert topic as before).
+- If the organisation wants SEVERAL petitions open at the same time, that is a
+  further change (a petition list rather than one campaign) — see
+  docs/pending-questions.md.
+
 ## 2026-10-09 — Press coverage lives in one place now
 
 Until today the same news story had to be entered up to four times: once on

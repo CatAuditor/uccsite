@@ -55,3 +55,22 @@ test('donate frequency: both (default), one-time only, monthly only, starting si
   assert.deepEqual([once.toggle, once.type], [false, 'onetime']);
   assert.equal(petitionDonate({ donate_default_frequency: 'Monthly' }).type, 'subscription');
 });
+
+test('derivePetitionProject: /petition gets the project link, that hub gets the campaign; off or unknown slug → unchanged', () => {
+  const { derivePetitionProject } = createRequire(import.meta.url)('../site.js');
+  const projects = [
+    { slug: 'alpr', name: 'ALPR', url: '/projects/alpr', is_sub: false },
+    { slug: 'sub', name: 'Sub', url: '/projects/alpr/sub', is_sub: true },
+  ];
+  const content = { homepage: { petition: { headline: 'H', project_slug: 'alpr', slug: 's' } }, projects: { projects, top_projects: [projects[0]] } };
+  const out = derivePetitionProject(content);
+  assert.deepEqual(out.homepage.petition.project, { name: 'ALPR', url: '/projects/alpr' });
+  assert.equal(out.projects.projects[0].petition.slug, 's');
+  assert.equal(out.projects.projects[1].petition, undefined);
+  assert.equal(out.projects.top_projects[0].petition.slug, 's');
+  assert.equal(projects[0].petition, undefined); // inputs untouched
+  const off = derivePetitionProject({ ...content, homepage: { petition: { headline: '', project_slug: 'alpr' } } });
+  assert.equal(off.projects.projects[0].petition, undefined);
+  assert.equal(off.homepage.petition.project, undefined);
+  assert.equal(derivePetitionProject({ ...content, homepage: { petition: { headline: 'H', project_slug: 'nope' } } }).homepage.petition.project, undefined);
+});

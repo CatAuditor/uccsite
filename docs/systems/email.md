@@ -10,9 +10,16 @@ idle Cloudflare `functions/` copy still names Resend).
 ## Code Map
 
 ```
-aws/api/routes.js            sesSend() — THE send path (welcome email, portal link)
+aws/api/routes.js            sesSend() — THE send path (welcome email, portal link, thank-yous)
                              FROM_ADDRESS = 'Utah Civic Compact <hello@utahciviccompact.org>'
-                             _setSesClient() — test seam only
+                             petitionThanksJob() / donationThanksJob() — the two thank-you jobs;
+                             petitionCampaign() / donateCopy() — read the admin's copy (homepage)
+                             _setSesClient(), _resetCampaignCache() — test seams only
+aws/api/emails.js            the thank-you bodies (pure): buildPetitionThanksEmail,
+                             buildDonationThanksEmail, shared layout, {placeholder} fill,
+                             default subjects/bodies. Welcome body stays in routes.js.
+aws/api/webhook.js           checkout.session.completed → self-invoke 'donation-thanks'
+aws/api/index.mjs            JOBS: welcome-email, portal-link, petition-thanks, donation-thanks
 aws/api/secrets.js           TOKEN_SECRET (signs unsubscribe/portal links); RESEND_API_KEY removed
 aws/newsletter/              NewsletterSendFn — the newsletter send path (docs/systems/newsletters.md)
 apps/admin/lib/notify.js     publish-request + newsletter-request review emails from the admin (same From, identity,
@@ -55,6 +62,8 @@ the ops topic and reputation metrics are not tagged.
 |---|---|---|---|
 | Welcome (= confirmation, double opt-in since 2026-10-05) | `POST /api/subscribe` (join form); carries a signed `GET /api/confirm` button (purpose `confirm`, 30 days) | self-invoke job, non-blocking | `List-Unsubscribe` + `List-Unsubscribe-Post: One-Click` (RFC 8058), signed 1-year unsubscribe link |
 | Billing-portal link | `POST /api/create-portal-session` | inline after the 202 | 15-minute signed link |
+| **Petition thank-you** (2026-10-09) | `POST /api/petition` — the FIRST signature of an address on a campaign only (a re-sign refreshes the row and sends nothing, so the route cannot be used to flood an inbox) | self-invoke job `petition-thanks`, non-blocking | `List-Unsubscribe` + One-Click (signing = joining the list), signed 1-year unsubscribe link. Subject/body: admin Petition page → "Thank-you email" fields (`homepage.petition.email_subject` / `email_body`, `{first_name}` `{headline}`), defaults in emails.js. Heading = the headline (only `<em>` kept). Adds the project link when the campaign is filed under a project, a Share button (/petition) and a Chip in button (/petition-thanks). Generic copy when the slug is not the live campaign or the content read fails |
+| **Donation thank-you / receipt** (2026-10-09) | Stripe `checkout.session.completed` (one-time AND the first charge of a monthly membership; renewals send nothing) — `aws/api/webhook.js` after the member/donation rows | self-invoke job `donation-thanks`, non-blocking; `processed_events` dedupes Stripe redeliveries so it is one email per checkout | none (a receipt, not list mail). Subject/body: admin Appeals page → Homepage donate section → "Thank-you email" fields (`homepage.donate.thanks_email_subject` / `thanks_email_body`, `{first_name}` `{amount}`). Always adds a receipt table (amount, one-time vs monthly, date in Mountain time) and the fixed 501(c)(4) **not tax-deductible** line; monthly adds "to change or cancel, email info@" |
 | Publish request needs review | an EDITOR (not an owner) requests a publish in the admin | `apps/admin/lib/notify.js`, after the request commits; one `SendEmail` to the four admins minus the requester (list in `lib/notify-recipients.mjs`); prod only unless `PUBLISH_NOTIFY_TO` is set | none — internal; links to the admin dashboard |
 | Newsletter (admin) | an approved send request in the admin (Mail → Newsletters; docs/systems/newsletters.md) | `NewsletterSendFn` Lambda: one `SendEmail` per recipient, 100 ms apart, per-recipient delivery ledger, self-resume; From `"<Author> from Utah Civic Compact" <hello@…>` (display name only — the address is IAM-pinned) | `List-Unsubscribe` + One-Click, signed 1-year unsubscribe link per recipient |
 | Newsletter test | "Send me a test" in the composer | admin SSR role, to the signed-in admin only, subject `[TEST] …` | none |
@@ -62,6 +71,20 @@ the ops topic and reputation metrics are not tagged.
 
 Volume is tiny (tens per month). No message bodies or recipient lists are
 ever logged (`[api] SES error: <ErrorName>` / `[api] SES sent <MessageId>` only).
+
+### Admin copy for the thank-yous
+
+Both thank-you emails read their subject and message from the homepage
+singleton at send time (the API role has read-only `SELECT` on `homepage`
+and `projects` — docs/systems/api-security.md). The text is plain: a blank
+line starts a paragraph, `{first_name}` / `{headline}` / `{amount}` are
+filled in, everything the admin typed is HTML-escaped. A blank field means
+the default in `aws/api/emails.js`. The copy is read from the SAVED draft,
+not the published site — a saved-but-unpublished subject goes out at once.
+The petition job uses the campaign copy only while `homepage.petition.slug`
+equals the slug signed; while an editor drafts the next campaign, signers of
+the still-live one get the generic copy (never the draft's headline). The
+lookup is cached per Lambda container for 5 minutes.
 
 ## SES infrastructure (UccProd stack, us-west-2)
 

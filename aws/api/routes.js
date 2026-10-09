@@ -14,6 +14,7 @@ const {
 } = require('./lib');
 const { StripeError, stripePost } = require('./stripe');
 const { utahZipSql, isUtahZip } = require('@uccsite/db/audience');
+const { buildPetitionThanksEmail, buildDonationThanksEmail } = require('./emails');
 
 const UNSUBSCRIBE_TTL = 60 * 60 * 24 * 365; // 1 year
 const LINK_TTL_SECONDS = 15 * 60;
@@ -396,7 +397,7 @@ const PETITION_SLUG_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const ZIP_RE = /^\d{5}(-\d{4})?$/;
 const PETITION_LIMIT = 20; // per IP per hour — one phone at a tabling event signs many
 
-async function petitionSign({ event, db, secrets, body }) {
+async function petitionSign({ event, db, secrets, body, origin, selfInvoke }) {
   const limited = await rateLimitOr429(db, event, 'petition', PETITION_LIMIT);
   if (limited) return limited;
 
@@ -418,18 +419,33 @@ async function petitionSign({ event, db, secrets, body }) {
   if (!ZIP_RE.test(zip)) return json({ error: 'A 5-digit ZIP code is required' }, 400);
   if (!isValidEmail(email)) return json({ error: 'A valid email address is required' }, 400);
 
+  // The campaign this slug belongs to (project filing + email copy). Null
+  // when the slug is not the live campaign or the read fails — the signature
+  // is still recorded, just without a project.
+  const campaign = await petitionCampaign(db, petition);
+
+  let isNew = true;
   try {
+    // First signature or a re-sign? Decides the thank-you email below: one
+    // per address per petition, so a re-sign can never be used to flood an
+    // inbox (the route is reachable by anyone who knows an email address).
+    const prior = await db.query(
+      'SELECT 1 FROM petition_signatures WHERE petition = $1 AND email = $2',
+      [petition, email],
+    );
+    isNew = !(prior.rows && prior.rows.length);
     await db.query(
-      `INSERT INTO petition_signatures (id, petition, first_name, last_name, email, zip, address, phone)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO petition_signatures (id, petition, first_name, last_name, email, zip, address, phone, project_slug)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (petition, email) DO UPDATE SET
          first_name = excluded.first_name,
          last_name  = excluded.last_name,
          zip        = excluded.zip,
          address    = COALESCE(excluded.address, petition_signatures.address),
          phone      = COALESCE(excluded.phone, petition_signatures.phone),
+         project_slug = COALESCE(excluded.project_slug, petition_signatures.project_slug),
          updated_at = now()`,
-      [petition, firstName, lastName, email, zip, address || null, phone || null],
+      [petition, firstName, lastName, email, zip, address || null, phone || null, campaign?.project_slug || null],
     );
     await db.query(
       `INSERT INTO subscribers (id, email, first_name, last_name, address, zip, confirmed_at)
@@ -453,7 +469,106 @@ async function petitionSign({ event, db, secrets, body }) {
   // A Utah signature may have changed the public counter — drop the cached
   // number so the next page load recounts (petitionCount below).
   if (isUtahZip(zip)) invalidateCount(petition);
+
+  // Thank-you email, first signature only, off the response path (same
+  // self-invoke pattern as the welcome email). A failed dispatch is logged
+  // and the signer still gets {ok:true} — the signature is what matters.
+  if (isNew && selfInvoke) {
+    try {
+      await selfInvoke({ job: 'petition-thanks', email, firstName, petition, origin });
+    } catch (err) {
+      console.error('[api] petition thanks dispatch failed:', err?.message);
+    }
+  }
   return json({ ok: true });
+}
+
+// ── Campaign lookup (homepage.petition) ─────────────────────────────────────
+// The API role may SELECT the homepage singleton and the projects table
+// (read-only, public content — docs/systems/api-security.md). Returns the
+// petition group when its slug is the one asked for, with `project` ({name,
+// url}) resolved from project_slug; null for any other slug (an editor may
+// be drafting the next campaign while the live one is still being signed)
+// and on any error (logged by name — the caller falls back to generic copy).
+// Cached per container for CAMPAIGN_TTL_MS: it is read on every signature.
+const CAMPAIGN_TTL_MS = 5 * 60_000;
+let campaignCache = null; // { at, group, project }
+function _resetCampaignCache() { campaignCache = null; }
+
+async function petitionCampaign(db, slug) {
+  try {
+    if (!campaignCache || Date.now() - campaignCache.at > CAMPAIGN_TTL_MS) {
+      const { loadHomepage } = require('@uccsite/db/content');
+      const group = (await loadHomepage(db)).petition || null;
+      let project = null;
+      const projectSlug = String(group?.project_slug || '').trim();
+      if (group && projectSlug) {
+        const rows = (await db.query('SELECT slug, name, parent_slug FROM projects')).rows;
+        const p = rows.find((r) => r.slug === projectSlug);
+        if (p) {
+          const parent = String(p.parent_slug || '').trim();
+          project = { name: p.name, url: `/projects/${parent ? `${parent}/` : ''}${p.slug}` };
+        }
+      }
+      campaignCache = { at: Date.now(), group, project };
+    }
+    const { group, project } = campaignCache;
+    if (!group || String(group.slug || '').toLowerCase() !== slug) return null;
+    return { ...group, project_slug: project ? String(group.project_slug).trim() : null, project };
+  } catch (err) {
+    console.error('[api] petition campaign lookup failed:', err?.name || 'Error');
+    return null;
+  }
+}
+
+// homepage.donate — the donation thank-you's editable subject/body. Null on
+// any error (defaults apply).
+async function donateCopy(db) {
+  try {
+    const { loadHomepage } = require('@uccsite/db/content');
+    return (await loadHomepage(db)).donate || null;
+  } catch (err) {
+    console.error('[api] donate copy lookup failed:', err?.name || 'Error');
+    return null;
+  }
+}
+
+// Runs from the self-invocation (index.mjs JOBS 'petition-thanks').
+async function petitionThanksJob({ db, secrets, email, firstName, petition, origin }) {
+  try {
+    const campaign = await petitionCampaign(db, String(petition || '').toLowerCase());
+    let unsubscribeUrl = `${origin}/#join`;
+    if (secrets.TOKEN_SECRET) {
+      const token = await signToken(secrets.TOKEN_SECRET, 'unsubscribe', email, UNSUBSCRIBE_TTL);
+      unsubscribeUrl = `${origin}/api/unsubscribe?token=${encodeURIComponent(token)}`;
+    }
+    const { subject, html } = buildPetitionThanksEmail({
+      firstName, campaign, project: campaign?.project || null, origin, unsubscribeUrl,
+    });
+    await sesSend({
+      to: email, subject, html,
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    });
+  } catch (err) {
+    console.error('[api] petition thanks email failed:', err?.message);
+  }
+}
+
+// Runs from the self-invocation (index.mjs JOBS 'donation-thanks'), dispatched
+// by the Stripe webhook on checkout.session.completed (webhook.js).
+async function donationThanksJob({ db, email, firstName, amountCents, recurring, origin }) {
+  try {
+    const copy = await donateCopy(db);
+    const { subject, html } = buildDonationThanksEmail({
+      firstName, amountCents, recurring: Boolean(recurring), copy, origin,
+    });
+    await sesSend({ to: email, subject, html });
+  } catch (err) {
+    console.error('[api] donation thanks email failed:', err?.message);
+  }
 }
 
 // ── GET /api/petition/count?petition=<slug> ─────────────────────────────────
@@ -694,5 +809,6 @@ async function donationStats({ db }) {
 module.exports = {
   subscribe, subscribePreflight, unsubscribe, confirmSubscription, newsletterOpen, tip, petitionSign, petitionCount, createCheckoutSession,
   createPortalSessionPost, createPortalSessionGet, portalLinkJob, welcomeEmailJob, donationStats,
-  _setSesClient,
+  petitionThanksJob, donationThanksJob,
+  _setSesClient, _resetCampaignCache,
 };

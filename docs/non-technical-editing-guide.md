@@ -89,11 +89,20 @@ puts that version back as a draft; request a publish to take it live.
 - **Writing page** (`/writing`) — builds itself from published documents and
   statements; nothing to edit. A document's **Category** sets its label there
   (Reports, Statements, Whitepapers).
-- **Petition** — the campaign copy, the thank-you page's donation window
+- **Petition** — the campaign copy, the **Project** it belongs to (its
+  project page then shows the petition with a sign button, and every
+  signature is filed under that project), the thank-you page's donation window
   (**amounts** as dollars, e.g. `5, 10, 25`; **one-time, monthly or both**; an
-  Other amount is always offered) and the **share** message and preview
-  picture used when people post the petition link. The **Form title** is
+  Other amount is always offered), the **share** message and preview
+  picture used when people post the petition link, and the **thank-you
+  email** each signer gets once (subject + message; `{first_name}` and
+  `{headline}` are filled in; blank = the standard wording; takes effect on
+  save, no publish needed). The **Form title** is
   also the headline apps show on that link; blank = Sign the petition.
+- **Appeals → Homepage donate section** also holds the **thank-you email**
+  every donor receives after checkout (subject + message; `{first_name}` and
+  `{amount}`; the receipt table and the not-tax-deductible line are added
+  automatically).
 - **Homepage** — hero headline/subtitle, mission quote, about paragraphs,
   join section, donate section, donation pop-up text, the press strip.
   (The featured statement card is automatic: it is always the newest

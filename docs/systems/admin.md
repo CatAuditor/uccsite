@@ -65,8 +65,9 @@ apps/admin/
                            query = packages/db/audience.js (shared with the sender) —
                            docs/systems/newsletters.md "Mailing list management"
   app/petition             Petition (editor+): campaign copy (homepage.petition group,
-                           page: 'petition'), signatures per slug, audited CSV export
-                           (docs/systems/petition.md)
+                           page: 'petition'; Project dropdown = widget 'project', thank-you
+                           email subject/body), filed-under line, signatures per slug
+                           (+ project), audited CSV export (docs/systems/petition.md)
   app/tips                 tipline inbox (editor+): list w/ status filter, [id] detail,
                            status change (audited tip.status), owner-only delete
                            (audited tip.delete, no snapshot) — docs/systems/tipline.md

@@ -3,7 +3,9 @@
 Built 2026-10-05 for the UDOT ALPR special-use-permit petition; designed so the
 NEXT campaign is a copy change, not a code change. One campaign is live at a
 time (the one whose copy is in `homepage.petition`); signatures from past
-campaigns stay in the table under their own slug.
+campaigns stay in the table under their own slug. Since 2026-10-09 a campaign
+is **filed under a project** (`project_slug`) and every first signature gets
+a **thank-you email** (docs/systems/email.md).
 
 ## Code Map
 
@@ -26,9 +28,17 @@ content/homepage.json           `petition` group — the git/local copy of the c
 packages/db/content.js          HOMEPAGE_GROUP_COLS gains ['petition','petition']
 packages/db/content-schema.js   ALTER TABLE homepage ADD COLUMN petition TEXT (JSON group)
 packages/db/schema.js           petition_signatures DDL + api grants (SELECT, INSERT, UPDATE)
-aws/api/routes.js               petitionSign() — POST /api/petition; petitionCount() — GET
+aws/api/routes.js               petitionSign() — POST /api/petition (files the signature under the
+                                campaign's project, dispatches the thank-you on a first signature);
+                                petitionCampaign() — the live campaign + its project (cached 5 min);
+                                petitionThanksJob() — the thank-you email; petitionCount() — GET
                                 /api/petition/count (Utah only, cached COUNT_TTL_MS);
                                 createCheckoutSession accepts optional `source` → Stripe metadata
+aws/api/emails.js               buildPetitionThanksEmail — the email body (docs/systems/email.md)
+packages/render/site.js         derivePetitionProject — petition.project for /petition, `petition`
+                                on the filed project's hub (after deriveProjectTree)
+templates/project.html          {{#petition}} card: label, headline, body, counter, sign button
+css/pages/projects.css          .hub-petition*;  css/pages/petition.css .petition-hero-project
 packages/db/audience.js         THE residency rule (utahZipSql / isUtahZip: every 84xxx ZIP is
                                 Utah) + the mailing-list audience query shared by the admin
                                 Mailing list page, its CSV and scripts/send-periodical.js
@@ -49,6 +59,8 @@ scripts/seed-homepage-group.mjs copy a content/homepage.json group into an env's
 | Field | Used by | Notes |
 |---|---|---|
 | `slug` | form (`data-petition`), API, admin filter, CSV | `^[a-z0-9][a-z0-9-]{0,63}$`; **changing it starts a new petition** |
+| `project_slug` | project hub (the petition card), /petition ("Part of our … project"), API (copied onto every new signature), thank-you email (project link), admin | a `projects.slug`; dropdown on the admin page; blank = no project. See "Project" |
+| `email_subject`, `email_body` | the thank-you email (docs/systems/email.md) | `{first_name}`, `{headline}` substituted; blank = defaults in `aws/api/emails.js` |
 | `label` | hero eyebrow, /petition | e.g. "Unofficial Petition" |
 | `headline` | hero, /petition | HTML allowed (`<em>` = red). **Blank = petition off** |
 | `body` | hero sub, /petition, meta description | the provision + the ask |
@@ -71,11 +83,21 @@ staging via `node scripts/seed-homepage-group.mjs --env staging --group petition
    `POST /api/petition` with the slug from `data-petition`.
 2. The API validates, rate-limits (20 / IP / hour — one phone at a tabling
    event signs many people), checks Turnstile when keyed, then in order:
+   - reads the live campaign (`petitionCampaign`: `homepage.petition` + the
+     project row; per-container cache, 5 min) — null when the posted slug is
+     not the live one or the read fails;
+   - checks whether this address already signed this petition (one indexed
+     SELECT) — decides the email below;
    - upserts `petition_signatures` on `(petition, email)` — a re-sign refreshes
      name/zip, fills address/phone only if newly given, keeps `created_at`;
+     `project_slug` is the campaign's project (kept on re-sign if the campaign
+     no longer names one);
    - upserts `subscribers` (signing = consent to communications) **without
      overwriting** details already on file (`COALESCE(subscribers.x, excluded.x)`).
-   No welcome email is sent.
+   No welcome email is sent. On a **first** signature the thank-you email is
+   dispatched as the self-invoke job `petition-thanks` (off the response path;
+   a failed dispatch is logged, the signer still gets `{ok:true}`). A re-sign
+   sends nothing.
 3. On `{ok:true}` the page stores `{petition, firstName, lastName, email, zip}`
    in sessionStorage and navigates to `/petition-thanks`.
 4. "I can help" opens the modal; "Continue to checkout" posts
@@ -135,27 +157,39 @@ Body: `{ petition, firstName, lastName, email, zip, address?, phone?, turnstileT
 | 500 | insert failed — logs `[api] petition insert failed: <ErrorName>` (name only; pg messages can echo signer PII) |
 
 Lengths: names 100, email 254, zip 10, address 200, phone 30. Email is
-lowercased. Side effect: subscribers row (see above).
+lowercased. Side effects: subscribers row (see above); thank-you email on a
+first signature (docs/systems/email.md); `project_slug` from the live campaign.
 
 ## Table: `petition_signatures`
 
 `id UUID PK, petition TEXT, first_name, last_name, email, zip (NOT NULL),
-address, phone, created_at, updated_at, UNIQUE (petition, email)`; index
-`(petition, created_at)`. API role: SELECT, INSERT, UPDATE (upsert needs
-all three; never DELETE). Admin reads with the admin role.
+address, phone, project_slug (2026-10-09), created_at, updated_at,
+UNIQUE (petition, email)`; index `(petition, created_at)`. API role: SELECT,
+INSERT, UPDATE (upsert needs all three; never DELETE). Admin reads with the
+admin role. `project_slug` is the project the campaign named WHEN the row was
+written (NULL before the column / no project); the schema backfills
+`udot-alpr-permits` → `alpr`.
 
 ## Admin
 
-- **Petition** (Site Main): status line (on/off + active slug), signature
-  counts per slug, newest 500 of the chosen slug, **Download CSV** (POST,
-  per slug or all; audit row `petition.export` with `{petition, rows}`),
-  then the copy editor (lost-update stamp on the homepage singleton; audit
-  `petition.save`; refuses a bad slug while the headline is set). Editor+.
+- **Petition** (Site Main): status line (on/off + active slug + the project
+  it is filed under, linking to that project's workspace), signature
+  counts per slug, newest 500 of the chosen slug (with a Project column),
+  **Download CSV** (POST, per slug or all; audit row `petition.export` with
+  `{petition, rows}`), then the copy editor (lost-update stamp on the
+  homepage singleton; audit `petition.save`; refuses a bad slug while the
+  headline is set; refuses a `project_slug` that is not a project). The
+  **Project** field is a dropdown of the projects tree (`listProjects`,
+  widget `'project'`). Editor+.
+- **Project workspace** (`/projects/<slug>` → Overview): one line saying
+  whether the live campaign is filed here and the signature counts per
+  campaign slug carrying this project (`workspace()` → `petitions`,
+  `activePetition`).
 - **Subscribers**: `donor` (email belongs to a member with ≥1 donation or a
   non-canceled subscription) and `petitions` (slugs signed) columns in the
   list and the CSV — the mailing-list labels.
 
-CSV columns: `petition, first_name, last_name, email, zip, utah_resident,
+CSV columns: `petition, project, first_name, last_name, email, zip, utah_resident,
 address, phone, signed_at_utc` (ISO 8601, UTC). Cells are quoted and formula-injection
 guarded like the subscribers export.
 
@@ -163,7 +197,9 @@ guarded like the subscribers export.
 
 Browser: `[petition] sign failed: <status>`, `[petition] sign network error`,
 `[petition] checkout failed`. API: see docs/error-handling/debug/api.md
-(`petition insert failed`, `rate limit check failed (petition)`).
+(`petition insert failed`, `rate limit check failed (petition)`,
+`petition campaign lookup failed`, `petition thanks dispatch failed`,
+`petition thanks email failed`, `SES sent … subject="Thank you for signing…"`).
 
 ## Verifying the hero
 
@@ -227,6 +263,31 @@ An **Other** button with a free amount ($1–$100,000) is always present.
 Monthly sends `type: 'subscription'` to `POST /api/create-checkout-session`
 (already supported — no API or Stripe change). Tests:
 `packages/render/test/petition-share.test.mjs`.
+
+## Project (2026-10-09)
+
+A campaign belongs to a project (`homepage.petition.project_slug`, the admin's
+**Project** dropdown). What that does:
+
+| Where | Effect |
+|---|---|
+| Project hub (`/projects/<path>`) | `derivePetitionProject` puts the campaign on the filed project as `petition`; `templates/project.html` renders a dark card (label, headline, body, Utah counter, sign button → /petition) between the intro and "Parts of this project". `js/petition.js` is loaded on hubs for the counter. |
+| `/petition` | "Part of our *Project* project" link under the headline (`petition.project`). |
+| Signature row | `project_slug` copied from the live campaign at sign time — a past campaign keeps its project after the slug moves on; admin list + CSV show it. |
+| Thank-you email | "This petition is part of our *Project* project" with the hub link. |
+| Admin | Petition page: "Filed under …" line + the dropdown; project workspace Overview: live-campaign flag + signature counts per slug for this project. |
+
+One live campaign at a time is unchanged (`docs/decisions/petition-copy-in-homepage-group.md`).
+If several petitions must run at once, the next step is a `petitions`
+collection (slug, project_slug, copy) with `homepage.petition` pointing at
+the featured one — noted in docs/pending-questions.md.
+
+## Thank-you email (2026-10-09)
+
+See docs/systems/email.md "What is sent". Summary: first signature only,
+self-invoke job, campaign copy from the saved draft (generic when the slug is
+not the live campaign), project link, Share + Chip in buttons, one-click
+unsubscribe headers. Tests: `aws/api/test/api.test.mjs` "petition-thanks job".
 
 ## Not built (deliberate)
 

@@ -18,6 +18,13 @@ Log group: `/aws/lambda/UccStaging-ApiFunction*` (or UccProd). Prefix: `[api]`.
 | `tip insert failed: <ErrorName>` | routes.js tip | 500 returned; `tips` insert threw — error NAME only, never the message (pg errors echo parameter values) |
 | `petition count error: <ErrorName>` | routes.js petitionCount | 500 on the public counter; the site hides the counter — nothing user-facing breaks |
 | `petition insert failed: <ErrorName>` | routes.js petitionSign | 500 returned; the signature or subscriber upsert threw — name only (signer PII). 42501 here = `petition_signatures` grant missing (re-run migrate-schema) |
+| `petition campaign lookup failed: <ErrorName>` | routes.js petitionCampaign | the `homepage` / `projects` read failed; the signature is still recorded WITHOUT a project and the thank-you uses generic copy. `error` with 42501 = `GRANT SELECT ON homepage/projects` missing (re-run migrate-schema); `Error` "homepage singleton missing" = content never migrated |
+| `petition thanks dispatch failed: <message>` | routes.js petitionSign | the async self-invoke for the thank-you failed; signer got 200, no email |
+| `petition thanks email failed: <message>` | routes.js petitionThanksJob | something other than the SES call threw inside the job (token signing, campaign read) |
+| `donate copy lookup failed: <ErrorName>` | routes.js donateCopy | `homepage` read failed; the receipt goes out with the default subject/body |
+| `donation thanks dispatch failed: <message>` | webhook.js handleCheckoutComplete | the self-invoke failed; the donation IS recorded, no receipt email, webhook still 200 (Stripe does not retry) |
+| `donation thanks email failed: <message>` | routes.js donationThanksJob | the job threw outside the SES call |
+| `SES sent <MessageId> subject="Thank you for signing…"` / `subject="Thank you for your $…"` | routes.js sesSend | normal — the thank-yous (docs/systems/email.md) |
 | `secret <NAME> is unset (placeholder)` | secrets.js | operator hasn't filled `ucc/<env>/<NAME>` yet |
 | `failed to load secret <NAME>: <err>` | secrets.js | transient — retried next invocation (never cached) |
 | `PUBLIC_ORIGIN is not set — …` | index.mjs | config error; CDK should have refused to synth |

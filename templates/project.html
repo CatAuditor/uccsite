@@ -60,6 +60,14 @@
 
         {{#summary_html}}<div class="hub-summary">{{{summary_html}}}</div>{{/summary_html}}
 
+        {{#petition}}<div class="hub-petition">
+          <p class="hub-petition-label">{{label}}</p>
+          <h2 class="hub-petition-headline">{{{headline}}}</h2>
+          <p class="hub-petition-body">{{body}}</p>
+          <p class="petition-count hub-petition-count" data-petition-count="{{slug}}" data-count-label="{{count_label}}" hidden></p>
+          <a href="/petition" class="btn btn-primary">{{cta}}</a>
+        </div>{{/petition}}
+
         {{#has_children}}<div class="project-media-label">Parts of this project</div>
         <ul class="project-files hub-children">
           {{#children}}
@@ -134,5 +142,6 @@
 {{> footer}}
 
   <script src="/js/main.js"></script>
+  <script src="/js/petition.js"></script>
 </body>
 </html>

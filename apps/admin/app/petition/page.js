@@ -12,6 +12,7 @@
 import { revalidatePath } from 'next/cache';
 import { loadHomepage, saveHomepage } from '@uccsite/db/content';
 import { utahZipSql } from '@uccsite/db/audience';
+import { listProjects } from '../../lib/files';
 import { requireRole } from '../../lib/auth';
 import { withDb, withWriteTx, recordChange, singletonStamp } from '../../lib/data';
 import { HOMEPAGE_GROUPS } from '../../lib/collections';
@@ -31,15 +32,18 @@ const LIST_LIMIT = 500;
 export default async function PetitionPage({ searchParams }) {
   const session = await requireRole('editor');
   const sp = await searchParams;
-  const [{ homepage, baseline }, live] = await Promise.all([
+  const [{ homepage, baseline, projects }, live] = await Promise.all([
     withDb(async (client) => ({
       homepage: await loadHomepage(client),
       baseline: await singletonStamp(client, 'homepage'),
+      projects: await listProjects(client),
     })),
     liveHero(),
   ]);
   const copy = homepage.petition || {};
   const activeSlug = SLUG_RE.test(copy.slug || '') ? copy.slug : '';
+  // Filed under (docs/systems/petition.md "Project"): the project the live campaign belongs to.
+  const project = projects.find(p => p.slug === String(copy.project_slug || '').trim()) || null;
   const requested = typeof sp?.petition === 'string' ? sp.petition.slice(0, 64) : '';
   const filter = requested === 'all' ? 'all' : (SLUG_RE.test(requested) ? requested : (activeSlug || 'all'));
   const residency = ['utah', 'outside'].includes(sp?.residency) ? sp.residency : 'all';
@@ -56,7 +60,7 @@ export default async function PetitionPage({ searchParams }) {
               MAX(created_at)::text AS newest
        FROM petition_signatures GROUP BY petition ORDER BY newest DESC`)).rows,
     rows: (await client.query(
-      `SELECT id, petition, first_name, last_name, email, zip, address, phone, created_at::text AS created_at,
+      `SELECT id, petition, project_slug, first_name, last_name, email, zip, address, phone, created_at::text AS created_at,
               (${utahZipSql('zip')}) AS utah
        FROM petition_signatures ${whereSql}
        ORDER BY created_at DESC LIMIT ${LIST_LIMIT}`, params)).rows,
@@ -82,6 +86,9 @@ export default async function PetitionPage({ searchParams }) {
       const expected = String(formData.get('baseline') ?? '');
       await withWriteTx(async (client) => {
         if (expected && (await singletonStamp(client, 'homepage')) !== expected) throw new Error(CONFLICT_MESSAGE);
+        if (next.project_slug && !(await listProjects(client)).some(p => p.slug === next.project_slug)) {
+          throw new Error(`"${next.project_slug}" is not a project. Pick one from the list or leave Project blank.`);
+        }
         const before = await loadHomepage(client);
         await saveHomepage(client, { ...before, petition: next }, { tx: false });
         await recordChange(client, {
@@ -101,7 +108,11 @@ export default async function PetitionPage({ searchParams }) {
         {copy.headline
           ? <>Petition is <strong>on</strong>: the homepage hero shows it and <code>/petition</code> takes signatures under the slug <strong>{activeSlug || '(invalid slug — fix below)'}</strong>.</>
           : <>Petition is <strong>off</strong> (no headline): the homepage shows the standing hero and <code>/petition</code> says no petition is open.</>}
+        {' '}{project
+          ? <>Filed under the project <strong><a href={`/projects/${project.slug}`}>{project.name}</a></strong>: its page on the site shows the petition, and every new signature carries that project.</>
+          : <>Not filed under a project — set <strong>Project</strong> below so the project page shows the petition and signatures are filed under it.</>}
         {' '}Copy changes go live on the next approved publish; signatures arrive here instantly.
+        Each signer gets one thank-you email (first signature only) — the subject and message are the two “Thank-you email” fields below.
         The public counter on the site shows <strong>Utah signatures only</strong> (ZIP 84xxx), refreshed about once a minute;
         out-of-state signatures are kept, listed and exportable here but never counted publicly.
       </p>
@@ -129,12 +140,13 @@ export default async function PetitionPage({ searchParams }) {
         <button type="submit">Download CSV — {filter === 'all' ? 'every petition' : filter}, {residency === 'all' ? 'Utah + outside' : residency === 'utah' ? 'Utah only' : 'outside Utah only'} ({shown} rows)</button>
       </form>
       <table>
-        <thead><tr><th>Signed</th><th>Petition</th><th>Name</th><th>Email</th><th>ZIP</th><th>Utah</th><th>Address</th><th>Phone</th></tr></thead>
+        <thead><tr><th>Signed</th><th>Petition</th><th>Project</th><th>Name</th><th>Email</th><th>ZIP</th><th>Utah</th><th>Address</th><th>Phone</th></tr></thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.id}>
               <td>{r.created_at?.slice(0, 16).replace('T', ' ')}</td>
               <td>{r.petition}</td>
+              <td>{r.project_slug || '—'}</td>
               <td>{[r.first_name, r.last_name].filter(Boolean).join(' ')}</td>
               <td>{r.email}</td>
               <td>{r.zip}</td>
@@ -143,7 +155,7 @@ export default async function PetitionPage({ searchParams }) {
               <td>{r.phone || '—'}</td>
             </tr>
           ))}
-          {!rows.length && <tr><td colSpan="8">No signatures{filter === 'all' ? '' : ` for ${filter}`}{residency === 'all' ? '' : ` (${residency})`} yet.</td></tr>}
+          {!rows.length && <tr><td colSpan="9">No signatures{filter === 'all' ? '' : ` for ${filter}`}{residency === 'all' ? '' : ` (${residency})`} yet.</td></tr>}
         </tbody>
       </table>
       {shown > rows.length && <p className="hint">Showing the newest {rows.length} of {shown}; the CSV has all of them.</p>}
@@ -161,7 +173,12 @@ export default async function PetitionPage({ searchParams }) {
                 <label htmlFor={id}>{label}</label>
                 {widget === 'textarea'
                   ? <textarea id={id} name={id} defaultValue={value} />
-                  : <input type="text" id={id} name={id} defaultValue={value} />}
+                  : widget === 'project'
+                    ? <select id={id} name={id} defaultValue={value}>
+                        <option value="">— no project —</option>
+                        {projects.map(p => <option key={p.slug} value={p.slug}>{p.label}</option>)}
+                      </select>
+                    : <input type="text" id={id} name={id} defaultValue={value} />}
                 {hint && <div className="hint">{hint}</div>}
               </div>
             );
