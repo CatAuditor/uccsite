@@ -59,6 +59,20 @@ test('custom menus render: styles, {email}, external links, escaping', () => {
   assert.equal(f.nav_bottom_html, '<a href="/terms.html">Terms</a>\n          <a href="/privacy.html">Privacy Policy</a>');
 });
 
+test('a dropdown can carry a button style (Get Involved); bogus styles dropped', () => {
+  const n = normalizeNavigation({ header: [
+    { label: 'Get Involved', style: 'cta', children: [{ label: 'Join', href: '/#join' }] },
+    { label: 'Odd', style: 'bogus', children: [{ label: 'x', href: '/x' }] },
+  ], footer: { columns: [], bottom: [] } });
+  assert.deepEqual(n.header[0], { label: 'Get Involved', style: 'cta', children: [{ label: 'Join', href: '/#join' }] });
+  assert.equal(n.header[1].style, undefined);
+  const h = navFields({}, 'index').nav_header_html;
+  assert.match(h, /<li class="nav-dropdown nav-dropdown-styled">\s*<button class="nav-dropdown-toggle nav-cta"[^>]*>\s*Get Involved/);
+  assert.match(h, /<a href="\/#join">Join the Compact<\/a>/);
+  assert.match(h, /<a href="https:\/\/lookup\.utahciviccompact\.org" target="_blank" rel="noopener">Find Your Officials<\/a>/);
+  assert.match(h, /<li><a href="\/projects\.html">Projects<\/a><\/li>/);
+});
+
 test('dangerous links never reach the page', () => {
   const navigation = { header: [
     { label: 'x', href: 'javascript:alert(1)' }, { label: 'y', href: 'data:text/html,<script>' },

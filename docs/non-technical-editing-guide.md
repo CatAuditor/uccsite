@@ -81,7 +81,9 @@ puts that version back as a draft; request a publish to take it live.
   footer links, including **Privacy Policy** on the bottom line. Reorder with
   the arrows; **Into dropdown** / **Out of dropdown** moves a link between the
   top level and a dropdown such as About Us. In **Links to**, pick a page from
-  the list or type any address. To add a **new page** to the menu, create it in
+  the list or type any address. **Looks like** makes a top-level link or a
+  whole dropdown look like the red Donate / Get Involved buttons (Get Involved
+  is a dropdown set that way). To add a **new page** to the menu, create it in
   All documents first, then pick it here. Every menu change waits for a
   publish like anything else.
 - **Writing page** (`/writing`) — builds itself from published documents and

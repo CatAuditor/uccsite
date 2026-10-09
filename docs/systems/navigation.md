@@ -42,7 +42,10 @@ packages/render/test/navigation.test.mjs  6 tests (normalize, aria-current, esca
 ```
 
 - **NULL / unreadable → `DEFAULT_NAVIGATION`.** The site can never lose its menus to a bad value.
-- One dropdown level. `style`: `donate` → `class="nav-donate"`, `cta` → `class="nav-cta"`, top-level plain links only.
+- One dropdown level. `style`: `donate` → `class="nav-donate"`, `cta` → `class="nav-cta"`, top-level items only. On a
+  dropdown (since 2026-10-08) the class goes on the toggle `<button>` and the `<li>` gets `nav-dropdown-styled`
+  (css/styles.css: white text kept over the toggle's dark-text rules, menu right-aligned, chevron inline on mobile).
+  The admin editor offers "Looks like" on dropdowns too.
 - `{email}` in a label or href becomes Site Settings → email at render.
 - Limits: 12 header items, 12 per dropdown, 5 columns, 12 links each, 6 bottom links, 80-char labels, 500-char hrefs. Empty rows dropped.
 - hrefs pass `safeUrl` (http(s), mailto, `/`, `#`; anything else → `#`). `//host` becomes `https://host`. Off-site http(s) links open in a new tab with `rel="noopener"`.
@@ -67,11 +70,12 @@ the live site.
 2026-10-08: **Find Your Officials** → `https://lookup.utahciviccompact.org`
 (separate app, repo CatAuditor/UCC-lookup; off-site, so it opens in a new tab)
 added in two places: the footer's Get Involved column, and the header, where
-**Projects** became a dropdown (All projects → `/projects.html`, Find Your
-Officials). Not a 10th top-level header item: that pushed Donate / Get Involved
-off-screen between 861 px (hamburger breakpoint) and ~1100 px in a
-headless-Chrome check; the dropdown adds only a chevron and still fits at
-900 px. Prod `site_settings.navigation` was NULL (checked 2026-10-09), so the
+the **Get Involved** button became a dropdown (Join the Compact → `/#join`,
+Find Your Officials) that still looks like the red CTA button. Conner: it is a
+tool, not a project, so not under Projects. Not a 10th top-level header item:
+that pushed Donate / Get Involved off-screen between 861 px (hamburger
+breakpoint) and ~1100 px in a headless-Chrome check; the dropdown adds only a
+chevron and still fits at 900 px. Prod `site_settings.navigation` was NULL (checked 2026-10-09), so the
 defaults are what the site renders.
 
 `aria-current="page"` goes on a link whose href resolves to the page being

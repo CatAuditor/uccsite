@@ -14,9 +14,9 @@ const CHEVRON = '<svg class="chevron" aria-hidden="true" width="10" height="10" 
 
 // The menus as they were hand-written in templates/partials until 2026-10-06,
 // plus the Writing dropdown and footer link (2026-10-07, docs/systems/writing.md)
-// and Find Your Officials (2026-10-08, the separate lookup app) in a Projects
-// dropdown + the footer — a 10th top-level header item pushes Donate/Get
-// Involved off at 861–1100px.
+// and Find Your Officials (2026-10-08, the separate lookup app) in a Get
+// Involved dropdown (still the red CTA button) + the footer — a 10th top-level
+// header item pushes Donate/Get Involved off at 861–1100px.
 // Used whenever settings.navigation is absent or unreadable, so a missing or
 // broken value can never strip the site of its menus.
 const DEFAULT_NAVIGATION = {
@@ -35,13 +35,13 @@ const DEFAULT_NAVIGATION = {
       { label: 'Newsletters', href: '/newsletters' },
     ] },
     { label: 'News & Media', href: '/blog.html' },
-    { label: 'Projects', children: [
-      { label: 'All projects', href: '/projects.html' },
-      { label: 'Find Your Officials', href: 'https://lookup.utahciviccompact.org' },
-    ] },
+    { label: 'Projects', href: '/projects.html' },
     { label: 'Submit a Tip', href: '/tip.html' },
     { label: 'Donate', href: '/#donate', style: 'donate' },
-    { label: 'Get Involved', href: '/#join', style: 'cta' },
+    { label: 'Get Involved', style: 'cta', children: [
+      { label: 'Join the Compact', href: '/#join' },
+      { label: 'Find Your Officials', href: 'https://lookup.utahciviccompact.org' },
+    ] },
   ],
   footer: {
     columns: [
@@ -82,7 +82,8 @@ function link(raw) {
 
 // normalizeNavigation(value) → a clean { header, footer } or null when the
 // value is unusable. Drops empty entries, caps sizes, allows ONE level of
-// dropdown, and keeps style only for top-level plain links. Used by the admin
+// dropdown, and keeps style only on top-level items (a styled dropdown's
+// toggle looks like that button). Used by the admin
 // on save and by the renderer on read, so both agree on what is valid.
 function normalizeNavigation(value) {
   let nav = value;
@@ -93,7 +94,7 @@ function normalizeNavigation(value) {
     if (raw && Array.isArray(raw.children)) {
       const label = str(raw.label, LIMITS.label);
       const children = raw.children.slice(0, LIMITS.children).map(link).filter(Boolean);
-      if (label && children.length) header.push({ label, children });
+      if (label && children.length) header.push(STYLES[raw.style] ? { label, style: raw.style, children } : { label, children });
       continue;
     }
     const l = link(raw);
@@ -138,8 +139,9 @@ function navFields(settings = {}, page = '') {
   const headerLines = [];
   for (const item of nav.header) {
     if (item.children) {
-      headerLines.push('<li class="nav-dropdown">',
-        '  <button class="nav-dropdown-toggle" type="button" aria-expanded="false" aria-haspopup="true">',
+      const styled = item.style ? ` ${STYLES[item.style]}` : '';
+      headerLines.push(`<li class="nav-dropdown${item.style ? ' nav-dropdown-styled' : ''}">`,
+        `  <button class="nav-dropdown-toggle${styled}" type="button" aria-expanded="false" aria-haspopup="true">`,
         `    ${escapeHtml(item.label)}`,
         `    ${CHEVRON}`,
         '  </button>',

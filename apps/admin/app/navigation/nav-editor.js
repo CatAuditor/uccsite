@@ -106,6 +106,11 @@ export default function NavEditor({ initial, options, baseline, save, readOnly, 
               <label htmlFor={`h-${i}-label`}>Dropdown label</label>
               <input id={`h-${i}-label`} type="text" value={item.label} disabled={readOnly} maxLength={80}
                 onChange={(e) => setHeader(replace(header, i, { ...item, label: e.target.value }))} />
+              <label htmlFor={`h-${i}-style`}>Looks like</label>
+              <select id={`h-${i}-style`} value={item.style || ''} disabled={readOnly}
+                onChange={(e) => setHeader(replace(header, i, { ...item, style: e.target.value || undefined }))}>
+                {STYLE_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
               <div className="nav-sublist">
                 <div className="nested-title">Links in this dropdown ({item.children.length})</div>
                 {item.children.map((c, j) => (

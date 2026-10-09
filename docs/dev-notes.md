@@ -24,10 +24,13 @@ or the lookup's sign-ups will be refused.
 The officials lookup (lookup.utahciviccompact.org) is now linked from the top
 menu and the footer; it opens in a new tab.
 
-- **Top menu:** **Projects** is now a dropdown with **All projects** (the
-  Projects page, as before) and **Find Your Officials**. A separate top-level
-  item would push the Donate and Get Involved buttons off the screen on
-  laptop-width windows.
+- **Top menu:** the red **Get Involved** button now opens a short list:
+  **Join the Compact** (the sign-up form, where the button used to go) and
+  **Find Your Officials**. A separate top-level item would push the Donate and
+  Get Involved buttons off the screen on laptop-width windows.
+- **Admin:** on **Menus (header & footer)**, a dropdown now has a **Looks
+  like** choice, so a dropdown can look like the red button (that is how Get
+  Involved is set).
 - **Footer:** in the **Get Involved** column.
 
 Editors can move or rename either link on **Menus (header & footer)**. Both
