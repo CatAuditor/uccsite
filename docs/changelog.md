@@ -4,6 +4,27 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.28.1 — 2026-10-10 — Dedicated /donate page
+
+Push = cbdfcc9.
+
+- **Site** (`templates/donate.html`, `css/pages/donate.css`, `packages/render/site.js` PAGES entry priority 0.8,
+  `js/main.js`): `/donate` — navy hero (label, headline, intro, three "where your money goes" points) beside the
+  homepage donate form; below it the recent-donor list, four FAQ `<details>` and other ways to help. The form reuses
+  the homepage ids so `initDonate()` runs unchanged; `#donate-submit[data-source=donate-page]` is sent as `source`
+  (Stripe metadata → admin Donations). Homepage section unchanged. `llms.txt` lists the page.
+- **Links repointed `/#donate` → `/donate`**: `DEFAULT_NAVIGATION` header button + footer link
+  (`packages/render/navigation.js`), homepage timed modal CTA, download modal CTA (footer partial), petition
+  thank-you email "Chip in" fallback (`aws/api/emails.js`), Stripe `cancel_url` + billing-portal `return_url`
+  (`aws/api/routes.js`). Anchor still works; admin link picker keeps it as "Homepage → Donate section".
+- **Content/admin** (`content/homepage.json`, `apps/admin/lib/collections.js`, `app/appeals`, `app/navigation`):
+  `donate` group gains `page_headline`, `page_intro`, `points_heading`, `point1..3_title/_body` (Appeals page; JSON
+  column, no DDL; template falls back to title/body when blank). Link picker lists Donate as a page.
+- **Tests**: `expected-diffs.json` names `donate.html`; all workspaces green.
+- **Docs**: site-structure, navigation, donation-tracker ("Donate page"), files, petition, admin, editing guide,
+  payment-options proposal table, `decisions/donate-page.md`, dev notes.
+- Deploy to do after this push: `cdk deploy` (UccStaging, UccProd) for templates/css/js + API URLs, seed the new
+  `donate` fields with `patch-homepage-group.mjs`, then publish. Open: Resend disconnect, DMARC step 1 leftovers.
 ## v0.28.0 — 2026-10-10 (branch `refactor`) — Admin Financial section: Donations with filters + monthly status, Costs page
 
 Push = aba3580 (80fb26b, ac88b0a, aba3580 on top of v0.27.2, which already carried c9d8941). Org ask: a financial section
