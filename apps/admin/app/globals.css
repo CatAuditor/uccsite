@@ -229,6 +229,18 @@ fieldset.item legend { font-weight: 700; font-size: 13.5px; color: var(--navy-da
 fieldset.item > label:first-of-type { margin-top: 4px; }
 .list-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 8px 0 4px; }
 .list-tools input[type="search"] { padding: 7px 10px; font-size: 13.5px; min-width: 220px; width: auto; }
+.list-tools input.short { width: 90px; padding: 7px 10px; font-size: 13.5px; }
+.list-tools select { width: auto; }
+
+/* ---------- Financial: summary tiles + number tables ---------- */
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin: 14px 0 18px; }
+.stat { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 12px 14px; min-width: 0; }
+.stat-value { font-size: 22px; font-weight: 800; color: var(--navy-dark); letter-spacing: -0.01em; line-height: 1.2; }
+.stat-unit { font-size: 13px; font-weight: 600; color: var(--gray-600); margin-left: 2px; }
+.stat-label { font-size: 12.5px; color: var(--gray-600); margin-top: 4px; }
+table.numbers td.num, table.numbers th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.numbers tfoot th { background: var(--gray-50); text-transform: none; letter-spacing: 0; font-size: 13.5px; color: var(--navy-dark); border-top: 2px solid var(--gray-200); }
+.chip.ut { margin-left: 6px; vertical-align: middle; }
 .nested { border-left: 3px solid var(--cream-line); margin: 14px 0 4px; padding-left: 14px; }
 .nested-title { font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-600); margin: 6px 0; }
 .nested fieldset.item { background: var(--white); }

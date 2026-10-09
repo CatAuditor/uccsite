@@ -43,9 +43,12 @@ const NAV = [
   // Mail (2026-10-05): newsletters are composed, reviewed and sent here;
   // the mailing list is the audience they reach (docs/systems/newsletters.md).
   { group: 'Mail', items: [['/mail', 'Outgoing emails'], ['/subscribers', 'Mailing list']] },
+  // Financial (2026-10-10): money in and money out, apart from the day-to-day
+  // operations pages (docs/systems/finance.md). Editor+ pages; a viewer sees
+  // the group but requireRole refuses the pages.
+  { group: 'Financial', items: [['/donations', 'Donations'], ['/costs', 'Costs (AWS & services)']] },
   { group: 'Operations', items: [
     ['/redirects', 'Redirects'],
-    ['/donations', 'Donations'],
     ['/tips', 'Tips'],
     ['/revisions', 'Revisions'],
     ['/audit', 'Audit Log'],
