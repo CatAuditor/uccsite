@@ -12,6 +12,7 @@ import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { audienceQuery, normalizeFilters, describeFilters } from '@uccsite/db/audience';
 import * as db from '@uccsite/db/newsletters';
 import { renderEmail, normalizeBlocks, normalizeTheme, fromHeader, rawBlock, UNSUBSCRIBE_TOKEN } from '@uccsite/newsletter/render';
+import { sanitizeRich } from './newsletter-import.mjs';
 import { renderWebBody, archiveSlug } from '@uccsite/newsletter/web';
 import { parseSchedule, formatZoned } from '@uccsite/newsletter/schedule';
 import { requireRole } from './auth';
@@ -125,7 +126,13 @@ export async function saveNewsletter(id, formData) {
   const s = await requireRole('editor');
   const nid = assertId(id);
   let blocks; let theme;
-  try { blocks = normalizeBlocks(JSON.parse(String(formData.get('blocks') || '[]'))); } catch (err) { throw new Error(`Blocks could not be read: ${err.message}`); }
+  try {
+    // Rich blocks (imported or pasted document HTML) are sanitized here, on
+    // every save, whatever the browser sent — the renderer only styles.
+    blocks = normalizeBlocks(JSON.parse(String(formData.get('blocks') || '[]')))
+      .map((b) => (b.type === 'rich' ? { ...b, html: sanitizeRich(b.html) } : b))
+      .filter((b) => b.type !== 'rich' || b.html);
+  } catch (err) { throw new Error(`Blocks could not be read: ${err.message}`); }
   try { theme = normalizeTheme(JSON.parse(String(formData.get('theme') || '{}'))); } catch { throw new Error('Theme could not be read'); }
   const audience = normalizeFilters({ residency: formData.get('residency'), donors: formData.get('donors'), petition: formData.get('petition') });
   const fields = {

@@ -261,11 +261,13 @@ visual; a developer changes the code and publishes.
    `[link text](https://…)`, "- " for bullets), *Button*, *Image* (paste the
    *Upload an image* right in the block after typing its alt text, or paste
    an address from the Media Library), *Quote*,
-   *Divider*. Use ↑ ↓ ✕ to reorder or remove. Or **import a file** (.docx
-   from Word / Google Docs / Claude Docs, Markdown or .html): its headings,
-   paragraphs, lists, quotes, links and images become blocks after the ones
-   you have, already in the email's look; images from inside a Word file
-   need an upload in their block. *Look* changes colours, font, the optional
+   *Divider*, *Document (HTML)* (a document's own HTML, shown in the
+   email's look). Use ↑ ↓ ✕ to reorder or remove. Or **import a file**
+   (.docx from Word / Google Docs / Claude Docs, Markdown, text or .html):
+   the document comes in as written — blank lines, numbered and nested
+   lists, tables, code, quotes, links, underline, checklists — as a
+   Document block after the blocks you have, in the email's look; images
+   from inside a Word file come out as Image blocks that need an upload. *Look* changes colours, font, the optional
    small line above the headline and the footer; **Reset to the site look**
    puts the site's navy-and-red defaults back.
 3. **Preview** on the right is what a phone shows. Switch **Light / Dark**

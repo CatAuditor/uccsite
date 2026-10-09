@@ -11,9 +11,9 @@ import InlineImageUpload from '../../media/inline-upload';
 import { importUpload } from './actions';
 
 const RESIDENCIES = [['all', 'everyone'], ['utah', 'Utah residents'], ['outside', 'outside Utah'], ['unknown', 'ZIP unknown']];
-const BLOCK_LABEL = { heading: 'Heading', text: 'Text', button: 'Button', image: 'Image', quote: 'Quote', divider: 'Divider' };
+const BLOCK_LABEL = { heading: 'Heading', text: 'Text', rich: 'Document (HTML)', button: 'Button', image: 'Image', quote: 'Quote', divider: 'Divider' };
 const NEW_BLOCK = {
-  heading: { type: 'heading', text: '' }, text: { type: 'text', markdown: '' }, button: { type: 'button', label: '', url: '', align: 'center' },
+  heading: { type: 'heading', text: '' }, text: { type: 'text', markdown: '' }, rich: { type: 'rich', html: '' }, button: { type: 'button', label: '', url: '', align: 'center' },
   image: { type: 'image', url: '', alt: '', link: '', caption: '' }, quote: { type: 'quote', text: '', cite: '' }, divider: { type: 'divider' },
 };
 let seq = 0;
@@ -28,6 +28,13 @@ function BlockFields({ block, onChange, readOnly, publicOrigin }) {
         <textarea value={block.markdown} onChange={set('markdown')} rows={6} disabled={readOnly}
           placeholder={'Paragraphs separated by a blank line.\n**bold**, *italic*, [link text](https://…)\n- bullet\n## small heading'} />
         <div className="hint">Blank line = new paragraph · **bold** · *italic* · [text](https://…) · &quot;- &quot; bullets · &quot;## &quot; small heading</div>
+      </>
+    );
+    case 'rich': return (
+      <>
+        <textarea value={block.html} onChange={set('html')} rows={10} className="code" spellCheck={false} disabled={readOnly}
+          placeholder={'<p>Document content as HTML — what an imported file puts here.</p>\n<ul><li>Lists (nested, numbered), tables, code, quotes, links keep their structure</li></ul>'} />
+        <div className="hint">Shown in the email&rsquo;s own look (colours, type, spacing). Headings, paragraphs, lists, tables, code, quotes, links, bold/italic/underline — kept. Scripts, styles and images are removed on save (add images as Image blocks).</div>
       </>
     );
     case 'button': return (

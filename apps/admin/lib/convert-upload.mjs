@@ -33,13 +33,21 @@ export function finishHtml(html, { keepImages = false } = {}) {
 
 // markdownToHtml(text) → { html, imagesOmitted }. GFM (tables, strikethrough).
 // Raw HTML in the markdown passes through; the ingest sanitizes it on save.
-export function markdownToHtml(text, opts) {
-  return finishHtml(marked.parse(String(text || ''), { gfm: true, breaks: false, async: false }), opts);
+// breaks: a single newline becomes <br> (plain .txt, where people do not
+// write two trailing spaces); off for real Markdown.
+export function markdownToHtml(text, { breaks = false, ...opts } = {}) {
+  return finishHtml(marked.parse(String(text || ''), { gfm: true, breaks, async: false }), opts);
 }
 
 // docxToHtml(buffer, opts) → { html, imagesOmitted, warnings[] }.
-export async function docxToHtml(buffer, opts) {
-  const res = await mammoth.convertToHtml({ buffer }, { styleMap: STYLE_MAP });
+// faithful: keep blank paragraphs (the writer's spacing) and underline —
+// the newsletter import wants the document as written; the Documents
+// ingest keeps mammoth's defaults.
+export async function docxToHtml(buffer, { faithful = false, ...opts } = {}) {
+  const res = await mammoth.convertToHtml({ buffer }, {
+    styleMap: faithful ? [...STYLE_MAP, 'u => u'] : STYLE_MAP,
+    ...(faithful ? { ignoreEmptyParagraphs: false } : {}),
+  });
   const warnings = [...new Set(res.messages.filter(m => m.type === 'warning').map(m => m.message))];
   return { ...finishHtml(res.value, opts), warnings };
 }
@@ -48,8 +56,8 @@ export async function docxToHtml(buffer, opts) {
 // parser: images kept (they become Image blocks awaiting an upload).
 export async function uploadToHtml(file) {
   const kind = uploadKind(file.name);
-  if (kind === 'docx') return { kind, ...(await docxToHtml(Buffer.from(await file.arrayBuffer()), { keepImages: true })) };
-  if (kind === 'markdown') return { kind, ...markdownToHtml(await file.text(), { keepImages: true }), warnings: [] };
+  if (kind === 'docx') return { kind, ...(await docxToHtml(Buffer.from(await file.arrayBuffer()), { keepImages: true, faithful: true })) };
+  if (kind === 'markdown') return { kind, ...markdownToHtml(await file.text(), { keepImages: true, breaks: /\.txt$/i.test(file.name) }), warnings: [] };
   if (kind === 'html' || file.type === 'text/html') return { kind: 'html', html: await file.text(), imagesOmitted: 0, warnings: [] };
   throw new Error('Upload a .docx, .md or .html file');
 }

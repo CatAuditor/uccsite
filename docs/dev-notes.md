@@ -22,12 +22,15 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
   without saving. (Before, the count only changed after pressing Save at the
   bottom.) Saving still stores the filters.
 - **Import a file.** Under Content there is an **import a file** control.
-  Pick a .docx (Word, Google Docs, Claude Docs export), a Markdown file or an
-  .html file and its headings, paragraphs, lists, quotes, links and images
-  become blocks in the email's own look, added after any blocks already
-  there. A first-level heading fills the headline if it is empty. A
-  paragraph that is only a link becomes a button. Tables become bulleted
-  lines (emails have no tables).
+  Pick a .docx (Word, Google Docs, Claude Docs export), a Markdown or text
+  file, or an .html file. The document comes in as written: headings,
+  paragraphs and the blank lines between them, numbered and nested lists,
+  tables, code, quotes, links, bold, italic, underline, strike-through,
+  footnote marks and checklists all keep their structure, and the email's
+  own colours and type are applied on top. It arrives as a **Document
+  (HTML)** block (you can see and edit the HTML), added after any blocks
+  already there. A first-level heading fills the headline if it is empty.
+  Images come out as separate Image blocks so you can upload them.
 
 **What editors do differently**
 
@@ -38,7 +41,8 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
   the org name is always in the letterhead, so it does not need repeating.
 - After importing a file: images from inside a Word file arrive without an
   address — upload each one in its block (or paste a Media Library address).
-  Check the preview, then save.
+  Check the preview, then save. Scripts, styles and colours from the file
+  are dropped on save; the email keeps the site look.
 
 **Left to do**
 

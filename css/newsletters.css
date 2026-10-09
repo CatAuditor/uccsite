@@ -24,3 +24,14 @@
 .nl-quote cite { display: block; margin-top: 8px; font-style: normal; color: #5c5c58; font-size: .95rem; }
 .nl-quote cite::before { content: "— "; }
 .nl-join { margin: 40px 0 0; text-align: center; }
+
+/* Rich blocks (imported documents): the document's own structure, styled like the article */
+.nl-rich ul, .nl-rich ol { padding-left: 24px; margin: 0 0 20px; }
+.nl-rich li ul, .nl-rich li ol { margin: 6px 0 0; }
+.nl-rich table { border-collapse: collapse; width: 100%; margin: 0 0 24px; font-size: .95rem; }
+.nl-rich th, .nl-rich td { padding: 8px 10px; border-bottom: 1px solid var(--gray-200); text-align: left; vertical-align: top; }
+.nl-rich th { font-weight: 700; }
+.nl-rich pre { margin: 0 0 20px; padding: 14px 16px; background: var(--cream); border-radius: 4px; white-space: pre-wrap; word-break: break-word; font-size: .9rem; }
+.nl-rich code { font-size: .95em; }
+.nl-rich blockquote { margin: 24px 0; padding: 16px 20px; border-left: 4px solid var(--red); background: var(--cream); font-style: italic; }
+.nl-rich p:empty::before { content: "\00a0"; }

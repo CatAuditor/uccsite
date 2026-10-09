@@ -26,7 +26,12 @@ export const UNSUBSCRIBE_TOKEN = '{{unsubscribe_url}}';
 export const SITE_URL = 'https://utahciviccompact.org';
 export const LOGO_URL = `${SITE_URL}/assets/logo-icon-dark.png`;
 
-export const BLOCK_TYPES = ['heading', 'text', 'button', 'image', 'quote', 'divider'];
+// 'rich' = a document's own HTML (an imported .docx/.md/.html, or pasted):
+// nested and numbered lists, tables, code, underline, footnotes and blank
+// paragraphs survive, and renderEmail styles every tag inline in the house
+// look (styleRich). The admin sanitizes the HTML server-side on import and
+// on save (lib/newsletter-import.mjs sanitizeRich); this file only styles.
+export const BLOCK_TYPES = ['heading', 'text', 'rich', 'button', 'image', 'quote', 'divider'];
 // The site's own stacks (css/styles.css --font-sans / --font-serif). Inter
 // is not embedded — email clients fall through to their system sans, which
 // is what the site does too where Inter is missing.
@@ -49,7 +54,7 @@ export const MAX_BLOCKS = 60;
 // 'raw' is not in BLOCK_TYPES (no "Add" button): the composer's "Ignore all
 // style — raw HTML" box stores the author's whole email as one raw block, and
 // renderEmail then sends that HTML as typed plus an unsubscribe link only.
-const LIMITS = { heading: 300, text: 20000, label: 120, url: 2000, alt: 300, cite: 200, quote: 2000, caption: 300, raw: 200000 };
+const LIMITS = { heading: 300, text: 20000, label: 120, url: 2000, alt: 300, cite: 200, quote: 2000, caption: 300, raw: 200000, rich: 200000 };
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 export const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
@@ -88,6 +93,7 @@ export function normalizeBlocks(raw) {
     if (!b || typeof b !== 'object' || !(BLOCK_TYPES.includes(b.type) || b.type === 'raw')) continue;
     switch (b.type) {
       case 'raw': { const html = clip(b.html, LIMITS.raw).trim(); if (html) out.push({ type: 'raw', html }); break; }
+      case 'rich': { const html = clip(b.html, LIMITS.rich).trim(); if (html) out.push({ type: 'rich', html }); break; }
       case 'heading': { const text = clip(b.text, LIMITS.heading).trim(); if (text) out.push({ type: 'heading', text }); break; }
       case 'text': { const markdown = clip(b.markdown, LIMITS.text).replace(/\r\n?/g, '\n').trim(); if (markdown) out.push({ type: 'text', markdown }); break; }
       case 'button': {
@@ -173,6 +179,62 @@ function textBlockText(markdown) {
   return out.join('\n');
 }
 
+// styleRich(html, s, light) → the document HTML with the house look applied
+// INLINE on every opening tag (email clients need inline styles). The HTML
+// is the sanitizer's output (tags from RICH_TAGS, attributes href/src/alt/
+// colspan/rowspan/start only), so a regex over opening tags is enough; any
+// class/style an unsanitized preview carries is simply shadowed. An empty
+// paragraph (a blank line in the document) gets &nbsp; so its height
+// survives margin collapsing.
+export const RICH_TAGS = ['p', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'strong', 'b', 'em', 'i', 'u', 's', 'del', 'sup', 'sub', 'hr', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption', 'img'];
+function styleRich(html, s, light) {
+  const mono = "SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace";
+  const cell = `padding:8px 10px;border-bottom:1px solid ${light.rule};vertical-align:top;font-size:15px;line-height:1.5;color:${light.text};`;
+  const rules = {
+    p: ['em-text', s.p],
+    h1: ['em-h', s.h2], h2: ['em-h', s.h2],
+    h3: ['em-h', s.sub], h4: ['em-h', s.sub], h5: ['em-h', s.sub], h6: ['em-h', s.sub],
+    ul: ['', s.ul], ol: ['', s.ul],
+    li: ['em-text', s.li],
+    blockquote: ['em-quote', s.quote],
+    pre: ['em-quote', `margin:0 0 20px;padding:14px 16px;background:${light.bg};color:${light.text};font-family:${mono};font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word;border-radius:4px;`],
+    code: ['', `font-family:${mono};font-size:0.95em;`],
+    a: ['em-link', s.link],
+    hr: ['em-rule', `border:0;border-top:1px solid ${light.rule};margin:8px 0 28px;`],
+    table: ['', 'border-collapse:collapse;width:100%;margin:0 0 24px;'],
+    th: ['em-text', `${cell}font-weight:700;text-align:left;`],
+    td: ['em-text', cell],
+    caption: ['em-muted', s.caption],
+    img: ['', 'max-width:100%;height:auto;display:block;margin:0 auto 20px;'],
+  };
+  let liDepth = 0; // a list opened inside an item is nested: tighter margins
+  return String(html)
+    .replace(/<(\/?)([a-z][a-z0-9]*)(\s[^>]*)?>/gi, (m, close, name, attrs = '') => {
+      const t = name.toLowerCase();
+      if (t === 'li') { liDepth += close ? -1 : 1; if (liDepth < 0) liDepth = 0; }
+      if (close || !rules[t]) return m;
+      let [cls, style] = rules[t];
+      if ((t === 'ul' || t === 'ol') && liDepth > 0) style = 'margin:6px 0 0;padding-left:24px;';
+      return `<${t}${attrs}${cls ? ` class="${cls}"` : ''} style="${style}">`;
+    })
+    .replace(/<p([^>]*)>\s*<\/p>/gi, '<p$1>&nbsp;</p>');
+}
+
+// htmlToText(html) → a plain-text reading of an HTML fragment (rich and raw
+// blocks): block closers become blank lines, tags go, entities resolve.
+const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", nbsp: ' ' };
+export function htmlToText(src) {
+  return String(src || '')
+    .replace(/<(head|style|script|title)\b[\s\S]*?<\/\1>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, '\n- ')
+    .replace(/<\/(p|div|h[1-6]|li|tr|table|ul|ol|blockquote|pre)>/gi, '\n\n')
+    .replace(/<\/(td|th)>/gi, ' | ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (m, e) => ENT[e])
+    .replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/ \|\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 // fromHeader(name) → the From header: '"Jarom Gillins from Utah Civic Compact" <hello@…>'.
 // The address never changes (IAM pins ses:FromAddress); only the display
 // name carries the author. Characters outside letters/space/.'- are dropped.
@@ -249,6 +311,7 @@ export function renderEmail({ subject = '', preheader = '', headline = '', block
     switch (b.type) {
       case 'heading': parts.push(`<h2 class="em-h" style="${s.h2}">${escapeHtml(b.text)}</h2>`); break;
       case 'text': parts.push(textBlockHtml(b.markdown, s)); break;
+      case 'rich': parts.push(styleRich(b.html, s, light)); break;
       case 'button':
         parts.push(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="${b.align}" style="margin:8px ${b.align === 'center' ? 'auto' : '0'} 28px;"><tr><td class="em-btn" bgcolor="${theme.accent}" style="border-radius:4px;"><a href="${escapeHtml(b.url)}" class="em-btn" style="${s.button}">${escapeHtml(b.label)}</a></td></tr></table>`);
         break;
@@ -313,6 +376,7 @@ ${pixelUrl ? `<img src="${escapeHtml(pixelUrl)}" width="1" height="1" alt="" sty
     switch (b.type) {
       case 'heading': textParts.push('', b.text.toUpperCase(), ''); break;
       case 'text': textParts.push(textBlockText(b.markdown), ''); break;
+      case 'rich': textParts.push(htmlToText(b.html), ''); break;
       case 'button': textParts.push(`${b.label}: ${b.url}`, ''); break;
       case 'image': textParts.push(`[${b.alt || 'image'}] ${b.link || b.url}`, ...(b.caption ? [inlineText(b.caption)] : []), ''); break;
       case 'quote': textParts.push(`"${inlineText(b.text)}"${b.cite ? ` — ${b.cite}` : ''}`, ''); break;
@@ -341,15 +405,7 @@ function renderRaw(src) {
     const at = html.search(/<\/body>/i);
     html = at === -1 ? `${html}\n${link}` : `${html.slice(0, at)}${link}${html.slice(at)}`;
   }
-  const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", nbsp: ' ' };
-  const text = src
-    .replace(/<(head|style|script|title)\b[\s\S]*?<\/\1>/gi, '')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|h[1-6]|li|tr|table|blockquote)>/gi, '\n\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (m, e) => ENT[e])
-    .replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n').trim();
-  return { html, text: `${text}\n\n--\nUnsubscribe: ${UNSUBSCRIBE_TOKEN}\n` };
+  return { html, text: `${htmlToText(src)}\n\n--\nUnsubscribe: ${UNSUBSCRIBE_TOKEN}\n` };
 }
 
 // previewHtml(doc, mode) → html with the unsubscribe token neutralised.

@@ -61,6 +61,22 @@ Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed 
 webhook reaching the AWS API), Jarom not signed into prod admin. Not exercised end-to-end: a real Stripe checkout on
 the AWS webhook (unit-tested; verify the first live donation's `SES sent … "Thank you for your $…"` log line).
 
+## v0.27.0 — 2026-10-09 (branch `refactor`) — Newsletter import is faithful: rich blocks
+
+- `packages/newsletter/render.mjs`: new block type `rich` (`{html}`, ≤200k, in `BLOCK_TYPES` as "Document (HTML)");
+  `styleRich` applies the house look inline per tag (nested/numbered lists, tables, pre/code, blockquote, h1–h6, hr,
+  empty `<p>` → `&nbsp;`) + dark classes; `htmlToText` shared with raw mode (lists as "- ", cells " | ");
+  `RICH_TAGS` exported for the sanitizer. `web.mjs`: `<div class="nl-rich">` with the sanitized HTML; `css/newsletters.css`
+  `.nl-rich` rules (needs a `cdk deploy` to reach the live archive, not done).
+- `apps/admin/lib/newsletter-import.mjs` rewritten: the converted HTML is kept as rich blocks (sanitizeRich: sanitize-html
+  allowlist, href/colspan/rowspan/start, http(s)/mailto; task-list checkboxes → ☐/☑); images lift out as Image blocks in
+  place or after their paragraph; first h1 → empty headline; page wrappers unwrapped. `sanitize-html` declared in
+  apps/admin/package.json (lock synced). `lib/newsletters.js saveNewsletter` re-sanitizes rich blocks on every save.
+- `lib/convert-upload.mjs`: `docxToHtml({faithful})` keeps blank paragraphs + underline (newsletter path only; Documents
+  unchanged); `markdownToHtml({breaks})` on for .txt.
+- Composer: "Document (HTML)" block (code textarea). Tests: 6 import/sanitize/render/web tests (admin 39), newsletter 21.
+- Docs: systems/newsletters.md (Data, Flow, Rendering, Code Map), dev-notes, editing guide.
+
 ## v0.26.1 — 2026-10-09 (branch `refactor`) — Changelog correction (v0.26.0 follow-up hash)
 
 ## v0.26.0 — 2026-10-09 (branch `refactor`) — Newsletters: site letterhead, Apply filters, file import

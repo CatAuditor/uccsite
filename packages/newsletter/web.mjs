@@ -43,6 +43,9 @@ export function renderWebBody({ headline = '', blocks = [] } = {}) {
     switch (b.type) {
       case 'heading': parts.push(`<h2>${escapeHtml(b.text)}</h2>`); break;
       case 'text': parts.push(textBlock(b.markdown)); break;
+      // Sanitized on save (lib/newsletter-import.mjs sanitizeRich): no
+      // style/class/script survives, so it can sit under the site's CSP.
+      case 'rich': parts.push(`<div class="nl-rich">${b.html}</div>`); break;
       case 'button': parts.push(`<p class="nl-button${b.align === 'left' ? ' nl-left' : ''}"><a class="btn" href="${escapeHtml(b.url)}">${escapeHtml(b.label)}</a></p>`); break;
       case 'image': {
         const img = `<img src="${escapeHtml(b.url)}" alt="${escapeHtml(b.alt)}" loading="lazy">`;
