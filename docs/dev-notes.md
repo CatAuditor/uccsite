@@ -6,6 +6,27 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-10 — Email footers say Farmington, UT
+
+**What changed**
+
+Every email the site sends (welcome, petition and donation thank-yous, and
+the default look for newsletters) now signs off "Utah Civic Compact ·
+Farmington, UT" instead of "Salt Lake City, UT".
+
+**What editors do differently**
+
+- A newsletter draft keeps whatever footer it already has. If the site's
+  saved default look (Outgoing emails → "Use this look as the default") was
+  saved with the old city, edit the footer once on a draft and save it as
+  the default again.
+
+**Unfinished**
+
+- Needs the next deploy to reach the live site's automatic emails.
+
+---
+
 ## 2026-10-10 — Newsletter replies go to the writer; donor thank-yous use the donor's record
 
 **What changed**

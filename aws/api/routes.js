@@ -250,7 +250,7 @@ function buildWelcomeEmail(greeting, unsubscribeUrl, confirmUrl = '') {
       <!-- Footer -->
       <tr><td style="background:#f5f5f0;padding:24px 40px;border-top:1px solid #e8e4d9;">
         <p style="margin:0;color:#888;font-family:sans-serif;font-size:12px;line-height:1.6;">
-          Utah Civic Compact &middot; Salt Lake City, UT<br />
+          Utah Civic Compact &middot; Farmington, UT<br />
           You're getting this because you signed up at utahciviccompact.org.<br />
           <a href="${escapeHtml(unsubscribeUrl)}" style="color:#1a3a2a;">Unsubscribe</a>
         </p>

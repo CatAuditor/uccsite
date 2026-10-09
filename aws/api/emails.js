@@ -67,7 +67,7 @@ function layout({ title, heading, bodyHtml, footerHtml }) {
       <!-- Footer -->
       <tr><td style="background:#f5f5f0;padding:24px 40px;border-top:1px solid #e8e4d9;">
         <p style="margin:0;color:#888;font-family:sans-serif;font-size:12px;line-height:1.6;">
-          Utah Civic Compact &middot; Salt Lake City, UT<br />
+          Utah Civic Compact &middot; Farmington, UT<br />
           ${footerHtml}
         </p>
       </td></tr>

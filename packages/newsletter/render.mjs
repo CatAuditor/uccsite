@@ -48,7 +48,7 @@ export const DEFAULT_THEME = {
   highlight: '#e74c3c',  // --red-light: eyebrow, quote rule, headings + links on dark
   font: 'sans',
   eyebrow: '',
-  footer: 'Utah Civic Compact · Salt Lake City, UT\nUtah Civic Compact is a 501(c)(4) social welfare organization. Contributions are not tax-deductible as charitable donations.\nYou are getting this because you signed up at utahciviccompact.org.',
+  footer: 'Utah Civic Compact · Farmington, UT\nUtah Civic Compact is a 501(c)(4) social welfare organization. Contributions are not tax-deductible as charitable donations.\nYou are getting this because you signed up at utahciviccompact.org.',
 };
 export const MAX_BLOCKS = 60;
 // 'raw' is not in BLOCK_TYPES (no "Add" button): the composer's "Ignore all
