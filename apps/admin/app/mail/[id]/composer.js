@@ -212,7 +212,7 @@ export default function Composer({ newsletter, names, count, petitions, readOnly
               Add: {BLOCK_TYPES.map((t) => <button key={t} type="button" className="secondary" onClick={() => add(t)}>{BLOCK_LABEL[t]}</button>)}
             </div>
           )}
-          {!readOnly && (
+          {!rawOn && !readOnly && (
             <div>
               <label htmlFor="mail-import">Or import a file (.docx from Word, Google Docs or Claude Docs; .md Markdown; .html) — its headings, paragraphs, lists, quotes, links and images become blocks after the ones above, in the email&rsquo;s own look</label>
               <input type="file" id="mail-import" accept=".docx,.md,.markdown,.txt,.html,.htm,text/markdown,text/plain,text/html,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={onImport} />

@@ -4,30 +4,9 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
-<<<<<<< HEAD
-## v0.25.6 — 2026-10-08 (branch `claude-wip`) — Newsletter: tests and requests save first; raw HTML mode
-
-- Bug: "Send me a test" / "Test send (all admins)" / "Request send" were separate forms that read the SAVED draft,
-  so text typed since the last Save was missing from the test. They are now buttons of the composer form
-  ("Save & …"); the server action saves, then tests or requests.
-- Composer checkbox "Ignore all style — raw HTML": the email is the typed HTML plus an Unsubscribe link only
-  (`type: 'raw'` block, `rawBlock`/`renderRaw` in packages/newsletter/render.mjs); no web copy for raw emails.
-- Tests: 3 new renderer tests; newsletter 20, admin 33, db 24, newsletter-send 7 pass; admin build clean.
-- Goes live with the next push to `refactor` (Amplify admin build); no Lambda deploy needed.
-
-## v0.25.5 — 2026-10-08 (branch `claude-wip`) — Unsubscribe is POST-only; DMARC enforcement plan
-
-- `GET /api/unsubscribe` now shows an Unsubscribe button and writes nothing; `POST` (RFC 8058 one-click or the
-  button) unsubscribes. Link scanners no longer unsubscribe people. Decision: docs/decisions/unsubscribe-post-only.md.
-- Welcome email sends no `List-Unsubscribe` headers when `TOKEN_SECRET` is missing.
-- Email/DNS audit (docs/systems/email.md "Domain authentication"); for-conner §12 rewritten as a staged path to
-  DMARC `p=reject` (Cloudflare DMARC Management for reports, SPF cleanup, Zoho DKIM check, postal address).
-- Tests: stale unsubscribe test (expected DELETE) replaced; API suite 37 pass, 1 pre-existing failure
-  ("petition signers are confirmed at insert" — the subscribe upsert now mentions confirmed_at by design).
-=======
 ## v0.26.0 — 2026-10-09 (branch `refactor`) — Newsletters: site letterhead, Apply filters, file import
 
-**Newsletters (admin + renderer)** — 53b7a90, 02d2664, e58db9e
+**Newsletters (admin + renderer)** — 26fb326, 63bb468, 6498cd5
 
 - `packages/newsletter/render.mjs`: letterhead (site logo mark `LOGO_URL` + org name on the accent band, linking
   `SITE_URL`), site tokens throughout (`DEFAULT_THEME` accent `#1b2f4e`, highlight `#e74c3c`, font `sans` = Inter stack,
@@ -50,12 +29,30 @@ of each push.
 - Docs: systems/newsletters.md (Code Map, Flow, Rendering), error-handling/debug/newsletters.md (2 rows),
   non-technical-editing-guide.md, systems/admin.md, dev-notes.md.
 
-**Pushed alongside (concurrent session)** — 9c16041 "Transactional thank-you emails (petition, donation) + petition
+**Pushed alongside (concurrent session; rebased onto v0.25.6)** — f0dbfed "Transactional thank-you emails (petition, donation) + petition
 filed under a project": `aws/api/emails.js`, `routes.js`, `webhook.js`; its own changelog detail belongs to that
 session's next entry.
 
 Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed, Jarom not signed into prod admin.
->>>>>>> 0801753 (Changelog v0.26.0: newsletters letterhead, Apply filters, file import)
+## v0.25.6 — 2026-10-08 (branch `claude-wip`) — Newsletter: tests and requests save first; raw HTML mode
+
+- Bug: "Send me a test" / "Test send (all admins)" / "Request send" were separate forms that read the SAVED draft,
+  so text typed since the last Save was missing from the test. They are now buttons of the composer form
+  ("Save & …"); the server action saves, then tests or requests.
+- Composer checkbox "Ignore all style — raw HTML": the email is the typed HTML plus an Unsubscribe link only
+  (`type: 'raw'` block, `rawBlock`/`renderRaw` in packages/newsletter/render.mjs); no web copy for raw emails.
+- Tests: 3 new renderer tests; newsletter 20, admin 33, db 24, newsletter-send 7 pass; admin build clean.
+- Goes live with the next push to `refactor` (Amplify admin build); no Lambda deploy needed.
+
+## v0.25.5 — 2026-10-08 (branch `claude-wip`) — Unsubscribe is POST-only; DMARC enforcement plan
+
+- `GET /api/unsubscribe` now shows an Unsubscribe button and writes nothing; `POST` (RFC 8058 one-click or the
+  button) unsubscribes. Link scanners no longer unsubscribe people. Decision: docs/decisions/unsubscribe-post-only.md.
+- Welcome email sends no `List-Unsubscribe` headers when `TOKEN_SECRET` is missing.
+- Email/DNS audit (docs/systems/email.md "Domain authentication"); for-conner §12 rewritten as a staged path to
+  DMARC `p=reject` (Cloudflare DMARC Management for reports, SPF cleanup, Zoho DKIM check, postal address).
+- Tests: stale unsubscribe test (expected DELETE) replaced; API suite 37 pass, 1 pre-existing failure
+  ("petition signers are confirmed at insert" — the subscribe upsert now mentions confirmed_at by design).
 
 ## v0.25.4 — 2026-10-09 (branch `refactor`) — Changelog correction (v0.25.3 counts)
 
