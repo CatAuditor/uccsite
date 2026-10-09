@@ -46,7 +46,12 @@ function seoBlock(doc, settings, siteUrl, path = `/${doc.slug}`) {
   const description = doc.metaDescription || '';
   if (!title) errors.push(`document ${label}: empty title`);
   if (!description) errors.push(`document ${label}: empty meta description (required, §12)`);
-  const canonical = doc.canonicalUrl || `${siteUrl}${path}`;
+  // An explicit canonical that names one of this page's OWN former or alias
+  // addresses (its short path, where it last published, its bare slug) would
+  // point search engines at a 301 — the page's address wins over it.
+  const aliases = new Set([doc.shortPath, doc.livePath, `/${doc.slug}`].filter(Boolean).map(p => `${siteUrl}${p}`));
+  const explicit = String(doc.canonicalUrl || '').replace(/\.html$/, '');
+  const canonical = explicit && !aliases.has(explicit) ? doc.canonicalUrl : `${siteUrl}${path}`;
   const ogTitle = doc.ogTitle || title;
   const ogDescription = doc.ogDescription || description;
   const ogImage = doc.ogImage || `${siteUrl}${DEFAULT_OG_IMAGE}`;

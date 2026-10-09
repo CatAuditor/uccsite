@@ -126,6 +126,19 @@ await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) 
     });
   }
 
+  // 2b. A stored canonical that names the document's own old address would
+  // point search engines at the 301 (the renderer ignores such a canonical
+  // too; clearing it keeps the editor honest).
+  for (const d of docs) {
+    const move = DOCUMENT_MOVES[d.slug] || (d.projectSlug && DOCUMENT_MOVES[(d.shortPath || '').slice(1)]);
+    const own = new Set([`/${d.slug}`, d.shortPath, d.livePath].filter(Boolean).map(p => `https://utahciviccompact.org${p}`));
+    const c = String(d.canonicalUrl || '').replace(/\.html$/, '');
+    if (!c || !own.has(c)) continue;
+    plan.push(`document ${d.slug}: canonical ${d.canonicalUrl} names its own old address → cleared`);
+    work.push((cl) => cl.query('UPDATE documents SET canonical_url = NULL WHERE id = $1', [d.id]));
+    void move;
+  }
+
   // 3. Project buttons.
   for (const [slug, url] of Object.entries(CTA)) {
     const p = byId(slug);
