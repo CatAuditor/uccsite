@@ -92,10 +92,17 @@ test('attached emails: kind in the row, triggers carry their placeholders, attac
   assert.deepEqual(nl.TRIGGERS.map((t) => t.key), ['petition-thanks', 'donation-thanks']);
   assert.deepEqual(nl.triggerOf('donation-thanks').required, ['receipt']);
   assert.equal(nl.triggerOf('nope'), null);
+  // per-petition trigger keys (docs/systems/petition.md): the bare key is no slot
+  assert.equal(nl.petitionTrigger('UDOT'), 'petition-thanks:udot');
+  assert.deepEqual([nl.triggerOf('petition-thanks:udot').slug, nl.triggerOf('petition-thanks:udot').placeholders], ['udot', ['first_name', 'headline', 'project_name']]);
+  assert.match(nl.triggerOf('petition-thanks:udot').label, /\(udot\)/);
+  assert.equal(nl.triggerOf('petition-thanks'), null);
+  assert.equal(nl.triggerOf('petition-thanks:Not A Slug'), null);
   const c = fakeClient([{ rows: [], rowCount: 1 }]);
-  await nl.attachTransactional(c, { trigger: 'petition-thanks', newsletterId: 'n1', subject: 'S', html: '<p>', text: 't', attachedBy: 'a@b.co' });
+  await nl.attachTransactional(c, { trigger: 'petition-thanks:udot', newsletterId: 'n1', subject: 'S', html: '<p>', text: 't', attachedBy: 'a@b.co' });
   assert.match(c.calls[0].sql, /INSERT INTO transactional_emails .* ON CONFLICT \(trigger\) DO UPDATE/);
-  assert.deepEqual(c.calls[0].params.slice(0, 2), ['petition-thanks', 'n1']);
+  assert.deepEqual(c.calls[0].params.slice(0, 2), ['petition-thanks:udot', 'n1']);
+  await assert.rejects(() => nl.attachTransactional(c, { trigger: 'petition-thanks', newsletterId: 'n1', subject: 'S', html: '<p>' }), /Unknown trigger/);
   await assert.rejects(() => nl.attachTransactional(c, { trigger: 'bogus', newsletterId: 'n1', subject: 'S', html: '<p>' }), /Unknown trigger/);
   const d = fakeClient([{ rows: [], rowCount: 0 }, { rows: [], rowCount: 0 }, { rows: [], rowCount: 1 }, { rows: [], rowCount: 1 }]);
   assert.equal(await nl.deleteNewsletter(d, 'n1'), true);

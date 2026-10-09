@@ -38,9 +38,14 @@ const PAGES = [
   { template: 'dignity-index-statement.html', content: ['settings'] },
   { template: 'theory.html',       content: ['settings'] },
   { template: 'tip.html',          content: ['settings'], sitemap: false },
-  // Petition campaign (docs/systems/petition.md): copy lives in homepage.petition.
-  { template: 'petition.html',        content: ['settings', 'homepage'], priority: '0.9' },
-  { template: 'petition-thanks.html', content: ['settings', 'homepage'], sitemap: false },
+  // Petitions (docs/systems/petition.md): ONE row per petition, filed under a
+  // project. petition.html renders once per open/closed petition to
+  // projects/<project path>/<slug>.html, the thank-you page under it
+  // (open only, noindex); /petitions is the index. derivePetitions builds
+  // the `pages` / `thanks_pages` lists (each item carries `petition`).
+  { template: 'petitions.html',       content: ['settings', 'petitions'], priority: '0.8' },
+  { template: 'petition.html',        content: ['petitions', 'settings'], each: 'pages', dir: 'projects', pathKey: 'path', priority: '0.9' },
+  { template: 'petition-thanks.html', content: ['petitions', 'settings'], each: 'thanks_pages', dir: 'projects', pathKey: 'path', sitemap: false },
   { template: 'privacy.html',      content: ['settings'], priority: '0.3' },
   { template: 'success.html',  content: ['settings'], sitemap: false },
   { template: '404.html',      content: ['settings'], sitemap: false },
@@ -68,87 +73,9 @@ function deriveHomepage(content) {
   return { ...content, homepage: { ...content.homepage, statements } };
 }
 
-// Petition share links (docs/systems/petition.md "Sharing"). Built at render
-// time, not in the browser, so every button works with JavaScript off and the
-// preview tags (og:image) are in the HTML that Facebook, iMessage and X fetch.
-// Text: share_text, else the headline with its <em> markup stripped. Image: a
-// site path to a png/jpg/webp under /media or /assets (1200×630 → large card),
-// else the logo on navy (assets/share-default.png, 1200×630). Title: the form
-// title drives <title>/og:title too, so the admin's one field names the page in
-// every link preview. Absent when the petition is switched off.
-const SHARE_IMAGE = /^\/(media|assets)\/[\w./-]+\.(png|jpe?g|webp)$/i;
-function derivePetitionShare(content, siteUrl = SITE_URL) {
-  const p = content.homepage && content.homepage.petition;
-  if (!p || !String(p.headline || '').trim()) return content;
-  const e = encodeURIComponent;
-  const url = `${siteUrl}/petition`;
-  const text = String(p.share_text || p.headline).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-  const custom = SHARE_IMAGE.test(String(p.share_image || '').trim());
-  const share = {
-    title: p.share_title || 'Share the petition',
-    page_title: `${String(p.form_title || '').replace(/<[^>]+>/g, '').trim() || 'Sign the petition'} | Utah Civic Compact`,
-    url, text,
-    image: `${siteUrl}${custom ? String(p.share_image).trim() : '/assets/share-default.png'}`,
-    card: 'summary_large_image',
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${e(url)}`,
-    x: `https://twitter.com/intent/tweet?text=${e(text)}&url=${e(url)}`,
-    bluesky: `https://bsky.app/intent/compose?text=${e(`${text} ${url}`)}`,
-    sms: `sms:?&body=${e(`${text} ${url}`)}`,
-    email: `mailto:?subject=${e(text)}&body=${e(`${text}\n\n${url}`)}`,
-  };
-  return { ...content, homepage: { ...content.homepage, petition: { ...p, share, donate: petitionDonate(p) } } };
-}
-
-// Petition <-> project (docs/systems/petition.md "Project"): when the live
-// campaign names a project (petition.project_slug), /petition gets
-// `petition.project` ({ name, url }) for its "Part of ..." line and that
-// project's hub gets `petition` (the campaign group) so it can show the ask.
-// Runs AFTER deriveProjectTree (needs each project's url). Off (blank
-// headline), no project_slug, or an unknown slug -> content unchanged.
-function derivePetitionProject(content) {
-  const p = content.homepage && content.homepage.petition;
-  const projects = content.projects && content.projects.projects;
-  if (!p || !String(p.headline || '').trim() || !Array.isArray(projects)) return content;
-  const slug = String(p.project_slug || '').trim();
-  const project = slug && projects.find((x) => String(x.slug || '').trim() === slug);
-  if (!project) return content;
-  const derived = projects.map((x) => (x === project ? { ...x, petition: { ...p } } : x));
-  return {
-    ...content,
-    homepage: { ...content.homepage, petition: { ...p, project: { name: project.name, url: project.url } } },
-    projects: { ...content.projects, projects: derived, top_projects: derived.filter((x) => !x.is_sub) },
-  };
-}
-
-// Thank-you page payment modal (docs/systems/petition.md "Donation ask"), all
-// from the admin's Petition page. Amounts are typed as dollars ("5, 10, 25");
-// anything outside $1–$100,000 (the API's bounds) is dropped, at most six are
-// kept, and an empty or unreadable list falls back to $10/$25/$50/$100.
-// Frequency: "both" (default), "one-time" or "monthly". An "Other" button
-// with a free amount is always offered.
-const DONATE_FALLBACK = [10, 25, 50, 100];
-function petitionDonate(p) {
-  const dollars = [...new Set(String(p.donate_amounts || '').split(/[,\s]+/)
-    .map((x) => Math.round(Number(x.replace(/[$]/g, ''))))
-    .filter((n) => Number.isFinite(n) && n >= 1 && n <= 100000))].slice(0, 6);
-  const amounts = dollars.length ? dollars : DONATE_FALLBACK;
-  const wanted = Math.round(Number(String(p.donate_default || '').replace(/[$]/g, '')));
-  const preset = amounts.includes(wanted) ? wanted : (amounts.includes(25) ? 25 : amounts[0]);
-  const f = String(p.donate_frequency || 'both').toLowerCase();
-  const monthlyOnly = /month/.test(f) && !/one|both/.test(f);
-  const onetimeOnly = /one/.test(f) && !/month|both/.test(f);
-  const startMonthly = monthlyOnly || (!onetimeOnly && /month/.test(String(p.donate_default_frequency || '').toLowerCase()));
-  const type = startMonthly ? 'subscription' : 'onetime';
-  return {
-    title: p.donate_title || 'Carry this fight through the legislature',
-    body: p.donate_body || "Choose an amount. You'll finish on our secure Stripe checkout page.",
-    tiers: amounts.map((d) => ({ cents: d * 100, label: `$${d.toLocaleString('en-US')}`, active: d === preset, per: startMonthly ? '/mo' : '' })),
-    type, toggle: !monthlyOnly && !onetimeOnly, monthly: startMonthly, onetime: !startMonthly,
-    customLabel: p.donate_custom_label || 'Other',
-    button: p.donate_button || 'Continue to checkout',
-    publicLabel: p.donate_public_label || 'Show my first name and amount on the public donor list',
-  };
-}
+// Petitions (share links, donation modal, pages, the hero, the hub cards)
+// derive in ./petitions.js — see derivePetitions.
+const { derivePetitions } = require('./petitions');
 
 // withColorClasses(content) → { content, colorsCss }
 // Content carries badge_color / status_color hex values; templates used to
@@ -396,7 +323,7 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
   if (errors.length) return { files: {}, errors };
 
   const colored = withColorClasses(content);
-  const teamed = deriveTeam(derivePetitionProject(deriveProjectTree(deriveProjectFiles(deriveProjectFilters(derivePetitionShare(deriveHomepage(colored.content), siteUrl))), siteUrl)), siteUrl);
+  const teamed = deriveTeam(derivePetitions(deriveProjectTree(deriveProjectFiles(deriveProjectFilters(deriveHomepage(colored.content))), siteUrl), siteUrl), siteUrl);
   const authors = authorIndex(teamed.team?.members || [], siteUrl);
   // Wrapped like every content file ({ statements: { statements: [...] } }): a
   // page's data merges each content object's keys, so the template reads writing.items.
@@ -445,5 +372,5 @@ ${pages.filter(p => p.sitemap !== false).map(p => {
 
 module.exports = {
   PAGES, MARKDOWN_FIELDS, SITE_URL, deriveHomepage, deriveProjectFilters, deriveProjectFiles, withColorClasses, buildSite, makeSitemap,
-  slugify, memberSlug, authorIndex, deriveTeam, expandPages, derivePetitionShare, derivePetitionProject, petitionDonate,
+  slugify, memberSlug, authorIndex, deriveTeam, expandPages,
 };

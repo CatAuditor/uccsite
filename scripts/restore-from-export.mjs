@@ -53,6 +53,7 @@ for (const name of COLLECTIONS) {
   const p = join(fromDir, 'content', `${name}.json`);
   // A schema ≤ 2 export has blog.json + coverage.json instead of press.json; saveContent unifies them.
   if (!existsSync(p) && name === 'press') { console.log('No content/press.json — unifying the legacy blog/coverage/homepage press (schema ≤ 2 export)'); continue; }
+  if (!existsSync(p) && name === 'petitions') { console.log('No content/petitions.json (schema ≤ 3 export) — petitions left as they are; scripts/migrate-petitions.mjs builds them from homepage.petition'); continue; }
   if (!existsSync(p)) { console.error(`Missing ${p}`); process.exit(2); }
   repo[name] = JSON.parse(readFileSync(p, 'utf8'));
 }

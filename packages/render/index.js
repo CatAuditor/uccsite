@@ -7,4 +7,5 @@ const documents = require('./documents');
 const dates = require('./dates');
 const projects = require('./projects');
 const press = require('./press');
-module.exports = { ...engine, ...site, ...dates, ...projects, ...press, documents };
+const petitions = require('./petitions');
+module.exports = { ...engine, ...site, ...dates, ...projects, ...press, ...petitions, documents };

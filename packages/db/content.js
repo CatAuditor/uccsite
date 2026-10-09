@@ -81,13 +81,16 @@ const FIELD_MAPS = {
   // legacy: kept in FIELD_MAPS so the one-time unification and an old export
   // can still be read; no longer loaded, saved or exported.
   press: Object.fromEntries(require('./press').PRESS_FIELDS.map(f => [f, f])),
+  // THE petitions table (docs/systems/petition.md, packages/db/petitions.js).
+  petitions: Object.fromEntries(require('./petitions').PETITION_FIELDS.map(f => [f, f])),
 };
 
 // homepage singleton: [column, jsonKey] (join is a SQL keyword → join_section)
 const HOMEPAGE_GROUP_COLS = [
   ['hero', 'hero'], ['mission', 'mission'], ['about', 'about'],
   ['join_section', 'join'], ['donate', 'donate'], ['modal', 'modal'],
-  ['petition', 'petition'], // campaign copy: hero takeover + /petition pages
+  // The `petition` column (the pre-2026-10-10 campaign group) is no longer
+  // read or written: petitions are a collection (packages/db/petitions.js).
 ];
 
 // content name → the tables whose rows/updated_at constitute that collection.
@@ -95,14 +98,15 @@ const HOMEPAGE_GROUP_COLS = [
 // the PAGES entries still name them, so their lastmod follows the press table.
 const COLLECTION_TABLES = {
   settings: ['site_settings'],
-  homepage: ['homepage', 'press'],
+  homepage: ['homepage', 'press', 'petitions'], // the hero follows the featured petition
   team: ['team_members'],
   statements: ['statements'],
   issues: ['issues'],
   blog: ['press'],
-  projects: ['projects', 'press'],
+  projects: ['projects', 'press', 'petitions'], // hubs show their petitions
   coverage: ['press'],
   press: ['press'],
+  petitions: ['petitions', 'projects'], // the page address comes from the project tree
 };
 const CONTENT_TABLES = [...new Set(Object.values(COLLECTION_TABLES).flat())];
 
@@ -194,6 +198,7 @@ async function loadContent(client) {
     issues: { issues: await list(client, 'issues') },
     projects: { projects },
     press: { items: await list(client, 'press') },
+    petitions: { items: await list(client, 'petitions') },
   };
 }
 
@@ -316,6 +321,7 @@ const PROJECT_SLUG_REFS = [
   ['project_files', 'project_slug', 'file', 'files'],
   ['project_notes', 'project_slug', 'note', 'notes'],
   ['press', 'project_slug', 'press story', 'press stories'], // docs/systems/press.md
+  ['petitions', 'project_slug', 'petition', 'petitions'], // docs/systems/petition.md
 ];
 
 async function assertProjectUnreferenced(client, slug) {
@@ -419,6 +425,9 @@ async function saveContent(client, repo) {
   const press = repo.press?.items
     || require('./press').unifyPress({ projects: repo.projects.projects, blog: repo.blog, coverage: repo.coverage, homepagePress: repo.homepage?.press }).items;
   await replaceCollectionRows(client, 'press', press);
+  // petitions.json (schema 4); an older export has none — the one-time
+  // migration (scripts/migrate-petitions.mjs) builds the row from homepage.petition.
+  if (repo.petitions?.items) await replaceCollectionRows(client, 'petitions', repo.petitions.items);
 }
 
 module.exports = {

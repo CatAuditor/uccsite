@@ -92,13 +92,31 @@ const KINDS = ['newsletter', 'transactional'];
 // transactionalTemplate reads by key). placeholders: {name} tokens the API
 // fills in (text, HTML-escaped; `receipt` is raw markup); required: tokens
 // the attach refuses without (the receipt carries the 501(c)(4) line).
+// The petition trigger is PER PETITION (2026-10-10, docs/systems/petition.md):
+// its key is `petition-thanks:<slug>` — one attachment per petition, no shared
+// fallback (a petition with nothing attached gets the built-in email).
+// `petitionTrigger(slug)` builds the key; triggerOf() recognises it.
+const PETITION_TRIGGER = 'petition-thanks';
+const PETITION_SLUG_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const TRIGGERS = [
-  { key: 'petition-thanks', label: 'Petition signed — thank-you', when: 'the first time an address signs the live petition',
+  { key: PETITION_TRIGGER, perPetition: true, label: 'Petition signed — thank-you', when: 'the first time an address signs this petition',
     placeholders: ['first_name', 'headline', 'project_name'], required: [] },
   { key: 'donation-thanks', label: 'Donation received — thank-you and receipt', when: 'after every completed checkout (one-time, or the first monthly charge)',
     placeholders: ['first_name', 'amount', 'type', 'date', 'receipt'], required: ['receipt'] },
 ];
-const triggerOf = (key) => TRIGGERS.find((t) => t.key === key) || null;
+const petitionTrigger = (slug) => `${PETITION_TRIGGER}:${String(slug || '').toLowerCase()}`;
+// triggerOf(key) → the trigger (with `key` = the full key and, for a petition, `slug`), or null.
+function triggerOf(key) {
+  const k = String(key || '');
+  const m = k.match(/^petition-thanks:(.+)$/);
+  if (m) {
+    if (!PETITION_SLUG_RE.test(m[1])) return null;
+    const base = TRIGGERS.find((t) => t.key === PETITION_TRIGGER);
+    return { ...base, key: k, slug: m[1], label: `Petition signed — thank-you (${m[1]})` };
+  }
+  const t = TRIGGERS.find((t) => t.key === k) || null;
+  return t && t.perPetition ? null : t; // the bare petition key is not a slot any more
+}
 const STALE_DELIVERY_MINUTES = 10;
 
 const COLS = `id, status, kind, subject, preheader, headline, from_name, blocks, theme, audience, created_by,
@@ -361,7 +379,7 @@ async function deleteNewsletter(client, id) {
 }
 
 module.exports = {
-  DDL, STATUSES, KINDS, TRIGGERS, triggerOf, STALE_DELIVERY_MINUTES, rowToNewsletter,
+  DDL, STATUSES, KINDS, TRIGGERS, triggerOf, petitionTrigger, PETITION_TRIGGER, STALE_DELIVERY_MINUTES, rowToNewsletter,
   attachTransactional, detachTransactional, listAttachments, listNewsletters, getNewsletter, pendingNewsletters, createNewsletter, duplicateNewsletter, saveNewsletter,
   requestSend, reschedule, reviewSend, cancelScheduled, retryFailed, getDefaults, setDefaults, claimForSending, dueNewsletters, beginDelivery, finishDelivery,
   deliveryCounts, deliveriesFor, finishNewsletter, listArchive, openCounts, deleteNewsletter,

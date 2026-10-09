@@ -6,6 +6,61 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-10 — Petitions are organized like everything else: one entry per petition, under a project
+
+**What changed**
+
+- The admin's **Petition** page is now **Petitions**: a list with one entry
+  per petition instead of a single campaign. Several petitions can be open at
+  the same time. Each one belongs to a **project** (required) and gets its
+  own page on the site under that project's address, for example
+  `/projects/alpr/udot-alpr-permits`, with its thank-you page underneath.
+  The project's own page shows every open petition as a card; a new
+  `/petitions` page lists all of them.
+- Each petition has a **status**: *draft* (not on the site), *open* (taking
+  signatures) or *closed* (the page stays with the final count and a short
+  "closed" message; nobody can sign). The homepage hero now follows the one
+  open petition ticked **Show in the homepage hero**; untick it or close the
+  petition and the standing hero comes back.
+- The old addresses `/petition` and `/petition-thanks` forward to the
+  featured petition, so printed or shared links keep working.
+- The existing UDOT ALPR petition was moved over as the first entry (open,
+  featured, under the ALPR project) with its two test signatures. Nothing
+  about counting (Utah only), the mailing list or the CSV changed.
+
+**What editors do differently**: open **Petitions**, click a petition to
+edit its copy or download its signatures, or **New petition** (pick the
+project, give it a slug and a headline) to start a draft. The slug cannot be
+changed once anyone has signed; close that petition and start a new one
+instead. The thank-you email dropdown is on each petition's page and is
+**that petition's own choice** (changed the same day after review: every
+petition is different; nothing chosen = the built-in email with that
+petition's headline). Outgoing emails lists one "Petition signed" line per
+petition.
+
+**Unfinished / needs a person**: this is on **staging only** so far. Prod
+needs the owner's keys: the two migration scripts, a stack deploy and a
+publish — the exact steps are in docs/for-conner.md §11. Not pushed yet.
+Technical detail: docs/systems/petition.md, docs/decisions/petitions-collection.md.
+
+## 2026-10-09 — Admin on a laptop always uses the right AWS account
+
+**What changed**
+
+- When someone runs the admin on their own computer, it used to need the AWS
+  account chosen by hand in the terminal first. Forgetting that produced a red
+  error page ("AWS credentials resolve to account ... Restart with
+  AWS_PROFILE=uccsite"). The local settings file now picks the right account
+  itself, so that error should not come back.
+
+**What editors do differently**
+
+- Nothing. This only affects developers running the admin locally.
+
+**Unfinished**
+
+- Nothing. The running dev server needs one restart to pick it up.
+
 ## 2026-10-09 — Admin pages now carry the same browser security headers as the site
 
 **What changed**

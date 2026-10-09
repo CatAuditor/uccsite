@@ -89,15 +89,20 @@ puts that version back as a draft; request a publish to take it live.
 - **Writing page** (`/writing`) — builds itself from published documents and
   statements; nothing to edit. A document's **Category** sets its label there
   (Reports, Statements, Whitepapers).
-- **Petition** — the campaign copy, the **Project** it belongs to (its
-  project page then shows the petition with a sign button, and every
-  signature is filed under that project), the thank-you page's donation window
-  (**amounts** as dollars, e.g. `5, 10, 25`; **one-time, monthly or both**; an
-  Other amount is always offered), the **share** message and preview
-  picture used when people post the petition link, and the **Thank-you
-  email** dropdown: which automatic email (written under Outgoing emails)
-  each signer gets once, or the built-in one. The **Form title** is
-  also the headline apps show on that link; blank = Sign the petition.
+- **Petitions** — one entry per petition. Every petition belongs to a
+  **project** and gets its own page under that project's address
+  (`/projects/<project>/<slug>`), a thank-you page under it, a card on the
+  project page and a spot on `/petitions`. **Status**: *draft* (not on the
+  site), *open* (taking signatures), *closed* (the page stays with the final
+  count, no form). Tick **Show in the homepage hero** on one open petition
+  to make it the homepage hero. Each petition's page holds its copy, the
+  thank-you page's donation window (**amounts** as dollars, e.g. `5, 10, 25`;
+  **one-time, monthly or both**; an Other amount is always offered), the
+  **share** message and preview picture, its signatures with a CSV, and the
+  **Thank-you email** dropdown (each petition has its own; nothing chosen =
+  the built-in email with that petition's headline). The slug
+  cannot change once anyone has signed — close that petition and start a
+  new one. **New petition** on the list page starts a draft.
 - **Appeals** also holds the **Thank-you email after a donation** dropdown
   (same idea; a donation email must contain `{receipt}`).
 - **Homepage** — hero headline/subtitle, mission quote, about paragraphs,
@@ -255,12 +260,13 @@ the whole mailing list after a second admin approves them.
 
 - The table at the top lists each moment an email goes out (*Petition signed*,
   *Donation received*) and which email is attached to it. With nothing
-  attached, a built-in email goes out; its wording is edited on the Petition
-  page (petition) and the Appeals page (donation).
+  attached, a built-in email goes out (its wording is fixed; the petition's
+  headline and project fill it).
 - To use your own design: **New automatic email**, write it exactly like a
   newsletter (blocks, look, preview, *Save & send me a test*). Then go to the
-  **Petition** page (Thank-you email) or the **Appeals** page (Thank-you email
-  after a donation) and pick it from the dropdown — **Use this email**. It
+  petition under **Petitions** (Thank-you email — each petition has its own
+  choice) or the **Appeals** page (Thank-you email after a donation) and
+  pick it from the dropdown — **Use this email**. It
   goes out from then on; swap to another one or back to *Built-in email* any
   time, no publish needed. Edits to the email do not go live until you pick
   it again (the page says "edited since" when that is the case).

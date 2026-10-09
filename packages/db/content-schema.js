@@ -222,6 +222,28 @@ const STATEMENTS = [
   )`,
   `CREATE INDEX ASYNC IF NOT EXISTS idx_press_project ON press(project_slug, sort_order)`,
 
+  // ── petitions (docs/systems/petition.md, packages/db/petitions.js) ────────
+  // ONE row per petition, always filed under a project (project_slug). Its
+  // page is /projects/<project path>/<slug>, the thank-you page sits under
+  // it, and the `featured` one takes over the homepage hero. Replaces the
+  // homepage.petition JSON group (column kept, no longer read —
+  // docs/decisions/petitions-collection.md). status: draft | open | closed.
+  `CREATE TABLE IF NOT EXISTS petitions (
+    id UUID PRIMARY KEY,
+    sort_order INTEGER NOT NULL,
+    slug TEXT, project_slug TEXT, status TEXT, featured TEXT,
+    label TEXT, headline TEXT, body TEXT, cta TEXT, cta_secondary TEXT, cta_secondary_url TEXT, count_label TEXT,
+    form_title TEXT, form_intro TEXT, consent TEXT,
+    thanks_title TEXT, thanks_body TEXT, thanks_cta TEXT, thanks_dismiss TEXT,
+    donate_title TEXT, donate_body TEXT, donate_amounts TEXT, donate_default TEXT, donate_frequency TEXT,
+    donate_default_frequency TEXT, donate_custom_label TEXT, donate_button TEXT, donate_public_label TEXT,
+    share_title TEXT, share_text TEXT, share_image TEXT,
+    closed_body TEXT,
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`,
+  `CREATE UNIQUE INDEX ASYNC IF NOT EXISTS idx_petitions_slug ON petitions(slug)`,
+  `CREATE INDEX ASYNC IF NOT EXISTS idx_petitions_project ON petitions(project_slug, sort_order)`,
+
   // ── project tree (docs/decisions/project-tree-nested-urls.md) ─────────────
   // parent_slug nests a project under another (depth 2; validated by
   // packages/render/projects.js validateProjectTree). summary: markdown intro

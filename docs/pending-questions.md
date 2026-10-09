@@ -58,15 +58,10 @@ change the page text if the org decides otherwise.
 
 ## 2026-10-09 — Transactional emails + petition filed under a project (docs/systems/email.md, petition.md)
 
-1. **"Petitions filed under their respective project" — one live campaign
-   linked to a project, or several petitions open at once?** Options: (a) keep
-   the one-campaign model and add a Project field (hub shows the petition,
-   signatures carry the project, email links it); (b) a `petitions`
-   collection (slug, project, copy, open/closed) with its own pages under
-   `/projects/<path>/petition` and several open at once. **Chose (a)** — it
-   fulfils the filing without re-plumbing the hero/form/thank-you pages;
-   signatures already key on the slug, so (b) can be built on top later
-   without touching the data.
+1. ~~One live campaign linked to a project, or several petitions open at once?~~
+   **Answered 2026-10-10:** a `petitions` collection, each petition always
+   under a project at `/projects/<path>/<slug>`, several open at once, a
+   featured one for the hero — docs/decisions/petitions-collection.md.
 2. **Email on every signature or the first only?** Options: (a) first only;
    (b) every re-sign. **Chose (a)** — a re-sign is the same person; sending on
    each would let anyone trigger repeat mail to an address they do not own.

@@ -68,3 +68,13 @@ Gotcha hit while adding it: `instrumentation.js` is bundled by webpack, and
 `lib/config.js`'s `require('node:path')` fails there (`UnhandledSchemeError:
 Reading from "node:path"`), which also broke `/login`. `aws-account.js`
 therefore reads `process.env` directly and must not import `config.js`.
+
+## Recurrence 2026-10-09
+
+Hit again: the Next.js overlay showed the `aws-account.js` guard error
+(`account 507024406243 (arn:aws:iam::507024406243:user/laebel) ... Restart
+with AWS_PROFILE=uccsite`) because `npm run dev` was launched from a shell
+without `AWS_PROFILE`. The guard worked; the fix is to stop relying on the
+shell. `AWS_PROFILE=uccsite` now lives in `apps/admin/.env.local` (Next loads
+it before any SDK call), and `scripts/admin-env.mjs` writes that line so a
+regenerated env file keeps it. Restart the dev server once after the change.

@@ -207,7 +207,7 @@ const EXAMPLE_HTML = `<!-- 1. Hero: the only place the <h1> goes. Eyebrow, headl
         <h2 class="section-title">Turn sharing off by default</h2>
         <p>The county can restrict sharing to Utah agencies in the vendor's settings today, at no cost, without a vote.</p>
         <p>UCC has asked the county commission to do so and to publish quarterly search counts by agency.</p>
-        <a href="/petition.html" class="btn btn-primary">Sign the petition</a>
+        <a href="/petitions" class="btn btn-primary">Sign the petition</a>
       </div>
       <div>
         <div class="about-card">

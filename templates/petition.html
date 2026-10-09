@@ -3,19 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{#petition.share}}{{petition.share.page_title}}{{/petition.share}}{{^petition.share}}Sign the Petition | Utah Civic Compact{{/petition.share}}</title>
+  <!-- One page per petition: /projects/<project path>/<slug> (docs/systems/petition.md).
+       `petition` is the row from packages/render/petitions.js derivePetitions. -->
+  <title>{{petition.page_title}}</title>
   <meta name="description" content="{{petition.body}}" />
-  <link rel="canonical" href="https://utahciviccompact.org/petition" />
+  <link rel="canonical" href="{{petition.abs_url}}" />
+  {{#petition.is_closed}}<meta name="robots" content="noindex, follow" />{{/petition.is_closed}}
 
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://utahciviccompact.org/petition" />
-  <meta property="og:title" content="{{#petition.share}}{{petition.share.page_title}}{{/petition.share}}{{^petition.share}}Sign the Petition | Utah Civic Compact{{/petition.share}}" />
+  <meta property="og:url" content="{{petition.abs_url}}" />
+  <meta property="og:title" content="{{petition.page_title}}" />
   <meta property="og:description" content="{{petition.body}}" />
   <meta property="og:site_name" content="Utah Civic Compact" />
-  {{#petition.share}}<meta property="og:image" content="{{petition.share.image}}" />
+  <meta property="og:image" content="{{petition.share.image}}" />
   <meta name="twitter:card" content="{{petition.share.card}}" />
-  <meta name="twitter:image" content="{{petition.share.image}}" />{{/petition.share}}{{^petition.share}}<meta name="twitter:card" content="summary" />{{/petition.share}}
-  <meta name="twitter:title" content="{{#petition.share}}{{petition.share.page_title}}{{/petition.share}}{{^petition.share}}Sign the Petition | Utah Civic Compact{{/petition.share}}" />
+  <meta name="twitter:image" content="{{petition.share.image}}" />
+  <meta name="twitter:title" content="{{petition.page_title}}" />
   <meta name="twitter:description" content="{{petition.body}}" />
 
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
@@ -34,29 +37,29 @@
     <div class="container">
 
       <div class="petition-hero-left">
-        {{#petition.headline}}
-        <p class="petition-hero-label">{{petition.label}}</p>
+        <p class="petition-hero-label">{{petition.label}}{{#petition.is_closed}} · Closed{{/petition.is_closed}}</p>
         <h1>{{{petition.headline}}}</h1>
-        {{#petition.project}}<p class="petition-hero-project">Part of our <a href="{{petition.project.url}}">{{petition.project.name}}</a> project</p>{{/petition.project}}
+        <p class="petition-hero-project">Part of our <a href="{{petition.project.url}}">{{petition.project.name}}</a> project · <a href="/petitions">All petitions</a></p>
         <p class="petition-hero-body">{{petition.body}}</p>
         <p class="petition-count" data-petition-count="{{petition.slug}}" data-count-label="{{petition.count_label}}" hidden></p>
         {{#petition.cta_secondary}}<a href="{{petition.cta_secondary_url}}" class="btn btn-ghost">{{petition.cta_secondary}}</a>{{/petition.cta_secondary}}
-        {{> petition-share}}
-        {{/petition.headline}}
-        {{^petition.headline}}
-        <p class="petition-hero-label">Petition</p>
-        <h1>No petition is open right now.</h1>
-        <p class="petition-hero-body">Check back soon, or sign up for updates on the homepage so you hear first.</p>
-        <a href="/#join" class="btn btn-ghost">Get updates</a>
-        {{/petition.headline}}
+        {{#petition.is_open}}{{> petition-share}}{{/petition.is_open}}
       </div>
 
-      {{#petition.headline}}
+      {{#petition.is_closed}}
+      <div class="petition-form-panel petition-closed-panel">
+        <h2>This petition is closed</h2>
+        <p class="form-sub">{{#petition.closed_body}}{{petition.closed_body}}{{/petition.closed_body}}{{^petition.closed_body}}Thank you to everyone who signed. It is no longer taking signatures.{{/petition.closed_body}}</p>
+        <a href="/petitions" class="btn btn-donate btn-full">See the open petitions</a>
+      </div>
+      {{/petition.is_closed}}
+
+      {{#petition.is_open}}
       <div class="petition-form-panel">
         <h2>{{petition.form_title}}</h2>
         <p class="form-sub">{{petition.form_intro}}</p>
 
-        <form id="petition-form" novalidate data-petition="{{petition.slug}}">
+        <form id="petition-form" novalidate data-petition="{{petition.slug}}" data-thanks-url="{{petition.thanks_url}}">
           <div class="form-row">
             <div class="field-group">
               <label class="field-label" for="first-name">First name <span class="req">*</span></label>
@@ -93,7 +96,7 @@
         </form>{{#turnstileSiteKey}}
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{{/turnstileSiteKey}}
       </div>
-      {{/petition.headline}}
+      {{/petition.is_open}}
 
     </div>
   </section>

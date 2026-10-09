@@ -1,6 +1,6 @@
 # ADR: petition campaigns are a content group + a slug, not a `petitions` table
 
-**Date:** 2026-10-05 · **Status:** accepted
+**Date:** 2026-10-05 · **Status:** superseded 2026-10-10 by petitions-collection.md (petitions are a table; several can be open at once)
 
 ## Decision
 

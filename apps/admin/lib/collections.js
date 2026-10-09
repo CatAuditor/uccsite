@@ -185,9 +185,8 @@ export const NAVIGATION_SETTINGS_FIELDS = [['navigation', 'Menus']];
 
 // Homepage singleton groups (flat string fields inside each group). The press
 // cards derive from the press list (featured) — docs/systems/press.md.
-// page: 'appeals' | 'petition' — the group is edited on that admin page
-// (app/appeals, app/petition); the Homepage editor skips it and preserves
-// it on save.
+// page: 'appeals' — the group is edited on that admin page (app/appeals);
+// the Homepage editor skips it and preserves it on save.
 export const HOMEPAGE_GROUPS = [
   { key: 'hero', title: 'Hero', fields: [
     ['headline', 'Headline', 'textarea', 'HTML allowed (line breaks with <br />)'],
@@ -211,41 +210,8 @@ export const HOMEPAGE_GROUPS = [
   { key: 'modal', title: 'Homepage timed modal (7.5 s after arrival)', page: 'appeals', fields: [
     ['badge', 'Badge'], ['title', 'Title'], ['body', 'Body', 'textarea'], ['cta', 'CTA label'],
   ]},
-  // Petition campaign (docs/systems/petition.md): the homepage hero takeover,
-  // /petition and /petition-thanks all read this one group.
-  { key: 'petition', title: 'Petition campaign', page: 'petition', fields: [
-    ['slug', 'Campaign slug', 'text', 'lowercase-with-dashes, e.g. udot-alpr-permits. Every signature is filed under it and the CSV is per slug. Change it to start a NEW petition; old signatures stay under the old slug.'],
-    // widget 'project' = a dropdown of the projects (app/petition renders it).
-    ['project_slug', 'Project', 'project', 'The project this petition belongs to. Its page on the site shows the petition with a sign button, /petition links back to it, every signature is filed under it, and the thank-you email points to it. Blank = no project.'],
-    ['label', 'Eyebrow label', 'text', 'e.g. Unofficial Petition'],
-    ['headline', 'Headline', 'textarea', 'HTML allowed: <em>word</em> turns red. BLANK switches the petition OFF — the homepage shows the standing hero and /petition says no petition is open.'],
-    ['body', 'Body', 'textarea', 'The UDOT provision and the ask. Shown in the hero and on /petition.'],
-    ['cta', 'Sign button label', 'text', 'e.g. Sign the petition now'],
-    ['cta_secondary', 'Secondary link label', 'text', 'blank = no secondary link'],
-    ['cta_secondary_url', 'Secondary link URL', 'text', 'e.g. /alpr.html'],
-    ['count_label', 'Signature counter', 'text', 'Shown under the hero buttons and on /petition once at least one Utahn has signed. {count} becomes the number of UTAH signatures (ZIP 84xxx); out-of-state signatures are kept but not counted. Blank = no counter. Updates as soon as a new Utah signature lands (no timed refresh).'],
-    ['form_title', 'Form title (/petition)', 'text', 'Heading of the sign-up panel. Also the page title and the headline of the link preview when /petition is shared. Blank = Sign the petition'],
-    ['form_intro', 'Form intro (/petition)', 'textarea'],
-    ['consent', 'Consent line under the sign button', 'textarea', 'What signers agree to — keep it true to how the list is used.'],
-    ['thanks_title', 'Thank-you page title', 'textarea'],
-    ['thanks_body', 'Thank-you page body (the donation ask)', 'textarea'],
-    ['thanks_cta', 'Thank-you page: help button label', 'text', 'e.g. I can help — opens the $10/25/50/100 payment modal'],
-    ['thanks_dismiss', 'Thank-you page: decline label', 'text', 'e.g. Not this time'],
-    // Payment modal on the thank-you page (packages/render/site.js petitionDonate).
-    ['donate_title', 'Payment window: title', 'text', 'Blank = "Carry this fight through the legislature"'],
-    ['donate_body', 'Payment window: text', 'textarea', "Blank = \"Choose an amount. You'll finish on our secure Stripe checkout page.\""],
-    ['donate_amounts', 'Payment window: amounts', 'text', 'Dollars, separated by commas, e.g. 5, 10, 25, 50. Up to six. An "Other" button for any amount is always added. Blank = 10, 25, 50, 100.'],
-    ['donate_default', 'Payment window: pre-selected amount', 'text', 'One of the amounts above, e.g. 25'],
-    ['donate_frequency', 'Payment window: one-time or monthly', 'text', 'both (shows a One-time / Monthly switch), one-time, or monthly. Blank = both.'],
-    ['donate_default_frequency', 'Payment window: starts on', 'text', 'one-time or monthly — which side of the switch is selected first. Blank = one-time.'],
-    ['donate_custom_label', 'Payment window: custom amount button', 'text', 'Blank = Other'],
-    ['donate_button', 'Payment window: checkout button', 'text', 'Blank = Continue to checkout'],
-    ['donate_public_label', 'Payment window: public donor checkbox', 'text', 'Blank = Show my first name and amount on the public donor list'],
-    // Sharing (packages/render/site.js derivePetitionShare).
-    ['share_title', 'Share: heading', 'text', 'Above the share buttons on /petition and the thank-you page. Blank = Share the petition'],
-    ['share_text', 'Share: message', 'textarea', 'Pre-filled in X, Bluesky, texts and emails (Facebook uses the page preview). Blank = the headline. The link is added automatically.'],
-    ['share_image', 'Share: preview image', 'text', 'The picture shown when the link is posted. A Media Library path, e.g. /media/…/1200.jpg — 1200×630 works best. Blank = the logo on navy.'],
-  ]},
+  // The petition campaign group left the homepage on 2026-10-10: petitions are
+  // a collection now (PETITION_FIELDS below, docs/systems/petition.md).
 ];
 
 
@@ -258,4 +224,47 @@ export const HOMEPAGE_GROUPS = [
   const groups = new Set(HOMEPAGE_GROUPS.map(g => g.key));
   for (const k of groups) if (!cols.has(k)) throw new Error(`HOMEPAGE_GROUPS: "${k}" is not a homepage column`);
   for (const k of cols) if (!groups.has(k)) throw new Error(`HOMEPAGE_GROUPS: homepage column "${k}" has no editor group — saves would wipe it`);
+}
+
+// Petitions (docs/systems/petition.md, packages/db/petitions.js): one row per
+// petition, edited on its own page (app/petitions/[id]). [name, label, widget,
+// hint] like the homepage groups; `group` headings split the long form.
+// slug / project_slug / status / featured are rendered by the page itself.
+export const PETITION_FIELDS = [
+  ['label', 'Eyebrow label', 'text', 'e.g. Unofficial Petition'],
+  ['headline', 'Headline', 'textarea', 'HTML allowed: <em>word</em> turns red. Shown on the petition page, the project page and (when featured) the homepage hero.'],
+  ['body', 'Body', 'textarea', 'The provision and the ask. Shown on the petition page, the project card and the hero.'],
+  ['cta', 'Sign button label', 'text', 'e.g. Sign the petition now'],
+  ['cta_secondary', 'Secondary link label', 'text', 'blank = no secondary link'],
+  ['cta_secondary_url', 'Secondary link URL', 'text', 'e.g. /projects/alpr/report'],
+  ['count_label', 'Signature counter', 'text', 'Shown once at least one Utahn has signed. {count} becomes the number of UTAH signatures (ZIP 84xxx); out-of-state signatures are kept but not counted. Blank = no counter.'],
+  ['form_title', 'Form title', 'text', 'Heading of the sign-up panel. Also the page title and the headline of the link preview when the page is shared. Blank = Sign the petition'],
+  ['form_intro', 'Form intro', 'textarea'],
+  ['consent', 'Consent line under the sign button', 'textarea', 'What signers agree to — keep it true to how the list is used.'],
+  ['closed_body', 'Closed message', 'textarea', 'Shown in place of the form once the petition is closed. Blank = "Thank you to everyone who signed. It is no longer taking signatures."'],
+  ['thanks_title', 'Thank-you page title', 'textarea'],
+  ['thanks_body', 'Thank-you page body (the donation ask)', 'textarea'],
+  ['thanks_cta', 'Thank-you page: help button label', 'text', 'e.g. I can help — opens the payment window'],
+  ['thanks_dismiss', 'Thank-you page: decline label', 'text', 'e.g. Not this time'],
+  ['donate_title', 'Payment window: title', 'text', 'Blank = "Carry this fight through the legislature"'],
+  ['donate_body', 'Payment window: text', 'textarea', "Blank = \"Choose an amount. You'll finish on our secure Stripe checkout page.\""],
+  ['donate_amounts', 'Payment window: amounts', 'text', 'Dollars, separated by commas, e.g. 5, 10, 25, 50. Up to six. An "Other" button for any amount is always added. Blank = 10, 25, 50, 100.'],
+  ['donate_default', 'Payment window: pre-selected amount', 'text', 'One of the amounts above, e.g. 25'],
+  ['donate_frequency', 'Payment window: one-time or monthly', 'text', 'both (shows a One-time / Monthly switch), one-time, or monthly. Blank = both.'],
+  ['donate_default_frequency', 'Payment window: starts on', 'text', 'one-time or monthly — which side of the switch is selected first. Blank = one-time.'],
+  ['donate_custom_label', 'Payment window: custom amount button', 'text', 'Blank = Other'],
+  ['donate_button', 'Payment window: checkout button', 'text', 'Blank = Continue to checkout'],
+  ['donate_public_label', 'Payment window: public donor checkbox', 'text', 'Blank = Show my first name and amount on the public donor list'],
+  ['share_title', 'Share: heading', 'text', 'Above the share buttons on the petition page and the thank-you page. Blank = Share the petition'],
+  ['share_text', 'Share: message', 'textarea', 'Pre-filled in X, Bluesky, texts and emails (Facebook uses the page preview). Blank = the headline. The link is added automatically.'],
+  ['share_image', 'Share: preview image', 'text', 'The picture shown when the link is posted. A Media Library path, e.g. /media/…/1200.jpg — 1200×630 works best. Blank = the logo on navy.'],
+];
+// Where each field group starts on the editor page (field name → heading).
+export const PETITION_FIELD_GROUPS = { label: 'The petition', form_title: 'Sign-up form', thanks_title: 'Thank-you page', donate_title: 'Payment window', share_title: 'Sharing' };
+export const PETITION_RECORD_FIELDS = ['slug', 'project_slug', 'status', 'featured']; // rendered by the page itself
+{
+  const mapped = new Set(Object.values(FIELD_MAPS.petitions));
+  const declared = new Set([...PETITION_RECORD_FIELDS, ...PETITION_FIELDS.map(([k]) => k)]);
+  for (const k of declared) if (!mapped.has(k)) throw new Error(`PETITION_FIELDS: "${k}" not in FIELD_MAPS.petitions`);
+  for (const k of mapped) if (!declared.has(k)) throw new Error(`PETITION_FIELDS: FIELD_MAPS.petitions key "${k}" missing from the editor — saves would wipe it`);
 }

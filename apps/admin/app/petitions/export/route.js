@@ -1,4 +1,4 @@
-// CSV of petition signatures (editor+), one campaign slug or every one.
+// CSV of petition signatures (editor+), one petition slug or every one.
 // Audited (`petition.export`): a bulk PII download is an event worth a row.
 // POST only — a cross-site GET link could trigger a download in an
 // editor's browser. Timestamps are ISO 8601 UTC (the signing time).

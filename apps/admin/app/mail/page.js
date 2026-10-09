@@ -67,7 +67,7 @@ export default async function MailPage() {
         Two kinds of email leave the site. <strong>Newsletters</strong> go to the <Link href="/subscribers">mailing list</Link> after a
         <strong> different</strong> admin approves the send (owners can approve their own). <strong>Automatic emails</strong> go to one
         person right after they do something — sign the petition, donate. Write them here; choose which one goes out on the
-        Petition page (after signing) or the Appeals page (after a donation); without a choice, a built-in email goes out. Every email is sent as &ldquo;<em>Your name</em> from Utah Civic Compact&rdquo; &lt;hello@utahciviccompact.org&gt;.
+        petition&apos;s own page under Petitions (after signing — each petition has its own choice) or the Appeals page (after a donation); without a choice, a built-in email goes out. Every email is sent as &ldquo;<em>Your name</em> from Utah Civic Compact&rdquo; &lt;hello@utahciviccompact.org&gt;.
       </p>
 
       <h2>Automatic emails</h2>
@@ -80,7 +80,7 @@ export default async function MailPage() {
               <td>{s.attachment
                 ? <Link href={`/mail/${s.attachment.newsletterId}`}>{s.attachment.currentSubject || s.attachment.subject || '(no subject)'}</Link>
                 : <span className="hint">Built-in email</span>}
-                {' '}<span className="hint">· choose on {s.key === 'petition-thanks' ? <Link href="/petition">Petition</Link> : <Link href="/appeals">Appeals</Link>}</span></td>
+                {' '}<span className="hint">· choose on {s.slug ? (s.petitionId ? <Link href={`/petitions/${s.petitionId}`}>Petitions › {s.slug}</Link> : <>Petitions › {s.slug} (no such petition any more)</>) : <Link href="/appeals">Appeals</Link>}</span></td>
               <td>{s.attachment ? `${when(s.attachment.attachedAt)} · ${s.attachment.attachedBy}` : '—'}</td>
             </tr>
           ))}

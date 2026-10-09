@@ -42,6 +42,9 @@ async function validateAddress(client, { id = null, slug, projectSlug = '', shor
     if ((await client.query('SELECT 1 FROM projects WHERE parent_slug = $1 AND slug = $2', [projectSlug, slug])).rows[0]) {
       throw new Error(`"${slug}" is a sub-project of that project; the document needs another slug`);
     }
+    if ((await client.query('SELECT 1 FROM petitions WHERE project_slug = $1 AND slug = $2', [projectSlug, slug])).rows[0]) {
+      throw new Error(`"${slug}" is a petition under that project (docs/systems/petition.md); the document needs another slug`);
+    }
   }
   const other = await getDocument(client, { slug, projectSlug });
   if (other && other.id !== id) throw new Error(`Slug "${slug}" is already used ${projectSlug ? 'in this project' : 'at the root'} by "${other.title}"`);

@@ -68,10 +68,11 @@ apps/admin/
                            actions.js = Remove / Undo removal / Erase record (audited);
                            query = packages/db/audience.js (shared with the sender) —
                            docs/systems/newsletters.md "Mailing list management"
-  app/petition             Petition (editor+): campaign copy (homepage.petition group,
-                           page: 'petition'; Project dropdown = widget 'project', thank-you
-                           email subject/body), filed-under line, signatures per slug
-                           (+ project), audited CSV export (docs/systems/petition.md)
+  app/petitions            Petitions (editor+): the list (project, status, homepage hero,
+                           address, Utah/outside counts), New petition; [id] = one petition's
+                           record + copy, thank-you email picker, signatures, CSV, delete;
+                           actions.js create/save/delete; export/route.js audited CSV
+                           (docs/systems/petition.md). app/petition redirects here.
   app/tips                 tipline inbox (editor+): list w/ status filter, [id] detail,
                            status change (audited tip.status), owner-only delete
                            (audited tip.delete, no snapshot) — docs/systems/tipline.md
@@ -108,7 +109,7 @@ apps/admin/
                            Kit + template rules) — documents.md "Authoring kit"
   lib/convert-upload.mjs   .docx (mammoth) / .md (marked) → HTML for the
                            document body upload
-  lib/hero-status.js       live-vs-saved hero check shown on /homepage and /petition (petition.md)
+  lib/hero-status.js       live-vs-saved hero check shown on /homepage and /petitions (petition.md)
 scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 ```
 
@@ -121,12 +122,12 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Images | Media Library |
 | Files (PDFs, spreadsheets, records…) shared between staff, optionally published at `/files/…` and listed on /projects | Files |
 | Every donation ask (homepage section, timed modal, download modal) | Donation appeals |
-| The petition campaign: hero takeover, /petition copy, thank-you ask, public Utah-only counter; signatures split Utah / outside + CSV | Petition |
+| Petitions, each under a project with its own page (`/projects/<path>/<slug>`): status draft/open/closed, the homepage hero (featured), copy, thank-you ask, public Utah-only counter; signatures split Utah / outside + CSV | Petitions |
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
 | Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |
 | Donors; the mailing list with audience controls (residency, donors, petition signers) + CSV; remove / restore / erase people on the list | Donations, Mailing list |
 | Newsletters: write (blocks or a .docx/.md/.html import), site letterhead look, live audience count, preview (phone, light/dark), test, request → approve → send (now or scheduled) | Mail → Outgoing emails (docs/systems/newsletters.md) |
-| Automatic emails: compose the petition thank-you or the donation receipt as a newsletter under Outgoing emails, then CHOOSE it from the dropdown on the Petition page (after signing) or the Appeals page (after a donation); "Built-in email" returns to the fixed body | Mail → Outgoing emails + Petition / Appeals (docs/systems/email.md "Attached emails") |
+| Automatic emails: compose the petition thank-you or the donation receipt as a newsletter under Outgoing emails, then CHOOSE it from the dropdown on a petition's page (after signing — each petition has its own choice) or the Appeals page (after a donation); "Built-in email" returns to the fixed body | Mail → Outgoing emails + Petitions / Appeals (docs/systems/email.md "Attached emails") |
 | Confidential tips: read, triage status, delete | Tips (editor+; delete is owner) |
 | Accounts, roles, MFA, security keys | Users (owners), My profile (everyone) |
 
@@ -408,8 +409,8 @@ No post or update goes live on one person's say-so. `lib/publish.js` +
 
 "Unpublished" = content audit rows (`CONTENT_ACTION_RE` in
 `packages/db/publish-requests.js` — every `<collection>.save`, document, media,
-redirect, style actions, `.restore`, plus `petition.save` and `appeals.save`
-since 2026-10-05; a new save action MUST be added there or it never counts,
+redirect, style actions, `.restore`, plus `petition.create|save|delete` and
+`appeals.save`; a new save action MUST be added there or it never counts,
 test `packages/db/test/publish-requests.test.mjs`) after the `started_at` of the newest
 succeeded/noop run (the Lambda snapshots the database right after it
 starts, so a save committed during a render is still unpublished).
@@ -457,9 +458,10 @@ Review fixes 2026-09-13 (the rules every editor page follows):
   `APPEAL_SETTINGS_FIELDS` ≡ `FIELD_MAPS.site_settings` (disjoint);
   `HOMEPAGE_GROUPS` keys ≡ homepage JSON columns (field keys inside a group
   follow templates/index.html). Groups flagged `page: 'appeals'` (and the
-  appeal settings fields) are edited on `/appeals` only, `page: 'petition'`
-  on `/petition` only; Site Settings, Homepage, Appeals and Petition each
-  save `{ ...current, ...ownFields }` so no page nulls another's columns.
+  appeal settings fields) are edited on `/appeals` only; Site Settings,
+  Homepage and Appeals each save `{ ...current, ...ownFields }` so no page
+  nulls another's columns. `PETITION_FIELDS` + `PETITION_RECORD_FIELDS` ≡
+  `FIELD_MAPS.petitions` (the petition editor, docs/systems/petition.md).
 
 ## Link previews — "Add from link" (2026-09-30)
 
@@ -507,7 +509,7 @@ missing file renders a notice, logged as `[admin] dev-notes unreadable: <code>`.
 ## What changed (Publish & Status, 2026-10-06)
 
 Above the save log, **What will change on the live site** lists one expandable
-row per section (Team & Bios, Petition, Menus, Documents › <title>, …): a count
+row per section (Team & Bios, Petitions, Menus, Documents › <title>, …): a count
 summary, who saved and when; open it for field-level lines — Added / Removed /
 Edited (each field `before → after`) / Order changed — and a link to the editor.
 
@@ -525,8 +527,9 @@ app/page.js                 WhatChanges component; the raw save list moved into 
 test/change-detail-core.test.mjs  6 tests
 ```
 
-Splits: the homepage row is reported as **Homepage**, **Petition** or **Donation
-appeals** by group; site settings as **Site Settings**, **Donation appeals**
+Splits: the homepage row is reported as **Homepage** or **Donation appeals**
+by group; a `petition` row as **Petitions** (one line per petition, with its
+field diffs); site settings as **Site Settings**, **Donation appeals**
 (download pop-up) or **Menus**. A save with no before/after model (media,
 redirects, styles) still appears, with its saves listed. Errors describing one
 thing are logged (`[admin] what-changed: …`) and never break the dashboard.
@@ -551,7 +554,9 @@ when set, `lib/aws-account.js` calls STS once per process and refuses every
 DB use — and logs at boot via `instrumentation.js` — if the resolved
 credentials belong to another account (the "forgot AWS_PROFILE" failure,
 docs/error-handling/client-side-error/2026-09-13-admin-dev-wrong-aws-profile.md).
-Leave it unset on Amplify. AWS credentials: local = `AWS_PROFILE=uccsite`;
+Leave it unset on Amplify. AWS credentials: local = `AWS_PROFILE=uccsite`
+(put it in `apps/admin/.env.local`, gitignored, so `npm run dev` never falls
+back to the default profile; 2026-10-09);
 Amplify Hosting = the app's SSR compute role (wire-up pending; it needs
 `dsql:DbConnectAdmin`, `lambda:InvokeFunction` on PublishFn,
 `s3:PutObject/GetObject/DeleteObject` on the media bucket, and `ses:SendEmail`

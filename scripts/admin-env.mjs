@@ -25,6 +25,7 @@ const envFile = [
   `SITE_BUCKET=${outputs.SiteBucketName}`,
   `PUBLIC_ORIGIN=${outputs.PublicOrigin}`,
   `APP_ORIGIN=http://localhost:3000`,
+  'AWS_PROFILE=uccsite', // local only: `npm run dev` must never fall back to the default (personal) profile
   '',
 ].join('\n');
 

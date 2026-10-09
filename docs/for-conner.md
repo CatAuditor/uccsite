@@ -495,27 +495,35 @@ deletion (30-day recovery window) — nothing reads it any more.
   - `_dmarc` TXT — remove `mailto:b5510ee5@dmarc.mailgun.org,` from both
     `rua=` and `ruf=` (OnDMARC stays and keeps reporting).
 
-## 11. Petition: enter the real copy, then publish
+## 11. Petitions: one record per petition (prod migration pending, 2026-10-10)
 
-Built 2026-10-05 (`docs/systems/petition.md`). The code, pages, database table
-and admin tab are live; the homepage hero stays as it was until the campaign
-copy exists in production.
+Built 2026-10-05 as one campaign; rebuilt 2026-10-10 as a collection
+(`docs/systems/petition.md`): every petition is its own record under a
+project with its own page at `/projects/<project>/<slug>`. **Staging has
+the new table and row and is published. Prod needs the steps below, in
+order, from a clean worktree at the commit that carries them:**
 
-1. `[hand]` Admin → **Site Main → Petition**. The copy is seeded (real
-   provision quote, 2026-10-05) — review and edit wording; keep the slug
-   `udot-alpr-permits` (or pick one; lowercase-with-dashes). **Save petition
-   copy** if you change anything.
-2. `[hand]` Admin → **Publish & Status** → request a publish, then approve
-   it yourself (owners may, since 2026-10-05) or have another admin approve.
-   (Done 2026-10-05 by the operator publish — the hero is live.)
-3. Signatures: Admin → Petition → **Download CSV** (Utah-only, outside-only
-   or both; audited). The site shows a public counter of **Utah** signatures
-   — its wording is the *Signature counter* field (blank = no counter).
+1. `[keys]` `node scripts/migrate-schema.mjs --env prod` (creates `petitions`,
+   grants the API role SELECT on it).
+2. `[keys]` `node scripts/migrate-petitions.mjs --env prod` (dry run; read
+   it), then `--apply` — turns the homepage campaign group into the first
+   petition row (open, featured, under `alpr`).
+3. `[keys]` `cdk deploy UccProd` from `infra/cdk` — the publish Lambda
+   bundles the new templates, the API Lambda reads the new table, the admin
+   builds from the push.
+4. `[hand]` Admin → **Publish & Status** → request + approve a publish.
+   `/petition` and `/petition-thanks` become 301s to
+   `/projects/alpr/udot-alpr-permits` (and `/thanks`); the hero and the
+   project page follow.
+5. Signatures: Admin → **Petitions** → the petition → **Download CSV**
+   (Utah-only, outside-only or both; audited). The site shows a public
+   counter of **Utah** signatures — its wording is the *Signature counter*
+   field (blank = no counter).
 4. Mailing list: Admin → **Mailing list** (was Subscribers) — pick residency
    (Utah / outside / ZIP unknown), a petition, donors-only; the page says
    who the email is going to; the CSV and the sender script use the same
    filters.
-5. Optional `[hand]`: Turnstile keys (§3) also protect the petition form.
+6. Optional `[hand]`: Turnstile keys (§3) also protect the petition forms.
 
 ## Done
 

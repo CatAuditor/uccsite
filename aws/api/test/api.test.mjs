@@ -556,12 +556,11 @@ test('subscribe CORS: preflight 204 + allow-origin only for the officials lookup
 
 // ── Transactional thank-yous (aws/api/emails.js; docs/systems/email.md) ─────
 
-const homepageRow = (petition, donate) => ({
-  rows: [{ id: 'singleton', petition: petition ? JSON.stringify(petition) : null, donate: donate ? JSON.stringify(donate) : null }], rowCount: 1,
-});
-const campaign = { slug: 'udot-alpr-permits', project_slug: 'alpr', headline: 'Tell <em>UDOT</em>: no cameras', share_title: 'Pass it on' };
+// The petitions table (docs/systems/petition.md): one row per petition.
+const petitionRows = (...rows) => ({ rows: rows.map((r, i) => ({ id: `p${i}`, sort_order: i, ...r })), rowCount: rows.length });
+const campaign = { slug: 'udot-alpr-permits', project_slug: 'alpr', status: 'open', headline: 'Tell <em>UDOT</em>: no cameras', share_title: 'Pass it on' };
 const projectRows = { rows: [{ slug: 'alpr', name: 'License plates', parent_slug: '' }], rowCount: 1 };
-const campaignDb = (extra = {}) => fakeDb({ 'SELECT * FROM homepage': homepageRow(campaign), 'SELECT slug, name, parent_slug FROM projects': projectRows, ...extra });
+const campaignDb = (extra = {}) => fakeDb({ 'SELECT * FROM petitions': petitionRows(campaign), 'SELECT slug, name, parent_slug FROM projects': projectRows, ...extra });
 
 test('petition: first signature files the project and dispatches the thank-you; a re-sign does neither', async () => {
   routes._resetCampaignCache();
@@ -584,9 +583,9 @@ test('petition: first signature files the project and dispatches the thank-you; 
   routes._resetCampaignCache();
 });
 
-test('petition: not the live campaign (or the content read fails) → no project, thank-you still sent; dispatch failure is harmless', async () => {
+test('petition: unknown slug (or the content read fails) → no project, thank-you still sent; dispatch failure is harmless', async () => {
   routes._resetCampaignCache();
-  const db = fakeDb(); // homepage read throws (no singleton) → campaign null
+  const db = fakeDb({ 'SELECT * FROM petitions': () => { const e = new Error('no table'); e.name = 'error'; throw e; } });
   const jobs = [];
   const { result: res, lines } = await spyConsole(() => routes.petitionSign({ ...baseCtx(db, { body: { ...signer, petition: 'other-campaign' } }), selfInvoke: async (p) => jobs.push(p) }));
   assert.equal(res.statusCode, 200);
@@ -594,8 +593,26 @@ test('petition: not the live campaign (or the content read fails) → no project
   assert.equal(jobs[0].job, 'petition-thanks');
   assert.ok(lines.some(l => l.includes('petition campaign lookup failed')));
   routes._resetCampaignCache();
+  // a slug no petition carries (an empty table) is recorded without a project, as before the collection
+  const db2 = fakeDb();
+  assert.equal((await routes.petitionSign({ ...baseCtx(db2, { body: { ...signer, petition: 'other-campaign' } }), selfInvoke: async () => {} })).statusCode, 200);
+  assert.equal(db2.calls.find(c => c.text.includes('INSERT INTO petition_signatures')).params[7], null);
+  assert.ok(!db2.calls.some(c => c.text.includes('FROM projects'))); // no petitions → no projects read
+  routes._resetCampaignCache();
   const res2 = await routes.petitionSign({ ...baseCtx(fakeDb(), { body: signer }), selfInvoke: async () => { throw new Error('throttled'); } });
   assert.equal(res2.statusCode, 200);
+  routes._resetCampaignCache();
+});
+
+test('petition: a closed petition takes no signature (409); a draft is unknown to the public route', async () => {
+  routes._resetCampaignCache();
+  const db = fakeDb({ 'SELECT * FROM petitions': petitionRows({ ...campaign, status: 'closed' }, { slug: 'next', project_slug: 'alpr', status: 'draft' }), 'SELECT slug, name, parent_slug FROM projects': projectRows });
+  const res = await routes.petitionSign({ ...baseCtx(db, { body: signer }), selfInvoke: async () => {} });
+  assert.equal(res.statusCode, 409);
+  assert.ok(!db.calls.some(c => c.text.includes('INSERT INTO petition_signatures')));
+  const draft = await routes.petitionSign({ ...baseCtx(db, { body: { ...signer, petition: 'next' } }), selfInvoke: async () => {} });
+  assert.equal(draft.statusCode, 200);
+  assert.equal(db.calls.find(c => c.text.includes('INSERT INTO petition_signatures')).params[7], null);
   routes._resetCampaignCache();
 });
 
@@ -612,16 +629,17 @@ test('petition-thanks job: campaign copy, project link, share + chip-in buttons,
   const body = m.Content.Simple.Body.Html.Data;
   assert.match(body, /Hi Ada,/);
   assert.match(body, /Tell <em style="[^"]+">UDOT<\/em>: no cameras/); // headline keeps only <em>
-  assert.match(body, /https:\/\/x\.test\/projects\/alpr/);
+  assert.match(body, /https:\/\/x\.test\/projects\/alpr"/); // the project link
   assert.match(body, /License plates/);
-  assert.match(body, /https:\/\/x\.test\/petition-thanks/);
+  assert.match(body, /https:\/\/x\.test\/projects\/alpr\/udot-alpr-permits"/); // Share → the petition's own page
+  assert.match(body, /https:\/\/x\.test\/projects\/alpr\/udot-alpr-permits\/thanks/); // Chip in → its thank-you page
   assert.match(body, /Pass it on/);
   const headers = Object.fromEntries(m.Content.Simple.Headers.map(h => [h.Name, h.Value]));
   assert.match(headers['List-Unsubscribe'], /^<https:\/\/x\.test\/api\/unsubscribe\?token=/);
   assert.equal(headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
 });
 
-test('petition-thanks job: unknown campaign → generic copy, no project; live campaign without a project → no projects read', async () => {
+test('petition-thanks job: unknown petition → generic copy, no project; a petition whose project is gone → no project link', async () => {
   routes._resetCampaignCache();
   let sent = fakeSes();
   try {
@@ -634,14 +652,14 @@ test('petition-thanks job: unknown campaign → generic copy, no project; live c
 
   routes._resetCampaignCache();
   sent = fakeSes();
-  const db = fakeDb({ 'SELECT * FROM homepage': homepageRow({ ...campaign, project_slug: '' }) });
+  const db = fakeDb({ 'SELECT * FROM petitions': petitionRows({ ...campaign, project_slug: 'gone' }), 'SELECT slug, name, parent_slug FROM projects': projectRows });
   try {
     await routes.petitionThanksJob({ db, secrets: {}, email: 'a@b.co', firstName: 'Ada', petition: 'udot-alpr-permits', origin: 'https://x.test' });
   } finally { routes._setSesClient(null); routes._resetCampaignCache(); }
   assert.equal(sent[0].Content.Simple.Subject.Data, 'Thank you for signing: Tell UDOT: no cameras');
   assert.match(sent[0].Content.Simple.Body.Html.Data, /Hi Ada,/);
   assert.ok(!sent[0].Content.Simple.Body.Html.Data.includes('/projects/'));
-  assert.ok(!db.calls.some(c => c.text.includes('FROM projects'))); // no project_slug → no projects read
+  assert.match(sent[0].Content.Simple.Body.Html.Data, /https:\/\/x\.test\/petitions"/); // Share falls back to the index
 });
 
 test('checkout.session.completed dispatches the donation thank-you (amount, recurring); a failed dispatch is not a 500', async () => {
@@ -714,7 +732,9 @@ test('petition-thanks job: an attached email replaces the built-in body — plac
   assert.match(m.Content.Simple.Body.Text.Data, /^Hi <Ada>\nUnsubscribe: https:\/\/x\.test\/api\/unsubscribe\?token=/);
   const headers = Object.fromEntries(m.Content.Simple.Headers.map(h => [h.Name, h.Value]));
   assert.equal(headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
-  assert.equal(db.calls.filter(c => c.text.includes('FROM transactional_emails')).length, 1);
+  const reads = db.calls.filter(c => c.text.includes('FROM transactional_emails'));
+  assert.equal(reads.length, 1);
+  assert.deepEqual(reads[0].params, ['petition-thanks:udot-alpr-permits']); // per petition, no shared key
 });
 
 test('donation-thanks job: attached email gets {amount} {type} {date} and the raw {receipt} table with the legal line; read failure falls back to the built-in', async () => {
