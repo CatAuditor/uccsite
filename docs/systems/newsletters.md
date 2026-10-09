@@ -77,11 +77,14 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    from the same renderer; toggles: Light / Dark (dark = the email's own
    `prefers-color-scheme` rules applied unconditionally), Phone (375 px) /
    Desktop.
-2. **Send me a test** (editor+): the saved version to the signed-in admin's
-   address only, subject prefixed `[TEST]`, through the admin's SSR role
+2. **Save & send me a test** (editor+): saves what is on screen, then sends
+   it to the signed-in admin's address only, subject prefixed `[TEST]`, through the admin's SSR role
    (`ses:SendEmail`, From pinned to hello@). The unsubscribe link points
    back at the editor. Audit `newsletter.test`.
-3. **Request send** (editor+): subject and ≥1 block required; the audience
+3. **Save & request send** (editor+): saves what is on screen first (Save,
+   both test buttons and the request are one form, `then` = the clicked
+   button — before 2026-10-08 they were separate forms and a test of an
+   unsaved draft went out without the new text); subject and ≥1 block required; the audience
    must match ≥1 person; optional *Send at* (Mountain time, ≥5 minutes
    ahead). Renders and freezes `html/text`, stores the count, status
    `pending`, audit `newsletter.request`. After the commit, the four admins
@@ -257,6 +260,21 @@ plain, UTM-tagged for site-side attribution only.
 Test sends go to the four admins (+ the sender) with the subject prefixed
 `TEST: ` — button **Test send (all admins)**; "Send me a test" is the
 single-address variant.
+
+## Raw HTML mode (2026-10-08)
+
+Composer checkbox **Ignore all style — raw HTML**. The typed HTML is stored
+as one `{ type: 'raw', html }` block (≤ 200,000 chars) in front of the
+builder blocks (which are kept, not sent). No schema change. When a raw
+block is present `renderEmail` returns the HTML **as typed** plus one
+Unsubscribe link inserted before `</body>` (or appended) — skipped when the
+author already used `{{unsubscribe_url}}`. No theme, header, footer, UTM
+tags, open pixel or View-in-browser. The text twin is the HTML with tags
+stripped + `Unsubscribe: <url>`. List-Unsubscribe headers are unchanged
+(send.js). No web copy: `renderFrozen` treats raw as `publishToSite` off
+(the site CSP would strip inline styles). The author must include the
+postal address (CAN-SPAM). Editors are trusted; the admin preview iframe is
+`sandbox=""`, so scripts in raw HTML never run there.
 
 ## Rendering
 

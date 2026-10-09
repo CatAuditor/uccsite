@@ -4,6 +4,16 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.25.6 — 2026-10-08 (branch `claude-wip`) — Newsletter: tests and requests save first; raw HTML mode
+
+- Bug: "Send me a test" / "Test send (all admins)" / "Request send" were separate forms that read the SAVED draft,
+  so text typed since the last Save was missing from the test. They are now buttons of the composer form
+  ("Save & …"); the server action saves, then tests or requests.
+- Composer checkbox "Ignore all style — raw HTML": the email is the typed HTML plus an Unsubscribe link only
+  (`type: 'raw'` block, `rawBlock`/`renderRaw` in packages/newsletter/render.mjs); no web copy for raw emails.
+- Tests: 3 new renderer tests; newsletter 20, admin 33, db 24, newsletter-send 7 pass; admin build clean.
+- Goes live with the next push to `refactor` (Amplify admin build); no Lambda deploy needed.
+
 ## v0.25.5 — 2026-10-08 (branch `claude-wip`) — Unsubscribe is POST-only; DMARC enforcement plan
 
 - `GET /api/unsubscribe` now shows an Unsubscribe button and writes nothing; `POST` (RFC 8058 one-click or the

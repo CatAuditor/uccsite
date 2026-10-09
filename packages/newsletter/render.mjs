@@ -33,7 +33,10 @@ export const DEFAULT_THEME = {
   footer: 'Utah Civic Compact · Salt Lake City, UT\nYou are getting this because you signed up at utahciviccompact.org.',
 };
 export const MAX_BLOCKS = 60;
-const LIMITS = { heading: 300, text: 20000, label: 120, url: 2000, alt: 300, cite: 200, quote: 2000, caption: 300 };
+// 'raw' is not in BLOCK_TYPES (no "Add" button): the composer's "Ignore all
+// style — raw HTML" box stores the author's whole email as one raw block, and
+// renderEmail then sends that HTML as typed plus an unsubscribe link only.
+const LIMITS = { heading: 300, text: 20000, label: 120, url: 2000, alt: 300, cite: 200, quote: 2000, caption: 300, raw: 200000 };
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 export const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
@@ -69,8 +72,9 @@ export function normalizeBlocks(raw) {
   if (list.length > MAX_BLOCKS) throw new Error(`At most ${MAX_BLOCKS} blocks per email`);
   const out = [];
   for (const b of list) {
-    if (!b || typeof b !== 'object' || !BLOCK_TYPES.includes(b.type)) continue;
+    if (!b || typeof b !== 'object' || !(BLOCK_TYPES.includes(b.type) || b.type === 'raw')) continue;
     switch (b.type) {
+      case 'raw': { const html = clip(b.html, LIMITS.raw).trim(); if (html) out.push({ type: 'raw', html }); break; }
       case 'heading': { const text = clip(b.text, LIMITS.heading).trim(); if (text) out.push({ type: 'heading', text }); break; }
       case 'text': { const markdown = clip(b.markdown, LIMITS.text).replace(/\r\n?/g, '\n').trim(); if (markdown) out.push({ type: 'text', markdown }); break; }
       case 'button': {
@@ -187,6 +191,8 @@ export function tagLinks(html, siteUrl, campaign) {
 //   siteUrl + campaign: UTM-tag links into the site (tagLinks)
 //   pixelUrl: campaign-level open pixel (sent copies only — never previews or tests)
 export function renderEmail({ subject = '', preheader = '', headline = '', blocks = [], theme: rawTheme } = {}, { mode = 'auto', viewUrl = '', siteUrl = '', campaign = '', pixelUrl = '' } = {}) {
+  const raw = rawBlock(blocks);
+  if (raw) return renderRaw(raw.html);
   const theme = normalizeTheme(rawTheme);
   const font = FONTS[theme.font];
   const dark = { bg: '#111412', card: '#1b1f1b', text: '#e9e9e3', muted: '#a9afa6', rule: '#343a34', quoteBg: '#232823' };
@@ -292,6 +298,32 @@ ${pixelUrl ? `<img src="${escapeHtml(pixelUrl)}" width="1" height="1" alt="" sty
   if (viewUrl) textParts.unshift(`View in browser: ${viewUrl}`, '');
   const text = textParts.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
   return { html: tagLinks(html, siteUrl, campaign), text };
+}
+
+// rawBlock(blocks) → the raw block when the email is in raw-HTML mode, else null.
+export function rawBlock(blocks) {
+  return normalizeBlocks(blocks).find((b) => b.type === 'raw') || null;
+}
+
+// Raw mode: the author's HTML untouched (no theme, header, footer, UTM, pixel
+// or View-in-browser). The one addition is the unsubscribe link (CAN-SPAM and
+// the List-Unsubscribe body twin), skipped when the author placed the token.
+function renderRaw(src) {
+  const link = `<p style="margin:24px 0;font-size:12px;text-align:center;"><a href="${UNSUBSCRIBE_TOKEN}" style="color:#6b6b66;">Unsubscribe</a></p>\n`;
+  let html = src;
+  if (!html.includes(UNSUBSCRIBE_TOKEN)) {
+    const at = html.search(/<\/body>/i);
+    html = at === -1 ? `${html}\n${link}` : `${html.slice(0, at)}${link}${html.slice(at)}`;
+  }
+  const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", nbsp: ' ' };
+  const text = src
+    .replace(/<(head|style|script|title)\b[\s\S]*?<\/\1>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h[1-6]|li|tr|table|blockquote)>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (m, e) => ENT[e])
+    .replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  return { html, text: `${text}\n\n--\nUnsubscribe: ${UNSUBSCRIBE_TOKEN}\n` };
 }
 
 // previewHtml(doc, mode) → html with the unsubscribe token neutralised.

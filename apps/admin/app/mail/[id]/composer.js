@@ -67,11 +67,20 @@ export default function Composer({ newsletter, names, count, petitions, readOnly
   const [preheader, setPreheader] = useState(newsletter.preheader);
   const [headline, setHeadline] = useState(newsletter.headline);
   const [fromName, setFromName] = useState(newsletter.fromName);
-  const [blocks, setBlocks] = useState(() => newsletter.blocks.map(withKey));
+  const [blocks, setBlocks] = useState(() => newsletter.blocks.filter((b) => b.type !== 'raw').map(withKey));
+  // "Ignore all style — raw HTML": the email is the typed HTML plus an
+  // unsubscribe link; the builder blocks are kept underneath but not sent.
+  const savedRaw = newsletter.blocks.find((b) => b.type === 'raw');
+  const [rawOn, setRawOn] = useState(Boolean(savedRaw));
+  const [rawHtml, setRawHtml] = useState(savedRaw?.html || '');
   const [theme, setTheme] = useState({ ...DEFAULT_THEME, ...newsletter.theme });
   const [mode, setMode] = useState('light');
   const [width, setWidth] = useState('phone');
-  const html = useMemo(() => previewHtml({ subject, preheader, headline, blocks, theme }, mode), [subject, preheader, headline, blocks, theme, mode]);
+  const sent = useMemo(() => {
+    const builder = blocks.map(({ _k, ...b }) => b);
+    return rawOn ? [{ type: 'raw', html: rawHtml }, ...builder] : builder;
+  }, [blocks, rawOn, rawHtml]);
+  const html = useMemo(() => previewHtml({ subject, preheader, headline, blocks: sent, theme }, mode), [subject, preheader, headline, sent, theme, mode]);
 
   const update = (i, b) => setBlocks((list) => list.map((x, j) => (j === i ? { ...b, _k: x._k } : x)));
   const move = (i, d) => setBlocks((list) => { const n = [...list]; const j = i + d; if (j < 0 || j >= n.length) return list; [n[i], n[j]] = [n[j], n[i]]; return n; });
@@ -83,7 +92,7 @@ export default function Composer({ newsletter, names, count, petitions, readOnly
   return (
     <div className="mail-split">
       <div className="mail-editor">
-        <input type="hidden" name="blocks" value={JSON.stringify(blocks.map(({ _k, ...b }) => b))} />
+        <input type="hidden" name="blocks" value={JSON.stringify(sent)} />
         <input type="hidden" name="theme" value={JSON.stringify(theme)} />
 
         <fieldset className="item">
@@ -124,7 +133,23 @@ export default function Composer({ newsletter, names, count, petitions, readOnly
 
         <fieldset className="item">
           <legend>Content</legend>
-          {blocks.map((b, i) => (
+          <label className="mail-check">
+            <input type="checkbox" checked={rawOn} onChange={(e) => setRawOn(e.target.checked)} disabled={readOnly} />
+            {' '}Ignore all style — raw HTML (sent exactly as typed; only an Unsubscribe link is added)
+          </label>
+          {rawOn && (
+            <>
+              <textarea value={rawHtml} onChange={(e) => setRawHtml(e.target.value)} rows={22} spellCheck={false} disabled={readOnly}
+                className="mail-raw" placeholder={'<html>\n<body>\n  <p>Your email…</p>\n</body>\n</html>'} />
+              <div className="hint">
+                No header, footer, colours or web copy. The Unsubscribe link goes just before &lt;/body&gt; — or put
+                {' '}<code>{'{{unsubscribe_url}}'}</code> in your own link to place it yourself. Include the org&rsquo;s postal
+                address (required by CAN-SPAM). Use inline styles; Gmail drops most &lt;style&gt; rules. The blocks below are
+                kept but not sent while this is ticked.
+              </div>
+            </>
+          )}
+          {!rawOn && blocks.map((b, i) => (
             <div key={b._k} className="mail-block">
               <div className="mail-block-head">
                 <strong>{BLOCK_LABEL[b.type]}</strong>
@@ -139,15 +164,15 @@ export default function Composer({ newsletter, names, count, petitions, readOnly
               <BlockFields block={b} onChange={(nb) => update(i, nb)} readOnly={readOnly} publicOrigin={publicOrigin} />
             </div>
           ))}
-          {!blocks.length && <p className="hint">Nothing yet — add a block below.</p>}
-          {!readOnly && (
+          {!rawOn && !blocks.length && <p className="hint">Nothing yet — add a block below.</p>}
+          {!rawOn && !readOnly && (
             <div className="mail-add">
               Add: {BLOCK_TYPES.map((t) => <button key={t} type="button" className="secondary" onClick={() => add(t)}>{BLOCK_LABEL[t]}</button>)}
             </div>
           )}
         </fieldset>
 
-        <fieldset className="item">
+        <fieldset className="item" hidden={rawOn}>
           <legend>Look</legend>
           <div className="mail-row">
             <label>Header &amp; headings colour <input type="color" value={theme.accent} onChange={setT('accent')} disabled={readOnly} /></label>

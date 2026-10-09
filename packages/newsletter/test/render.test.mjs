@@ -148,3 +148,30 @@ test('pixelUrl adds the open pixel only when asked', () => {
   assert.ok(!renderEmail(doc).html.includes('/api/open'));
   assert.ok(!previewHtml(doc, 'light').includes('/api/open'));
 });
+
+// Raw HTML mode ("Ignore all style — raw HTML"): the author's HTML goes out
+// as typed; the only addition is the unsubscribe link.
+test('raw block: HTML sent as typed, unsubscribe appended before </body>, no theme', () => {
+  const raw = '<html><body><h1 style="color:red">Hi</h1><p>Body &amp; more<br>line two</p></body></html>';
+  const { html, text } = renderEmail({ ...doc, blocks: [{ type: 'raw', html: raw }, ...doc.blocks] }, { viewUrl: 'https://x/v', pixelUrl: 'https://x/p', siteUrl: 'https://utahciviccompact.org', campaign: 'c' });
+  assert.ok(html.startsWith('<html><body><h1 style="color:red">Hi</h1><p>Body &amp; more<br>line two</p>'));
+  assert.match(html, new RegExp(`<a href="${UNSUBSCRIBE_TOKEN.replace(/[{}]/g, '\\$&')}"[^>]*>Unsubscribe</a></p>\\s*</body></html>$`));
+  assert.ok(!html.includes('What happened'));       // builder blocks ignored
+  assert.ok(!html.includes('View in browser') && !html.includes('https://x/p')); // nothing else added
+  assert.ok(!html.includes(DEFAULT_THEME.accent));
+  assert.match(text, /Hi\s+Body & more\nline two/);
+  assert.ok(text.trimEnd().endsWith(`Unsubscribe: ${UNSUBSCRIBE_TOKEN}`));
+});
+
+test('raw block: an author-placed unsubscribe token is not duplicated; fragment without </body> gets it at the end', () => {
+  const placed = renderEmail({ blocks: [{ type: 'raw', html: `<p><a href="${UNSUBSCRIBE_TOKEN}">stop</a></p>` }] }).html;
+  assert.equal(placed.split(UNSUBSCRIBE_TOKEN).length - 1, 1);
+  const frag = renderEmail({ blocks: [{ type: 'raw', html: '<p>x</p>' }] }).html;
+  assert.ok(frag.startsWith('<p>x</p>') && frag.includes(UNSUBSCRIBE_TOKEN));
+  assert.ok(previewHtml({ blocks: [{ type: 'raw', html: '<p>x</p>' }] }, 'light').includes('href="#"'));
+});
+
+test('normalizeBlocks keeps a raw block (trimmed, clipped) and drops an empty one', () => {
+  assert.deepEqual(normalizeBlocks([{ type: 'raw', html: '  <p>a</p> ' }]), [{ type: 'raw', html: '<p>a</p>' }]);
+  assert.deepEqual(normalizeBlocks([{ type: 'raw', html: '   ' }]), []);
+});

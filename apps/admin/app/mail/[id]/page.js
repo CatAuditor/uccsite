@@ -38,8 +38,22 @@ export default async function NewsletterPage({ params }) {
   const canReview = n.status === 'pending' && canAct && (!isRequester || session.role === 'owner');
   const path = `/mail/${n.id}`;
 
+  // One form for a draft: Save, the test buttons and Request send all submit
+  // the composer, so what is on screen is saved BEFORE it is tested or
+  // requested (`then` = the clicked button). Tests and requests read the
+  // saved row — a separate form would send the last save, not the screen.
   async function save(prev, formData) {
     'use server';
+    const then = String(formData.get('then') || '');
+    if (then === 'test' || then === 'test-all') {
+      return runAction(async () => {
+        await saveNewsletter(id, formData);
+        revalidatePath(path);
+        const to = await sendTest(id, { all: then === 'test-all' });
+        return { ok: true, message: `Saved, and test sent to ${to.join(', ')} (subject starts with TEST:).` };
+      });
+    }
+    if (then === 'request') return request(prev, formData);
     return runAction(async () => {
       await saveNewsletter(id, formData);
       revalidatePath(path);
@@ -49,6 +63,7 @@ export default async function NewsletterPage({ params }) {
   async function request(prev, formData) {
     'use server';
     return runAction(async () => {
+      await saveNewsletter(id, formData);
       const { needsReview, notified, scheduledFor } = await requestSend(id, String(formData.get('note') || ''), String(formData.get('schedule') || ''));
       revalidatePath(path); revalidatePath('/mail'); revalidatePath('/');
       const timing = scheduledFor ? `scheduled for ${scheduledFor}` : 'to go out on approval';
@@ -204,17 +219,35 @@ export default async function NewsletterPage({ params }) {
         <Composer newsletter={n} names={names} count={count} petitions={petitions} readOnly={!canAct || !isDraft} publicOrigin={config.publicOrigin} />
         {canAct && isDraft && (
           <div className="item-tools">
-            <button type="submit">Save</button>
+            <button type="submit">Save</button>{' '}
+            <button type="submit" name="then" value="test-all" className="secondary" title="Saves, then emails it to all four admins with TEST: in the subject">Save &amp; test send (all admins)</button>{' '}
+            <button type="submit" name="then" value="test" className="secondary" title="Saves, then emails it to you only">Save &amp; send me a test ({session.email})</button>
+          </div>
+        )}
+        {canAct && isDraft && (
+          <div className="request-send">
+            <h2>Request the send</h2>
+            <p className="hint">
+              Saves first. Audience: <strong>{count}</strong> people ({describeFilters(normalizeFilters(n.audience))}).
+              Leave the time empty to send as soon as someone approves; set one to schedule it ({ZONE_LABEL}, at least 5 minutes from now).
+            </p>
+            <label htmlFor="schedule">Send at ({ZONE_LABEL}) — optional</label>
+            <input type="datetime-local" id="schedule" name="schedule" defaultValue={n.scheduledFor ? toLocalInput(n.scheduledFor) : ''} />
+            <label htmlFor="request-note">Note for the reviewer (optional)</label>
+            <textarea id="request-note" name="note" placeholder="What this email is and anything to double-check." />
+            <button type="submit" name="then" value="request">Save &amp; request send</button>
           </div>
         )}
       </ActionForm>
 
       {canAct && (
         <div className="mail-tools">
-          <ActionForm action={test} className="inline">
-            <button type="submit" name="all" value="1" title="Emails the saved version to all four admins with TEST: in the subject">Test send (all admins)</button>{' '}
-            <button type="submit" className="secondary" title="Emails the saved version to you only">Send me a test ({session.email})</button>
-          </ActionForm>
+          {!isDraft && (
+            <ActionForm action={test} className="inline">
+              <button type="submit" name="all" value="1" title="Emails the frozen version to all four admins with TEST: in the subject">Test send (all admins)</button>{' '}
+              <button type="submit" className="secondary" title="Emails the frozen version to you only">Send me a test ({session.email})</button>
+            </ActionForm>
+          )}
           <div className="mail-row">
             <ActionForm action={duplicate} className="inline">
               <button type="submit" className="secondary">Copy as a new draft</button>
@@ -223,20 +256,6 @@ export default async function NewsletterPage({ params }) {
               <button type="submit" className="secondary" title={defaults.updatedBy ? `Current default set by ${defaults.updatedBy}` : 'No default saved yet — new drafts use the built-in look'}>Use this look as the default</button>
             </ActionForm>
           </div>
-          {isDraft && (
-            <ActionForm action={request} className="request-send">
-              <h2>Request the send</h2>
-              <p className="hint">
-                Saves first. Audience: <strong>{count}</strong> people ({describeFilters(normalizeFilters(n.audience))}).
-                Leave the time empty to send as soon as someone approves; set one to schedule it ({ZONE_LABEL}, at least 5 minutes from now).
-              </p>
-              <label htmlFor="schedule">Send at ({ZONE_LABEL}) — optional</label>
-              <input type="datetime-local" id="schedule" name="schedule" defaultValue={n.scheduledFor ? toLocalInput(n.scheduledFor) : ''} />
-              <label htmlFor="request-note">Note for the reviewer (optional)</label>
-              <textarea id="request-note" name="note" placeholder="What this email is and anything to double-check." />
-              <button type="submit">Request send</button>
-            </ActionForm>
-          )}
           {session.role === 'owner' && !['pending', 'approved', 'sending'].includes(n.status) && (
             <ActionForm action={remove} className="inline">
               <button type="submit" className="danger">Delete this newsletter</button>

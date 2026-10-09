@@ -11,7 +11,7 @@ import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { audienceQuery, normalizeFilters, describeFilters } from '@uccsite/db/audience';
 import * as db from '@uccsite/db/newsletters';
-import { renderEmail, normalizeBlocks, normalizeTheme, fromHeader, UNSUBSCRIBE_TOKEN } from '@uccsite/newsletter/render';
+import { renderEmail, normalizeBlocks, normalizeTheme, fromHeader, rawBlock, UNSUBSCRIBE_TOKEN } from '@uccsite/newsletter/render';
 import { renderWebBody, archiveSlug } from '@uccsite/newsletter/web';
 import { parseSchedule, formatZoned } from '@uccsite/newsletter/schedule';
 import { requireRole } from './auth';
@@ -55,7 +55,7 @@ export function blockDiff(before, after) {
   const key = (b) => JSON.stringify(b);
   const label = (b) => b.type === 'text' ? `Text: ${b.markdown.slice(0, 60)}${b.markdown.length > 60 ? '…' : ''}`
     : b.type === 'heading' ? `Heading: ${b.text}` : b.type === 'button' ? `Button: ${b.label}` : b.type === 'image' ? `Image: ${b.alt || b.url}`
-    : b.type === 'quote' ? `Quote: ${b.text.slice(0, 60)}` : 'Divider';
+    : b.type === 'quote' ? `Quote: ${b.text.slice(0, 60)}` : b.type === 'raw' ? `Raw HTML (${b.html.length} characters)` : 'Divider';
   const a = normalizeBlocks(before || []); const b = normalizeBlocks(after || []);
   const aKeys = new Set(a.map(key)); const bKeys = new Set(b.map(key));
   const removed = a.filter((x) => !bKeys.has(key(x))).map(label);
@@ -147,12 +147,14 @@ export async function saveNewsletter(id, formData) {
 
 // renderFrozen(n, slug, { pixel }) → { html, text, webHtml } — the bytes a
 // request freezes. pixel: the campaign-level open counter (real sends only;
-// a test send must not count as an open).
+// a test send must not count as an open). A raw-HTML email gets no web copy:
+// the site CSP (style-src 'self') would strip its inline styles.
 function renderFrozen(n, slug, { pixel = false } = {}) {
-  const viewUrl = n.publishToSite && slug ? `${config.publicOrigin}/newsletters/${slug}` : '';
+  const web = n.publishToSite && !rawBlock(n.blocks);
+  const viewUrl = web && slug ? `${config.publicOrigin}/newsletters/${slug}` : '';
   const pixelUrl = pixel ? `${config.publicOrigin}/api/open?c=${n.id}` : '';
   const { html, text } = renderEmail(n, { mode: 'auto', viewUrl, siteUrl: config.publicOrigin, campaign: slug || n.id, pixelUrl });
-  const webHtml = n.publishToSite ? renderWebBody(n) : '';
+  const webHtml = web ? renderWebBody(n) : '';
   return { html, text, webHtml };
 }
 
