@@ -4,6 +4,60 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.24.0 — 2026-10-09 (branch `refactor`) — Projects as a tree: hub pages, nested document URLs, workspace + notes
+
+Decision record docs/decisions/project-tree-nested-urls.md; system doc docs/systems/projects.md (rewritten).
+**Staging migrated and published; prod needs for-conner.md §14 (`[go]`).**
+
+- **Render** — `packages/render/projects.js`: `projectPath`/`projectUrl`/`documentUrl`, `validateProjectTree`,
+  `deriveProjectTree` (hub data, documents by category, children, breadcrumbs, CollectionPage + BreadcrumbList
+  JSON-LD, `top_projects`); `projectOf` is the explicit `project_slug` only (CTA fallback removed).
+  `site.js`: `project.html` rendered once per project to `projects/<path>.html` (`expandPages` `pathKey`);
+  deriveTeam/writing use hub and nested URLs. `documents.js`: a document under a project renders at
+  `/projects/<path>/<slug>` (file, canonical, sitemap, page CSS key `projects-alpr-report.<hash>.css`),
+  BreadcrumbList + `isPartOf`, foot bar with path and "More in <project>", hashes/paths keyed by id, errors
+  labelled by path; a stored canonical naming one of the page's own aliases is ignored. `navigation.js`:
+  header item `auto: 'projects'` → dropdown of the live top-level projects (default Projects item carries it).
+- **Templates / CSS** — new `templates/project.html` (hub); `projects.html` → card index (filters kept,
+  `#project-<slug>` anchors kept); homepage cards `top_projects`, name → hub; `report.html` breadcrumb block;
+  `css/pages/projects.css` hub/card styles, `css/styles.css` breadcrumb list, `css/pages/index.css` card link.
+- **Database** — `projects.parent_slug`, `projects.summary`; `project_notes` table; `documents.short_path`,
+  `documents.live_path`; `documents_slug_key` DROPPED (DSQL `DROP CONSTRAINT`), `project_slug` default `''`,
+  unique index `idx_documents_address (project_slug, slug)`. `replaceProjects` upserts by id/slug (stable ids),
+  cascades slug renames to documents/files/notes, refuses deleting a referenced project, validates the tree;
+  `loadProjects(client, { ids })`. `documents.js`: `shortPath`, `livePath`, `getDocument({ slug, projectSlug })`,
+  `markDocumentLive({ path })`, `archivedPaths`. `redirects.js kvsEntries(rows, { documentRedirects, gonePaths })`.
+  `project-notes.js` CRUD.
+- **Publish** — `render-db.js`: `documents_index.url`; fixed templates dropped for every claimed address
+  (slug, short path, live path); `documentRedirects` (short + previous live paths → 301, de-duplicated,
+  never shadowing a live page) computed before `live_path` is overwritten and passed to `publishRedirects`
+  by the Lambda and `scripts/publish.mjs`; 410s at archived documents' last live paths.
+- **Admin** — `/projects` tree table (counts, workspace links, orphan warning) + list editor (`parent_slug`,
+  `summary` fields; rows carry `id`, `sanitizeItems keepIds`); `/projects/[slug]` workspace: Overview
+  (single-record save through `replaceProjects`), Folders & files (documents by category, folders of files +
+  notes, uploader), Notes (Markdown or `.md`/`.txt`/`.docx` upload via `mammoth.convertToMarkdown`, pin),
+  Activity; `/projects/[slug]/notes/[id]` (edit, preview, move, delete, "Start a document from this note").
+  Documents: address column, bulk **Move**, Project select with sub-project indent, **Short link** field,
+  `validateAddress` (per-project slug uniqueness, sub-project clash, fixed pages, short path), `assignDocuments`.
+  Menus editor: "List the live projects underneath". Files page: indented project tabs/selects.
+  `lib/files.js listProjects` returns tree order with `path`/`url`/`label`; `lib/projects.js` workspace/activity/
+  noteUploadToMarkdown.
+- **Migration** — `scripts/migrate-project-tree.mjs` (dry run / `--apply`): weber-county project → document of
+  alpr; `alpr`→`alpr/report` (short `/alpr`), `stratos`→`stratos/report` (`/stratos`), weber-county,
+  how-did-this-happen, license-plate-has-a-price under alpr with short paths; `live_path` backfill; stale
+  canonicals cleared; buttons repointed. **Staging**: schema + migration applied, published with
+  `--allow-bulk-delete` (34 changed, 9 removed), verified: 5 old URLs 301, hubs/nested pages 200, unknown nested
+  404, sitemap + canonicals nested, `isPartOf` present. Admin `next build` clean.
+- **Tests** — projects.test.mjs rewritten (paths, validation, derive), navigation auto-projects, redirects
+  document entries; golden `expected-diffs` for `projects/alpr.html`, `projects/stratos.html`, index/projects.
+- **Docs** — projects.md, documents.md ("Addresses"), publish-pipeline.md, navigation.md, site-structure.md,
+  admin.md, files.md, data-handling.md (`project_notes`), non-technical-editing-guide.md, spec addendum 14,
+  for-conner.md §14, dev-notes, error-handling/debug/projects.md.
+- Deferred: press unification (project articles/videos + coverage + News & Media), file actions inside the
+  workspace, top-of-page document breadcrumb, project members.
+- Open P1 at push: prod data migration + first publish (`--allow-bulk-delete`) awaiting `[go]`; prod admin
+  needs `migrate-schema --env prod` immediately after this push (run by the dev session, see below).
+
 ## v0.23.5 — 2026-10-09 (branch `refactor`) — Prod published
 
 - `scripts/publish.mjs --env prod --source db` on the owner's instruction (bypassing the admin's request/approve

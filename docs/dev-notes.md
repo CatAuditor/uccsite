@@ -6,6 +6,67 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-09 — Projects get their own pages, documents nest under them, and each project has a workspace
+
+Until now "Projects" was one long page with every project stacked on it, and
+a report such as the license-plate investigation lived at its own address
+with nothing tying it back to the project except a line at the very bottom.
+That changes in three ways. It is live on the **test site** now and goes to
+the real site when Conner gives the go (his runbook, section 14).
+
+**On the site**
+
+- Every project has its own page: `/projects/alpr`, `/projects/stratos`.
+  The page shows the status, the lead, the main button, an intro you can
+  write, every document that belongs to the project grouped by category,
+  the published files, the press coverage and the TV segments. A project can
+  also sit inside another project (two levels), and the parent's page lists
+  its parts.
+- Documents that belong to a project now live under it:
+  `/projects/alpr/weber-county`, `/projects/alpr/report`. **Every old
+  address keeps working**: `/alpr`, `/weber-county`, `/stratos`,
+  `/how-did-this-happen` and `/license-plate-has-a-price` send readers (and
+  search engines, properly) to the new page. The short address is kept on
+  purpose for print and broadcast; it is a field on the document called
+  **Short link**.
+- The Weber County complaint is no longer a project of its own: it is one
+  document of the license-plate investigation, which is what it is.
+- The Projects menu at the top of the site lists the live projects. The
+  Projects page is now a set of cards; the homepage cards link to the
+  project pages. Every document ends with "Projects › project › this page"
+  and "More in this project".
+
+**In the admin**
+
+- **Projects** opens with a table of the projects and their counts. Click a
+  project to open its **workspace**: *Overview* (its record; **Part of**
+  makes it a sub-project), *Folders & files* (its documents, then folders
+  holding files and notes, with the uploader right there), *Notes*, and
+  *Activity* (who changed what under this project).
+- **Notes** are new: internal working notes for the people on a project.
+  Type Markdown or upload a `.md` or `.docx` straight from Word, Google Docs
+  or Claude; put it in a folder; pin the important ones. Nobody outside the
+  admin can ever see a note. A note can become a draft document with one
+  click ("Start a document from this note").
+- **All documents** shows each document's address, and you can tick several
+  and **Move** them to a project at once. The document editor's **Project**
+  field now also sets the address; moving a document redirects the old
+  address at the next publish, so links never break.
+- Renaming a project keeps every document, file and note attached. A project
+  that still has things under it cannot be deleted by accident.
+
+**What is left**
+
+- Conner: the production migration and the first publish (runbook §14). Until
+  then the real site is unchanged.
+- The press articles and TV segments are still edited in the Projects list
+  editor, not in the workspace; combining them with Report Coverage and News
+  & Media into one place is the next step once this has settled.
+- Write a *Project page intro* for each project (Overview tab); the pages
+  publish without one until you do.
+
+---
+
 ## 2026-10-08 — Documents: a block builder is replacing the paste-HTML editor (step 1 of several)
 
 Uploading a document was meant to be easy and was not: the file became one

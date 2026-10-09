@@ -736,3 +736,14 @@ session plan; key items:
     Mailgun, GitHub, Cloudflare DNS and Turnstile stay (org decision:
     Airtable is the only non-AWS dependency retired in this pass).
     Plan: `docs/migration/airtable-retirement-plan.md`.
+14. **Projects are a tree with hub pages and nested document URLs (2026-10-09).**
+    `projects` keeps stable ids and gains `parent_slug` (depth 2) and `summary`;
+    every project renders `/projects/<path>` from `templates/project.html`; a
+    document under a project publishes at `/projects/<path>/<slug>` (slugs
+    unique per project — the table-level UNIQUE on `documents.slug` is replaced
+    by a unique index on `(project_slug, slug)`), with `short_path` aliases and
+    previous `live_path`s published as 301s through the §9 KeyValueStore sync.
+    `project_notes` (internal, never rendered or exported) back the admin's
+    per-project workspace. §3.1's "nested collection" (articles/videos child
+    tables) is unchanged; press unification is deferred. Decision record:
+    `docs/decisions/project-tree-nested-urls.md`; system doc `docs/systems/projects.md`.

@@ -100,10 +100,23 @@ puts that version back as a draft; request a publish to take it live.
   Statement.)
 - **Team & Bios** — name, title, headshot, bio, and the person's admin email
   (that link lets them edit their own bio from their profile).
+- **Projects** — every project has its own page on the site
+  (`/projects/<slug>`) and a **workspace** in the admin: open a project from
+  the table at the top of the Projects page. *Overview* is the record (name,
+  status, button, intro; **Part of** makes it a sub-project of another).
+  *Folders & files* shows everything under it: its documents, and folders
+  holding files and notes. *Notes* are internal working notes — type
+  Markdown or upload a `.md`/`.docx`; nobody outside the admin ever sees
+  them; a note can become a draft document with one click. *Activity* is
+  who changed what. The list editor underneath adds projects, reorders them
+  (the order on the site) and holds the press articles and videos. A
+  document joins a project in its editor (**Project**) or by ticking several
+  on All documents and choosing **Move**; it then lives at
+  `/projects/<project>/<slug>`, and the old address redirects after the
+  next publish. Renaming a project keeps everything attached.
 - **Statements**, **Policy Positions**, **News & Media** (articles and
-  videos), **Projects** (each with its press articles and videos), **Report
-  Coverage** — the lists the site pages are built from. Reorder with the
-  arrows; the order you save is the order on the site.
+  videos), **Report Coverage** — the lists the site pages are built from.
+  Reorder with the arrows; the order you save is the order on the site.
 - **Media Library** — upload images. **Alt text is required** before an
   image can be placed on a page (describe the image for screen readers).
   Pick an image in any "Headshot" field from the drop-down.

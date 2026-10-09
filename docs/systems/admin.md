@@ -95,8 +95,10 @@ apps/admin/
                            documents/authoring-kit/route.js = kit .md download
   lib/documents.js         editor data, Style Kit, preview, match counts,
                            the Project chooser's project list
-  app/projects             projects editor + per-project Documents / Files /
-                           site links (docs/systems/projects.md "Nesting")
+  app/projects             the project tree + list editor; [slug] = the project
+                           WORKSPACE (record, folders of files + notes, notes,
+                           activity); [slug]/notes/[id] one note; lib/projects.js
+                           (docs/systems/projects.md "Admin")
   lib/authoring-kit.js     the authoring kit markdown (voice rules + live Style
                            Kit + template rules) — documents.md "Authoring kit"
   lib/convert-upload.mjs   .docx (mammoth) / .md (marked) → HTML for the

@@ -48,7 +48,8 @@ packages/render/documents.js      composeDocument / buildDocuments: ingest →
                                   block + JSON-LD generation; pageCssKey;
                                   project_name/project_href for the shell's
                                   "part of <project>" bar (projects.md "Nesting")
-packages/render/projects.js       projectOf — which project a document is under
+packages/render/projects.js       projectOf / documentUrl — a document under a project publishes at
+                                  /projects/<path>/<slug> (docs/systems/projects.md "Addresses")
 templates/documents/report.html   the 'report' shell (developer-owned head/body
                                   wrapper; header/footer partials carry <main>;
                                   .doc-breadcrumb project bar under the body)
@@ -90,6 +91,19 @@ apps/admin/app/styles/            rules with match counts, foreign class map,
 apps/admin/app/revisions/page.js  restore path for entity_type 'document'
 ```
 
+## Addresses (2026-10-09)
+
+A document's page is its URL path: `/projects/<project path>/<slug>` under a
+project (`projects.js documentUrl`), `/<slug>` without one. The file key,
+the canonical URL, the sitemap entry, `documents_index.url` (author pages,
+Writing, hubs) and the page CSS key (`css/pages/projects-alpr-report.<hash>.css`)
+all come from it. Slugs are unique per project; `buildDocuments` refuses an
+address two things claim (another document, a project hub). Optional
+`short_path` (`/alpr`) and the previous `live_path` publish as 301s; an
+archived document is 410 at its last live path. A stored `canonical_url`
+that names one of the page's own aliases is ignored. Full table:
+docs/systems/projects.md. Decision: docs/decisions/project-tree-nested-urls.md.
+
 ## Compose (every publish, `packages/render/documents.js`)
 
 ```
@@ -129,11 +143,15 @@ cannot wedge publishing.
 
 ## Admin editor
 
-- **Project** (`project_slug`, select): the project the page is nested under
-  (docs/systems/projects.md "Nesting") — listed under that project's block on
-  /projects and linked back from the foot of the page. Blank = the project
-  whose button opens this page, if any, else none. Also on the New document
-  form (defaulted from the list's `?project=` filter).
+- **Project** (`project_slug`, select; sub-projects indented): sets the page's
+  address (`/projects/<path>/<slug>`), lists it on the project's hub page and
+  links back from the foot bar (path + "More in <project>"). Blank = none,
+  address `/<slug>`. Also on the New document form (defaulted from the list's
+  `?project=` filter). **Short link** (`short_path`): optional `/word` alias
+  → 301. `validateAddress` (actions.js) checks slug uniqueness within the
+  project, no clash with a sub-project or a fixed page, and that the short
+  path is a free root segment. Moving a document (editor or the list's bulk
+  "Move") redirects the old address on the next publish (`live_path`).
 - **Save** (`saveDocument`): one transaction — baseline (`updated_at`) lost-
   update check, slug uniqueness/reserved check, canonical on-site / og:image
   https / sitemap priority validation, ingest with the template's
@@ -408,8 +426,10 @@ are read; default = monorepo root from `apps/admin`; Amplify copies them to
 
 ## Data
 
-`documents` columns: see content-schema.js (`project_slug` added 2026-10-06,
-soft link to `projects.slug`). Nothing personal. Revisions for
+`documents` columns: see content-schema.js (`project_slug` 2026-10-06, '' =
+none; `short_path`, `live_path` 2026-10-09; the table-level UNIQUE on slug is
+replaced by the unique index `idx_documents_address` on `(project_slug, slug)`).
+Nothing personal. Revisions for
 `entity_type='document'` carry the full raw body (§9) — the 20-per-entity
 prune keeps them bounded.
 
@@ -419,7 +439,8 @@ prune keeps them bounded.
   the site bucket CSS is unreadable (fallback used). `[admin] nav categories
   unavailable` if the layout's category query fails (nav degrades, page
   still renders).
-- Publish: `[publish] RENDER ERROR: document <slug>: …` in CloudWatch + the
+- Publish: `[publish] RENDER ERROR: document <path>: …` (path = the address
+  without the leading slash, e.g. `projects/alpr/report`) in CloudWatch + the
   document's `last_publish_error` shown on the list and editor.
 
 ## Status / not yet
