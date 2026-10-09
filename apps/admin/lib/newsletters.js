@@ -138,8 +138,14 @@ export async function saveNewsletter(id, formData) {
   const fields = {
     subject: clip(formData.get('subject'), 200), preheader: clip(formData.get('preheader'), 200), headline: clip(formData.get('headline'), 200),
     fromName: clip(formData.get('fromName'), 60), blocks, theme, audience, publishToSite: formData.get('publishToSite') === '1',
+    kind: formData.get('automatic') === '1' ? 'transactional' : 'newsletter',
   };
   await withWriteTx(async (client) => {
+    // Unticking "Automatic email" while a trigger still sends it would leave
+    // a newsletter wired to the petition/donation thank-you.
+    if (fields.kind === 'newsletter' && (await db.listAttachments(client)).some((a) => a.newsletterId === nid)) {
+      throw new Error('This email is chosen on the Petition or Appeals page — switch that to another email first, then untick "Automatic email".');
+    }
     const ok = await db.saveNewsletter(client, { id: nid, ...fields, expectedUpdatedAt: String(formData.get('updatedAt') || '') });
     if (!ok) {
       const row = await db.getNewsletter(client, nid);
@@ -175,6 +181,7 @@ export async function requestSend(id, note, scheduleLocal) {
     const n = await db.getNewsletter(client, nid);
     if (!n) throw new Error('This newsletter no longer exists.');
     if (n.status !== 'draft') throw new Error(`This newsletter is already ${n.status}.`);
+    if (n.kind === 'transactional') throw new Error('This is an automatic email — it never goes to the mailing list. Untick "Automatic email" to send it as a newsletter.');
     if (!n.subject.trim()) throw new Error('Give the email a subject line first.');
     if (!normalizeBlocks(n.blocks).length) throw new Error('The email has no content yet — add at least one block and save.');
     const recipients = await audienceCount(client, n.audience);
