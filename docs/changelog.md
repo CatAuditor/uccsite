@@ -4,6 +4,47 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.26.3 — 2026-10-09 (branch `refactor`) — Outgoing emails: attach a composed newsletter as an automatic email
+
+Push = 5c68bd3 (+ this changelog commit). Previous top entry: v0.26.2.
+
+**Model** (`packages/db/newsletters.js`) — `newsletters.kind` (`'newsletter'` | `'transactional'`, NULL = newsletter; in COLS /
+`rowToNewsletter`, kept by `duplicateNewsletter`); `TRIGGERS` (`petition-thanks`, `donation-thanks`: label, when, placeholders,
+required); table `transactional_emails` (`trigger` PK, `newsletter_id`, frozen `subject/html/text`, `attached_by/_at`);
+`attachTransactional` (upsert per trigger) / `detachTransactional` / `listAttachments`; `deleteNewsletter` drops the
+attachment after the row. `API_GRANTS` + `GRANT SELECT ON transactional_emails TO api`. `migrate-schema` run on staging + prod.
+
+**API** (`aws/api/routes.js`, `emails.js`) — `transactionalTemplate(db, trigger)` (5-min container cache, cleared with the
+campaign cache) + `fillAttached`: `fillHtml` (text tokens HTML-escaped, raw `{receipt}` markup, unknown tokens kept),
+`fillText` for subject/text, `{{unsubscribe_url}}` → signed link; `sesSend` sends a Text part when present. Petition job
+tokens `first_name` `headline` `project_name`; donation job `first_name` `amount` `type` `date` + raw `receipt`
+(`receiptHtml` extracted from the built-in email — table + 501(c)(4) line). Built-in bodies unchanged when nothing is
+attached or the read fails (`attached email lookup failed (<trigger>): <ErrorName>`).
+
+**Admin** — nav Mail → **Outgoing emails** (`layout.js`); `/mail` lists the trigger slots (attached email or "built-in"),
+automatic drafts and newsletters, with "New automatic email"; `/mail/[id]` for `kind = 'transactional'`: chip
+Attached/Not attached, no send-request block, **Send automatically** panel (trigger select with the current occupant,
+Attach / Attach again / Detach), placeholder help, audience-ignored hint. `lib/transactional.js` (new): `createTransactional`,
+`listSlots`, `transactionalState`, `attachEmail` (renders with `renderEmail`, UTM campaign = trigger, refuses without
+subject/block/required token; audit `newsletter.attach` with `replaced`), `detachEmail` (audit `newsletter.detach`). The
+other session's uncommitted `composer.js` / `lib/newsletters.js` were deliberately not touched (the Audience fieldset
+still renders on automatic emails — hint says it is ignored).
+
+**Tests** — API 46 pass (attached petition email: tokens filled + escaped, unsubscribe swapped, Text part; attached
+donation email: receipt + legal line inserted, read failure → built-in); db 25 pass (kind, triggers, attach SQL, delete order).
+
+**Deployed / verified** — `cdk deploy UccStaging` + `UccProd` from a clean worktree at 5c68bd3 (ApiFunction, PublishFn,
+NewsletterSendFn — the latter two carry 6898fe4). Staging E2E: a `transactional_emails` row inserted directly, fresh
+simulator signature → `SES sent … subject="E2E attached: thanks Attached for Tell UDOT: the public does not support these
+cameras."`; row removed afterwards. Amplify builds the admin from this push.
+
+**Docs** — systems/email.md "Attached emails", newsletters.md "Kinds" + data, api-security.md, admin.md,
+error-handling/debug/api.md + newsletters.md, legal/data-handling.md (`transactional_emails` row), non-technical-editing-guide
+("Outgoing emails" section), dev-notes.md, pending-questions.md (#5 attach has no second-admin review; #6 welcome email not
+attachable — needs a confirm-button placeholder).
+
+Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed, Jarom not signed into prod admin.
+
 ## v0.26.2 — 2026-10-09 (branch `refactor`) — Transactional thank-you emails; petition filed under a project
 
 Push = 0ff2602 (patch-homepage-group script), 4f14b2b (tests restored after the v0.26.0 rebase), ee3e187 (hub card
