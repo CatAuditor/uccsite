@@ -61,6 +61,7 @@ const FIELD_MAPS = {
     name: 'name', slug: 'slug', date: 'date', author: 'author', status: 'status',
     status_color: 'status_color', region: 'region', tagline: 'tagline',
     cta_url: 'cta_url', cta_text: 'cta_text',
+    parent_slug: 'parent_slug', summary: 'summary', // the tree + hub intro (docs/decisions/project-tree-nested-urls.md)
   },
   project_articles: {
     outlet: 'outlet', badge_color: 'badge_color', date: 'date', region: 'region',
@@ -145,9 +146,11 @@ async function loadHomepage(client) {
 // cannot silently wipe the other's rows.
 const PROJECT_CHILDREN = { articles: 'project_articles', videos: 'project_videos' };
 
-// loadProjects(client) → projects with nested articles/videos (the projects.json shape).
-async function loadProjects(client) {
-
+// loadProjects(client, { ids }) → projects with nested articles/videos (the
+// projects.json shape). ids: true adds each project's `id` (the admin's
+// editor carries it back so replaceProjects can tell a rename from a new
+// project); the renderer and the export never see ids.
+async function loadProjects(client, { ids = false } = {}) {
   const projectRows = (await client.query(`SELECT * FROM projects ORDER BY sort_order`)).rows;
   const groupByProject = (rows, table) => {
     const map = new Map();
@@ -162,6 +165,7 @@ async function loadProjects(client) {
     byField[field] = groupByProject((await client.query(`SELECT * FROM ${table} ORDER BY project_id, sort_order`)).rows, table);
   }
   return projectRows.map(row => ({
+    ...(ids ? { id: row.id } : {}),
     ...rowToObject('projects', row),
     ...Object.fromEntries(Object.keys(PROJECT_CHILDREN).map(field => [field, byField[field].get(row.id) || []])),
   }));
@@ -301,17 +305,84 @@ async function saveHomepage(client, homepage, { tx = true } = {}) {
   await replaceCollectionRows(client, 'homepage_press', homepage.press || [], { tx });
 }
 
-// replaceProjects(client, projects, { tx }) — projects + children in ONE
-// transaction (a 40001 abort or a crash between the parent wipe and the
+// Tables whose rows point at a project by slug (soft links). A rename
+// cascades to each inside the save; a delete is refused while any row still
+// points at the project (docs/decisions/project-tree-nested-urls.md).
+const PROJECT_SLUG_REFS = [
+  ['documents', 'project_slug', 'document', 'documents'],
+  ['project_files', 'project_slug', 'file', 'files'],
+  ['project_notes', 'project_slug', 'note', 'notes'],
+];
+
+async function assertProjectUnreferenced(client, slug) {
+  const parts = [];
+  for (const [table, col, one, many] of PROJECT_SLUG_REFS) {
+    const n = Number((await client.query(`SELECT count(*)::int AS n FROM ${table} WHERE ${col} = $1`, [slug])).rows[0].n);
+    if (n) parts.push(`${n} ${n === 1 ? one : many}`);
+  }
+  if (parts.length) throw new Error(`Project "${slug}" still has ${parts.join(', ')} under it. Move or delete them first, then remove the project.`);
+}
+
+function updateRowSql(table, extra) {
+  const cols = [...Object.keys(extra), ...Object.keys(FIELD_MAPS[table])];
+  return `UPDATE ${table} SET ${cols.map((c, i) => `${c} = $${i + 2}`).join(', ')}, updated_at = now() WHERE id = $1`;
+}
+
+// replaceProjects(client, projects, { tx }) — the whole project list in ONE
+// transaction (a 40001 abort or a crash between the parent write and the
 // child inserts must not publish empty projects). tx: false when the caller
 // owns the transaction (the admin's projects editor).
+//
+// Projects KEEP THEIR IDS: each incoming project matches an existing row by
+// `id` (the admin editor carries ids; revisions snapshots too), else by slug
+// (export restore, migration); matched rows are UPDATEd, unmatched ones
+// INSERTed, rows nobody claimed are deleted — refused while documents, files
+// or notes still point at them. A slug change is a rename: it cascades to
+// every reference (and to the sub-projects' parent_slug in this payload)
+// before the tree is validated. Child lists (articles, videos) are leaf
+// data and are still wiped and re-inserted.
 async function replaceProjects(client, projects, { tx = true } = {}) {
+  const { validateProjectTree } = require('@uccsite/render/projects');
   const body = async () => {
+    const slug = (p) => String(p.slug || '').trim();
+    const existing = (await client.query('SELECT id, slug FROM projects')).rows;
+    const byId = new Map(existing.map(r => [r.id, r]));
+    const bySlug = new Map(existing.map(r => [r.slug, r]));
+    const claimed = new Set();
+    const matched = projects.map(p => {
+      const row = (p.id && byId.get(p.id)) || bySlug.get(slug(p)) || null;
+      if (row) {
+        if (claimed.has(row.id)) throw new Error(`Two projects would save onto the same record ("${row.slug}")`);
+        claimed.add(row.id);
+      }
+      return { p: { ...p }, row };
+    });
+    // Renames: old slug → new slug, applied to the payload's parent links too
+    // (an editor who renames a parent did not retype it on each child).
+    const renames = new Map(matched.filter(m => m.row && m.row.slug !== slug(m.p)).map(m => [m.row.slug, slug(m.p)]));
+    for (const m of matched) {
+      const parent = String(m.p.parent_slug || '').trim();
+      if (parent && renames.has(parent)) m.p.parent_slug = renames.get(parent);
+      if (!parent) delete m.p.parent_slug;
+    }
+    const errors = validateProjectTree(matched.map(m => m.p));
+    if (errors.length) throw new Error(errors.join('. '));
+
+    for (const row of existing) if (!claimed.has(row.id)) await assertProjectUnreferenced(client, row.slug);
     for (const table of Object.values(PROJECT_CHILDREN)) await client.query(`DELETE FROM ${table}`);
-    await client.query('DELETE FROM projects');
-    for (let i = 0; i < projects.length; i++) {
-      const p = projects[i];
-      const projectId = await insertRow(client, 'projects', p, { sort_order: i });
+    for (const row of existing) if (!claimed.has(row.id)) await client.query('DELETE FROM projects WHERE id = $1', [row.id]);
+    for (const [from, to] of renames) {
+      for (const [table, col] of PROJECT_SLUG_REFS) await client.query(`UPDATE ${table} SET ${col} = $2 WHERE ${col} = $1`, [from, to]);
+    }
+    for (let i = 0; i < matched.length; i++) {
+      const { p, row } = matched[i];
+      let projectId;
+      if (row) {
+        projectId = row.id;
+        await client.query(updateRowSql('projects', { sort_order: i }), [row.id, i, ...objectToParams('projects', p)]);
+      } else {
+        projectId = await insertRow(client, 'projects', p, { sort_order: i });
+      }
       for (const [field, table] of Object.entries(PROJECT_CHILDREN)) {
         const children = Array.isArray(p[field]) ? p[field] : [];
         for (let j = 0; j < children.length; j++) {

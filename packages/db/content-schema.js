@@ -205,6 +205,31 @@ const STATEMENTS = [
   `ALTER TABLE project_files ADD COLUMN IF NOT EXISTS publish_requested_at TIMESTAMPTZ`,
   `ALTER TABLE project_files ADD COLUMN IF NOT EXISTS publish_requested_by TEXT`,
 
+  // ── project tree (docs/decisions/project-tree-nested-urls.md) ─────────────
+  // parent_slug nests a project under another (depth 2; validated by
+  // packages/render/projects.js validateProjectTree). summary: markdown intro
+  // for the project's hub page. Since 2026-10-09 projects keep their ids
+  // across saves (replaceProjects upserts), so the slug links below are
+  // rename-safe (the save cascades a rename).
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS parent_slug TEXT`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS summary TEXT`,
+  // Internal project notes (admin only, never rendered): markdown typed in
+  // the admin or converted from an uploaded .md/.docx. folder matches the
+  // project_files folder convention so notes and files share one tree.
+  `CREATE TABLE IF NOT EXISTS project_notes (
+    id UUID PRIMARY KEY,
+    project_slug TEXT NOT NULL,
+    folder TEXT NOT NULL DEFAULT '',
+    title TEXT NOT NULL,
+    body_md TEXT NOT NULL DEFAULT '',
+    source_filename TEXT,
+    pinned INTEGER NOT NULL DEFAULT 0,
+    author TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`,
+  `CREATE INDEX ASYNC IF NOT EXISTS idx_project_notes_project ON project_notes(project_slug, folder, updated_at)`,
+
   // ── redirects (spec §9; packages/db/redirects.js) ─────────────────────────
   ...REDIRECTS_DDL,
 
@@ -267,6 +292,14 @@ const STATEMENTS = [
   // save, so no FK). NULL = none, unless a project's CTA points at the page
   // (packages/render/projects.js projectOf). docs/systems/projects.md "Nesting".
   `ALTER TABLE documents ADD COLUMN IF NOT EXISTS project_slug TEXT`,
+  // Nested URLs (docs/decisions/project-tree-nested-urls.md): a document
+  // under a project publishes at /projects/<path>/<slug>. short_path: an
+  // optional one-segment alias (e.g. /alpr) published as a 301 to it.
+  // live_path: the path the last successful publish wrote, so the next
+  // publish can 301 from it when the URL changes (and an archived document's
+  // 410 lands on its last address). Both ride the KeyValueStore sync.
+  `ALTER TABLE documents ADD COLUMN IF NOT EXISTS short_path TEXT`,
+  `ALTER TABLE documents ADD COLUMN IF NOT EXISTS live_path TEXT`,
   // Rules match structure (selector subset, §6.2); scope 'template' rules
   // apply to every document with that template_key, 'page' rules to one.
   `CREATE TABLE IF NOT EXISTS style_rules (

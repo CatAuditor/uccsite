@@ -144,3 +144,43 @@
 
 .project-byline a { color: var(--navy); text-decoration: none; border-bottom: 1px solid rgba(27,47,78,0.3); }
 .project-byline a:hover { border-bottom-color: var(--navy); }
+
+/* Project hub pages (templates/project.html) and the index cards (docs/decisions/project-tree-nested-urls.md) */
+.hub-crumbs a.hero-backlink {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,0.35);
+}
+.hub-crumbs a.hero-backlink:hover { border-bottom-color: rgba(255,255,255,0.8); }
+.hub-crumbs span[aria-current] { color: rgba(255,255,255,0.85); }
+.hub-block { border-bottom: none; }
+.hub-summary {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--gray-600);
+  max-width: 680px;
+  margin-bottom: 24px;
+}
+.hub-summary p { margin-bottom: 1em; }
+.hub-summary a { color: var(--navy-dark); text-decoration: underline; text-underline-offset: 3px; }
+.hub-foot {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  font-size: 14px;
+  color: var(--gray-600);
+}
+.hub-foot a { color: var(--navy-dark); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.project-name-link { color: inherit; text-decoration: none; }
+.project-name-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+.project-parts {
+  list-style: none;
+  padding: 0;
+  margin: -16px 0 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 14px;
+}
+.project-parts a { color: var(--navy-dark); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.project-cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 0; }

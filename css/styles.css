@@ -3101,4 +3101,8 @@ input, textarea, select { font: inherit; }
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.doc-breadcrumb p { margin: 0 0 8px; }
+.doc-breadcrumb-path span[aria-current] { color: var(--gray-600); font-weight: 400; }
+.doc-breadcrumb-label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); margin-top: 16px; }
+.doc-breadcrumb-list { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 6px 20px; }
 @media (max-width: 768px) { .doc-breadcrumb { padding: 16px 24px; } }

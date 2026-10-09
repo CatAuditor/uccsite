@@ -75,17 +75,23 @@ async function replaceRedirects(client, list) {
   for (const r of list) await upsertRedirect(client, { ...r, id: null });
 }
 
-// kvsEntries(redirects, { goneSlugs }) → [{ key, value }] in the viewer
-// function's format: active rows as {"to": …, "status": …}; each archived
-// document slug (documents.js archivedSlugs) as {"status": 410}, which the
-// function answers with 410 Gone. An active redirect from the same path
-// wins — an admin may deliberately send an archived page's readers elsewhere.
-function kvsEntries(redirects, { goneSlugs = [] } = {}) {
+// kvsEntries(redirects, { documentRedirects, gonePaths }) → [{ key, value }]
+// in the viewer function's format. Precedence, first wins:
+//   1. active rows of the redirects table ({"to": …, "status": …}) — an
+//      admin may deliberately send an archived page's readers elsewhere;
+//   2. documentRedirects [{ from, to }] (render-db.js: short paths and
+//      moved documents' previous live paths) as 301s;
+//   3. gonePaths (documents.js archivedPaths) as {"status": 410}.
+function kvsEntries(redirects, { documentRedirects = [], gonePaths = [] } = {}) {
   const entries = redirects.filter(r => r.active).map(r => ({ key: r.fromPath, value: JSON.stringify({ to: r.toUrl, status: r.statusCode }) }));
   const taken = new Set(entries.map(e => e.key));
-  for (const slug of goneSlugs) {
-    const key = `/${slug}`;
-    if (!taken.has(key)) entries.push({ key, value: JSON.stringify({ status: 410 }) });
+  for (const { from, to } of documentRedirects) {
+    if (!from || !to || from === to || taken.has(from)) continue;
+    taken.add(from);
+    entries.push({ key: from, value: JSON.stringify({ to, status: 301 }) });
+  }
+  for (const key of gonePaths) {
+    if (!taken.has(key)) { taken.add(key); entries.push({ key, value: JSON.stringify({ status: 410 }) }); }
   }
   return entries;
 }

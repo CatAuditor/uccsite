@@ -83,3 +83,14 @@ test('dangerous links never reach the page', () => {
   assert.match(h, /href="https:\/\/evil\.example\/p" target="_blank" rel="noopener"/, 'protocol-relative made explicit and marked external');
   assert.equal((h.match(/href="#"/g) || []).length, 3);
 });
+
+test('auto projects: the Projects link becomes a dropdown of the live projects; plain link without them', () => {
+  const projects = [{ name: 'License Plate Reader Investigation', url: '/projects/alpr' }, { name: 'Stratos <Project>', url: '/projects/stratos' }];
+  const h = navFields({}, 'projects', { projects }).nav_header_html;
+  assert.match(h, /<button class="nav-dropdown-toggle" type="button" aria-expanded="false" aria-haspopup="true">\s*Projects/);
+  assert.match(h, /<li><a href="\/projects\.html" aria-current="page">All projects<\/a><\/li>/);
+  assert.match(h, /<li><a href="\/projects\/alpr">License Plate Reader Investigation<\/a><\/li>/);
+  assert.match(h, /<li><a href="\/projects\/stratos">Stratos &lt;Project&gt;<\/a><\/li>/);
+  assert.match(navFields({}, 'projects').nav_header_html, /<li><a href="\/projects\.html" aria-current="page">Projects<\/a><\/li>/);
+  assert.equal(normalizeNavigation(DEFAULT_NAVIGATION).header.find(i => i.label === 'Projects').auto, 'projects');
+});
