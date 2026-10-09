@@ -14,8 +14,9 @@ const CHEVRON = '<svg class="chevron" aria-hidden="true" width="10" height="10" 
 
 // The menus as they were hand-written in templates/partials until 2026-10-06,
 // plus the Writing dropdown and footer link (2026-10-07, docs/systems/writing.md)
-// and a footer Find Your Officials link (2026-10-08, the separate lookup app;
-// footer only — a 10th header item pushes Donate/Get Involved off at 861–1100px).
+// and Find Your Officials (2026-10-08, the separate lookup app) in a Projects
+// dropdown + the footer — a 10th top-level header item pushes Donate/Get
+// Involved off at 861–1100px.
 // Used whenever settings.navigation is absent or unreadable, so a missing or
 // broken value can never strip the site of its menus.
 const DEFAULT_NAVIGATION = {
@@ -34,7 +35,10 @@ const DEFAULT_NAVIGATION = {
       { label: 'Newsletters', href: '/newsletters' },
     ] },
     { label: 'News & Media', href: '/blog.html' },
-    { label: 'Projects', href: '/projects.html' },
+    { label: 'Projects', children: [
+      { label: 'All projects', href: '/projects.html' },
+      { label: 'Find Your Officials', href: 'https://lookup.utahciviccompact.org' },
+    ] },
     { label: 'Submit a Tip', href: '/tip.html' },
     { label: 'Donate', href: '/#donate', style: 'donate' },
     { label: 'Get Involved', href: '/#join', style: 'cta' },

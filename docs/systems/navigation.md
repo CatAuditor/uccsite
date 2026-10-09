@@ -64,12 +64,15 @@ the live site.
 2026-10-07: the defaults gained a **Writing** dropdown and a footer link
 (docs/systems/writing.md).
 
-2026-10-08: the footer's Get Involved column gained **Find Your Officials** →
-`https://lookup.utahciviccompact.org` (separate app, repo CatAuditor/UCC-lookup;
-off-site, so it opens in a new tab). Footer only: a 10th top-level header item
-pushed Donate / Get Involved off-screen between 861 px (hamburger breakpoint)
-and ~1100 px in a headless-Chrome check. The live menus matched the defaults,
-so this ships on the next publish unless a menu was saved in the admin since.
+2026-10-08: **Find Your Officials** → `https://lookup.utahciviccompact.org`
+(separate app, repo CatAuditor/UCC-lookup; off-site, so it opens in a new tab)
+added in two places: the footer's Get Involved column, and the header, where
+**Projects** became a dropdown (All projects → `/projects.html`, Find Your
+Officials). Not a 10th top-level header item: that pushed Donate / Get Involved
+off-screen between 861 px (hamburger breakpoint) and ~1100 px in a
+headless-Chrome check; the dropdown adds only a chevron and still fits at
+900 px. Prod `site_settings.navigation` was NULL (checked 2026-10-09), so the
+defaults are what the site renders.
 
 `aria-current="page"` goes on a link whose href resolves to the page being
 rendered (`pageKey`: `/team.html` → `team`), never on `#` anchors, styled

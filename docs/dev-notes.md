@@ -19,13 +19,19 @@ Needs a person later: when Turnstile (the anti-bot check) is switched on, add
 lookup.utahciviccompact.org to the Turnstile widget's hostnames in Cloudflare,
 or the lookup's sign-ups will be refused.
 
-## 2026-10-08 — "Find Your Officials" link in the footer
+## 2026-10-08 — "Find Your Officials" in the menus
 
-The footer's **Get Involved** column now links to the officials lookup
-(lookup.utahciviccompact.org), which opens in a new tab. It is not in the top
-menu: one more item there pushes the Donate and Get Involved buttons off the
-screen on laptop-width windows. Editors can move or rename it on **Menus
-(header & footer)** like any other link. Shows after the next publish.
+The officials lookup (lookup.utahciviccompact.org) is now linked from the top
+menu and the footer; it opens in a new tab.
+
+- **Top menu:** **Projects** is now a dropdown with **All projects** (the
+  Projects page, as before) and **Find Your Officials**. A separate top-level
+  item would push the Donate and Get Involved buttons off the screen on
+  laptop-width windows.
+- **Footer:** in the **Get Involved** column.
+
+Editors can move or rename either link on **Menus (header & footer)**. Both
+show after the next publish.
 
 ## 2026-10-07 — Sitemap fixed for Google Search Console
 
