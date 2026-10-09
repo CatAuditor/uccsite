@@ -29,7 +29,9 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 // the donation page and the homepage hero (the report hero is subpage-hero).
 // Every other annotated group is offered, with its CSS, so the author can
 // reuse the site's section patterns (stats bands, cards, callouts) in a body.
-const CHROME_GROUPS = new Set(['Navigation', 'Footer', 'Forms', 'Modal', 'Donations', 'Hero']);
+// 'Document block parts' are the inner pieces the builder writes itself
+// (stat-num, release-badge, …); the block classes are offered, the parts not.
+const CHROME_GROUPS = new Set(['Navigation', 'Footer', 'Forms', 'Modal', 'Donations', 'Hero', 'Document block parts']);
 
 const dash = (s) => String(s || '').replace(/[—–]/g, '-').replace(/\s+/g, ' ').trim();
 

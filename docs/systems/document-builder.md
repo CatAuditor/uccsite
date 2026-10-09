@@ -130,7 +130,7 @@ Chrome) comes with the conversion script. The same check runs as a test in
 ## Status / not yet
 
 - [x] model, serializer, parser, tests, round-trip report
-- [ ] `css/styles.css` "Document blocks" group (promote the per-page classes: release-meta, paper-toc, scope-box, finding-box, stats-grid, pull-quote, evidence-figure, table-scroll, btn-file, related-cta, sources-*, parts-nav, part-header, ask-item, join-grid, contact-cta, doc-body/doc-inner typography modelled on how-did-this-happen)
+- [x] `css/styles.css` "Document blocks" group: the one canonical copy of every class the serializer writes (54 annotated entries; the inner pieces are group "Document block parts", hidden from the authoring kit like chrome). Where the legacy pages disagreed, how-did-this-happen wins: `finding-box` is the navy box; the grey red-bar box is `violation-box` (stratos's name), and alpr/weber-county's `finding-box` must be converted as `violation-box`. `details`/`summary` are scoped under `.doc-accordion`, `blockquote` under `.doc-inner`, so the group styles nothing outside a builder document. `.doc-inner h2` has `scroll-margin-top` so contents-list jumps clear the fixed nav.
 - [ ] `documents.body_blocks` column; save path serializes; revisions carry it
 - [ ] admin builder UI: header fields, sections, block editors (contenteditable text), block picker with rendered previews, live preview without saving, add bars
 - [ ] `parseUpload` server action; New document = upload first

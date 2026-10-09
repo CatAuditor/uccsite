@@ -22,6 +22,15 @@ code that reads an uploaded or existing page into blocks. Every one of the
 eight existing long-form pages reads into blocks and comes back out with
 exactly the same words, so the new system will be able to host them.
 
+The second step moves the styling of those pieces (the byline strip, the
+contents box, the scope and finding boxes, stat cards, pull quotes, figures,
+tables, download buttons, source cards, the collapsible sections and the
+part navigation) into the site's one shared stylesheet. Until now each of
+them lived only inside the page that first used it, which is why a new
+document could not use any of them and the license-plate statement
+published as plain text. The existing pages are not affected: they keep
+their own copies until they are moved over.
+
 Nothing changes for editors yet. The Documents pages work as before. The new
 screen, the upload-first flow and the move of the existing pages come in
 the following steps, one at a time.

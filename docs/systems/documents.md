@@ -205,7 +205,8 @@ The markdown is built from
 - live data: the Style Kit catalog (`styleKitFor(siteCss)`; annotated
   entries only, with each entry's **CSS declarations** printed under it;
   only the true chrome groups Navigation / Footer / Forms / Modal /
-  Donations / Hero are hidden, so the section patterns (Impact stats,
+  Donations / Hero and the builder's inner pieces ("Document block parts",
+  2026-10-08) are hidden, so the section patterns (Impact stats,
   Mission & pillars, Policy positions, About, News & coverage) are offered
   for reuse inside a body), the **design tokens** (the `:root` block of the
   live stylesheet, extracted by the route with a regex and passed as
