@@ -4,6 +4,7 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+<<<<<<< HEAD
 ## v0.25.6 — 2026-10-08 (branch `claude-wip`) — Newsletter: tests and requests save first; raw HTML mode
 
 - Bug: "Send me a test" / "Test send (all admins)" / "Request send" were separate forms that read the SAVED draft,
@@ -23,6 +24,38 @@ of each push.
   DMARC `p=reject` (Cloudflare DMARC Management for reports, SPF cleanup, Zoho DKIM check, postal address).
 - Tests: stale unsubscribe test (expected DELETE) replaced; API suite 37 pass, 1 pre-existing failure
   ("petition signers are confirmed at insert" — the subscribe upsert now mentions confirmed_at by design).
+=======
+## v0.26.0 — 2026-10-09 (branch `refactor`) — Newsletters: site letterhead, Apply filters, file import
+
+**Newsletters (admin + renderer)** — 53b7a90, 02d2664, e58db9e
+
+- `packages/newsletter/render.mjs`: letterhead (site logo mark `LOGO_URL` + org name on the accent band, linking
+  `SITE_URL`), site tokens throughout (`DEFAULT_THEME` accent `#1b2f4e`, highlight `#e74c3c`, font `sans` = Inter stack,
+  cream page `#f5f1ea`, gray-900 text), accent footer band with white links, navy-dark dark mode (`.em-band`, `.em-btn`
+  → highlight in dark). `DEFAULT_THEME.eyebrow` = '' (an eyebrow equal to the org name is not drawn); default footer
+  adds the 501(c)(4) line. Serif option = Playfair/Georgia. Tests: letterhead + dark palette.
+- `css/newsletters.css`: archive quote rule/background → `var(--red)` / `var(--cream)` (needs a `cdk deploy` before the
+  next publish to reach the live archive pages — cosmetic, not done in this push).
+- Composer: "Reset to the site look" (DEFAULT_THEME), relabelled colour/font controls, optional eyebrow placeholder.
+- `GET /mail/audience-count` (`app/mail/audience-count/route.js`, signed-in, no write) + composer "Apply filters":
+  the audience controls are controlled state; the legend says "match these filters" after an apply, "the saved
+  filters" otherwise. Log `[newsletter] audience-count …`.
+- `importUpload` (`app/mail/[id]/actions.js`, editor+, 8 MB) → `lib/convert-upload.mjs uploadToHtml` →
+  `lib/newsletter-import.mjs htmlToBlocks` (new, 4 tests): h1 → headline when empty, h2 heading, h3+ `## ` lines,
+  p/lists text (nested lists flattened), link-only p → button, img → image (data:/relative → empty url), blockquote →
+  quote (+ "— cite"), hr divider, table → "- a | b" lines. Blocks append; nothing stored until save. Log
+  `[newsletter] import …`.
+- Prod `newsletter_defaults` was `{}` at the change (checked), so new drafts get the site look with no action; one
+  existing draft carries the old green/gold theme (reset button).
+- Docs: systems/newsletters.md (Code Map, Flow, Rendering), error-handling/debug/newsletters.md (2 rows),
+  non-technical-editing-guide.md, systems/admin.md, dev-notes.md.
+
+**Pushed alongside (concurrent session)** — 9c16041 "Transactional thank-you emails (petition, donation) + petition
+filed under a project": `aws/api/emails.js`, `routes.js`, `webhook.js`; its own changelog detail belongs to that
+session's next entry.
+
+Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed, Jarom not signed into prod admin.
+>>>>>>> 0801753 (Changelog v0.26.0: newsletters letterhead, Apply filters, file import)
 
 ## v0.25.4 — 2026-10-09 (branch `refactor`) — Changelog correction (v0.25.3 counts)
 
