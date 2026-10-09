@@ -588,7 +588,7 @@ in this order, and nothing changes on the live site until step 3.
   ```
 - [x] `[agent]` `cdk deploy UccProd` and `UccStaging` (PublishFn bundles the new stylesheet; without this an
   admin publish would ship the old sheet and strip the block classes). Done 2026-10-09, Lambda code only.
-- [ ] `[go]` In the production admin, open a converted document (how-did-this-happen is the reference) and
-  the license-plate statement, confirm the previews, then **request and approve a publish** on
-  Publish & Status (owner self-approval is allowed). That publish ships the new stylesheet and the nine
-  converted pages together; "Live stylesheet is behind the code" clears a few minutes after it.
+- [x] `[go]` Publish. Done 2026-10-09 on Jarom's instruction from the repo
+  (`node scripts/publish.mjs --env prod --source db`: 39 changed, 2 removed, invalidation verified);
+  live pages checked (how-did-this-happen on its own frame, license-plate on the standard frame,
+  styles.css carries the Document blocks group). Later publishes go through Publish & Status as usual.

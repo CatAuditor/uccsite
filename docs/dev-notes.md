@@ -85,11 +85,10 @@ frame (badge, date and author strip, contents box, the reports' headings)
 with its words untouched. Review it in the test admin's builder; the same
 rebuild runs on production as part of the conversion there.
 
-Production is prepared: the database column, the conversion of all nine
-documents (each with a revision to undo it) and the backend redeploy are
-done. Needs a person: request and approve a publish on Publish & Status in
-the production admin. That one publish takes the new styling, the eight
-pages (unchanged in look) and the restyled license-plate statement live.
+Live on the public site since 2026-10-09 (published on Jarom's say-so): the
+new styling, the eight pages (unchanged in look) and the restyled
+license-plate statement. Every document in the production admin now opens
+in the builder. Nothing left for a person on this one.
 ## 2026-10-08 — Officials lookup joins the mailing list
 
 The officials lookup (lookup.utahciviccompact.org) has a "Send me the Utah

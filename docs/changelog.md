@@ -4,6 +4,15 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.23.5 — 2026-10-09 (branch `refactor`) — Prod published
+
+- `scripts/publish.mjs --env prod --source db` on the owner's instruction (bypassing the admin's request/approve
+  for this one run): 39 changed, 2 page-CSS files removed (alpr, weber-county re-fingerprinted), invalidation
+  read-back verified; `/privacy-report` stays 410 (archived earlier). Verified live: how-did-this-happen keeps
+  its own frame, license-plate-has-a-price on doc-body > doc-inner with byline strip + contents list,
+  css/styles.css carries the Document blocks group. Staging republished from the database as well.
+- for-conner.md §13 complete.
+
 ## v0.23.4 — 2026-10-09 (branch `refactor`) — Prod prepared: stacks deployed, documents converted
 
 - `cdk deploy UccProd` and `UccStaging` (PublishFn, ExportContentFn, MediaProcessFn code; no IAM change).
