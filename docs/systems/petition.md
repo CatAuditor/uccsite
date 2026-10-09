@@ -52,6 +52,8 @@ apps/admin/lib/collections.js   HOMEPAGE_GROUPS entry `petition` (page: 'petitio
 aws/export-operational/         nightly export includes petition_signatures
 scripts/restore-operational.mjs restore includes petition_signatures
 scripts/seed-homepage-group.mjs copy a content/homepage.json group into an env's DB
+scripts/patch-homepage-group.mjs set single fields inside a saved group (--set project_slug=alpr)
+                                without replacing the editor's copy; revision + audit row
 ```
 
 ## Content: `homepage.petition`
