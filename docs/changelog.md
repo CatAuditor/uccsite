@@ -4,6 +4,17 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.27.2 — 2026-10-09 — claude-wip merged into refactor; BIMI logo live
+
+- Merged `origin/claude-wip` into `refactor` (f937e12): v0.27.1 petitions prod-migration docs, `static/bimi-logo.svg`,
+  DMARC step 1 runbook (for-conner.md), email.md BIMI row. Prod published from the DB (42 files); the logo now serves
+  at `https://utahciviccompact.org/bimi-logo.svg` (was 404 while the `default._bimi` DNS record already pointed at it).
+- Also went out in this push: c9d8941 (Donations: `stripe_subscription_id` column + `packages/db/donations.js` query
+  builders, webhook stores the subscription id). Not yet used by any committed admin page; the column is added by the
+  next `migrate-schema`, the webhook change by the next `cdk deploy`. The donations admin work continues uncommitted.
+- Open: Resend fully disconnected (SPF is Zoho-only); DMARC step 1 leftovers (Zoho DKIM check, Show-original checks);
+  prod `migrate-schema` + `cdk deploy UccProd` for the donations column before the admin reads it.
+
 ## v0.27.1 — 2026-10-09 (branch `claude-wip`) — Petitions: prod migrated
 
 - Prod admin pages failed ("Server Components render" digests) because v0.27.0 reached the prod admin before the prod

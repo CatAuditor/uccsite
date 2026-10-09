@@ -6,6 +6,26 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-09 — Conner's prod work folded into the main branch; email logo file now live
+
+**What changed**
+
+Conner migrated the live database for the new petitions setup and wrote up what he did, but on a side branch.
+That branch is now merged into the main working branch, so the runbook and changelog match what is actually
+running. The site was re-published, which put the email logo file (for BIMI, the logo some inboxes show next to
+our emails) online at the address the DNS record already pointed to.
+
+**What editors do differently**
+
+Nothing.
+
+**Still needs a person**
+
+Finish the DMARC step 1 leftovers in the runbook (Zoho DKIM check, two "Show original" checks) before moving to
+step 2. Inboxes will not show the logo until step 2 is done and a mark certificate is bought.
+
+---
+
 ## 2026-10-10 — Petitions are organized like everything else: one entry per petition, under a project
 
 **What changed**
