@@ -51,6 +51,9 @@ const STATEMENTS = [
   )`,
   // The donor ticker's exact access path (schema.sql had no donations index).
   `CREATE INDEX ASYNC IF NOT EXISTS idx_donations_public_created ON donations(public, created_at)`,
+  // 2026-10-10: which subscription a charge came from (invoice.paid), so the
+  // admin can tell a monthly payment from a one-time gift (docs/systems/finance.md).
+  `ALTER TABLE donations ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT`,
 
   `CREATE TABLE IF NOT EXISTS subscribers (
     id UUID PRIMARY KEY,

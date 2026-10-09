@@ -146,7 +146,7 @@ test('checkout.session.completed records member + donation (old shape)', async (
   });
   assert.equal(res.statusCode, 200);
   const donation = db.calls.find(c => c.text.includes('INSERT INTO donations'));
-  assert.deepEqual(donation.params, ['uuid-1', 'pi_9', 5000, 0]); // publicDonor '0' honored
+  assert.deepEqual(donation.params, ['uuid-1', 'pi_9', 5000, 0, null]); // publicDonor '0' honored; one-time → no subscription
 });
 
 test('invoice.paid handles the NEW parent shape too', async () => {
@@ -166,7 +166,7 @@ test('invoice.paid handles the NEW parent shape too', async () => {
   });
   assert.equal(res.statusCode, 200);
   const donation = db.calls.find(c => c.text.includes('INSERT INTO donations'));
-  assert.deepEqual(donation.params, ['uuid-2', 'pi_new', 700, 1]);
+  assert.deepEqual(donation.params, ['uuid-2', 'pi_new', 700, 1, 'sub_5']); // renewal carries its subscription id
   const subUpdate = db.calls.find(c => c.text.includes('UPDATE subscriptions'));
   assert.equal(subUpdate.params[0], 'sub_5');
 });

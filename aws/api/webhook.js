@@ -133,7 +133,7 @@ async function handleCheckoutComplete(session, db, { origin, selfInvoke } = {}) 
 // THE donation insert — one-time (checkout) and recurring (invoice.paid)
 // both land here, so the SQL, the public-donor default, and the
 // missing-member warn-and-drop behavior cannot drift between the two paths.
-async function recordDonation(db, { customerId, paymentIntentId, amountCents, publicDonor }) {
+async function recordDonation(db, { customerId, paymentIntentId, amountCents, publicDonor, subscriptionId = null }) {
   const member = await getMemberByStripeId(db, customerId);
   if (!member) {
     console.warn(`[api] no member for customer ${customerId}; donation ${paymentIntentId} not recorded`);
@@ -141,10 +141,10 @@ async function recordDonation(db, { customerId, paymentIntentId, amountCents, pu
   }
   const isPublic = publicDonor === '0' ? 0 : 1;
   await db.query(
-    `INSERT INTO donations (id, member_id, stripe_payment_intent_id, amount_cents, public)
-     VALUES (gen_random_uuid(), $1, $2, $3, $4)
+    `INSERT INTO donations (id, member_id, stripe_payment_intent_id, amount_cents, public, stripe_subscription_id)
+     VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
      ON CONFLICT (stripe_payment_intent_id) DO NOTHING`,
-    [member.id, paymentIntentId, amountCents, isPublic],
+    [member.id, paymentIntentId, amountCents, isPublic, subscriptionId],
   );
 }
 
@@ -168,6 +168,7 @@ async function handleInvoicePaid(invoice, db) {
       paymentIntentId,
       amountCents: invoice.amount_paid,
       publicDonor,
+      subscriptionId, // marks the row as a monthly payment (admin Financial → Donations)
     });
   }
 }
