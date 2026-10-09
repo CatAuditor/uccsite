@@ -47,6 +47,18 @@ test('state transitions are conditional updates on the current status', async ()
   assert.match(c.calls[5].sql, /WHERE id = \$1 AND status = 'failed'/);
 });
 
+test('saveNewsletter sets the kind when given (the "Automatic email" tick box), keeps it otherwise', async () => {
+  const c = fakeClient([{ rowCount: 1 }, { rowCount: 1 }, { rowCount: 1 }]);
+  const base = { id: 'a', subject: 's', preheader: '', headline: '', fromName: 'J', blocks: [], theme: {}, audience: {}, expectedUpdatedAt: 't1' };
+  await nl.saveNewsletter(c, { ...base, kind: 'transactional' });
+  assert.match(c.calls[0].sql, /kind = COALESCE\(\$11, kind\)/);
+  assert.equal(c.calls[0].params[10], 'transactional');
+  await nl.saveNewsletter(c, base);
+  assert.equal(c.calls[1].params[10], null);
+  await nl.saveNewsletter(c, { ...base, kind: 'bogus' });
+  assert.equal(c.calls[2].params[10], null);
+});
+
 test('claimForSending is the approved→sending mutex; resume widens it to sending', async () => {
   const c = fakeClient([{ rows: [{ id: 'a', status: 'sending', html: '<h>', text: 't' }] }, { rows: [] }]);
   const won = await nl.claimForSending(c, 'a');

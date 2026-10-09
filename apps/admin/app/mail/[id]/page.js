@@ -61,7 +61,7 @@ export default async function NewsletterPage({ params }) {
     if (then === 'request') return request(prev, formData);
     return runAction(async () => {
       await saveNewsletter(id, formData);
-      revalidatePath(path);
+      revalidatePath(path); revalidatePath('/mail'); revalidatePath('/petition'); revalidatePath('/appeals');
       return { ok: true, message: 'Saved. The preview on the right is what goes out.' };
     });
   }
@@ -226,6 +226,9 @@ export default async function NewsletterPage({ params }) {
       <ActionForm action={save} className="editor">
         <input type="hidden" name="updatedAt" value={n.updatedAt} />
         <Composer newsletter={n} names={names} count={count} petitions={petitions} readOnly={!canAct || !isDraft} publicOrigin={config.publicOrigin} />
+        {canAct && isDraft && (
+          <label className="mail-check"><input type="checkbox" name="automatic" value="1" defaultChecked={isTx} /> Automatic email — sent by the site to one person after they act (choose it on the <Link href="/petition">Petition</Link> or <Link href="/appeals">Appeals</Link> page), not to the mailing list. Takes effect on Save.</label>
+        )}
         {canAct && isDraft && (
           <div className="item-tools">
             <button type="submit">Save</button>{' '}

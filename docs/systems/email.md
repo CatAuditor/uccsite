@@ -86,7 +86,10 @@ ever logged (`[api] SES error: <ErrorName>` / `[api] SES sent <MessageId>` only)
 Either thank-you can be replaced by an email **composed in the admin's
 newsletter builder**. Admin → Mail → **Outgoing emails** → *Automatic emails*:
 "New automatic email" creates a `newsletters` row with `kind = 'transactional'`
-(same composer, preview, test send; no audience, no send request). The choice
+(same composer, preview, test send; no audience, no send request). Any draft
+can also be switched with the editor's **"Automatic email"** tick box (sets
+`kind` on Save; unticking is refused while a trigger uses the email, and a
+send request is refused for an automatic email). The choice
 of WHICH automatic email goes out is made where the trigger lives — the
 **Petition** page ("Thank-you email") and the **Appeals** page ("Thank-you
 email after a donation") — with one dropdown each (`AutomaticEmailPicker` →
