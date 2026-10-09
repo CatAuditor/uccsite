@@ -11,8 +11,8 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 Until now "Projects" was one long page with every project stacked on it, and
 a report such as the license-plate investigation lived at its own address
 with nothing tying it back to the project except a line at the very bottom.
-That changes in three ways. It is live on the **test site** now and goes to
-the real site when Conner gives the go (his runbook, section 14).
+That changes in three ways. It is **live on the real site** (published
+2026-10-09, after a run on the test site).
 
 **On the site**
 
@@ -57,8 +57,6 @@ the real site when Conner gives the go (his runbook, section 14).
 
 **What is left**
 
-- Conner: the production migration and the first publish (runbook §14). Until
-  then the real site is unchanged.
 - The press articles and TV segments are still edited in the Projects list
   editor, not in the workspace; combining them with Report Coverage and News
   & Media into one place is the next step once this has settled.

@@ -593,7 +593,7 @@ in this order, and nothing changes on the live site until step 3.
   live pages checked (how-did-this-happen on its own frame, license-plate on the standard frame,
   styles.css carries the Document blocks group). Later publishes go through Publish & Status as usual.
 
-## 14. Projects as a tree: production migration — `[go]` for step 3
+## 14. Projects as a tree: production migration — DONE 2026-10-09
 
 Projects now have their own pages (`/projects/alpr`), documents under a
 project publish at nested addresses (`/projects/alpr/report`), the Weber
@@ -604,7 +604,7 @@ Staging is migrated and published (2026-10-09; old URLs verified 301, hubs
 200, sitemap and canonicals nested). Production needs three steps; nothing
 changes on the live site until step 3.
 
-- [ ] `[agent]` Schema (idempotent; adds `projects.parent_slug/summary`,
+- [x] `[agent]` Schema (idempotent; adds `projects.parent_slug/summary`,
   `documents.short_path/live_path`, `project_notes`, drops the global UNIQUE
   on `documents.slug` for a unique index on `(project_slug, slug)`). Run right
   after the push: Amplify deploys the admin from `refactor` and the Projects
@@ -612,7 +612,7 @@ changes on the live site until step 3.
   ```
   $env:AWS_PROFILE='uccsite'; node scripts/migrate-schema.mjs --env prod
   ```
-- [ ] `[agent]` Dry run the data migration and read the plan (nothing written):
+- [x] `[agent]` Dry run the data migration and read the plan (nothing written):
   ```
   node scripts/migrate-project-tree.mjs --env prod
   ```
@@ -624,7 +624,7 @@ changes on the live site until step 3.
   `license-plate-has-a-price` should NOT sit under the license-plate
   investigation, say so before step 3 (it can also be moved later in the
   admin).
-- [ ] `[go]` Deploy, apply, publish — in this order. The stack deploy puts the
+- [x] `[go]` Deploy, apply, publish — in this order. Done 2026-10-09 on Jarom's instruction (34 changed, 9 removed; every old URL verified 301, hubs 200, /privacy-report 410, canonicals nested, Projects dropdown live). The stack deploy puts the
   new renderer (hub pages, nested addresses, redirects) into the publish
   Lambda; until it runs, an admin-triggered publish on prod would still use
   the old code. The first publish removes 9 objects (old pages + their

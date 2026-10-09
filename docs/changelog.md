@@ -4,6 +4,16 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.24.2 — 2026-10-09 (branch `refactor`) — Prod migrated and published: the tree is live
+
+- `cdk deploy UccProd` (PublishFn carries the new renderer), `migrate-project-tree --env prod --apply` (22 steps),
+  `publish.mjs --env prod --source db --allow-bulk-delete` (34 changed, 9 removed, invalidation verified). Live checks:
+  `/alpr` `/stratos` `/weber-county` `/how-did-this-happen` `/license-plate-has-a-price` → 301 to the nested addresses,
+  `/privacy-report` 410, `/projects`, `/projects/alpr`, `/projects/stratos`, nested documents 200, canonicals nested,
+  sitemap 23 locs, Projects menu lists both projects. Amplify admin builds 78/79 succeeded.
+- for-conner §14 marked done; projects.md status; dev note updated.
+- Open P1: none from this work. Next: press unification (deferred by design).
+
 ## v0.24.1 — 2026-10-09 (branch `refactor`) — Prod schema for the tree; runbook adds the stack deploy
 
 - `migrate-schema --env prod` run right after the v0.24.0 push (columns, `project_notes`, slug constraint → unique index) so the

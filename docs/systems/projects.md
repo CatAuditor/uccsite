@@ -189,9 +189,10 @@ per changed document:
 Then publish from the database. The first publish removes 9 objects (the
 old pages + their CSS), which trips the bulk-delete guard: run it from the
 repo with `--allow-bulk-delete` (an admin-triggered publish would be
-refused). **Staging: done 2026-10-09** (old URLs 301, hubs 200, sitemap
-nested, canonicals nested, JSON-LD verified). **Prod: pending `[go]`**
-(docs/for-conner.md §14).
+refused). **Staging and prod: done 2026-10-09** (old URLs 301, hubs 200, sitemap
+nested, canonicals nested, JSON-LD verified; prod published from the repo
+with `--allow-bulk-delete`, both stacks redeployed so admin publishes carry
+the new renderer).
 
 ## Debugging
 
