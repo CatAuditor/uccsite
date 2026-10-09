@@ -4,6 +4,30 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.26.5 — 2026-10-09 (branch `refactor`) — Security headers on the admin and HSTS on /api/*
+
+Push = 3be5d75 (+ this changelog commit). Audit answer to "do we have our security headers proper": public site yes
+(CloudFront `SiteHeaders` policy, verified live), API all but HSTS, admin none at all.
+
+- **Admin** (`apps/admin/next.config.js`): `headers()` on `/:path*` — HSTS (1 y, includeSubDomains, preload),
+  `Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'`, `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`
+  (camera/mic/geo/payment/usb off), `X-Robots-Tag: noindex, nofollow`; `poweredByHeader: false`. No `script-src`
+  yet (Next inline scripts need a nonce; builder/composer/dev-notes use `dangerouslySetInnerHTML`) — separate change,
+  report-only first. Verified in headless Chromium that the srcdoc preview iframes still run under an inherited
+  `frame-ancestors 'none'`. Amplify builds the admin from this push.
+- **API** (`infra/cdk/lib/ucc-stack.js`): new `ApiHeaders` ResponseHeadersPolicy (HSTS only) on the `/api/*`
+  behavior; the Lambda keeps stamping nosniff / Referrer-Policy / X-Robots-Tag / Cache-Control. `cdk diff` also
+  showed the viewer-request function differing from the deployed copy in comments only (em dashes had deployed as
+  `?`); redeployed as-is. `UccProd` deployed from the working tree at 3be5d75 (clean, 95 s). Verified live after
+  deploy + Amplify job 93: admin `/login` and `/` (307) carry all seven headers, no `x-powered-by`; `/api/health` carries
+  HSTS plus the Lambda's four.
+- Admin tests 39 pass. Docs: systems/admin.md (Code Map + new "Security headers"), systems/api-security.md (stale
+  Decap `/admin/*` CSP line replaced; `/api/*` header split), dev-notes.md.
+
+Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed, Jarom not signed into prod admin.
+Open: admin `script-src` CSP (nonce work).
+
 ## v0.26.4 — 2026-10-09 (branch `refactor`) — Automatic emails chosen on the Petition / Appeals pages
 
 Push = 410a6f0 (+ this changelog commit). Owner feedback on v0.26.3: the email should be WRITTEN under Outgoing emails
