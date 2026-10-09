@@ -4,6 +4,25 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.22.6 — 2026-10-09 (branch `refactor`) — Get Involved dropdown (replaces the Projects one)
+
+**Site** (`packages/render/navigation.js`, `css/styles.css`; commit 35e40c4)
+- Reverts v0.22.5's Projects dropdown (Conner: the lookup is a tool, not a project); Projects is a
+  plain link again. Get Involved becomes a dropdown — Join the Compact (`/#join`), Find Your Officials —
+  still the red CTA: `normalizeNavigation` keeps a valid `style` on dropdowns; the toggle gets the
+  style class, the `<li>` `nav-dropdown-styled`. CSS keeps white toggle text, right-aligns that menu
+  (`dropdownInEnd` keyframes), keeps the chevron inline on mobile. Headless Chrome at 390/900/1100/1280.
+- render tests 31/31 (new styled-dropdown test).
+
+**Admin** (`apps/admin/app/navigation/nav-editor.js`): "Looks like" select on dropdowns too, so a menu
+save keeps the style. `next build` green.
+
+**Docs**: navigation.md, dev-notes, non-technical-editing-guide.
+
+Deploy: `cdk deploy UccProd` (PublishFn bundles render + site CSS), then a site publish.
+
+Open P1s: unchanged from v0.22.3.
+
 ## v0.22.5 — 2026-10-09 (branch `refactor`) — Find Your Officials in the header
 
 **Site** (`packages/render/navigation.js`; commit 47d16af)
