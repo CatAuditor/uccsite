@@ -5,24 +5,6 @@
     "cta_primary": "Join the Compact",
     "cta_secondary": "Our Mission"
   },
-  "petition": {
-    "slug": "udot-alpr-permits",
-    "project_slug": "alpr",
-    "label": "Unofficial Petition",
-    "headline": "Tell UDOT: the public does <em>not</em> support these cameras.",
-    "body": "UDOT's permit agreement with the license-plate-reader company says UDOT may terminate it if “UDOT determines that the public does not support the Company’s activities.” That is the opening. Add your name and help us show UDOT that Utah does not support these cameras on our roads.",
-    "cta": "Sign the petition now",
-    "cta_secondary": "Read the ALPR report",
-    "cta_secondary_url": "/alpr.html",
-    "count_label": "{count} Utahns have signed so far.",
-    "form_title": "Sign the petition",
-    "form_intro": "Add your name to the record UDOT will see. First name, last name, ZIP code and email are required; address and phone are optional. Utah residents are what UDOT weighs, but anyone may sign.",
-    "consent": "By signing this petition you agree to be included in future communications regarding our fight for Utahns.",
-    "thanks_title": "Thank you for helping us tell UDOT not to enable a surveillance state.",
-    "thanks_body": "In order to solidify this into law, $25 will help us carry this fight through the legislature.",
-    "thanks_cta": "I can help",
-    "thanks_dismiss": "Not this time"
-  },
   "mission": {
     "quote": "\"Ensuring residents have genuine voice and consent in the decisions that shape their lives and building the civic capacity to make it stick.\""
   },

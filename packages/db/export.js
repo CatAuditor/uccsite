@@ -14,8 +14,8 @@
 // EXCLUDED from the "did anything change" decision (isContentChanged).
 const { createHash } = require('crypto');
 
-const SCHEMA_VERSION = 3; // 2: documents/ + styles/rules.json (Phase 8); 3: press.json replaces blog.json, coverage.json and homepage.press (2026-10-09)
-const COLLECTIONS = ['settings', 'homepage', 'team', 'statements', 'issues', 'projects', 'press'];
+const SCHEMA_VERSION = 4; // 2: documents/ + styles/rules.json (Phase 8); 3: press.json replaces blog.json, coverage.json and homepage.press (2026-10-09); 4: petitions.json replaces homepage.petition (2026-10-10)
+const COLLECTIONS = ['settings', 'homepage', 'team', 'statements', 'issues', 'projects', 'press', 'petitions'];
 // Collections an older export (schema ≤ 2) carries that saveContent unifies into press.
 const LEGACY_COLLECTIONS = ['blog', 'coverage'];
 
