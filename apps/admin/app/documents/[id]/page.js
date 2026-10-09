@@ -166,7 +166,7 @@ export default async function DocumentEditorPage({ params }) {
           </div>
         </fieldset>
 
-        {!readOnly && <><button type="submit">Save document</button><RequestPublish /></>}
+        {!readOnly && <div className="doc-actions"><button type="submit">Save document</button><RequestPublish /></div>}
       </ActionForm>
 
       {!isBuilder && !readOnly && (

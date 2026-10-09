@@ -4,6 +4,15 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.23.2 — 2026-10-09 (branch `refactor`) — License-plate rebuilt on staging; editor layout
+
+- `scripts/copy-document.mjs` (commit 75fc1a0): copy a document between environments as a builder
+  document; used to rebuild `license-plate-has-a-price` from prod on staging with `--standard-frame`
+  (7 sections, 8 blocks, 0 raw; every source word kept, the byline's trailing period moved into the strip).
+- Admin editor layout (globals.css, `[id]/page.js`): Document/SEO boxes centred at 960 px inside a
+  full-width form; builder editor and preview are exact halves (`1fr 1fr`) on desktop, preview stacks
+  below under 1100 px; Save + Request publish in a `.doc-actions` row.
+
 ## v0.23.1 — 2026-10-09 (branch `refactor`) — License-plate statement on the standard frame; prod column
 
 - **Prod database**: `documents.body_blocks` applied (the live admin deploys from `refactor` and selects it).

@@ -254,7 +254,12 @@ fieldset.item > label:first-of-type { margin-top: 4px; }
 
 /* ---------- Documents editor ---------- */
 .doc-editor { max-width: none; }
-.doc-form { max-width: 960px; }
+/* The metadata / SEO boxes sit centred at a reading width; the builder
+   (editor + preview) uses the full width of the content area. */
+.doc-form { max-width: none; }
+.doc-form > * { max-width: 960px; margin-left: auto; margin-right: auto; }
+.doc-form > .builder { max-width: none; }
+.doc-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 textarea.code { font: 12.5px/1.45 var(--font-mono); white-space: pre; overflow: auto; }
 .doc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 16px; }
 .doc-checks { display: flex; gap: 18px; margin-top: 10px; }
@@ -534,7 +539,7 @@ td .hint { font-size: 11.5px; }
 
 /* ---------- Document builder (docs/systems/document-builder.md) ---------- */
 .builder { margin-top: 8px; }
-.builder-cols { display: grid; grid-template-columns: minmax(380px, 1fr) minmax(380px, 1fr); gap: 20px; align-items: start; }
+.builder-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
 .builder-edit { min-width: 0; }
 .builder-preview { position: sticky; top: 12px; }
 .builder-preview iframe { width: 100%; height: calc(100vh - 120px); min-height: 480px; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); background: var(--white); }
