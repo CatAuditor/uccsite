@@ -33,8 +33,8 @@ menu and the footer; it opens in a new tab.
   Involved is set).
 - **Footer:** in the **Get Involved** column.
 
-Editors can move or rename either link on **Menus (header & footer)**. Both
-show after the next publish.
+Editors can move or rename either link on **Menus (header & footer)**. Live
+since 2026-10-09.
 
 ## 2026-10-07 — Sitemap fixed for Google Search Console
 

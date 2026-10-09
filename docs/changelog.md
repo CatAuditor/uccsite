@@ -19,7 +19,10 @@ save keeps the style. `next build` green.
 
 **Docs**: navigation.md, dev-notes, non-technical-editing-guide.
 
-Deploy: `cdk deploy UccProd` (PublishFn bundles render + site CSS), then a site publish.
+**Deployed 2026-10-09:** `cdk deploy UccProd` (from 9bca144, run by Conner's instruction), then an
+operator publish (`scripts/publish.mjs --env prod --source db --trigger manual:lookup-nav`; no
+unpublished editor changes were pending): 25 pages changed. Verified live: Get Involved dropdown,
+footer link, CSS.
 
 Open P1s: unchanged from v0.22.3.
 
