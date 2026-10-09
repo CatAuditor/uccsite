@@ -2562,8 +2562,8 @@ input, textarea, select { font: inherit; }
 .paper-toc-label { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--navy); margin-bottom: 14px; }
 .paper-toc ol { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 32px; }
 .paper-toc li { font-size: 14.5px; line-height: 1.6; margin-bottom: 8px; padding: 0; break-inside: avoid; }
-.paper-toc a { color: var(--navy-dark); text-decoration: none; }
-.paper-toc a:hover { color: var(--red); text-decoration: underline; }
+.paper-toc a, .doc-inner .paper-toc li a { color: var(--navy-dark); text-decoration: none; }
+.paper-toc a:hover, .doc-inner .paper-toc li a:hover { color: var(--red); text-decoration: underline; }
 
 /* @class part-header
    @label Part header

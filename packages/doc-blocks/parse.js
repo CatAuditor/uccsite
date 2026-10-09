@@ -446,13 +446,17 @@ function parse(html, opts = {}) {
       continue;
     }
 
-    // Heuristic header fields before the first section (plain documents).
-    if (!sawHero && sawH1 && header.layout !== 'none' && !sections.some(s => s.heading) && t === 'p' && elKids(n).every(c => ['a', 'strong', 'em', 'br'].includes(tag(c)))) {
+    // Heuristic header fields before the first section (plain documents, and
+    // a kit-era page that wrote its byline as a paragraph under the hero).
+    if (sawH1 && !sawMeta && header.layout !== 'none' && !sections.some(s => s.heading) && t === 'p' && elKids(n).every(c => ['a', 'strong', 'em', 'br', 'time'].includes(tag(c)))) {
       const s = text(n);
+      // "By Name, Title. October 6, 2026." in one line
+      const byDate = s.match(/^by\s+([^,.]+?)(?:,\s*([^.]+?))?\.?\s+((?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4})\.?$/i);
+      if (byDate && s.length < 160) { out.author = byDate[1].trim(); header.authorTitle = (byDate[2] || '').trim(); header.date = byDate[3].trim(); const a = find(n, c => tag(c) === 'a'); if (a) out.authorHref = a.attribs.href || ''; continue; }
       const by = s.match(BYLINE_RE);
-      if (by && s.length < 120) { out.author = by[1].trim(); header.authorTitle = (by[2] || '').trim(); continue; }
+      if (by && s.length < 120) { out.author = by[1].trim(); header.authorTitle = (by[2] || '').replace(/\.$/, '').trim(); const a = find(n, c => tag(c) === 'a'); if (a) out.authorHref = a.attribs.href || ''; continue; }
       if (DATE_RE.test(s) && s.length < 80) { header.date = s; continue; }
-      if (!header.summary && !prose) { header.summary = outer(n); continue; }
+      if (!sawHero && !header.summary && !prose) { header.summary = outer(n); continue; }
     }
 
     if (t === 'details') {
@@ -478,7 +482,19 @@ function parse(html, opts = {}) {
     const same = links.length === heads.length && links.every((l, k) => l.href === (heads[k].anchor || slugify(heads[k].heading)));
     if (same) { header.toc = 'auto'; links.forEach((l, k) => { if (l.text !== heads[k].heading) heads[k].tocLabel = l.text; }); }
     else { header.toc = 'none'; const first = sections[0] && !sections[0].heading ? sections[0] : (sections.unshift(newSection('')), sections[0]); first.blocks.unshift({ id: newId(), type: 'raw', html: outer(tocEl) }); out.report.raw++; out.report.notes.push('contents list does not match the headings; kept as HTML'); }
-  } else header.toc = legacy || sections.filter(s => s.heading).length < 2 ? 'none' : 'auto';
+  } else {
+    header.toc = legacy || sections.filter(s => s.heading).length < 2 ? 'none' : 'auto';
+    // A kit-era hand-written contents list: a callout labelled "In this …" /
+    // "Contents" holding only links to the section anchors. The contents
+    // list replaces it.
+    const anchors = new Set(sections.filter(s => s.heading).map(s => s.anchor || slugify(s.heading)));
+    for (const s of sections) {
+      const i = s.blocks.findIndex(b => b.type === 'callout' && /^(in this \w+|contents|table of contents)$/i.test(b.label || '')
+        && /^<(ol|ul)>[\s\S]*<\/(ol|ul)>$/.test(b.html.trim()) && !/<p[\s>]/.test(b.html)
+        && [...b.html.matchAll(/href="#([^"]+)"/g)].every(m => anchors.has(m[1])) && /href="#/.test(b.html));
+      if (i >= 0) { s.blocks.splice(i, 1); header.toc = anchors.size >= 2 ? 'auto' : header.toc; out.report.notes.push('hand-written contents callout replaced by the contents list'); break; }
+    }
+  }
   // A legacy page without a meta strip prints none; a plain upload gets the default badge.
   if (legacy && !sawMeta) header.badge = '';
   for (const s of sections) for (const b of s.blocks) if (b.type === 'prose') b.html = b.html.trim();

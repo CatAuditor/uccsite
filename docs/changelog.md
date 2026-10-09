@@ -4,6 +4,18 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.23.1 — 2026-10-09 (branch `refactor`) — License-plate statement on the standard frame; prod column
+
+- **Prod database**: `documents.body_blocks` applied (the live admin deploys from `refactor` and selects it).
+- **Parser** (`packages/doc-blocks/parse.js`): a kit-era byline paragraph under the hero
+  ("By Name, Title. October 6, 2026.") becomes author title + date; a hand-written "In this statement" /
+  "Contents" callout of anchor links is replaced by the automatic contents list.
+- **Conversion script**: `STANDARD_FRAME` set (license-plate-has-a-price) drops the page's own frame for
+  doc-body > doc-inner, byline strip and contents list; text/pixel changes are reported as RESTYLED, not
+  failures, and `--apply` is allowed. Checked read-only against prod: 7 sections, 8 blocks, 0 raw.
+- **CSS**: contents-list links no longer inherit the column's underline.
+- Runbook §13 updated. Prod conversion + publish still pending (for-conner.md).
+
 ## v0.23.0 — 2026-10-09 (branch `refactor`) — Documents: block builder, legacy pages converted
 
 Four commits (8ea1a2c, e6db6dd, 192bdff, 7ab119e); docs/systems/document-builder.md is the system doc,

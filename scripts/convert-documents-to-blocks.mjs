@@ -169,10 +169,11 @@ await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) 
     const textOld = flatText(ingest(oldDoc.bodyHtmlRaw, { knownClasses: known }).bodyHtmlNormalized);
     const textNew = flatText(ingest(newDoc.bodyHtmlRaw, { knownClasses: known }).bodyHtmlNormalized);
     const blocks = res.body.sections.reduce((n, s) => n + s.blocks.length, 0);
-    const line = { slug: doc.slug, sections: res.body.sections.length, blocks, raw: res.report.raw, text: textOld === textNew ? 'identical' : 'DIFFERENT', notes: res.report.notes };
+    const restyled = STANDARD_FRAME.has(doc.slug); // text may change (badge, contents list, byline strip)
+    const line = { slug: doc.slug, sections: res.body.sections.length, blocks, raw: res.report.raw, text: textOld === textNew ? 'identical' : restyled ? 'changed (restyled)' : 'DIFFERENT', notes: res.report.notes };
     console.log(`   ${line.sections} sections, ${blocks} blocks, raw ${line.raw}; text ${line.text}${aliases && Object.keys(aliases).length ? `; aliases ${JSON.stringify(aliases)}` : ''}`);
     for (const n of res.report.notes) console.log(`   note: ${n}`);
-    if (textOld !== textNew) { failures++; const i = [...textOld].findIndex((ch, k) => ch !== textNew[k]); console.log(`   TEXT DIFF at ${i}: old …${textOld.slice(Math.max(0, i - 40), i + 80)}\n                 new …${textNew.slice(Math.max(0, i - 40), i + 80)}`); }
+    if (textOld !== textNew && !restyled) { failures++; const i = [...textOld].findIndex((ch, k) => ch !== textNew[k]); console.log(`   TEXT DIFF at ${i}: old …${textOld.slice(Math.max(0, i - 40), i + 80)}\n                 new …${textNew.slice(Math.max(0, i - 40), i + 80)}`); }
 
     const dir = join(OUT, doc.slug);
     mkdirSync(dir, { recursive: true });
@@ -189,12 +190,12 @@ await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) 
       const d = diffPngs(join(dir, 'old.png'), join(dir, 'new.png'), join(dir, 'diff.png'));
       line.pixels = d;
       const ok = d.pct <= THRESHOLD && Math.abs(d.heightOld - d.heightNew) <= 8;
-      console.log(`   pixels: ${d.pct.toFixed(3)}% differ (${d.differing} of ${d.total}); page height ${d.heightOld} → ${d.heightNew} ${ok ? 'PASS' : 'CHECK'}  (${join(dir, 'diff.png')})`);
-      if (!ok) failures++;
+      console.log(`   pixels: ${d.pct.toFixed(3)}% differ (${d.differing} of ${d.total}); page height ${d.heightOld} → ${d.heightNew} ${ok ? 'PASS' : restyled ? 'RESTYLED (expected)' : 'CHECK'}  (${join(dir, 'diff.png')})`);
+      if (!ok && !restyled) failures++;
     }
     summary.push(line);
 
-    if (APPLY && textOld === textNew) {
+    if (APPLY && (textOld === textNew || restyled)) {
       if (doc.bodyBlocks) { console.log('   skip apply: already a builder document'); continue; }
       const before = (({ bodyHtmlNormalized, ingestReport, liveHash, liveAt, lastPublishError, createdAt, updatedAt, contentHash, publishedAt, ...fields }) => ({ ...fields, overrides: overrides.map(({ nid, classes, mode }) => ({ nid, classes, mode })) }))(doc);
       // Store the normalized body + report as a save would (the admin re-ingests on the next save anyway).
