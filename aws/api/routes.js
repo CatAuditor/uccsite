@@ -421,10 +421,12 @@ async function petitionSign({ event, db, secrets, body, origin, selfInvoke }) {
   if (!ZIP_RE.test(zip)) return json({ error: 'A 5-digit ZIP code is required' }, 400);
   if (!isValidEmail(email)) return json({ error: 'A valid email address is required' }, 400);
 
-  // The campaign this slug belongs to (project filing + email copy). Null
-  // when the slug is not the live campaign or the read fails — the signature
-  // is still recorded, just without a project.
+  // The petition this slug belongs to (project filing + email copy). Null
+  // when no petition carries the slug or the read fails — the signature is
+  // still recorded, just without a project. A CLOSED petition takes no more
+  // signatures (its page says so; the form is gone — this catches a stale tab).
   const campaign = await petitionCampaign(db, petition);
+  if (campaign && campaign.status === 'closed') return json({ error: 'This petition has closed and is no longer taking signatures.' }, 409);
 
   let isNew = true;
   try {
@@ -485,17 +487,18 @@ async function petitionSign({ event, db, secrets, body, origin, selfInvoke }) {
   return json({ ok: true });
 }
 
-// ── Campaign lookup (homepage.petition) ─────────────────────────────────────
-// The API role may SELECT the homepage singleton and the projects table
-// (read-only, public content — docs/systems/api-security.md). Returns the
-// petition group when its slug is the one asked for (headline for the email,
-// project_slug to file the signature), with `project` ({name, url}) resolved
-// from project_slug; null for any other slug (an editor may be drafting the
-// next campaign while the live one is still being signed) and on any error
-// (logged by name — the caller falls back to generic copy).
-// Cached per container for CAMPAIGN_TTL_MS: it is read on every signature.
+// ── Petition lookup (petitions table) ───────────────────────────────────────
+// The API role may SELECT the petitions and projects tables (read-only,
+// public content — docs/systems/api-security.md). Returns the petition row
+// whose slug is asked for (status, headline for the email, project_slug to
+// file the signature) with `project` ({name, url}), `url` (its page) and
+// `thanks_url` resolved from the project tree; null for an unknown slug (a
+// draft counts as unknown — the signature is still recorded under the slug,
+// as before the collection) and on any error (logged by name — the caller
+// falls back to generic copy). Cached per container for CAMPAIGN_TTL_MS:
+// it is read on every signature.
 const CAMPAIGN_TTL_MS = 5 * 60_000;
-let campaignCache = null; // { at, group, project }
+let campaignCache = null; // { at, petitions: Map<slug, row>, projects: Map<slug, {name, url}> }
 function _resetCampaignCache() { campaignCache = null; templateCache.clear(); }
 
 // Attached emails (docs/systems/email.md "Attached emails"): an admin can
@@ -531,23 +534,28 @@ function fillAttached(row, vars, raw = {}, unsubscribeUrl = '') {
 async function petitionCampaign(db, slug) {
   try {
     if (!campaignCache || Date.now() - campaignCache.at > CAMPAIGN_TTL_MS) {
-      const { loadHomepage } = require('@uccsite/db/content');
-      const group = (await loadHomepage(db)).petition || null;
-      let project = null;
-      const projectSlug = String(group?.project_slug || '').trim();
-      if (group && projectSlug) {
-        const rows = (await db.query('SELECT slug, name, parent_slug FROM projects')).rows;
-        const p = rows.find((r) => r.slug === projectSlug);
-        if (p) {
+      const { rowToObject } = require('@uccsite/db/content');
+      const rows = (await db.query('SELECT * FROM petitions')).rows;
+      const petitions = new Map();
+      for (const r of rows) {
+        const p = rowToObject('petitions', r);
+        const status = String(p.status || 'draft');
+        if (status === 'open' || status === 'closed') petitions.set(String(p.slug || '').toLowerCase(), { ...p, status });
+      }
+      const projects = new Map();
+      if (petitions.size) {
+        for (const p of (await db.query('SELECT slug, name, parent_slug FROM projects')).rows) {
           const parent = String(p.parent_slug || '').trim();
-          project = { name: p.name, url: `/projects/${parent ? `${parent}/` : ''}${p.slug}` };
+          projects.set(p.slug, { name: p.name, url: `/projects/${parent ? `${parent}/` : ''}${p.slug}` });
         }
       }
-      campaignCache = { at: Date.now(), group, project };
+      campaignCache = { at: Date.now(), petitions, projects };
     }
-    const { group, project } = campaignCache;
-    if (!group || String(group.slug || '').toLowerCase() !== slug) return null;
-    return { ...group, project_slug: project ? String(group.project_slug).trim() : null, project };
+    const row = campaignCache.petitions.get(slug);
+    if (!row) return null;
+    const project = campaignCache.projects.get(String(row.project_slug || '').trim()) || null;
+    const url = project ? `${project.url}/${row.slug}` : null;
+    return { ...row, project_slug: project ? String(row.project_slug).trim() : null, project, url, thanks_url: url ? `${url}/thanks` : null };
   } catch (err) {
     console.error('[api] petition campaign lookup failed:', err?.name || 'Error');
     return null;

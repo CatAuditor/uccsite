@@ -119,8 +119,8 @@ function buildPetitionThanksEmail({ firstName, campaign, project, origin, unsubs
     title: subject,
     heading: headline ? headlineHtml(campaign.headline) : 'You signed. Thank you.',
     bodyHtml: `${body}${projectLine}
-        ${button(`${origin}/petition`, campaign?.share_title || 'Share the petition')}
-        ${button(`${origin}/petition-thanks`, 'Chip in', { bg: '#c8a84b', fg: '#1a3a2a' })}`,
+        ${button(`${origin}${campaign?.url || '/petitions'}`, campaign?.share_title || 'Share the petition')}
+        ${button(`${origin}${campaign?.thanks_url || '/#donate'}`, 'Chip in', { bg: '#c8a84b', fg: '#1a3a2a' })}`,
     footerHtml: `You're getting this because you signed the petition at utahciviccompact.org. Signing adds you to our updates; you can leave any time.<br />
           <a href="${escapeHtml(unsubscribeUrl)}" style="color:#1a3a2a;">Unsubscribe</a>`,
   });
