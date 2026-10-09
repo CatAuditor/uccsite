@@ -85,9 +85,11 @@ frame (badge, date and author strip, contents box, the reports' headings)
 with its words untouched. Review it in the test admin's builder; the same
 rebuild runs on production as part of the conversion there.
 
-Needs a person: production still has the column but not the conversion or a
-publish (docs/for-conner.md, section 13). Until then, builder documents
-exist on the test site only.
+Production is prepared: the database column, the conversion of all nine
+documents (each with a revision to undo it) and the backend redeploy are
+done. Needs a person: request and approve a publish on Publish & Status in
+the production admin. That one publish takes the new styling, the eight
+pages (unchanged in look) and the restyled license-plate statement live.
 ## 2026-10-08 — Officials lookup joins the mailing list
 
 The officials lookup (lookup.utahciviccompact.org) has a "Send me the Utah

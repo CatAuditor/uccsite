@@ -576,19 +576,19 @@ in this order, and nothing changes on the live site until step 3.
   ```
   $env:AWS_PROFILE='uccsite'; node scripts/migrate-schema.mjs --env prod
   ```
-- [ ] `[agent]` Check the conversion against production content (read-only; needs Chrome on the machine):
+- [x] `[agent]` Check the conversion against production content (read-only; needs Chrome on the machine).
+  Done 2026-10-09: eight documents `PASS` at `0.000%`, `license-plate-has-a-price` `RESTYLED (expected)`
+  (moved onto the site's standard document frame by design).
   ```
   node scripts/convert-documents-to-blocks.mjs --env prod
   ```
-  Every row must say `PASS` with `0.000%` differing pixels and `text identical`, except
-  `license-plate-has-a-price`: the script moves that one onto the site's standard document
-  frame (byline strip, contents list, the reports' column) by design, so it reports `CHECK`
-  with a visible difference. Open its `new.html` under `.tmp/blocks-conversion/` to see it.
-- [ ] `[agent]` Apply (writes blocks + regenerated HTML, with a revision per document):
+- [x] `[agent]` Apply (writes blocks + regenerated HTML, with a revision per document). Done 2026-10-09.
   ```
   node scripts/convert-documents-to-blocks.mjs --env prod --apply --no-shots
   ```
-- [ ] `[go]` Open each converted document in the production admin, confirm the
-  preview, then request and approve a publish on Publish & Status. The publish
-  also ships the new site stylesheet ("Document blocks" group), which the admin
-  reports as "Live stylesheet is behind the code" until then.
+- [x] `[agent]` `cdk deploy UccProd` and `UccStaging` (PublishFn bundles the new stylesheet; without this an
+  admin publish would ship the old sheet and strip the block classes). Done 2026-10-09, Lambda code only.
+- [ ] `[go]` In the production admin, open a converted document (how-did-this-happen is the reference) and
+  the license-plate statement, confirm the previews, then **request and approve a publish** on
+  Publish & Status (owner self-approval is allowed). That publish ships the new stylesheet and the nine
+  converted pages together; "Live stylesheet is behind the code" clears a few minutes after it.

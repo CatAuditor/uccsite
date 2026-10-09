@@ -4,6 +4,15 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.23.4 — 2026-10-09 (branch `refactor`) — Prod prepared: stacks deployed, documents converted
+
+- `cdk deploy UccProd` and `UccStaging` (PublishFn, ExportContentFn, MediaProcessFn code; no IAM change).
+- Prod: `convert-documents-to-blocks --env prod` check (8 × PASS 0.000%, license-plate RESTYLED) then
+  `--apply`: nine documents now carry `body_blocks`, each with a revision + `document.convert_blocks` audit.
+- Amplify admin build of fc6de37 running at the time of the push; 527aed3 succeeded.
+- **Pending `[go]`**: a prod publish via Publish & Status (docs/for-conner.md §13). Nothing on the live site
+  changes until then.
+
 ## v0.23.3 — 2026-10-09 (branch `refactor`) — Kit brought up to date; uploads take the standard frame
 
 - `parse(html, { keepFrame })`: a page's own wrapper chain is kept only for conversions (script, Convert
