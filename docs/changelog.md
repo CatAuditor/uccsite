@@ -4,6 +4,21 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.22.5 — 2026-10-09 (branch `refactor`) — Find Your Officials in the header
+
+**Site** (`packages/render/navigation.js`; commit 47d16af)
+- Header: Projects is now a dropdown — All projects (`/projects.html`), Find Your Officials
+  (`https://lookup.utahciviccompact.org`, new tab). Fits at 900 px (a top-level item did not).
+  Footer link from v0.22.4 unchanged. render tests 30/30.
+
+**Docs** (also carries ba56d5c, e41eb49 from claude-wip): navigation.md, dev-notes, api-security.md,
+decisions/subscribe-cors-lookup-origin.md, legal/data-handling.md, changelog v0.22.4.
+
+Deploy: `cdk deploy UccProd` (PublishFn bundles the render package), then a site publish — the header
+and footer links appear only after both.
+
+Open P1s: unchanged from v0.22.3.
+
 ## v0.22.4 — 2026-10-08 (branch `refactor`) — Officials lookup integration
 
 **API** (`aws/api/index.mjs`, `lib.js`, `routes.js`; commit 0df5136)
