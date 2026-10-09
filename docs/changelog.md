@@ -4,9 +4,10 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
-## v0.27.0 — 2026-10-10 (branch `refactor`, NOT YET PUSHED) — Petitions collection: one record per petition, under a project
+## v0.27.0 — 2026-10-10 (branch `refactor`) — Petitions collection: one record per petition, under a project
 
-Commits 26f0832 → (this entry). Org decisions: petitions organized like press/documents; "petitions always belong
+Push = f338885 (eight commits rebased onto 089b0e7, the other session's "Automatic email tick box"; the rebase also carried
+adde9b5 admin-env.mjs AWS_PROFILE, committed locally by that session). Org decisions: petitions organized like press/documents; "petitions always belong
 to a project"; nested URL; featured tick for the hero; per-petition thank-you page; list + per-petition admin page.
 Staging migrated and published; prod pending (for-conner.md §11).
 
