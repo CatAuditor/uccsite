@@ -4,9 +4,11 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.26.1 — 2026-10-09 (branch `refactor`) — Changelog correction (v0.26.0 follow-up hash)
+
 ## v0.26.0 — 2026-10-09 (branch `refactor`) — Newsletters: site letterhead, Apply filters, file import
 
-**Newsletters (admin + renderer)** — 26fb326, 63bb468, 6498cd5
+**Newsletters (admin + renderer)** — 26fb326, 63bb468, 6498cd5, 717e94a (import control hidden in raw-HTML mode)
 
 - `packages/newsletter/render.mjs`: letterhead (site logo mark `LOGO_URL` + org name on the accent band, linking
   `SITE_URL`), site tokens throughout (`DEFAULT_THEME` accent `#1b2f4e`, highlight `#e74c3c`, font `sans` = Inter stack,
