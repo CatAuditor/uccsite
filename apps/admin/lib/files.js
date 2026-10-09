@@ -14,6 +14,7 @@ import {
   MAX_FILE_BYTES, MAX_PUBLIC_BYTES, mimeForFilename, fileKey, publicFileKey, contentDisposition, normalizeFolder,
   rowToFile, FILE_COLUMNS,
 } from '@uccsite/db/files';
+import { projectPath, projectUrl } from '@uccsite/render/projects';
 import { config } from './config';
 
 let s3 = null;
@@ -34,13 +35,21 @@ function assertId(id) {
   return String(id);
 }
 
-// listProjects(client) → [{ slug, name, ctaUrl }] in site order, for the
-// project choosers (files, documents) and the move/upload selects. ctaUrl lets
-// the Documents pages show the project a page belongs to through the
-// project's button (packages/render/projects.js projectOf).
+// listProjects(client) → [{ id, slug, name, parentSlug, parent_slug, path, url,
+// label, status, isSub }] in TREE order (each parent followed by its
+// sub-projects), for the project choosers (files, documents), the workspace
+// list and the move/upload selects. `label` indents a sub-project for a
+// <select>; `url` is the hub page (packages/render/projects.js).
 export async function listProjects(client) {
-  const res = await client.query(`SELECT slug, name, cta_url FROM projects WHERE slug IS NOT NULL AND slug <> '' ORDER BY sort_order`);
-  return res.rows.map(r => ({ slug: r.slug, name: r.name || r.slug, ctaUrl: r.cta_url || '' }));
+  const res = await client.query(`SELECT id, slug, name, parent_slug, status, cta_url FROM projects WHERE slug IS NOT NULL AND slug <> '' ORDER BY sort_order`);
+  const rows = res.rows.map(r => ({ id: r.id, slug: r.slug, name: r.name || r.slug, parentSlug: r.parent_slug || '', parent_slug: r.parent_slug || '', status: r.status || '', ctaUrl: r.cta_url || '' }));
+  const out = [];
+  const add = (p, depth) => {
+    out.push({ ...p, isSub: depth > 0, path: projectPath(p, rows), url: projectUrl(p, rows), label: `${depth ? '— ' : ''}${p.name}` });
+    for (const c of rows.filter(x => x.parentSlug === p.slug)) add(c, depth + 1);
+  };
+  for (const p of rows.filter(x => !x.parentSlug || !rows.some(y => y.slug === x.parentSlug))) add(p, 0);
+  return out;
 }
 
 // listFiles(client) → every row newest first, each with downloadUrl

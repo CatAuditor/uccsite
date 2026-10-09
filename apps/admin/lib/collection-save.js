@@ -16,15 +16,20 @@ export const CONFLICT_MESSAGE = 'Someone else saved this since you opened it. Co
 // sanitizeItems(fields, payload | array) → items with only the declared
 // fields, trimmed strings, empty values dropped; widget 'list' fields
 // recurse (nested child lists are always present as arrays).
-export function sanitizeItems(fields, payload) {
+// keepIds: a nested (projects) payload carries each row's id so the save can
+// tell a renamed project from a new one (replaceProjects keeps ids —
+// docs/decisions/project-tree-nested-urls.md). Only a well-formed UUID passes.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export function sanitizeItems(fields, payload, { keepIds = false } = {}) {
   let parsed = payload;
   if (typeof payload === 'string') {
     try { parsed = JSON.parse(payload); } catch { throw new Error('Bad payload'); }
   }
   if (!Array.isArray(parsed)) throw new Error('Bad payload');
   if (parsed.length > 2000) throw new Error('Too many items');
-  return parsed.map((item) => Object.fromEntries(
-    fields.map(f => {
+  return parsed.map((item) => Object.fromEntries([
+    ...(keepIds && typeof item?.id === 'string' && UUID_RE.test(item.id) ? [['id', item.id]] : []),
+    ...fields.map(f => {
       const v = item?.[f.name];
       if (f.widget === 'list') return [f.name, sanitizeItems(f.fields, Array.isArray(v) ? v : [])];
       const s = (typeof v === 'string' ? v : '').trim();
@@ -32,12 +37,12 @@ export function sanitizeItems(fields, payload) {
     }).filter(([, v]) => v !== ''),
   // An entry with no text at all (a forgotten "+ Add") would publish as an
   // empty card — drop it instead of storing an all-NULL row.
-  )).filter(o => Object.values(o).some(v => !Array.isArray(v)));
+  ])).filter(o => Object.entries(o).some(([k, v]) => k !== 'id' && !Array.isArray(v)));
 }
 
 export function loadCollectionItems(client, key) {
   const spec = COLLECTIONS[key];
-  if (spec.nested) return loadProjects(client); // the one nested collection
+  if (spec.nested) return loadProjects(client, { ids: true }); // the one nested collection; ids ride in the form
   const where = spec.where ? `WHERE ${spec.where[0]} = $1` : '';
   const params = spec.where ? [spec.where[1]] : [];
   return list(client, spec.table, where, params);
@@ -58,7 +63,7 @@ export function mediaAssetIds(spec, items) {
 export async function saveCollection(key, formData) {
   const spec = COLLECTIONS[key];
   const session = await requireRole('editor');
-  const items = sanitizeItems(spec.fields, formData.get('payload'));
+  const items = sanitizeItems(spec.fields, formData.get('payload'), { keepIds: Boolean(spec.nested) });
   const baseline = String(formData.get('baseline') ?? '');
   const mediaIds = mediaAssetIds(spec, items);
   await withWriteTx(async (client) => {

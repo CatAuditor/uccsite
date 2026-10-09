@@ -110,18 +110,20 @@ export const COLLECTIONS = {
     table: 'projects',
     nested: true,
     childTables: PROJECT_CHILDREN, // the db layer's mapping — asserted below
-    note: 'Order here is the order on /projects and the homepage cards. Use the filter box to find a project; drag order with the arrows.',
+    note: 'Order here is the order on /projects and the homepage cards. Use the filter box to find a project; drag order with the arrows. Each project has its own workspace (notes, files, documents) — open it from the list above.',
     itemLabel: (item) => item.name || 'project',
     fields: [
       { name: 'name', label: 'Project name' },
-      { name: 'slug', label: 'Slug', hint: 'lowercase-with-dashes; matches the report page slug when there is one' },
+      { name: 'slug', label: 'Slug', hint: 'lowercase-with-dashes; the project page is /projects/<slug>. Renaming keeps every document, file and note attached.' },
+      { name: 'parent_slug', label: 'Part of (parent project slug)', hint: 'blank = a top-level project; a parent’s slug makes this a sub-project at /projects/<parent>/<slug> (two levels at most)' },
       { name: 'date', label: 'Date', hint: 'e.g. August 2026 or June 4, 2026 (used for "newest first" sorting on the site)' },
       { name: 'author', label: 'Author' },
       { name: 'status', label: 'Status', hint: 'e.g. Active, Closed' },
       { name: 'status_color', label: 'Status colour', hint: 'hex, e.g. #c0392b' },
       { name: 'region', label: 'Region' },
       { name: 'tagline', label: 'Tagline', widget: 'textarea' },
-      { name: 'cta_url', label: 'Button link', hint: 'e.g. /alpr.html' },
+      { name: 'summary', label: 'Project page intro', widget: 'textarea', hint: `Shown on the project’s own page under the button. ${MD_HINT}` },
+      { name: 'cta_url', label: 'Button link', hint: 'e.g. /projects/alpr/report — the main report’s address' },
       { name: 'cta_text', label: 'Button text' },
       { name: 'articles', label: 'In the press', widget: 'list', itemLabelField: 'headline', fields: [
         { name: 'outlet', label: 'Outlet' },

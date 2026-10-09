@@ -36,10 +36,12 @@ async function loadSiteFromDb(client) {
 // this render writes is dropped: a redirect must never shadow a live page.
 function documentRedirects(documents, projects, livePaths) {
   const out = [];
+  const seen = new Set();
   for (const d of documents) {
     const to = documentUrl(d, projects);
     for (const from of [d.shortPath, d.livePath]) {
-      if (!from || from === to || livePaths.has(from)) continue;
+      if (!from || from === to || livePaths.has(from) || seen.has(from)) continue;
+      seen.add(from);
       out.push({ from, to });
     }
   }

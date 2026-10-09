@@ -246,7 +246,7 @@ const STATEMENTS = [
   // file). SEO fields are structured (§12) — the head is generated.
   `CREATE TABLE IF NOT EXISTS documents (
     id UUID PRIMARY KEY,
-    slug TEXT UNIQUE NOT NULL,
+    slug TEXT NOT NULL,
     title TEXT NOT NULL,
     category TEXT,
     template_key TEXT NOT NULL DEFAULT 'report',
@@ -300,6 +300,14 @@ const STATEMENTS = [
   // 410 lands on its last address). Both ride the KeyValueStore sync.
   `ALTER TABLE documents ADD COLUMN IF NOT EXISTS short_path TEXT`,
   `ALTER TABLE documents ADD COLUMN IF NOT EXISTS live_path TEXT`,
+  // Slugs are unique PER PROJECT (two projects may each have a "report"):
+  // the table-level UNIQUE on slug goes, project_slug stores '' (never NULL —
+  // NULLs are distinct in a unique index) for "no project", and the unique
+  // index is on the pair. documents.js documentToParams keeps '' for this
+  // column; scripts/migrate-project-tree.mjs backfills existing NULLs.
+  `ALTER TABLE documents DROP CONSTRAINT IF EXISTS documents_slug_key`,
+  `ALTER TABLE documents ALTER COLUMN project_slug SET DEFAULT ''`,
+  `CREATE UNIQUE INDEX ASYNC IF NOT EXISTS idx_documents_address ON documents(project_slug, slug)`,
   // Rules match structure (selector subset, §6.2); scope 'template' rules
   // apply to every document with that template_key, 'page' rules to one.
   `CREATE TABLE IF NOT EXISTS style_rules (

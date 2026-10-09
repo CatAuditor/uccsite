@@ -57,6 +57,7 @@ function documentToParams(doc) {
     const v = doc[key];
     if (JSON_COLS.has(col)) return v == null ? null : JSON.stringify(v);
     if (INT_COLS.has(col)) return Number(v || 0);
+    if (col === 'project_slug') return String(v || ''); // '' = no project, never NULL (unique index on (project_slug, slug))
     return v == null || v === '' ? null : String(v);
   });
 }

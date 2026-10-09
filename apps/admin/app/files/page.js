@@ -60,7 +60,7 @@ export default async function FilesPage({ searchParams }) {
         <Link href="/files" className={!projectParam ? 'active' : ''}>All ({files.length})</Link>
         <Link href={href(GENERAL)} className={projectParam === GENERAL ? 'active' : ''}>General ({counts.get('') || 0})</Link>
         {projects.map(p => (
-          <Link key={p.slug} href={href(p.slug)} className={projectParam === p.slug ? 'active' : ''}>{p.name} ({counts.get(p.slug) || 0})</Link>
+          <Link key={p.slug} href={href(p.slug)} className={projectParam === p.slug ? 'active' : ''}>{p.isSub ? '↳ ' : ''}{p.name} ({counts.get(p.slug) || 0})</Link>
         ))}
         {orphanSlugs.map(s => (
           <Link key={s} href={href(s)} className={projectParam === s ? 'active' : ''} title="No project has this slug any more — move these files">{s}? ({counts.get(s)})</Link>
@@ -76,7 +76,7 @@ export default async function FilesPage({ searchParams }) {
       )}
 
       {readOnly ? <p className="notice">Viewer role — download only.</p>
-        : <FileUploader projects={projects} accept={ACCEPTED_EXTENSIONS.map(e => `.${e}`).join(',')}
+        : <FileUploader projects={projects.map(p => ({ slug: p.slug, name: p.label }))} accept={ACCEPTED_EXTENSIONS.map(e => `.${e}`).join(',')}
             maxBytes={MAX_FILE_BYTES} defaultProject={selectedSlug} defaultFolder={folderParam} />}
 
       <h2>{projectParam ? projectLabel(selectedSlug) : 'All files'}{folderParam ? ` / ${folderParam}` : ''} ({shown.length})</h2>
@@ -125,7 +125,7 @@ export default async function FilesPage({ searchParams }) {
                       <label htmlFor={`project-${f.id}`}>Project</label>
                       <select id={`project-${f.id}`} name="project" defaultValue={names.has(f.projectSlug) ? f.projectSlug : ''}>
                         <option value="">General (no project)</option>
-                        {projects.map(p => <option key={p.slug} value={p.slug}>{p.name}</option>)}
+                        {projects.map(p => <option key={p.slug} value={p.slug}>{p.label}</option>)}
                       </select>
                       <label htmlFor={`folder-${f.id}`}>Folder</label>
                       <input type="text" id={`folder-${f.id}`} name="folder" defaultValue={f.folder} placeholder="e.g. Records requests/2026" />

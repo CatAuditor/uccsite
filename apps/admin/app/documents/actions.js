@@ -22,8 +22,38 @@ import { parse as parseBlocks, rewritePageCss, slugify as slugifyText } from '@u
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,80}$/;
 const RESERVED_SLUGS = new Set(['index', 'team', 'blog', 'statements', 'issues', 'projects', 'tip', 'success', '404', 'admin', 'api', 'media', 'css', 'js', 'assets']);
 
+const SHORT_PATH_RE = /^\/[a-z0-9][a-z0-9-]{0,80}$/;
+
 const str = (fd, name, max = 2000) => String(fd.get(name) ?? '').trim().slice(0, max);
 const flag = (fd, name) => (fd.get(name) ? 1 : 0);
+
+// validateAddress(client, { id, slug, projectSlug, shortPath }) — the
+// document's place in the tree (docs/decisions/project-tree-nested-urls.md):
+// the slug is unique within its project (root documents also keep clear of
+// the fixed pages and reserved paths), it may not collide with a sub-project
+// under the same parent, the project must exist, and the optional short path
+// is one root segment nobody else has claimed. Throws the message to show.
+async function validateAddress(client, { id = null, slug, projectSlug = '', shortPath = '' }) {
+  if (!SLUG_RE.test(slug)) throw new Error('Slug must be lowercase letters, digits and dashes');
+  if (projectSlug && !SLUG_RE.test(projectSlug)) throw new Error('Bad project');
+  if (!projectSlug && RESERVED_SLUGS.has(slug)) throw new Error(`"${slug}" is a fixed page or reserved path`);
+  if (projectSlug) {
+    if (!(await client.query('SELECT 1 FROM projects WHERE slug = $1', [projectSlug])).rows[0]) throw new Error(`Project "${projectSlug}" does not exist`);
+    if ((await client.query('SELECT 1 FROM projects WHERE parent_slug = $1 AND slug = $2', [projectSlug, slug])).rows[0]) {
+      throw new Error(`"${slug}" is a sub-project of that project; the document needs another slug`);
+    }
+  }
+  const other = await getDocument(client, { slug, projectSlug });
+  if (other && other.id !== id) throw new Error(`Slug "${slug}" is already used ${projectSlug ? 'in this project' : 'at the root'} by "${other.title}"`);
+  if (shortPath) {
+    if (!SHORT_PATH_RE.test(shortPath)) throw new Error('Short link must be a slash and one word, e.g. /alpr');
+    const name = shortPath.slice(1);
+    if (RESERVED_SLUGS.has(name)) throw new Error(`"${shortPath}" is a fixed page or reserved path`);
+    const taken = (await client.query(
+      `SELECT title FROM documents WHERE id IS DISTINCT FROM $1 AND (short_path = $2 OR (coalesce(project_slug, '') = '' AND slug = $3)) LIMIT 1`, [id, shortPath, name])).rows[0];
+    if (taken) throw new Error(`"${shortPath}" is already the address of "${taken.title}"`);
+  }
+}
 
 // Snapshot shape (restore path in app/revisions): the document's editable
 // fields + its overrides. body_html_raw is included verbatim (§9).
@@ -48,10 +78,8 @@ export async function createDocument(prevState, formData) {
     const projectSlug = str(formData, 'projectSlug', 80);
     if (projectSlug && !SLUG_RE.test(projectSlug)) throw new Error('Bad project');
     if (!title) throw new Error(parsed ? 'The file has no heading to use as the title; type one' : 'Title is required');
-    if (!SLUG_RE.test(slug)) throw new Error('Slug must be lowercase letters, digits and dashes');
-    if (RESERVED_SLUGS.has(slug)) throw new Error(`"${slug}" is a fixed page or reserved path`);
     await withWriteTx(async (client) => {
-      if (await getDocument(client, { slug })) throw new Error(`A document with slug "${slug}" already exists`);
+      await validateAddress(client, { slug, projectSlug });
       // Every new document is a builder document (empty blocks when no file).
       const author = parsed ? parsed.author : '';
       const { body, html } = await blocksToRaw(client, parsed ? parsed.body : { v: 1, header: {}, sections: [] }, { title, author });
@@ -160,8 +188,6 @@ export async function saveDocument(prevState, formData) {
     const templateKey = str(formData, 'templateKey', 40) || 'report';
     if (!TEMPLATE_KEYS.includes(templateKey)) throw new Error('Unknown template');
     const slug = str(formData, 'slug', 80).toLowerCase();
-    if (!SLUG_RE.test(slug)) throw new Error('Slug must be lowercase letters, digits and dashes');
-    if (RESERVED_SLUGS.has(slug)) throw new Error(`"${slug}" is a fixed page or reserved path`);
     let jsonldOverrides = null;
     const jsonldText = str(formData, 'jsonldOverrides', 20000);
     if (jsonldText) {
@@ -176,8 +202,7 @@ export async function saveDocument(prevState, formData) {
       if (baseline && current.updatedAt !== baseline) throw new Error(CONFLICT_MESSAGE);
       if (status === 'archived' && current.status !== 'archived') throw new Error('Use the Archive button to archive a document.');
       if (status !== 'archived' && current.status === 'archived') throw new Error('This document is archived. Use "Restore as draft" to bring it back.');
-      const other = await getDocument(client, { slug });
-      if (other && other.id !== id) throw new Error(`Slug "${slug}" is used by "${other.title}"`);
+      await validateAddress(client, { id, slug, projectSlug: str(formData, 'projectSlug', 80), shortPath: str(formData, 'shortPath', 90).toLowerCase() });
       const before = await snapshotOf(client, id);
       const allowScripts = s.role === 'owner' ? flag(formData, 'allowScripts') : current.allowScripts; // owner-only field
       const title = str(formData, 'title', 200);
@@ -198,7 +223,8 @@ export async function saveDocument(prevState, formData) {
       const next = {
         ...current,
         title, slug, category: str(formData, 'category', 60), author, templateKey, status,
-        projectSlug: str(formData, 'projectSlug', 80), // projects.slug soft link (docs/systems/projects.md "Nesting")
+        projectSlug: str(formData, 'projectSlug', 80), // projects.slug soft link — sets the page's address (docs/systems/projects.md)
+        shortPath: str(formData, 'shortPath', 90).toLowerCase(), // optional /alias → 301 (validated above)
         sortOrder: Number(str(formData, 'sortOrder', 10) || 0),
         bodyHtmlRaw, bodyBlocks,
         pageCss: String(formData.get('pageCss') ?? ''),
@@ -210,7 +236,6 @@ export async function saveDocument(prevState, formData) {
         jsonldType: str(formData, 'jsonldType', 60), jsonldOverrides, allowScripts,
         sitemapPriority: str(formData, 'sitemapPriority', 5),
       };
-      if (next.projectSlug && !SLUG_RE.test(next.projectSlug)) throw new Error('Bad project');
       if (next.sitemapPriority && !/^(0(\.\d)?|1(\.0)?)$/.test(next.sitemapPriority)) {
         throw new Error('Sitemap priority must be 0.0–1.0 (e.g. 0.7) or blank');
       }
@@ -256,6 +281,36 @@ export async function saveDocument(prevState, formData) {
     if (summary.a11y.length) parts.push(`${summary.a11y.length} accessibility issues`);
     if (summary.match) parts.push(`${summary.match.matched ?? ''} matched`);
     return { ok: true, message: `Saved.${parts.length ? ' Ingest: ' + parts.join(', ') + ' — see the report below.' : ''}` };
+  });
+}
+
+// assignDocuments: move the ticked documents to a project (or out of one).
+// Each move is validated like a save (slug free in the target, no clash with
+// a sub-project) and recorded as its own revision + 'document.move' audit
+// row; the next publish writes the new addresses and 301s from the old ones.
+export async function assignDocuments(prevState, formData) {
+  return runAction(async () => {
+    const s = await requireRole('editor');
+    const ids = formData.getAll('ids').map(String).filter(v => /^[0-9a-f-]{36}$/.test(v));
+    if (!ids.length) throw new Error('Tick at least one document first');
+    if (ids.length > 200) throw new Error('Too many at once');
+    const projectSlug = str(formData, 'projectSlug', 80);
+    let moved = 0;
+    await withWriteTx(async (client) => {
+      for (const id of ids) {
+        const current = await getDocument(client, { id });
+        if (!current) continue;
+        if ((current.projectSlug || '') === projectSlug) continue;
+        await validateAddress(client, { id, slug: current.slug, projectSlug, shortPath: current.shortPath });
+        const before = await snapshotOf(client, id);
+        await client.query('UPDATE documents SET project_slug = $2, updated_at = now() WHERE id = $1', [id, projectSlug || null]);
+        await recordChange(client, { actor: s.email, action: 'document.move', entityType: 'document', entityId: id, snapshot: before, diff: { slug: current.slug, from: current.projectSlug || '', to: projectSlug } });
+        moved++;
+      }
+    });
+    revalidatePath('/documents');
+    revalidatePath('/projects');
+    return { ok: true, message: moved ? `Moved ${moved} document${moved === 1 ? '' : 's'}. Publish to make the new addresses live (the old ones redirect).` : 'Nothing to move — already there.' };
   });
 }
 
