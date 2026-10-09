@@ -13,3 +13,6 @@ apps/admin/.next/
 apps/admin/site-src/
 admin-dev.log
 setup-admin-hosting.sh
+
+# scratch output of scripts (conversion screenshots, diffs)
+.tmp/

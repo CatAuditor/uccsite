@@ -13,6 +13,10 @@ export function Field({ def, value, onChange, disabled, ctx }) {
     case 'text':
     case 'url':
       return <div className="bf">{label}<input id={id} type="text" value={value ?? ''} onChange={(e) => onChange(e.target.value)} disabled={disabled} /></div>;
+    case 'classes': // string[] shown space-separated
+      return <div className="bf">{label}<input id={id} type="text" value={Array.isArray(value) ? value.join(' ') : ''} onChange={(e) => onChange(e.target.value.split(/\s+/).filter(Boolean))} disabled={disabled} /></div>;
+    case 'frame': // string[] of wrapper class lists, outer to inner, shown "outer > inner"
+      return <div className="bf">{label}<input id={id} type="text" placeholder="doc-body > doc-inner" value={Array.isArray(value) ? value.join(' > ') : ''} onChange={(e) => onChange(e.target.value.split('>').map(s => s.trim()).filter(Boolean))} disabled={disabled} /></div>;
     case 'inline':
       return <div className="bf">{label}<RichText value={value ?? ''} onChange={onChange} disabled={disabled} placeholder={def.hint || ''} /></div>;
     case 'html':

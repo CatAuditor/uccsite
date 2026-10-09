@@ -55,7 +55,7 @@ for (const f of files) {
   const types = {};
   for (const s of res.body.sections) for (const b of s.blocks) types[b.type] = (types[b.type] || 0) + 1;
   console.log(`\n== ${doc.slug}: ${res.body.sections.length} sections, ${blocks} blocks, raw ${res.report.raw} ${JSON.stringify(types)}`);
-  console.log(`   title ${res.title === doc.title ? 'ok' : `DIFF "${res.title}"`} | author "${res.author}" ${res.body.header.authorTitle ? `(${res.body.header.authorTitle})` : ''} | date "${res.body.header.date}" | toc ${res.body.header.toc} | wrappers ${res.report.wrappers.join(',')}`);
+  console.log(`   title ${res.title === doc.title ? 'ok' : `DIFF "${res.title}"`} | author "${res.author}" ${res.body.header.authorTitle ? `(${res.body.header.authorTitle})` : ''} | date "${res.body.header.date}" | toc ${res.body.header.toc} | frame [${res.body.header.frame.join(' > ')}] | wrappers ${res.report.wrappers.join(',')}`);
   for (const n of res.report.notes) console.log(`   note: ${n}`);
   if (!textSame) {
     failures++;

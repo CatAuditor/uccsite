@@ -27,7 +27,7 @@ test('serialize: header, byline, contents list and sections in the site frame', 
   ]), doc, { authorHref: '/team/jarom-gillins' });
   assert.match(html, /^<div class="subpage-hero">\n<div class="section-label">Policy Paper<\/div>\n<h1>A Report<\/h1>\n<p>Lead <strong>text<\/strong>\.<\/p>/);
   assert.match(html, /<div class="release-meta">\n<span class="release-badge">Utah Civic Compact<\/span>\n<span class="release-date">September 9, 2026<\/span>\n<span class="release-author">By <a href="\/team\/jarom-gillins">Jarom Gillins<\/a>, Director of Policy<\/span>/);
-  assert.match(html, /<nav class="paper-toc" aria-label="Contents">[\s\S]*<li><a href="#summary">I\. Summary<\/a><\/li>\n<li><a href="#findings">Findings<\/a><\/li>/);
+  assert.match(html, /<div class="paper-toc" role="navigation" aria-label="Contents">[\s\S]*<li><a href="#summary">I\. Summary<\/a><\/li>\n<li><a href="#findings">Findings<\/a><\/li>/);
   assert.match(html, /<h2 id="summary" data-section="s[a-z0-9]+">I\. Summary<\/h2>/);
   assert.match(html, /<div class="scope-box" data-block="b[a-z0-9]+">\n<div class="scope-box-label">Scope<\/div>\n<p>Two\.<\/p>\n<\/div>/);
   assert.match(html, /<div class="doc-body">\n<div class="doc-inner">/);
@@ -46,14 +46,32 @@ test('serialize: text fields are escaped, rich text passes through, headline ove
 test('serialize: bands and full-width blocks leave the reading column', () => {
   const html = serialize(body([
     section('', [block('partsnav', { items: [{ num: 'Part 1', title: 'T', desc: 'D', href: '#p1' }] })]),
-    section('Part 1', [block('prose', { html: '<p>a</p>' })], { band: true, classes: ['s-abc123'] }),
-    section('Part 2', [block('prose', { html: '<p>b</p>' })], { band: true }),
+    section('Part 1', [block('prose', { html: '<p>a</p>' })], { band: true, bandClasses: ['s-abc123'] }),
+    section('Part 2', [block('prose', { html: '<p>b</p>' })], { band: true, classes: ['report-section'] }),
   ]), doc);
   const bands = html.match(/<div class="doc-body[^"]*">/g);
   assert.deepEqual(bands, ['<div class="doc-body">', '<div class="doc-body s-abc123">', '<div class="doc-body">']);
   // the parts nav sits between the first band (byline) and the second
   assert.match(html, /<\/div>\n<\/div>\n<div class="parts-nav"/);
   assert.match(html, /<\/div>\n<div class="doc-body s-abc123">\n<div class="doc-inner">\n<h2 id="part-1"/);
+  // a section wrapper sits inside the column
+  assert.match(html, /<div class="doc-inner">\n<div class="report-section" data-section="s[a-z0-9]+">\n<h2 id="part-2"/);
+});
+
+test('serialize: a legacy frame and legacy box class are written back verbatim', () => {
+  const b = body([section('S', [block('callout', { variant: 'callout', legacyClass: 'report-callout', legacyLabelClass: 'callout-label', label: 'Working definition', html: '<p>x</p>' })])]);
+  b.header.frame = ['report-body', 'container'];
+  const html = serialize(b, doc);
+  assert.match(html, /<div class="report-body">\n<div class="container">/);
+  assert.ok(!html.includes('doc-body'));
+  assert.match(html, /<div class="report-callout" data-block="[^"]+">\n<div class="callout-label">Working definition<\/div>/);
+  // parse reads it back the same way
+  const r = parse(html);
+  assert.deepEqual(r.body.header.frame, ['report-body', 'container']);
+  const c = r.body.sections[0].blocks[0];
+  assert.equal(c.type, 'callout');
+  assert.equal(c.legacyClass, 'report-callout');
+  assert.equal(c.label, 'Working definition');
 });
 
 test('serialize: byline block replaces the top byline; letterhead layout has no hero', () => {

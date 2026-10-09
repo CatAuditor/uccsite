@@ -18,7 +18,7 @@
 import domSerializer from 'dom-serializer';
 import { textContent } from 'domutils';
 import htmlIngest from '@uccsite/html-ingest';
-import { BLOCK_TYPES, CALLOUT_VARIANTS, emptyBody, newSection, newId, slugify } from './schema.js';
+import { BLOCK_TYPES, CALLOUT_VARIANTS, CALLOUT_LEGACY, emptyBody, newSection, newId, slugify } from './schema.js';
 import { aliasClasses } from './convert.js';
 
 const serialize = domSerializer.default || domSerializer;
@@ -33,19 +33,25 @@ const tag = (n) => (isEl(n) ? n.name.toLowerCase() : '');
 const has = (n, cls) => isEl(n) && getClasses(n).includes(cls);
 const inner = (n) => serialize(n.children || [], SER).trim();
 const outer = (n) => serialize([n], SER).trim();
-const text = (n) => textContent(n).replace(/\s+/g, ' ').trim();
+const text = (n) => textContent(n).replace(/[ \t\r\n]+/g, ' ').trim(); // keeps nbsp (legacy "&nbsp;·&nbsp;" date lines)
 const kids = (n) => (n.children || []).filter(c => !isBlank(c));
 const elKids = (n) => (n.children || []).filter(isEl);
 const find = (n, pred) => { for (const c of elKids(n)) { if (pred(c)) return c; const d = find(c, pred); if (d) return d; } return null; };
 const findAll = (n, pred, out = []) => { for (const c of elKids(n)) { if (pred(c)) out.push(c); findAll(c, pred, out); } return out; };
 
 const PROSE_TAGS = new Set(['p', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'hr', 'pre', 'dl']);
-const WRAPPER_CLASSES = ['paper-body', 'paper-inner', 'briefing-body', 'briefing-inner', 'report-body', 'report-section', 'theory-body', 'theory-section', 'privacy-body', 'doc-body', 'doc-inner', 'container', 'section', 'prose', 'page'];
-const CALLOUT_ROOTS = Object.fromEntries(CALLOUT_VARIANTS.map(v => [v.root, v]));
-const CALLOUT_ALIASES = { acknowledgment: 'scope-box', 'report-callout': 'callout', 'report-callout-dark': 'callout-dark', 'theory-stat': 'finding-box' };
+// Frame wrappers: the page-level bands and columns a legacy page wraps its
+// flow in. They are unwrapped; the first band's class chain becomes
+// header.frame so the serializer writes the same wrappers back.
+const FRAME_RE = /^(.+-body|.+-inner|container|section|prose|page|bg-.+)$/;
+// Per-section wrappers (one h2 + its content) ride on the section (classes).
+const SECTION_WRAPPER_RE = /-section$/;
 // Per-part scoped classes the Document migration minted (stratos: .s-cdbd22
-// on a wrapper, styled in the page CSS). They ride along on the section.
+// on a band, styled in the page CSS). They ride on the section as bandClasses.
 const SCOPED_RE = /^s-[0-9a-f]{6}$/;
+const isWrapperClass = (c) => FRAME_RE.test(c) || SECTION_WRAPPER_RE.test(c) || SCOPED_RE.test(c);
+const CALLOUT_ROOTS = Object.fromEntries(CALLOUT_VARIANTS.map(v => [v.root, v]));
+const CALLOUT_ALIASES = CALLOUT_LEGACY;
 const TOKEN_RE = /^\{\{(video|coverage):([A-Za-z0-9_-]+)\}\}$/;
 const DATE_RE = /^(?:(?:updated|published|filed)\s+)?(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}\b/i;
 const BYLINE_RE = /^by\s+([^,]+?)(?:,\s*(.+))?$/i;
@@ -64,15 +70,21 @@ const isEndMarker = (n) => isComment(n) && /^\s*\/ucc\s*$/.test(n.data);
 
 function quoteFrom(el) {
   const source = find(el, c => has(c, 'quote-source'));
-  const cite = elKids(el).find(c => tag(c) === 'cite') || find(el, c => tag(c) === 'cite');
+  let cite = elKids(el).find(c => tag(c) === 'cite') || find(el, c => tag(c) === 'cite');
+  // Markdown has no <cite>: a last paragraph starting with a dash is the citation.
+  const last = elKids(el).at(-1);
+  if (!cite && last && tag(last) === 'p' && /^(—|–|--)\s*/.test(text(last)) && elKids(el).length > 1) cite = last;
   const body = (el.children || []).filter(c => c !== source && c !== cite && !isBlank(c));
-  return { source: source ? text(source) : '', html: serialize(body, SER).trim(), cite: cite ? inner(cite).replace(/^[—–-]\s*/, '') : '' };
+  return { source: source ? text(source) : '', html: serialize(body, SER).trim(), cite: cite ? inner(cite).replace(/^\s*(—|–|--)\s*/, '') : '' };
 }
 
-function calloutFrom(el, root) {
+// calloutFrom(el, root, legacyClass?) — legacyClass: the page's own class
+// that stood in for `root` (kept on the block so its page CSS still applies).
+function calloutFrom(el, root, legacyClass = '') {
   const v = CALLOUT_ROOTS[root];
   let label = '';
   let body;
+  let legacyLabelClass = '';
   if (v.labelTag) {
     const h = elKids(el).find(c => tag(c) === v.labelTag);
     label = h ? text(h) : '';
@@ -82,11 +94,16 @@ function calloutFrom(el, root) {
     if (term) { label = text(term); term.parent.children.splice(term.parent.children.indexOf(term), 1); }
     body = el.children || [];
   } else {
-    const l = elKids(el).find(c => has(c, v.labelClass));
+    // the label element: the variant's class, or (legacy) any first-child
+    // element whose class ends in -label
+    let l = elKids(el).find(c => has(c, v.labelClass));
+    if (!l && legacyClass) { const f = elKids(el)[0]; if (f && getClasses(f).some(c => /-label$/.test(c)) && !find(f, x => tag(x) === 'p')) { l = f; legacyLabelClass = getClasses(f).find(c => /-label$/.test(c)); } }
     label = l ? text(l) : '';
     body = (el.children || []).filter(c => c !== l);
   }
-  return { variant: v.value, label, html: serialize(body.filter(c => !isBlank(c)), SER).trim().replace(/^<p>\s+/, '<p>') };
+  const out = { variant: v.value, label, html: serialize(body.filter(c => !isBlank(c)), SER).trim().replace(/^<p>\s+/, '<p>') };
+  if (legacyClass) { out.legacyClass = legacyClass; if (legacyLabelClass) out.legacyLabelClass = legacyLabelClass; }
+  return out;
 }
 
 function statsFrom(el, variant) {
@@ -131,8 +148,14 @@ function tableFrom(el) {
   const width = head.length || (Array.isArray(rows[0]) ? rows[0].length : rows[0]?.cells.length);
   if (rows.some(r => (Array.isArray(r) ? r : r.cells).length !== width)) return null;
   const tcls = getClasses(table);
-  const variant = tcls.find(c => ['own-table', 'rank-table', 'timeline-table', 'doc-table'].includes(c)) || (tcls.includes('defs-table') || tcls.includes('report-table') ? 'doc-table' : 'doc-table');
-  return { variant, caption: caption ? inner(caption) : '', head, rows };
+  const variant = tcls.find(c => ['own-table', 'rank-table', 'timeline-table', 'doc-table'].includes(c)) || 'doc-table';
+  const out = { variant, caption: caption ? inner(caption) : '', head, rows };
+  // a legacy page's own table / wrapper classes are written back verbatim
+  const legacyClass = tcls.filter(c => c !== variant).join(' ');
+  if (legacyClass && !tcls.includes(variant)) out.legacyClass = legacyClass;
+  if (tag(el) !== 'table') { const w = getClasses(el).join(' '); if (w && !['doc-table-wrap', 'table-wrap', 'table-scroll'].includes(w)) out.legacyWrap = w; }
+  else out.bare = true; // written without a wrapper (page CSS puts the margins on the table)
+  return out;
 }
 
 function filesFrom(el) {
@@ -146,7 +169,7 @@ function ctaFrom(el, variant) {
   const p = elKids(el).find(c => tag(c) === 'p');
   const buttons = elKids(el).filter(c => tag(c) === 'a');
   if (elKids(el).some(c => c !== h && c !== p && tag(c) !== 'a')) return null;
-  return { variant, heading: h ? text(h) : '', html: p ? inner(p) : '', buttons: buttons.map(a => ({ label: text(a), href: a.attribs.href || '' })) };
+  return { variant, heading: h ? text(h) : '', html: p ? inner(p) : '', buttons: buttons.map(a => ({ label: text(a), href: a.attribs.href || '', icon: find(a, c => tag(c) === 'svg') ? 'download' : '' })) };
 }
 
 function sourcesGridFrom(el) {
@@ -177,10 +200,11 @@ function accordionItem(el) {
 function blockFor(el) {
   const t = tag(el);
   const cls = getClasses(el);
-  const root = cls.find(c => CALLOUT_ROOTS[c]) || cls.map(c => CALLOUT_ALIASES[c]).find(Boolean);
+  const legacyRoot = cls.find(c => CALLOUT_ALIASES[c]);
+  const root = cls.find(c => CALLOUT_ROOTS[c]) || (legacyRoot && CALLOUT_ALIASES[legacyRoot]);
   if (t === 'blockquote') return { type: 'quote', ...quoteFrom(el) };
   if (cls.includes('pull-quote')) { const q = quoteFrom(el); return { type: 'pullquote', html: q.html.replace(/^<p>([\s\S]*)<\/p>$/, '$1'), cite: q.cite }; }
-  if (root) return { type: 'callout', ...calloutFrom(el, root) };
+  if (root) return { type: 'callout', ...calloutFrom(el, root, cls.includes(root) ? '' : legacyRoot) };
   if (cls.includes('stats-grid')) { const s = statsFrom(el, 'cards'); return s && { type: 'stats', ...s }; }
   if (cls.includes('impact')) { const s = statsFrom(el, 'band'); return s && { type: 'stats', ...s }; }
   if (t === 'figure') { const f = figureFrom(el); return f && { type: 'figure', ...f }; }
@@ -225,7 +249,14 @@ function blockFromMarker(kind, attrs, nodes) {
   else if (kind === 'quote') { const tmp = parseFragmentTree(`<blockquote>${html}</blockquote>`); Object.assign(block, quoteFrom(tmp.children[0]), attrs.source ? { source: attrs.source } : {}, attrs.cite ? { cite: attrs.cite } : {}); }
   else if (kind === 'pullquote') { const tmp = parseFragmentTree(`<div>${html}</div>`); const q = quoteFrom(tmp.children[0]); block.html = q.html.replace(/^<p>([\s\S]*)<\/p>$/, '$1'); if (!attrs.cite) block.cite = q.cite; }
   else if (kind === 'table') { const tmp = parseFragmentTree(`<div>${html}</div>`); const tb = tableFrom(tmp.children[0]); if (!tb) return null; Object.assign(block, tb, attrs.variant ? { variant: attrs.variant } : {}); }
-  else if (kind === 'figure') { const tmp = parseFragmentTree(`<figure>${html}</figure>`); const f = figureFrom(tmp.children[0]); if (!f) return null; Object.assign(block, f, attrs); }
+  else if (kind === 'figure') {
+    // Markdown wraps the image in a paragraph; the caption may be a second one.
+    const tmp = parseFragmentTree(`<figure>${html.replace(/<p>\s*(<img[^>]*>)\s*<\/p>/i, '$1')}</figure>`);
+    const fig = tmp.children[0];
+    const extraP = elKids(fig).find(c => tag(c) === 'p');
+    if (extraP && !attrs.caption) { attrs.caption = inner(extraP); fig.children.splice(fig.children.indexOf(extraP), 1); }
+    const f = figureFrom(fig); if (!f) return null; Object.assign(block, f, attrs);
+  }
   else if (kind === 'stats') {
     // <li>5,171,087 — Searches since 2022</li> or <p>number</p><p>desc</p> pairs
     const tmp = parseFragmentTree(`<div>${html}</div>`);
@@ -250,21 +281,38 @@ function blockFromMarker(kind, attrs, nodes) {
 
 // ─── the pass ───
 
-function unwrap(nodes) {
-  // Flatten the legacy wrappers so the stream is the body's flow.
+// unwrap(nodes, state) — flatten the legacy wrappers so the stream is the
+// body's flow. state.frame collects the first band's wrapper chain (outer →
+// inner) for header.frame; a band wrapper emits a section marker (band="1",
+// band-classes = its scoped classes); a per-section wrapper emits a marker
+// with classes so the next h2's section writes the wrapper back.
+function unwrap(nodes, state = { frame: [], depth: 0, bands: 0 }) {
   const out = [];
   for (const n of nodes) {
     if (isBlank(n)) continue;
-    if (isEl(n) && !has(n, 'subpage-hero') && (tag(n) === 'div' || tag(n) === 'section' || tag(n) === 'main' || tag(n) === 'article')) {
+    // article/main are not unwrapped: a page's CSS may target them (dignity: article p)
+    if (isEl(n) && !has(n, 'subpage-hero') && (tag(n) === 'div' || tag(n) === 'section')) {
       const cls = getClasses(n);
-      const wrapper = cls.length === 0 || cls.every(c => WRAPPER_CLASSES.includes(c) || /^bg-/.test(c) || SCOPED_RE.test(c));
+      const wrapper = cls.length === 0 || cls.every(isWrapperClass);
       // Only unwrap when the element is not itself a block and holds flow
       // content (a heading, meta strip, or several children).
       if (wrapper && !blockFor(n) && (find(n, c => /^h[12]$/.test(tag(c)) || has(c, 'release-meta')) || kids(n).length > 1)) {
         const scoped = cls.filter(c => SCOPED_RE.test(c));
-        const isBand = cls.some(c => /-body$/.test(c));
-        if (scoped.length || isBand) out.push({ type: 'comment', data: `ucc:section${isBand ? ' band="1"' : ''} classes="${scoped.join(' ')}"` });
-        out.push(...unwrap(n.children));
+        const sectionCls = cls.filter(c => SECTION_WRAPPER_RE.test(c));
+        const frameCls = cls.filter(c => FRAME_RE.test(c));
+        const isBand = state.depth === 0 && (frameCls.length > 0 || cls.length === 0);
+        if (sectionCls.length) {
+          out.push({ type: 'comment', data: `ucc:section classes="${sectionCls.join(' ')}"` });
+          out.push(...unwrap(n.children, { ...state, depth: state.depth + 1 }));
+          continue;
+        }
+        if (isBand) {
+          state.bands++;
+          out.push({ type: 'comment', data: `ucc:section band="1" band-classes="${scoped.join(' ')}"` });
+        }
+        // the first band's chain of wrappers is the page frame
+        if (state.bands === 1 && frameCls.length && state.frame.length === state.depth) state.frame.push(frameCls.join(' '));
+        out.push(...unwrap(n.children, { ...state, depth: state.depth + 1 }));
         continue;
       }
     }
@@ -278,13 +326,14 @@ function readHero(hero, header, out) {
   const h1 = find(hero, c => tag(c) === 'h1');
   const ctas = find(hero, c => has(c, 'hero-ctas'));
   const prov = find(hero, c => has(c, 'hero-provenance'));
-  if (label) header.eyebrow = text(label);
+  if (label) { header.eyebrow = text(label); if (tag(label) === 'p') header.eyebrowTag = 'p'; }
   if (h1) out.title = text(h1);
   const ps = elKids(hero).filter(c => tag(c) === 'p' && c !== prov && c !== label);
   header.summary = ps.map(outer).join('\n');
   const cta = (a) => ({ label: text(a), href: a.attribs.href || '', kind: has(a, 'hero-secondary') ? 'secondary' : 'primary', icon: find(a, c => tag(c) === 'svg') ? 'download' : '' });
   const direct = elKids(hero).filter(a => tag(a) === 'a' && (has(a, 'hero-download') || has(a, 'hero-secondary')));
   header.ctas = [...(ctas ? elKids(ctas).filter(a => tag(a) === 'a') : []), ...direct].map(cta);
+  if (!ctas && direct.length) header.ctasBare = true; // written without the hero-ctas row
   if (prov) header.provenance = inner(prov);
   const leftovers = elKids(hero).filter(c => c !== label && c !== h1 && c !== ctas && c !== prov && tag(c) !== 'p' && !direct.includes(c));
   return leftovers;
@@ -307,11 +356,18 @@ function readMeta(meta, header, out) {
 // reading (a legacy page's "finding-box" that is the site's "violation-box").
 function parse(html, opts = {}) {
   const tree = parseFragmentTree(aliasClasses(String(html || ''), opts.classAliases || {}));
+  // Builder ids from an earlier serialization are not content.
+  for (const el of findAll(tree, c => c.attribs && ('data-block' in c.attribs || 'data-section' in c.attribs))) { delete el.attribs['data-block']; delete el.attribs['data-section']; }
   const out = { title: '', author: '', authorHref: '', body: emptyBody(), extras: [], report: { raw: 0, notes: [], wrappers: [] } };
   const header = out.body.header;
   const sections = out.body.sections;
-  const nodes = unwrap(tree.children);
-  for (const w of findAll(tree, c => getClasses(c).some(x => WRAPPER_CLASSES.includes(x)))) for (const c of getClasses(w)) if (WRAPPER_CLASSES.includes(c) && !out.report.wrappers.includes(c)) out.report.wrappers.push(c);
+  const state = { frame: [], depth: 0, bands: 0 };
+  const nodes = unwrap(tree.children, state);
+  // A legacy frame is kept verbatim (its page CSS targets it); the standard
+  // doc-body > doc-inner (or no wrappers at all) means the default.
+  const legacyFrame = state.frame.filter(c => !/^doc-(body|inner)$/.test(c));
+  if (legacyFrame.length && state.frame.join('|') !== 'doc-body|doc-inner') header.frame = state.frame;
+  for (const w of findAll(tree, c => getClasses(c).some(isWrapperClass))) for (const c of getClasses(w)) if (isWrapperClass(c) && !out.report.wrappers.includes(c)) out.report.wrappers.push(c);
 
   let section = null;            // current section
   let prose = null;              // open Text block being accumulated
@@ -322,7 +378,8 @@ function parse(html, opts = {}) {
     if (!p) return {};
     const band = Boolean(p.band) && bandCount++ > 0; // the first band is the default column
     if (p.band && !band) bandCount = 1;
-    return { eyebrow: p.eyebrow || '', dek: p.dek || '', tocLabel: p.tocLabel || '', band, classes: p.classes ? p.classes.split(/\s+/).filter(Boolean) : [] };
+    const split = (s) => (s ? String(s).split(/\s+/).filter(Boolean) : []);
+    return { eyebrow: p.eyebrow || '', dek: p.dek || '', tocLabel: p.tocLabel || '', band, bandClasses: split(p.bandClasses), classes: split(p.classes) };
   };
   const ensureSection = () => { if (!section) { section = newSection(''); sections.push(section); } return section; };
   const flushProse = () => { prose = null; };

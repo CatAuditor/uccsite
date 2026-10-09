@@ -562,3 +562,30 @@ Do these in Cloudflare DNS, **in this order**, a week apart:
 Not DNS, already done by the dev: double opt-in for the join form, bounce
 and complaint suppression, List-Id/Precedence headers, UTM tagging, the web
 archive at /newsletters.
+
+## 13. Document builder: production column, conversion, publish
+
+The Documents editor is now a block builder (docs/systems/document-builder.md).
+Staging has the column and the eight long-form pages converted (pixel-identical,
+docs/migration/blocks-conversion.md). Production needs the same three steps,
+in this order, and nothing changes on the live site until step 3.
+
+- [ ] `[agent]` Add the column (idempotent; applies every pending DDL):
+  ```
+  $env:AWS_PROFILE='uccsite'; node scripts/migrate-schema.mjs --env prod
+  ```
+- [ ] `[agent]` Check the conversion against production content (read-only; needs Chrome on the machine):
+  ```
+  node scripts/convert-documents-to-blocks.mjs --env prod
+  ```
+  Every row must say `PASS` with `0.000%` differing pixels and `text identical`. The
+  statement "Your license plate has a price" was never styled cleanly and may show
+  a difference; that one is expected and can be fixed in the builder afterwards.
+- [ ] `[agent]` Apply (writes blocks + regenerated HTML, with a revision per document):
+  ```
+  node scripts/convert-documents-to-blocks.mjs --env prod --apply --no-shots
+  ```
+- [ ] `[go]` Open each converted document in the production admin, confirm the
+  preview, then request and approve a publish on Publish & Status. The publish
+  also ships the new site stylesheet ("Document blocks" group), which the admin
+  reports as "Live stylesheet is behind the code" until then.

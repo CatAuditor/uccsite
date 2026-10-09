@@ -349,7 +349,13 @@ After `/license-plate-has-a-price` published as bare text
   request publish until the report is clean. Nothing is blocked server-side:
   the two-person publish review stays the gate.
 
-## Upload a file (.html / .docx / .md) (2026-10-05)
+## Upload a file (.html / .docx / .md) (2026-10-05; builder documents use parseUpload instead, 2026-10-08)
+
+**Superseded for builder documents** (every new document, and every converted
+one): the file goes through `parseUpload` / `createDocument`'s upload-first
+path into blocks (docs/systems/document-builder.md "Upload-first and
+conversion"). The flow below remains for a legacy document still edited in
+the HTML box.
 
 The HTML box's file input accepts `.html/.htm` (read in the browser,
 unchanged, as before — also any file the browser types as `text/html`, since

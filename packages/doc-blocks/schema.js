@@ -29,6 +29,9 @@ const CALLOUT_VARIANTS = [
   { value: 'update-note', label: 'Update note (grey, navy bar)', root: 'update-note', labelClass: 'update-note-label' },
   { value: 'draft-def', label: 'Draft definition (cream, navy bar)', root: 'draft-def', labelClass: 'def-term', labelInline: true },
 ];
+// Legacy box classes a converted page may carry instead of a variant root
+// (block.legacyClass): read as the nearest variant, written back unchanged.
+const CALLOUT_LEGACY = { acknowledgment: 'scope-box', 'report-callout': 'callout', 'report-callout-dark': 'callout-dark', 'theory-stat': 'finding-box' };
 
 const TABLE_VARIANTS = [
   { value: 'doc-table', label: 'Data table (navy header)' },
@@ -54,8 +57,10 @@ const CTA_VARIANTS = [
 ];
 
 // Hero button icons: the inline SVG the site uses, by name.
+const DOWNLOAD_PATHS = '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>';
 const CTA_ICONS = {
-  download: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  download: `<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${DOWNLOAD_PATHS}</svg>`,
+  downloadSmall: `<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${DOWNLOAD_PATHS}</svg>`,
 };
 
 const F = (key, label, kind, extra = {}) => ({ key, label, kind, ...extra });
@@ -124,7 +129,7 @@ const BLOCK_TYPES = {
     label: 'Call to action',
     description: 'A centred cream box with a heading, a sentence and buttons. Related reading, the full archive, a petition.',
     variants: CTA_VARIANTS,
-    fields: [F('heading', 'Heading', 'text'), F('html', 'Text', 'inline'), F('buttons', 'Buttons', 'list', { of: [F('label', 'Button text', 'text'), F('href', 'Link', 'url')] })],
+    fields: [F('heading', 'Heading', 'text'), F('html', 'Text', 'inline'), F('buttons', 'Buttons', 'list', { of: [F('label', 'Button text', 'text'), F('href', 'Link', 'url'), F('icon', 'Icon', 'select', { options: [{ value: '', label: 'None' }, { value: 'download', label: 'Download arrow' }] })] })],
     empty: () => ({ variant: 'related-cta', heading: '', html: '', buttons: [{ label: '', href: '' }] }),
     sample: { variant: 'related-cta', heading: 'The records behind this paper', html: 'Every figure comes from records Weber County released.', buttons: [{ label: 'Read the full investigation →', href: '/alpr.html' }] },
   },
@@ -207,6 +212,8 @@ const SECTION_FIELDS = [
   F('eyebrow', 'Eyebrow', 'text', { hint: 'small label above the heading (part headers)' }),
   F('dek', 'Standfirst', 'inline', { hint: 'one sentence under the heading' }),
   F('band', 'Starts a new page band', 'bool', { hint: 'closes the white column and opens a fresh one (multi-part pieces)' }),
+  F('bandClasses', 'Extra classes on the band', 'classes', { hint: 'space-separated; migrated per-part styles' }),
+  F('classes', 'Wrapper classes around this section', 'classes', { hint: 'space-separated; a migrated page\'s own section wrapper' }),
 ];
 
 // Header fields: the fixed top of every document.
@@ -224,10 +231,11 @@ const HEADER_FIELDS = [
   F('metaLinkHref', 'Byline link', 'file'),
   F('note', 'Note under the byline', 'inline', { hint: 'italic provenance paragraph' }),
   F('toc', 'Contents list', 'select', { options: [{ value: 'auto', label: 'From the section headings' }, { value: 'none', label: 'None' }] }),
+  F('frame', 'Page frame', 'frame', { hint: 'wrapper classes around the column, outer to inner; blank = the standard doc-body > doc-inner. A converted page keeps its own so its page CSS still applies.' }),
 ];
 
 function emptyHeader() {
-  return { layout: 'hero', eyebrow: '', headline: '', summary: '', ctas: [], provenance: '', badge: 'Utah Civic Compact', status: '', date: '', authorTitle: '', metaLinkLabel: '', metaLinkHref: '', note: '', toc: 'auto' };
+  return { layout: 'hero', eyebrow: '', headline: '', summary: '', ctas: [], provenance: '', badge: 'Utah Civic Compact', status: '', date: '', authorTitle: '', metaLinkLabel: '', metaLinkHref: '', note: '', toc: 'auto', frame: [] };
 }
 
 let counter = 0;
@@ -243,7 +251,7 @@ function newBlock(type) {
 }
 
 function newSection(heading = '') {
-  return { id: newId('s'), heading, anchor: '', tocLabel: '', eyebrow: '', dek: '', band: false, classes: [], blocks: [] };
+  return { id: newId('s'), heading, anchor: '', tocLabel: '', eyebrow: '', dek: '', band: false, bandClasses: [], classes: [], blocks: [] };
 }
 
 function emptyBody() {
@@ -271,9 +279,10 @@ function validateBody(input) {
   if (!['hero', 'none'].includes(body.header.layout)) body.header.layout = 'hero';
   if (!['auto', 'none'].includes(body.header.toc)) body.header.toc = 'auto';
   if (!Array.isArray(body.header.ctas)) body.header.ctas = [];
+  body.header.frame = Array.isArray(body.header.frame) ? body.header.frame.map(String).filter(Boolean) : [];
   for (const [i, s] of (Array.isArray(input.sections) ? input.sections : []).entries()) {
     if (!s || typeof s !== 'object') { errors.push(`Section ${i + 1} is not an object`); continue; }
-    const section = { id: String(s.id || newId('s')), heading: String(s.heading || ''), anchor: String(s.anchor || ''), tocLabel: String(s.tocLabel || ''), eyebrow: String(s.eyebrow || ''), dek: String(s.dek || ''), band: Boolean(s.band), classes: Array.isArray(s.classes) ? s.classes.map(String) : [], blocks: [] };
+    const section = { id: String(s.id || newId('s')), heading: String(s.heading || ''), anchor: String(s.anchor || ''), tocLabel: String(s.tocLabel || ''), eyebrow: String(s.eyebrow || ''), dek: String(s.dek || ''), band: Boolean(s.band), bandClasses: Array.isArray(s.bandClasses) ? s.bandClasses.map(String) : [], classes: Array.isArray(s.classes) ? s.classes.map(String) : [], blocks: [] };
     for (const [j, b] of (Array.isArray(s.blocks) ? s.blocks : []).entries()) {
       if (!b || typeof b !== 'object' || !BLOCK_TYPES[b.type]) { errors.push(`Section ${i + 1}, block ${j + 1}: unknown type "${b && b.type}"`); continue; }
       const def = BLOCK_TYPES[b.type];
@@ -288,6 +297,6 @@ function validateBody(input) {
 }
 
 export {
-  VERSION, BLOCK_TYPES, SECTION_FIELDS, HEADER_FIELDS, CALLOUT_VARIANTS, TABLE_VARIANTS, STATS_VARIANTS, SOURCES_VARIANTS, CTA_VARIANTS, CTA_ICONS,
+  VERSION, BLOCK_TYPES, SECTION_FIELDS, HEADER_FIELDS, CALLOUT_VARIANTS, CALLOUT_LEGACY, TABLE_VARIANTS, STATS_VARIANTS, SOURCES_VARIANTS, CTA_VARIANTS, CTA_ICONS,
   emptyBody, emptyHeader, newBlock, newSection, newId, slugify, validateBody, fullWidth,
 };

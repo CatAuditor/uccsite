@@ -16,6 +16,7 @@ const HEADER_GROUPS = [
   ['Hero', ['layout', 'eyebrow', 'headline', 'summary', 'ctas', 'provenance']],
   ['Byline', ['badge', 'status', 'date', 'authorTitle', 'metaLinkLabel', 'metaLinkHref', 'note']],
   ['Contents', ['toc']],
+  ['Advanced', ['frame']],
 ];
 const LAYOUT_FIELD = { key: 'layout', label: 'Top of the page', kind: 'select', options: [{ value: 'hero', label: 'Hero, byline and contents (standard)' }, { value: 'none', label: 'None: the blocks draw the whole page' }] };
 // Styling chips offered on every block: utilities and the block group's roots.
@@ -164,8 +165,6 @@ export default function Builder({ documentId, initialBody, initialPreview, galle
                 <details className="bgroup bsection-more">
                   <summary>Section options{section.heading ? ` · #${section.anchor || slugify(section.heading)}` : ''}</summary>
                   <Fields defs={sectionDefs} obj={section} disabled={readOnly} ctx={{ ...ctx, prefix: `sec-${i}` }} onChange={(next) => setSection(i, () => ({ ...next, blocks: section.blocks }))} />
-                  <Field def={{ key: 'classes', label: 'Extra classes on the band', kind: 'text', hint: 'space-separated; for migrated per-part styles' }} value={(section.classes || []).join(' ')} disabled={readOnly} ctx={{ prefix: `sec-${i}` }}
-                    onChange={(v) => setSection(i, s => ({ ...s, classes: v.split(/\s+/).filter(Boolean) }))} />
                 </details>
 
                 <AddBar label="Add a block" onClick={() => setPicker({ sectionIndex: i, index: 0 })} disabled={readOnly} small />
@@ -237,7 +236,11 @@ function BlockCard({ block, kit, ctx, readOnly, selected, onSelect, onHover, onC
       <div className="bcard-head">
         <strong>{def.label}</strong>
         {def.variants && (
-          <select value={block.variant || def.variants[0].value} disabled={readOnly} onChange={(e) => onChange(b => ({ ...b, variant: e.target.value }))} title="Style">
+          // A converted page's own box/table class (legacyClass) is kept until a
+          // real variant is chosen; choosing one drops the legacy classes.
+          <select value={block.legacyClass ? '__legacy' : (block.variant || def.variants[0].value)} disabled={readOnly} title="Style"
+            onChange={(e) => { if (e.target.value === '__legacy') return; onChange(b => { const { legacyClass, legacyLabelClass, legacyWrap, bare, ...rest } = b; return { ...rest, variant: e.target.value }; }); }}>
+            {block.legacyClass && <option value="__legacy">This page&apos;s own style ({block.legacyClass})</option>}
             {def.variants.map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
           </select>
         )}

@@ -9,9 +9,10 @@ serializer writes the body HTML the ingest already expects into
 (docs/systems/documents.md) are unchanged. Decision record:
 docs/decisions/document-builder-blocks.md.
 
-Status: **model, site CSS, database column, admin builder, upload-first and
-convert-to-blocks shipped; legacy conversion with pixel comparison and the
-authoring-kit markers follow** (see "Status" at the bottom).
+Status: **shipped on staging 2026-10-08**: model, site CSS group, database
+column, admin builder, upload-first, convert-to-blocks, the eight legacy
+documents converted (pixel-identical), authoring-kit markers. Production
+needs the column and the conversion run (docs/for-conner.md §13).
 
 ## Code Map
 
@@ -130,13 +131,17 @@ Logs: `[documents] upload-first "<file>" …`, `[documents] parse upload …`,
 
 ```
 { v: 1,
-  header: { layout: 'hero'|'none', eyebrow, headline (blank = title), summary (html),
-            ctas: [{ label, href, kind: 'primary'|'secondary', icon: ''|'download' }],
-            provenance (inline), badge, status, date, authorTitle,
-            metaLinkLabel, metaLinkHref, note (inline), toc: 'auto'|'none' },
-  sections: [{ id, heading, anchor, tocLabel, eyebrow, dek, band, classes[], blocks: [
-    { id, type, variant?, classes?: [], ...fields } ] }] }
+  header: { layout: 'hero'|'none', eyebrow, eyebrowTag?: 'p', headline (blank = title),
+            summary (html), ctas: [{ label, href, kind: 'primary'|'secondary', icon: ''|'download' }],
+            ctasBare?: true, provenance (inline), badge, status, date, authorTitle,
+            metaLinkLabel, metaLinkHref, note (inline), toc: 'auto'|'none',
+            frame: [] (blank = ['doc-body', 'doc-inner']) },
+  sections: [{ id, heading, anchor, tocLabel, eyebrow, dek, band, bandClasses[], classes[],
+               blocks: [ { id, type, variant?, classes?: [], legacyClass?, ...fields } ] }] }
 ```
+
+The `?` fields exist for converted legacy pages only (see "Legacy conversion"):
+they let the serializer write exactly the markup the page's own CSS expects.
 
 The document's `title` and `author` columns stay the source for the h1 (unless
 `headline` is set: legacy pages whose h1 is not the SEO title) and the byline
@@ -180,9 +185,13 @@ div.doc-body > div.doc-inner            ← one white "band"; the reading column
   h2#anchor … blocks …                   (or div.part-header > eyebrow + h2 + p when eyebrow/dek set)
 ```
 
-A section with `band: true` (or with `classes`) closes the band and opens a
-new `div.doc-body[.classes]`; a full-width block (`fullWidth()`: partsnav,
-stats band) is written between bands. Multi-part pieces (stratos) need this.
+A section with `band: true` closes the band and opens a new one carrying
+`bandClasses`; `classes` wraps the section in a div inside the column; a
+full-width block (`fullWidth()`: partsnav, stats band) is written between
+bands. Multi-part pieces (stratos) need this. **Text blocks write their
+children bare**, each tagged `data-block`, so `:first-of-type` and
+`:last-child` rules behave as on a hand-written page; the contents box is a
+`div` (the ingest allowlist has no `nav`).
 
 ## Parsing (`parse.js`)
 
@@ -212,16 +221,58 @@ Anything else is a **raw** block, counted in `report.raw` with a note. A
 legacy page with no `.release-meta` gets `badge: ''` (it printed none); a
 plain upload gets the default badge and an automatic contents list.
 
-## Legacy conversion check
+## Legacy conversion
 
-`node scripts/blocks-roundtrip.mjs [slug…] [--html <dir>]` parses each
-tracked document, serializes it back, runs both through the ingest and
-compares text and tag sequence. State on 2026-10-08: all eight documents
-**text-identical**; raw blocks 0 everywhere except the Dignity Index statement
-(letterhead: masthead, date line, the-ask, footer kept verbatim). Tag
-sequences differ only by the block wrapper divs. Pixel comparison (headless
-Chrome) comes with the conversion script. The same check runs as a test in
+A converted page must look exactly as before, so the parser records what the
+page's own CSS depends on and the serializer writes it back:
+
+- **frame**: the wrapper chain around the column (`['paper-body',
+  'paper-inner']`, `['report-body', 'container']`, `['page']` …) instead of
+  `doc-body > doc-inner`; a `*-body` wrapper starts a band, a `.s-xxxxxx`
+  scoped class rides on the band, a `*-section` wrapper on the section;
+- **legacyClass** on a box or table whose class is the page's own
+  (`report-callout`, `theory-stat`, `acknowledgment`, `defs-table` +
+  `defs-table-wrap`): read as the nearest variant, written back unchanged (the
+  editor shows "This page's own style"; picking a variant drops it);
+- `eyebrowTag: 'p'`, `ctasBare`, a bare table (`bare`), icons on buttons,
+  `&nbsp;` kept in text.
+
+Page CSS is left as it is; the only rewrite is a class alias where a legacy
+name means something else site-wide (alpr and weber-county's grey
+`finding-box` is the site's `violation-box`; `rewritePageCss` +
+`parse({ classAliases })`, per slug in the script).
+
+**Proof**: `node scripts/convert-documents-to-blocks.mjs --env <env>
+[--only slugs] [--apply] [--no-shots]` (needs Chrome; `puppeteer-core`,
+`pixelmatch`, `pngjs` are dev dependencies). For each document without
+blocks: parse → serialize; text must be identical; OLD (legacy HTML + page
+CSS + the site CSS from commit 68dc73c, before the Document blocks group)
+and NEW (blocks + current site CSS) are composed with the real shell,
+screenshotted full-page at 1280px with every `<details>` open and
+pixel-diffed. Output under `.tmp/blocks-conversion/<slug>/` (old/new
+HTML + PNG, diff.png, blocks.json). `--apply` writes `body_blocks`,
+`body_html_raw`, `page_css` with a revision snapshot and a
+`document.convert_blocks` audit row (actor `scripts/convert-documents-to-blocks`).
+Result 2026-10-08 (docs/migration/blocks-conversion.md): **all eight
+documents 0.000% differing pixels, identical page heights, raw blocks 0**
+except the Dignity Index statement (letterhead: masthead, date line, article,
+footer kept as Custom HTML). Applied on staging the same day.
+
+`node scripts/blocks-roundtrip.mjs` is the quick text/tag check without a
+database or browser; the same round-trip runs as a test in
 `packages/doc-blocks/test/blocks.test.mjs`.
+
+## Authoring kit markers
+
+`apps/admin/lib/authoring-kit.js` section 5 "Builder markers" documents the
+`<!-- ucc:… -->` vocabulary (header, section, callout, quote, pullquote,
+stats, figure, table, files, cta, sources, accordion, video, coverage) with a
+Markdown example; `apps/admin/test/upload-blocks.test.mjs` runs that example
+through `markdownToHtml` + `parse` and asserts the blocks. Section 1 now
+describes the three routes as upload → builder; section 4 says how a plain
+draft marks eyebrow, byline and date; the "classes copied from a live page"
+warning (and `html-editor.js LIVE_PAGE_CLASSES`) now names only the private
+wrappers, since the shared pieces are site classes.
 
 ## Status / not yet
 
@@ -230,5 +281,7 @@ Chrome) comes with the conversion script. The same check runs as a test in
 - [x] `documents.body_blocks` column (applied to staging 2026-10-08; prod with the next migrate-schema); save path serializes; revisions carry it
 - [x] admin builder UI: header fields, sections, block editors (contenteditable text), block picker with rendered previews, live preview without saving, add bars
 - [x] `parseUpload` server action; New document = upload first; Convert to blocks on legacy documents
-- [ ] convert the legacy documents (page CSS selectors rewritten to the new frame), pixel-compare old vs new
-- [ ] authoring kit: the marker vocabulary
+- [x] convert the legacy documents, pixel-compare old vs new (0.000% on all eight; applied on staging 2026-10-08)
+- [x] authoring kit: the marker vocabulary (+ test of the kit's example)
+- [ ] production: `migrate-schema --env prod`, then `convert-documents-to-blocks --env prod` (check, then `--apply`), then a publish (docs/for-conner.md §13)
+- [ ] later: a converted page can be moved onto the standard frame (clear Page frame + page CSS, pick variants) when its look should follow the site

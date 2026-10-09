@@ -54,9 +54,23 @@ The third step is the screen itself, on the test site first:
   checked against their current look in the next step; do not convert them
   by hand yet.
 
-Needs a person: nothing yet. The new column reached the test database
-today; it reaches production with the next schema migration before any
-builder document is published there.
+The fourth step moved the eight existing long-form pages onto the builder,
+on the test site. Each one was read into blocks, written back out, and the
+old and new pages were photographed in a browser and compared pixel by
+pixel: all eight match exactly (the comparison is kept in
+`docs/migration/blocks-conversion.md`). Each conversion saved a revision
+first. Those pages keep their own styling; a converted page shows "This
+page's own style" on boxes and tables that came from it, and choosing a
+site style replaces it.
+
+The authoring kit (the file handed to Claude before writing) now explains
+the three ways to hand back a piece and the small markers a writing tool
+can put in a Markdown file so a quotation, a scope box, key figures or a
+table arrive as the right block, already styled.
+
+Needs a person: production still has to get the new column and the same
+conversion run, then a publish (docs/for-conner.md, section 13). Until
+then, builder documents exist on the test site only.
 ## 2026-10-08 — Officials lookup joins the mailing list
 
 The officials lookup (lookup.utahciviccompact.org) has a "Send me the Utah

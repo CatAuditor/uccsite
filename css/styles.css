@@ -2450,7 +2450,7 @@ input, textarea, select { font: inherit; }
    @applies p
    @group Document blocks
    @desc Small muted line under the hero buttons: where every figure on the page comes from. */
-.subpage-hero .hero-provenance { font-size: 13px; color: rgba(255,255,255,0.45); max-width: 560px; margin-top: 20px; }
+.hero-provenance { font-size: 13px; color: rgba(255,255,255,0.45); margin-top: 20px; }
 
 /* ---- the reading column ---- */
 
@@ -2480,8 +2480,7 @@ input, textarea, select { font: inherit; }
 .doc-inner ol li { font-size: 16px; color: var(--gray-600); line-height: 1.75; padding: 6px 0; }
 .doc-inner hr { border: 0; border-top: 1px solid var(--gray-200); margin: 40px 0; }
 .doc-inner img { max-width: 100%; height: auto; }
-.doc-inner > :last-child, .doc-inner [data-block] > :last-child { margin-bottom: 0; }
-.doc-inner [data-block] { margin-bottom: 16px; }
+.doc-inner > :last-child { margin-bottom: 0; }
 
 /* @class doc-part
    @label Section wrapper

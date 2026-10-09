@@ -214,8 +214,8 @@ const escapeAttr = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '
 // select block (builder); hover messages → outline by nid or by block id.
 const PREVIEW_SCRIPT = `<script>
 (function(){
-  var last=null;
-  function outline(sel){ if(last){last.style.outline='';last.style.outlineOffset='';} last=null; if(!sel) return; var el=document.querySelector(sel); if(el){ el.style.outline='2px solid #c8a84b'; el.style.outlineOffset='4px'; el.scrollIntoView({block:'nearest'}); last=el; } }
+  var last=[];
+  function outline(sel){ last.forEach(function(el){el.style.outline='';el.style.outlineOffset='';}); last=[]; if(!sel) return; var els=document.querySelectorAll(sel); els.forEach(function(el){ el.style.outline='2px solid #c8a84b'; el.style.outlineOffset='4px'; last.push(el); }); if(els[0]) els[0].scrollIntoView({block:'nearest'}); }
   document.addEventListener('click', function(e){ var a=e.target.closest('a'); if(a) e.preventDefault(); var b=e.target.closest('[data-block],[data-section]'); if(b) parent.postMessage({ucc:'block', id: b.getAttribute('data-block')||b.getAttribute('data-section')}, '*'); var el=e.target.closest('[data-nid]'); if(!el) return; e.preventDefault(); parent.postMessage({ucc:'select', nid: el.getAttribute('data-nid')}, '*'); });
   window.addEventListener('message', function(e){ if(!e.data) return; if(e.data.ucc==='hover') outline(e.data.nid ? '[data-nid="'+e.data.nid+'"]' : null); if(e.data.ucc==='hoverBlock') outline(e.data.id ? '[data-block="'+e.data.id+'"],[data-section="'+e.data.id+'"]' : null); if(e.data.ucc==='scrollTo') window.scrollTo(0, e.data.y||0); });
   var t=null; window.addEventListener('scroll', function(){ clearTimeout(t); t=setTimeout(function(){ parent.postMessage({ucc:'scroll', y: window.scrollY}, '*'); }, 80); });

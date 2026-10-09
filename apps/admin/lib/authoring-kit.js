@@ -347,13 +347,13 @@ This is everything a writing tool needs to produce a long-form page (a report, a
 
 | you say | you get | then you |
 |---|---|---|
-| **"Help me write / edit this piece. Prose only."** | The text, in plain prose with headings. No HTML. | Draft in Claude Docs, Word or Google Docs and export a **.docx**, or save Claude's answer as a **.md** file. In the admin, open the document and use **Upload a file** in the HTML box. The admin converts it to clean HTML for you. |
-| **"Give me the HTML fragment."** | An HTML body fragment that follows sections 5 and 6: the site's document frame and the site's own classes, so the page arrives already styled. | Copy it into the **Body HTML** box, or save it as a **.html** file and upload it. |
-| **"Convert my draft to the HTML fragment."** (paste or attach your finished draft) | The same fragment, built from text you already wrote. | Same as above. |
+| **"Help me write / edit this piece. Prose only."** | The text, in plain prose with headings. No HTML. | Draft in Claude Docs, Word or Google Docs and export a **.docx**, or save Claude's answer as a **.md** file. In the admin, choose the file on **New document** (or **Start from a file** inside an open document). The admin reads the eyebrow, title, summary, byline, date and every section into editable blocks. |
+| **"Give me the Markdown with block markers."** | The piece as Markdown, with the markers in section 5 ("Builder markers") around the boxes, figures, tables and quotations that should become styled blocks. | Save it as a **.md** file and upload it the same way. Every marked piece arrives as the right block, already styled. |
+| **"Give me the HTML fragment."** | An HTML body fragment that follows sections 5 and 6: the site's document markup and classes. | Save it as a **.html** file and upload it. The admin reads the site's own markup (hero, byline strip, boxes, tables) into blocks. |
 
 Whichever route, Claude must also return the **page fields** block in section 3. Those are typed into the admin by hand; they are not part of the body.
 
-The HTML route is the one that lands styled: the body of a document is placed directly between the site's header and footer with nothing around it, so the fragment itself supplies the page frame and the classes (section 6 has all of them, with the CSS each one applies). The prose route arrives as plain tags and is styled by the editor afterwards. In both cases the admin runs the HTML through a cleaner that removes anything unsafe, shows a live preview on the real page design, and a second person approves the publish. The text must be **correct, well structured and in the site's voice**; the styling should match what section 6 describes.
+Every route lands in the **block builder**: the admin shows the page header fields, then the sections and their blocks, each with a style choice and a live preview of the real page, before anything is saved. Plain prose arrives as Text blocks under the right headings; markers and site markup arrive as the specific block (a scope box, key figures, a quotation with its source). The admin runs everything through a cleaner that removes anything unsafe, and a second person approves the publish. The text must be **correct, well structured and in the site's voice**; the styling is chosen in the builder, and the markers let the writing tool choose it in advance.
 
 ### Instructions for Claude
 
@@ -423,7 +423,7 @@ Whether you return prose or HTML, the structure is the same.
 5. **The evidence**: quotes, tables, figures, each attributed in the text next to it. A table needs a caption or a sentence introducing it.
 6. **What is unknown**, and what UCC asked that went unanswered.
 7. **What UCC recommends or will do next**, if anything, in a section of its own so fact and position do not mix.
-8. **No "About UCC" paragraph, no "Contact" block, no signature** at the end; the site adds the footer. The site does not print a byline or a date on the page itself (the Author field feeds the page's structured data only), so if the piece is bylined, put one line at the end of the hero: \`<p>By [Name], 14 March 2026</p>\`.
+8. **No "About UCC" paragraph, no "Contact" block, no signature** at the end; the site adds the footer. The page prints a byline strip under the hero (badge, date, "By Name, Title") that the admin builds from the page fields: in prose, put a line \`By [Name], [Title]\` and a line with the date (\`September 9, 2026\`) right after the lead paragraph and the admin reads them; a short line above the headline (\`Policy Paper\`) becomes the eyebrow.
 
 Images are not part of the draft. If a chart or a document scan belongs in the piece, write a one-line note where it goes (\`[IMAGE: the vendor contract, page 3, signature block]\`) and the editor uploads it on the admin's Media page and inserts it with alt text. Alt text is required for every image, so suggest it in the note.
 
@@ -442,7 +442,7 @@ Return a **body fragment**: the content that goes inside the page's \`<main>\`. 
 - \`style="..."\` on any element, \`<style>\` blocks, \`<script>\`, \`<iframe>\`, \`<form>\`, \`<input>\`, \`<button>\`, \`<video>\`, \`<audio>\`, \`<object>\`, \`<embed>\`, \`<link>\`, \`<meta>\`. All removed on save.
 - \`onclick\` or any \`on*\` attribute; \`javascript:\` or \`data:\` URLs. Removed.
 - Classes that are not in the site stylesheet (section 6.5 lists every one an author can use). Unknown classes are stripped and reported, so they only make work. No invented class names, no Tailwind or Bootstrap classes.
-- **Classes copied from an existing page on the site.** The published reports and papers (alpr, how-did-this-happen, privacy-report, stratos and the rest) carry their own private per-page CSS; their classes (paper-body, paper-inner, release-meta, release-badge, paper-toc, ask-box, sources-list, related-cta, hero-ctas, btn-file, report-section, report-callout and so on) are not in the site stylesheet and are stripped on save, which leaves the page as bare text. Do not fetch a live page and imitate its markup. Build from the frame in 6.1 and the classes in 6.5 only; a table of contents is a \`callout\`, a byline is a \`<p>\` in the hero, an "ask" box is a \`callout-dark\`.
+- **Classes copied from an existing page on the site.** The published reports still carry private per-page wrappers (paper-body, paper-inner, briefing-body, report-section, report-callout, theory-section, ask-box) that are not in the site stylesheet; the shared document pieces (release-meta, paper-toc, scope-box, finding-box, stats-grid, pull-quote, related-cta and the rest of the "Document blocks" group in 6.5) are, and the admin reads them into blocks. Do not fetch a live page and imitate its wrappers. Build from the frame in 6.1, or better, use the builder markers below and let the admin write the markup.
 - Markdown inside the HTML (\`**bold**\`, \`# heading\`). It is published literally.
 - Font tags, \`<center>\`, \`<font>\`, \`&nbsp;\` runs for spacing, \`<br>\` to make paragraphs. Use \`<p>\`.
 - \`<h1>\` more than once, or a heading level that skips. These block publishing.
@@ -463,6 +463,56 @@ Return a **body fragment**: the content that goes inside the page's \`<main>\`. 
 **Placeholders the site expands**
 
 ${tokensSection(coverageKeys)}
+
+### Builder markers (Markdown or HTML)
+
+The admin's block builder reads these HTML comments and turns what they wrap into the named block, styled by the site. They work in a **.md** file (Markdown passes HTML comments through) and in an **.html** fragment. Put each marker on its own line; close a wrapped block with \`<!-- /ucc -->\`. Attribute values go in double quotes.
+
+| marker | what it makes | what goes inside |
+|---|---|---|
+| \`<!-- ucc:header eyebrow="Policy Paper" date="September 9, 2026" author="Jarom Gillins" author-title="Director of Policy" badge="Utah Civic Compact" status="" -->\` | the page header fields (one marker, near the top; every attribute optional) | nothing (self-contained) |
+| \`<!-- ucc:section eyebrow="Part 1" dek="One sentence under the heading." -->\` | extra fields on the \`##\` heading that follows | nothing |
+| \`<!-- ucc:callout variant="scope-box" label="The boundaries of this analysis" -->\` ... \`<!-- /ucc -->\` | a box; variants: \`callout\`, \`callout-dark\`, \`scope-box\`, \`finding-box\`, \`violation-box\`, \`update-note\`, \`draft-def\` | paragraphs |
+| \`<!-- ucc:quote source="Utah Code" -->\` ... \`<!-- /ucc -->\` | a quotation with a small red source label and a citation | the quoted paragraph(s); a last line starting with an em dash or "--" is the citation (a link is fine) |
+| \`<!-- ucc:pullquote -->\` ... \`<!-- /ucc -->\` | one sentence set large on navy | one paragraph, then an attribution line |
+| \`<!-- ucc:stats variant="cards" -->\` ... \`<!-- /ucc -->\` | key figures (\`cards\` grey grid or \`band\` full-width navy) | a list: \`- 5,171,087 - Searches, February 2022 to July 2026\` (number, dash, description) |
+| \`<!-- ucc:figure caption="Figure 1. The order form, page 3" -->\` ... \`<!-- /ucc -->\` | an image with a caption | one image: \`![alt text](file.png)\`; the editor uploads the file itself |
+| \`<!-- ucc:table variant="doc-table" caption="Fields in each record" -->\` ... \`<!-- /ucc -->\` | a table; variants \`doc-table\` (navy header), \`own-table\`, \`rank-table\`, \`timeline-table\` | a Markdown or HTML table with a header row |
+| \`<!-- ucc:files -->\` ... \`<!-- /ucc -->\` | a row of download buttons | a list of links |
+| \`<!-- ucc:cta variant="related-cta" heading="The records behind this paper" -->\` ... \`<!-- /ucc -->\` | a centred box with buttons; variants \`related-cta\`, \`download-cta\`, \`contact-cta\` | one sentence, then a list of links |
+| \`<!-- ucc:sources -->\` ... \`<!-- /ucc -->\` | the sources appendix | paragraphs |
+| \`<!-- ucc:accordion -->\` ... \`<!-- /ucc -->\` | collapsible sections | \`### Heading\` then its paragraphs, repeated |
+| \`<!-- ucc:video id="dQw4w9WgXcQ" -->\` / \`<!-- ucc:coverage key="alpr" -->\` | a YouTube embed / the press coverage strip | nothing |
+
+Without markers the admin still reads a plain document sensibly: the first short line above the \`#\` headline is the eyebrow, the first paragraph after it the summary, a \`By Name, Title\` line the author, a date line the date; every \`##\` starts a section; blockquotes become quotations; tables become tables; everything else is Text. Markers only decide the styled pieces.
+
+Example, in Markdown:
+
+\`\`\`markdown
+<!-- ucc:header eyebrow="Surveillance investigation" date="August 12, 2026" author="Conner Radcliffe" -->
+# Ten cameras in one Utah county were searched 5.1 million times
+
+Weber County operates ten license plate reader cameras. Records the county released show 3,343 agencies ran 5,171,087 searches against the networks it administers.
+
+## The numbers
+
+<!-- ucc:stats -->
+- 5,171,087 - Searches, February 2022 to July 2026
+- 3,343 - Agencies that ran at least one search
+<!-- /ucc -->
+
+<!-- ucc:callout variant="scope-box" label="A note on this investigation" -->
+Nothing on this page is a criticism of the sheriff's office. Weber County is the only county that has let anyone look.
+<!-- /ucc -->
+
+## What Utah law requires
+
+<!-- ucc:quote source="Utah Code" -->
+"cameras used in combination with computer algorithms to convert an image of a license plate into computer-readable data."
+
+-- [§ 41-6a-2002(2)](https://le.utah.gov/xcode/Title41/Chapter6A/41-6a-S2002.html)
+<!-- /ucc -->
+\`\`\`
 
 ### Skeleton
 
@@ -518,7 +568,7 @@ Everything a report needs, and nothing it does not, inside the site's document f
 
 ## 6. Styling: the site's stylesheet, and how a document uses it
 
-A document's body is inserted between the site header and footer with no wrapper of its own, so the fragment carries its own structure. 6.1 gives the frame, 6.4 a full reference fragment showing the classes in use, 6.5 every class with its CSS, read from the live stylesheet when this file is generated. Use them to choose patterns that fit the content: a stats band for the key figures, a cream band to set a section apart, a card grid for parallel items. Keep the writing rules in section 2 regardless of layout; a stats band does not excuse a triplet.
+A document's body is inserted between the site header and footer with no wrapper of its own. An upload goes through the block builder, which writes the frame (hero, byline strip, contents list, the white reading column) itself; a hand-written HTML fragment carries its own structure. 6.1 gives the frame, 6.4 a full reference fragment showing the classes in use, 6.5 every class with its CSS, read from the live stylesheet when this file is generated. Use them to choose patterns that fit the content: a stats band for the key figures, a cream band to set a section apart, a card grid for parallel items. Keep the writing rules in section 2 regardless of layout; a stats band does not excuse a triplet.
 
 ### 6.1 Document frame
 

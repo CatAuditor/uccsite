@@ -33,8 +33,15 @@ function link(href, label, { external, cls } = {}) {
   return `<a href="${esc(href)}"${ext ? ' target="_blank" rel="noopener"' : ''}${cls ? ` class="${esc(cls)}"` : ''}>${inline(label)}</a>`;
 }
 
+// Text blocks write their children bare, each top-level element tagged with
+// the block id, so the page flow (and :first-of-type / :last-child rules in a
+// legacy page's CSS) is exactly what a hand-written page would have.
+function tagChildren(html, id) {
+  return String(html || '').replace(/^<([a-z][a-z0-9]*)(\s|>)/gim, (m, t, rest) => `<${t} data-block="${esc(id)}"${rest === '>' ? '>' : ' '}`);
+}
+
 const renderers = {
-  prose: (b) => `<div${attrs(b)}>${nl}${paragraphs(b.html)}${nl}</div>`,
+  prose: (b) => tagChildren(paragraphs(b.html), b.id),
 
   quote: (b) => [
     `<blockquote${attrs(b)}>`,
@@ -53,15 +60,20 @@ const renderers = {
 
   callout: (b) => {
     const v = CALLOUT_VARIANTS.find(x => x.value === b.variant) || CALLOUT_VARIANTS[0];
+    // legacyClass: a converted page's own box class (report-callout,
+    // theory-stat, acknowledgment) written INSTEAD of the variant's root so
+    // the page CSS keeps styling it; choosing a variant in the editor clears it.
+    const root = b.legacyClass || v.root;
+    const labelClass = b.legacyLabelClass || v.labelClass;
     let label = '';
     if (b.label) {
       if (v.labelTag) label = `<${v.labelTag}>${esc(b.label)}</${v.labelTag}>`;
       else if (v.labelInline) label = ''; // draft-def: the term sits inside the first paragraph
-      else label = `<div class="${v.labelClass}">${esc(b.label)}</div>`;
+      else label = `<div class="${esc(labelClass)}">${esc(b.label)}</div>`;
     }
     let body = paragraphs(b.html);
-    if (b.label && v.labelInline) body = body.replace(/^<p>/i, `<p><span class="${v.labelClass}">${esc(b.label)}</span> `);
-    return [`<div${attrs(b, v.root)}>`, label, body, `</div>`].filter(Boolean).join(nl);
+    if (b.label && v.labelInline) body = body.replace(/^<p>/i, `<p><span class="${esc(labelClass)}">${esc(b.label)}</span> `);
+    return [`<div${attrs(b, root)}>`, label, body, `</div>`].filter(Boolean).join(nl);
   },
 
   stats: (b) => {
@@ -93,8 +105,10 @@ const renderers = {
       `<tbody>${nl}${rows.map(r => row(r, 'td', Array.isArray(r) ? '' : r.cls)).join(nl)}${nl}</tbody>`,
       `</table>`,
     ].filter(Boolean).join(nl);
-    const wrap = variant === 'rank-table' ? 'table-scroll' : variant === 'doc-table' ? 'doc-table-wrap' : 'table-wrap';
-    return `<div${attrs(b, wrap)}>${nl}${table}${nl}</div>`;
+    const cls = esc(b.legacyClass || variant);
+    if (b.bare) return table.replace(/^<table class="[^"]*">/, `<table${attrs(b, cls)}>`);
+    const wrap = b.legacyWrap || (variant === 'rank-table' ? 'table-scroll' : variant === 'doc-table' ? 'doc-table-wrap' : 'table-wrap');
+    return `<div${attrs(b, wrap)}>${nl}${table.replace(/^<table class="[^"]*">/, `<table class="${cls}">`)}${nl}</div>`;
   },
 
   files: (b) => `<div${attrs(b, 'table-downloads')}>${nl}${(b.items || []).filter(it => it.href || it.label).map(it => link(it.href, esc(it.label), { cls: 'btn-file' })).join(nl)}${nl}</div>`,
@@ -103,7 +117,7 @@ const renderers = {
     `<div${attrs(b, b.variant || 'related-cta')}>`,
     b.heading ? `<h3>${esc(b.heading)}</h3>` : '',
     b.html ? `<p>${inline(b.html)}</p>` : '',
-    ...(b.buttons || []).filter(x => x.href || x.label).map(x => link(x.href, esc(x.label), { cls: (CTA_VARIANTS.find(v => v.value === b.variant) || CTA_VARIANTS[0]).button })),
+    ...(b.buttons || []).filter(x => x.href || x.label).map(x => link(x.href, (CTA_ICONS[x.icon] ? CTA_ICONS[x.icon] + ' ' : '') + esc(x.label), { cls: (CTA_VARIANTS.find(v => v.value === b.variant) || CTA_VARIANTS[0]).button })),
     `</div>`,
   ].filter(Boolean).join(nl),
 
@@ -147,9 +161,11 @@ function sectionAnchor(section) {
 // in-column content reopens it.
 function renderSection(section, ctx = {}, band = null) {
   const out = [];
-  const wrap = !band && Array.isArray(section.classes) && section.classes.length > 0;
-  if (wrap) out.push(`<div class="doc-part ${esc(section.classes.join(' '))}" data-section="${esc(section.id)}">`);
+  // classes → a wrapper div inside the column (a legacy per-section wrapper
+  // such as report-section, or styling the editor added to the section).
+  const wrap = Array.isArray(section.classes) && section.classes.length > 0;
   const ensure = () => { if (band) { const o = band.open(); if (o) out.push(o); } };
+  if (wrap) { ensure(); out.push(`<div class="${esc(section.classes.join(' '))}" data-section="${esc(section.id)}">`); }
   if (section.heading) ensure();
   if (section.heading) {
     const id = esc(sectionAnchor(section));
@@ -164,7 +180,7 @@ function renderSection(section, ctx = {}, band = null) {
     }
   }
   for (const b of section.blocks || []) {
-    if (band && fullWidth(b)) { const c = band.close(); if (c) out.push(c); }
+    if (band && fullWidth(b) && !wrap) { const c = band.close(); if (c) out.push(c); }
     else ensure();
     out.push(renderBlock(b, ctx));
   }
@@ -179,14 +195,15 @@ function renderHeader(body, doc, { authorHref } = {}) {
   const h = body.header || {};
   if (h.layout === 'none') return '';
   const out = [`<div class="subpage-hero">`];
-  if (h.eyebrow) out.push(`<div class="section-label">${esc(h.eyebrow)}</div>`);
+  const eyebrowTag = h.eyebrowTag === 'p' ? 'p' : 'div'; // a legacy page may have written the label as <p>
+  if (h.eyebrow) out.push(`<${eyebrowTag} class="section-label">${esc(h.eyebrow)}</${eyebrowTag}>`);
   out.push(`<h1>${esc(h.headline || doc.title)}</h1>`);
   if (h.summary) out.push(paragraphs(h.summary));
   const ctas = (h.ctas || []).filter(c => c.href || c.label);
   if (ctas.length) {
-    out.push(`<div class="hero-ctas">`);
+    if (!h.ctasBare) out.push(`<div class="hero-ctas">`);
     for (const c of ctas) out.push(link(c.href, (CTA_ICONS[c.icon] ? CTA_ICONS[c.icon] + ' ' : '') + esc(c.label), { cls: c.kind === 'secondary' ? 'hero-secondary' : 'hero-download' }));
-    out.push(`</div>`);
+    if (!h.ctasBare) out.push(`</div>`);
   }
   if (h.provenance) out.push(`<p class="hero-provenance">${inline(h.provenance)}</p>`);
   out.push(`</div>`);
@@ -201,7 +218,7 @@ function renderMeta(body, doc, { authorHref } = {}, block = null) {
   if (h.status) parts.push(`<span class="release-badge-status">${esc(h.status)}</span>`);
   if (h.date) parts.push(`<span class="release-date">${esc(h.date)}</span>`);
   if (author) parts.push(`<span class="release-author">By ${authorHref ? `<a href="${esc(authorHref)}">${esc(author)}</a>` : esc(author)}${h.authorTitle ? `, ${esc(h.authorTitle)}` : ''}</span>`);
-  if (h.metaLinkHref || h.metaLinkLabel) parts.push(`<a href="${esc(h.metaLinkHref)}" download class="download-inline">${CTA_ICONS.download} ${esc(h.metaLinkLabel || 'Download')}</a>`);
+  if (h.metaLinkHref || h.metaLinkLabel) parts.push(`<a href="${esc(h.metaLinkHref)}" download class="download-inline">${CTA_ICONS.downloadSmall} ${esc(h.metaLinkLabel || 'Download')}</a>`);
   if (!parts.length) return block ? `<div${attrs(block, 'release-meta')}></div>` : '';
   return `<div${block ? attrs(block, 'release-meta') : ' class="release-meta"'}>${nl}${parts.join(nl)}${nl}</div>`;
 }
@@ -212,13 +229,14 @@ function renderToc(body) {
   if ((body.header || {}).toc === 'none') return '';
   const items = (body.sections || []).filter(s => s.heading);
   if (items.length < 2) return '';
+  // div, not nav: the ingest allowlist (html-ingest ALLOWED_TAGS) has no nav.
   return [
-    `<nav class="paper-toc" aria-label="Contents">`,
+    `<div class="paper-toc" role="navigation" aria-label="Contents">`,
     `<div class="paper-toc-label">Contents</div>`,
     `<ol>`,
     ...items.map(s => `<li><a href="#${esc(sectionAnchor(s))}">${esc(s.tocLabel || s.heading)}</a></li>`),
     `</ol>`,
-    `</nav>`,
+    `</div>`,
   ].join(nl);
 }
 
@@ -232,11 +250,21 @@ function serialize(body, doc = {}, opts = {}) {
   const out = [];
   const hero = renderHeader(body, doc, opts);
   if (hero) out.push(hero);
+  // The frame: nested wrapper divs around the column. Default doc-body >
+  // doc-inner; a converted legacy document keeps its own (header.frame,
+  // e.g. ['paper-body', 'paper-inner']) so its page CSS keeps applying.
+  const frame = Array.isArray(h.frame) && h.frame.length ? h.frame.map(String) : ['doc-body', 'doc-inner'];
   let open = false;
   let nextClasses = [];
   const band = {
-    open: () => { if (open) return ''; open = true; const cls = ['doc-body', ...nextClasses].join(' '); nextClasses = []; return `<div class="${esc(cls)}">${nl}<div class="doc-inner">`; },
-    close: () => { if (!open) return ''; open = false; return `</div>${nl}</div>`; },
+    open: () => {
+      if (open) return '';
+      open = true;
+      const levels = frame.map((cls, i) => (i === 0 ? [cls, ...nextClasses].filter(Boolean).join(' ') : cls));
+      nextClasses = [];
+      return levels.map(cls => `<div class="${esc(cls)}">`).join(nl);
+    },
+    close: () => { if (!open) return ''; open = false; return frame.map(() => '</div>').join(nl); },
   };
   if (h.layout !== 'none') {
     const meta = hasBylineBlock(body) ? '' : renderMeta(body, doc, opts);
@@ -247,12 +275,12 @@ function serialize(body, doc = {}, opts = {}) {
     if (toc) out.push(toc);
   }
   for (const s of body.sections || []) {
-    if (s.band || (Array.isArray(s.classes) && s.classes.length)) { const c = band.close(); if (c) out.push(c); nextClasses = s.classes || []; }
+    if (s.band) { const c = band.close(); if (c) out.push(c); nextClasses = Array.isArray(s.bandClasses) ? s.bandClasses : []; }
     const html = renderSection(s, ctx, band);
     if (html) out.push(html);
   }
   const c = band.close(); if (c) out.push(c);
-  if (!out.length) return `<div class="doc-body">${nl}<div class="doc-inner">${nl}</div>${nl}</div>${nl}`;
+  if (!out.length) return `${band.open()}${nl}${band.close()}${nl}`;
   return out.join(nl) + nl;
 }
 
