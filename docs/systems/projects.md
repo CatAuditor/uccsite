@@ -38,7 +38,7 @@ aws/publish/render-db.js        documents_index carries url; fixed templates dro
                                 every claimed address; documentRedirects (short + previous
                                 live paths → 301) computed before live_path is overwritten
 templates/project.html          the hub page (hero crumbs, meta, button, intro, parts,
-                                documents by category, files, press, video, foot nav)
+                                documents by category, files, press + video from the press list, foot nav)
 templates/projects.html         the card index (filters/sort as before, id="project-<slug>"
                                 anchors kept so old #project links still land)
 templates/index.html            {{#top_projects}} cards, name → hub
@@ -68,7 +68,7 @@ packages/render/test/projects.test.mjs, packages/db/test/redirects.test.mjs, nav
 | table / column | meaning |
 |---|---|
 | `projects.id` | STABLE across saves since 2026-10-09 (`replaceProjects` upserts) |
-| `projects.slug` | the link key everywhere; renaming cascades to `documents.project_slug`, `project_files.project_slug`, `project_notes.project_slug` and the payload's `parent_slug`s inside the save transaction |
+| `projects.slug` | the link key everywhere; renaming cascades to `documents.project_slug`, `project_files.project_slug`, `project_notes.project_slug`, `press.project_slug` and the payload's `parent_slug`s inside the save transaction |
 | `projects.parent_slug` | '' / NULL = top-level; a top-level project's slug = sub-project (a sub-project cannot have children) |
 | `projects.summary` | markdown intro for the hub (`summary_html`) |
 | `documents.project_slug` | '' = none (never NULL: the unique index is on `(project_slug, slug)`, and NULLs are distinct) |
@@ -102,14 +102,14 @@ of the page's own aliases is ignored (the address wins).
 
 ## Site
 
-- **Hub** (`templates/project.html`, data from `deriveProjectTree`): hero with
+- **Hub** (`templates/project.html`, data from `deriveProjectTree` + `derivePress`): hero with
   breadcrumb (Projects › parent › this), status / region / date, "Led by"
   (author page link when the lead is a team member), the button (`cta_url`,
   normally the main report), the intro (`summary_html`), **Parts of this
   project** (sub-projects), the published documents **grouped by category**
   (title, date, summary; DB render only — the git build has no index),
   **Files** (published project files by folder), **In the Press** / **On
-  Television** (the project's child lists), a foot nav (parent, all projects).
+  Television** (the press list's rows filed under the project, press.md), a foot nav (parent, all projects).
   Head: title, tagline as description, canonical, OG; JSON-LD `@graph` of a
   `CollectionPage` (`isPartOf` the parent, `hasPart` children + documents) and
   a `BreadcrumbList`.
@@ -130,9 +130,9 @@ of the page's own aliases is ignored (the address wins).
 
 - **Projects** (`/projects`): the tree table (address, status, counts of
   documents / files / notes, "On the site") → each project's workspace;
-  orphan warnings; then the list editor (add a project, reorder, bulk fields,
-  press/videos). The editor carries each row's `id`, so a slug edit is a
-  rename, not a delete + create.
+  orphan warnings; then the list editor (add a project, reorder, record
+  fields). The editor carries each row's `id`, so a slug edit is a rename,
+  not a delete + create. Press is filed on Press & coverage (press.md).
 - **Workspace** (`/projects/<slug>`):
   - *Overview*: the record (name, slug, date, lead, status + colour, region,
     button, **Part of** select — disabled when the project has sub-projects —,
@@ -144,7 +144,8 @@ of the page's own aliases is ignored (the address wins).
     status; the file uploader (project preselected); one block per folder
     (root first, nested folders indented) listing notes (📝) and files (📄)
     with size / public state / who / when. Publish, unpublish, move and
-    delete files stay on the Files page.
+    delete files stay on the Files page. A **Press** table at the bottom lists
+    the stories filed under the project (edit on Press & coverage).
   - *Notes*: new note (title, folder, optional `.md`/`.txt`/`.docx` upload,
     Markdown body, pin) and the list with rendered previews. Notes are
     **internal**: never rendered to the site, not in the content export.
@@ -165,7 +166,7 @@ of the page's own aliases is ignored (the address wins).
   the indented labels.
 - **Menus**: a header link can "List the live projects underneath".
 
-Audit actions: `projects.save` (list editor, Overview, migration),
+Audit actions: `projects.save` (list editor, Overview, migration), `press.save`,
 `document.move`, `note.create` / `note.save` / `note.delete`,
 `document.create` (with `fromNote`). Logs: `[projects]` — docs/error-handling/debug/projects.md.
 
@@ -206,8 +207,6 @@ live_path FROM documents`.
 
 ## Not built / deferred
 
-- Press unification (project articles/videos + coverage entries + News &
-  Media in one table) — after the tree is confirmed on prod.
 - Publish/unpublish/move files from inside the workspace (links to Files).
 - A top-of-page breadcrumb on documents (the hero sits under the fixed nav);
   the breadcrumb and sibling list are in the foot bar.

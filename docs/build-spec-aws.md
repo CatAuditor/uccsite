@@ -747,3 +747,10 @@ session plan; key items:
     per-project workspace. §3.1's "nested collection" (articles/videos child
     tables) is unchanged; press unification is deferred. Decision record:
     `docs/decisions/project-tree-nested-urls.md`; system doc `docs/systems/projects.md`.
+15. **Press is one table (2026-10-09).** `press` replaces `project_articles`,
+    `project_videos`, `coverage_entries`, `blog_articles`, `blog_videos` and
+    `homepage_press`; the hubs, the `{{coverage:<project>}}` strips, News &
+    Media and the homepage cards derive from it at render. §3.1's nested
+    project lists are gone; the export (§14.2) is schema 3 with `press.json`.
+    Decision record `docs/decisions/press-unification.md`; system doc
+    `docs/systems/press.md`.

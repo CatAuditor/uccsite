@@ -9,7 +9,7 @@
 // stay in the repo for the git/build.js path until cutover, but once a
 // Document has claimed that address (as its slug, its short path or the
 // path it last published at) the database wins.
-const { buildSite, PAGES, withColorClasses, authorIndex, documents: docs, documentUrl, projectUrl } = require('@uccsite/render');
+const { buildSite, PAGES, withColorClasses, authorIndex, documents: docs, documentUrl, projectUrl, derivePress } = require('@uccsite/render');
 const { loadContent, contentMeta, makeDbLastmod } = require('@uccsite/db/content');
 const { loadPublishBundle, markDocumentLive, markDocumentPublishError, archivedPaths } = require('@uccsite/db/documents');
 const { listRedirects, kvsEntries } = require('@uccsite/db/redirects');
@@ -52,7 +52,10 @@ function documentRedirects(documents, projects, livePaths) {
 //   → { files: { key → string }, errors: [],
 //       documents: [{ id, label }], documentHashes: { id → hash }, documentPaths: { id → '/path' },
 //       documentRedirects: [{ from, to }] }
-function renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl, projectFiles = {}, newsletters = [] }) {
+function renderSiteFromDb({ inputs, siteCss, content: rawContent, meta, bundle, siteUrl, projectFiles = {}, newsletters = [] }) {
+  // The press table feeds the coverage strips the documents expand, so derive
+  // before composing them (buildSite derives again; it is idempotent).
+  const content = derivePress(rawContent);
   const foreignClassMaps = {};
   for (const row of bundle.foreignClassMapRows) {
     const key = row.templateKey || '*';

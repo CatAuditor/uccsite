@@ -31,7 +31,7 @@ export default async function ProjectWorkspacePage({ params, searchParams }) {
     return { ...ws, baseline: await collectionStamp(client, 'projects'), log: tab === 'activity' ? await activity(client, ws) : [] };
   });
   if (!data) notFound();
-  const { project, projects, parent, children, documents, files, notes, folders, counts, baseline, log } = data;
+  const { project, projects, parent, children, documents, files, notes, folders, press, counts, baseline, log } = data;
   const readOnly = session.role === 'viewer';
   const href = (t) => `/projects/${slug}${t === 'overview' ? '' : `?tab=${t}`}`;
   const docsByCategory = [...new Set(documents.map(d => d.category || 'Uncategorized'))].map(c => [c, documents.filter(d => (d.category || 'Uncategorized') === c)]);
@@ -45,6 +45,7 @@ export default async function ProjectWorkspacePage({ params, searchParams }) {
         <strong>{counts.documents}</strong> document{counts.documents === 1 ? '' : 's'} ({counts.published} live) · <strong>{counts.files}</strong> file{counts.files === 1 ? '' : 's'} · <strong>{counts.notes}</strong> note{counts.notes === 1 ? '' : 's'}
         {children.length > 0 && <> · <strong>{children.length}</strong> sub-project{children.length === 1 ? '' : 's'}</>}
         {' · '}<a href={`${config.publicOrigin}${project.url}`} target="_blank" rel="noopener">Project page on the site</a>
+        {' · '}<strong>{counts.press}</strong> press {counts.press === 1 ? 'story' : 'stories'}
         {' · '}<Link href={`/documents?project=${encodeURIComponent(slug)}`}>New document here</Link>
       </p>
 
@@ -59,7 +60,7 @@ export default async function ProjectWorkspacePage({ params, searchParams }) {
           <input type="hidden" name="baseline" value={baseline} />
           <OverviewFields project={project} projects={projects} readOnly={readOnly} />
           {!readOnly && <><button type="submit">Save project</button><RequestPublish /></>}
-          <p className="hint">Press coverage and videos for this project are edited in the <Link href="/projects#editor">Projects list</Link> (for now).</p>
+          <p className="hint">Press coverage for this project is filed on <Link href="/press">Press &amp; coverage</Link> (Project field).</p>
         </ActionForm>
       )}
 
@@ -125,6 +126,23 @@ export default async function ProjectWorkspacePage({ params, searchParams }) {
             ))}
           </div>
           <p className="hint">Publish, unpublish, move or delete files on the <Link href={`/files?project=${encodeURIComponent(slug)}`}>Files page</Link>.</p>
+
+          <h2>Press ({press.length})</h2>
+          <p className="hint">Stories filed under this project: shown on its page and in the coverage strip inside its reports. Edit them on <Link href="/press">Press &amp; coverage</Link> (set the Project field to file a story here).</p>
+          {press.length > 0 && (
+            <table>
+              <tbody>
+                {press.map((it, i) => (
+                  <tr key={i}>
+                    <td>{it.type === 'video' ? '🎬' : '📰'} <a href={it.url || (it.youtube_id ? `https://www.youtube.com/watch?v=${it.youtube_id}` : '#')} target="_blank" rel="noopener">{it.headline}</a></td>
+                    <td className="hint">{it.outlet}</td>
+                    <td className="hint">{it.date}</td>
+                    <td className="hint">{it.featured === '1' ? 'homepage' : ''}{it.hide_from_news === '1' ? ' · not on News & Media' : ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 

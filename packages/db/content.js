@@ -76,6 +76,11 @@ const FIELD_MAPS = {
     outlet: 'outlet', badge_color: 'badge_color', date: 'date', headline: 'headline',
     url: 'url', read_more: 'read_more', lang_attr: 'lang_attr',
   },
+  // THE press table (docs/systems/press.md, packages/db/press.js). The six
+  // tables above it (homepage_press, blog_*, project_*, coverage_entries) are
+  // legacy: kept in FIELD_MAPS so the one-time unification and an old export
+  // can still be read; no longer loaded, saved or exported.
+  press: Object.fromEntries(require('./press').PRESS_FIELDS.map(f => [f, f])),
 };
 
 // homepage singleton: [column, jsonKey] (join is a SQL keyword → join_section)
@@ -86,15 +91,18 @@ const HOMEPAGE_GROUP_COLS = [
 ];
 
 // content name → the tables whose rows/updated_at constitute that collection.
+// blog / coverage are DERIVED from press at render (packages/render/press.js);
+// the PAGES entries still name them, so their lastmod follows the press table.
 const COLLECTION_TABLES = {
   settings: ['site_settings'],
-  homepage: ['homepage', 'homepage_press'],
+  homepage: ['homepage', 'press'],
   team: ['team_members'],
   statements: ['statements'],
   issues: ['issues'],
-  blog: ['blog_articles', 'blog_videos'],
-  projects: ['projects', 'project_articles', 'project_videos'],
-  coverage: ['coverage_entries'],
+  blog: ['press'],
+  projects: ['projects', 'press'],
+  coverage: ['press'],
+  press: ['press'],
 };
 const CONTENT_TABLES = [...new Set(Object.values(COLLECTION_TABLES).flat())];
 
@@ -134,8 +142,7 @@ async function loadHomepage(client) {
   for (const [col, key] of HOMEPAGE_GROUP_COLS) {
     if (hp[col] !== null && hp[col] !== undefined) homepage[key] = JSON.parse(hp[col]);
   }
-  homepage.press = await list(client, 'homepage_press');
-  return homepage;
+  return homepage; // press cards derive from the press table (packages/render/press.js)
 }
 
 // loadContent(client) → the renderer's full content map. Project children are
@@ -144,7 +151,10 @@ async function loadHomepage(client) {
 // loadProjects/replaceProjects AND is asserted against the admin's
 // collection spec (apps/admin/lib/collections.js) so a rename in one place
 // cannot silently wipe the other's rows.
-const PROJECT_CHILDREN = { articles: 'project_articles', videos: 'project_videos' };
+// Since 2026-10-09 a project has NO child lists: its press lives in the press
+// table keyed by project_slug (docs/systems/press.md). Kept as the (empty)
+// single source so the save path and the admin's drift guard still agree.
+const PROJECT_CHILDREN = {};
 
 // loadProjects(client, { ids }) → projects with nested articles/videos (the
 // projects.json shape). ids: true adds each project's `id` (the admin's
@@ -182,15 +192,8 @@ async function loadContent(client) {
     team: { members: await list(client, 'team_members') },
     statements: { statements: await list(client, 'statements') },
     issues: { issues: await list(client, 'issues') },
-    blog: {
-      articles: await list(client, 'blog_articles'),
-      videos: await list(client, 'blog_videos'),
-    },
     projects: { projects },
-    coverage: {
-      alpr_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['alpr']),
-      stratos_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['stratos']),
-    },
+    press: { items: await list(client, 'press') },
   };
 }
 
@@ -302,7 +305,7 @@ async function saveHomepage(client, homepage, { tx = true } = {}) {
      VALUES ($1, ${HOMEPAGE_GROUP_COLS.map((_, i) => `$${i + 2}`).join(', ')})
      ON CONFLICT (id) DO UPDATE SET ${HOMEPAGE_GROUP_COLS.map(([c], i) => `${c} = $${i + 2}`).join(', ')}, updated_at = now()`,
     params);
-  await replaceCollectionRows(client, 'homepage_press', homepage.press || [], { tx });
+  void tx; // press cards are no longer stored with the homepage (press table)
 }
 
 // Tables whose rows point at a project by slug (soft links). A rename
@@ -312,6 +315,7 @@ const PROJECT_SLUG_REFS = [
   ['documents', 'project_slug', 'document', 'documents'],
   ['project_files', 'project_slug', 'file', 'files'],
   ['project_notes', 'project_slug', 'note', 'notes'],
+  ['press', 'project_slug', 'press story', 'press stories'], // docs/systems/press.md
 ];
 
 async function assertProjectUnreferenced(client, slug) {
@@ -398,7 +402,7 @@ async function replaceProjects(client, projects, { tx = true } = {}) {
   });
 }
 
-// saveContent(client, repo) — the inverse of loadContent: load the eight
+// saveContent(client, repo) — the inverse of loadContent: load the seven
 // content/*.json shapes into the tables (singletons upsert, lists
 // wipe-and-load). THE write path for the initial migration and for
 // restore-from-export (§14.4) — one implementation, so a restore can never
@@ -409,13 +413,12 @@ async function saveContent(client, repo) {
   await replaceCollectionRows(client, 'team_members', repo.team.members);
   await replaceCollectionRows(client, 'statements', repo.statements.statements);
   await replaceCollectionRows(client, 'issues', repo.issues.issues);
-  await replaceCollectionRows(client, 'blog_articles', repo.blog.articles);
-  await replaceCollectionRows(client, 'blog_videos', repo.blog.videos);
-
   await replaceProjects(client, repo.projects.projects);
-
-  await replaceCollectionRows(client, 'coverage_entries', repo.coverage.alpr_coverage, { where: ['report_key', 'alpr'] });
-  await replaceCollectionRows(client, 'coverage_entries', repo.coverage.stratos_coverage, { where: ['report_key', 'stratos'] });
+  // press.json (schema 3) — or, for an older export, the four legacy sources
+  // unified the same way the one-time migration did (packages/db/press.js).
+  const press = repo.press?.items
+    || require('./press').unifyPress({ projects: repo.projects.projects, blog: repo.blog, coverage: repo.coverage, homepagePress: repo.homepage?.press }).items;
+  await replaceCollectionRows(client, 'press', press);
 }
 
 module.exports = {

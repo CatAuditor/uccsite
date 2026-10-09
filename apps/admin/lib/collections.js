@@ -12,16 +12,6 @@ import { FIELD_MAPS, HOMEPAGE_GROUP_COLS, PROJECT_CHILDREN } from '@uccsite/db/c
 
 const MD_HINT = 'Supports **bold**, *italic*, [link text](https://url). Blank line = new paragraph.';
 
-// The 7-field press/coverage shape used by three editors — one copy.
-const PRESS_FIELDS = [
-  { name: 'outlet', label: 'Outlet' },
-  { name: 'badge_color', label: 'Badge color' },
-  { name: 'date', label: 'Date' },
-  { name: 'headline', label: 'Headline' },
-  { name: 'url', label: 'URL' },
-  { name: 'read_more', label: 'Read-more text' },
-  { name: 'lang_attr', label: 'lang attribute', hint: 'optional, e.g. lang="es" for Spanish coverage' },
-];
 
 export const COLLECTIONS = {
   team: {
@@ -71,46 +61,43 @@ export const COLLECTIONS = {
       { name: 'body', label: 'Body', widget: 'textarea', hint: MD_HINT },
     ],
   },
-  'blog-articles': {
-    title: 'News & Media — Articles',
-    table: 'blog_articles',
-    itemLabel: (item) => item.headline || 'article',
+  // THE press list (docs/systems/press.md): one row per story. Where it shows
+  // is derived at render: the project's hub (project_slug), the
+  // {{coverage:<project>}} strip inside that project's reports, News & Media
+  // (unless hidden), the homepage cards (featured, first three in this order).
+  press: {
+    title: 'Press & coverage',
+    table: 'press',
+    sortable: true,
+    note: 'Every story about the Compact, once. Order here is the order on News & Media and on each project page; "Sort newest first" reorders by date. A story with a project appears on that project\u2019s page and in the coverage strip inside its reports; tick Homepage to make it one of the three homepage cards (the first three ticked, in this order).',
+    itemLabel: (item) => item.headline || 'story',
     fields: [
+      { name: 'type', label: 'Kind', widget: 'select', options: [['', 'Article'], ['video', 'Video (YouTube)']] },
       { name: 'outlet', label: 'Outlet' },
-      { name: 'badge_color', label: 'Badge color' },
-      { name: 'date', label: 'Date' },
+      { name: 'badge_color', label: 'Badge color', hint: 'hex, e.g. #0057a8 — Add from link reuses the colour of a known outlet' },
+      { name: 'date', label: 'Date', hint: 'e.g. August 20, 2026' },
       { name: 'region', label: 'Region' },
       { name: 'headline', label: 'Headline' },
-      { name: 'excerpt', label: 'Excerpt', widget: 'textarea' },
-      { name: 'url', label: 'Article URL' },
-      { name: 'read_more', label: 'Read-more text' },
+      { name: 'excerpt', label: 'Excerpt', widget: 'textarea', hint: 'shown on News & Media and project pages (not in the compact strips)' },
+      { name: 'url', label: 'Article URL', hint: 'for a video, the YouTube page is fine; the embed uses the video id below' },
+      { name: 'read_more', label: 'Read-more text', hint: 'e.g. Read on KSL →' },
       { name: 'lang_attr', label: 'lang attribute', hint: 'optional, e.g. lang="es" for Spanish coverage' },
+      { name: 'youtube_id', label: 'YouTube video id', hint: 'videos only' },
+      { name: 'embed_params', label: 'Embed params', hint: 'videos only, optional, e.g. ?start=90' },
+      { name: 'youtube_title', label: 'Player title (accessibility)', hint: 'videos only' },
+      { name: 'project_slug', label: 'Project', widget: 'select', optionsFrom: 'projects', hint: 'blank = general coverage (News & Media only)' },
+      { name: 'featured', label: 'Homepage card', widget: 'checkbox', hint: 'the first three ticked stories, in list order, are the homepage\u2019s "Recent Coverage"' },
+      { name: 'hide_from_news', label: 'Hide from News & Media', widget: 'checkbox', hint: 'keep it on the project page only' },
     ],
   },
-  'blog-videos': {
-    title: 'News & Media — Videos',
-    table: 'blog_videos',
-    itemLabel: (item) => item.headline || 'video',
-    fields: [
-      { name: 'outlet', label: 'Outlet' },
-      { name: 'badge_color', label: 'Badge color' },
-      { name: 'date', label: 'Date' },
-      { name: 'region', label: 'Region' },
-      { name: 'headline', label: 'Headline' },
-      { name: 'youtube_id', label: 'YouTube video id' },
-      { name: 'embed_params', label: 'Embed params', hint: 'optional, e.g. start=90' },
-      { name: 'youtube_title', label: 'Player title (accessibility)' },
-    ],
-  },
-  // Nested collection (spec §3.1 "projects keeps its nested articles and
-  // videos"): child lists are widget 'list' with their own fields and child
-  // table; the whole tree saves in one transaction (replaceProjects).
+  // Projects (docs/systems/projects.md). Press articles/videos used to be
+  // nested child lists here; since 2026-10-09 they live in the press list.
   projects: {
     title: 'Projects',
     table: 'projects',
     nested: true,
     childTables: PROJECT_CHILDREN, // the db layer's mapping — asserted below
-    note: 'Order here is the order on /projects and the homepage cards. Use the filter box to find a project; drag order with the arrows. Each project has its own workspace (notes, files, documents) — open it from the list above.',
+    note: 'Order here is the order on /projects and the homepage cards. Use the filter box to find a project; drag order with the arrows. Each project has its own workspace (notes, files, documents) — open it from the list above. Press coverage is on the Press & coverage page.',
     itemLabel: (item) => item.name || 'project',
     fields: [
       { name: 'name', label: 'Project name' },
@@ -125,41 +112,7 @@ export const COLLECTIONS = {
       { name: 'summary', label: 'Project page intro', widget: 'textarea', hint: `Shown on the project’s own page under the button. ${MD_HINT}` },
       { name: 'cta_url', label: 'Button link', hint: 'e.g. /projects/alpr/report — the main report’s address' },
       { name: 'cta_text', label: 'Button text' },
-      { name: 'articles', label: 'In the press', widget: 'list', itemLabelField: 'headline', fields: [
-        { name: 'outlet', label: 'Outlet' },
-        { name: 'badge_color', label: 'Badge colour' },
-        { name: 'date', label: 'Date' },
-        { name: 'region', label: 'Region' },
-        { name: 'headline', label: 'Headline' },
-        { name: 'excerpt', label: 'Excerpt', widget: 'textarea' },
-        { name: 'url', label: 'Article URL' },
-        { name: 'read_more', label: 'Read-more text' },
-        { name: 'lang_attr', label: 'lang attribute', hint: 'optional, e.g. lang="es"' },
-      ]},
-      { name: 'videos', label: 'On television', widget: 'list', itemLabelField: 'headline', fields: [
-        { name: 'outlet', label: 'Outlet' },
-        { name: 'badge_color', label: 'Badge colour' },
-        { name: 'date', label: 'Date' },
-        { name: 'region', label: 'Region' },
-        { name: 'headline', label: 'Headline' },
-        { name: 'youtube_id', label: 'YouTube video id' },
-        { name: 'youtube_title', label: 'Player title (accessibility)' },
-      ]},
     ],
-  },
-  'coverage-alpr': {
-    title: 'Report Coverage — ALPR',
-    table: 'coverage_entries',
-    where: ['report_key', 'alpr'],
-    itemLabel: (item) => item.headline || 'entry',
-    fields: PRESS_FIELDS,
-  },
-  'coverage-stratos': {
-    title: 'Report Coverage — Stratos',
-    table: 'coverage_entries',
-    where: ['report_key', 'stratos'],
-    itemLabel: (item) => item.headline || 'entry',
-    fields: PRESS_FIELDS,
   },
 };
 
@@ -230,7 +183,8 @@ export const NAVIGATION_SETTINGS_FIELDS = [['navigation', 'Menus']];
   for (const [k] of SETTINGS_FIELDS) if (APPEAL_SETTINGS_FIELDS.some(([a]) => a === k)) throw new Error(`"${k}" is in both SETTINGS_FIELDS and APPEAL_SETTINGS_FIELDS`);
 }
 
-// Homepage singleton groups (flat string fields inside each group) + press list.
+// Homepage singleton groups (flat string fields inside each group). The press
+// cards derive from the press list (featured) — docs/systems/press.md.
 // page: 'appeals' | 'petition' — the group is edited on that admin page
 // (app/appeals, app/petition); the Homepage editor skips it and preserves
 // it on save.
@@ -292,7 +246,6 @@ export const HOMEPAGE_GROUPS = [
   ]},
 ];
 
-export const HOMEPAGE_PRESS_FIELDS = PRESS_FIELDS;
 
 // Group-level drift guard: every JSON group column must have an editor group
 // and vice versa (a group missing here would be NULLed on save). Field-level

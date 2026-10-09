@@ -43,7 +43,7 @@ docs/migration/parity-exceptions.json  known diffs the parity gate may ignore
 ## Export layout (§14.2)
 
 ```
-content/settings.json … content/coverage.json   eight collections
+content/settings.json … content/press.json   seven collections (schema 3: press.json replaced blog.json, coverage.json and homepage.press, 2026-10-09; restore still reads a schema ≤ 2 export and unifies them)
 documents/<slug>.html    body_html_raw, byte-exact (what the author would re-paste)
 documents/<slug>.json    title, category, template, status, page CSS, SEO fields,
                          JSON-LD, allow_scripts, sitemap priority, published_at, overrides

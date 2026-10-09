@@ -7,6 +7,7 @@
 const { render, mdToHtml } = require('./engine');
 const { navFields } = require('./navigation');
 const { deriveWriting } = require('./writing');
+const { derivePress } = require('./press');
 
 const SITE_URL = 'https://utahciviccompact.org';
 
@@ -359,8 +360,11 @@ function expandPages(pages, content) {
 function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteUrl = SITE_URL, sitemapExtra = [] }) {
   const errors = [];
   const fail = (msg) => errors.push(msg);
-  // Derived page data that no content file carries (filled in below).
-  content = { ...content, writing: content.writing || {} };
+  // Derived page data that no content file carries (filled in below). Press
+  // first: it supplies blog / coverage / homepage.press / project press from
+  // the one press list (packages/render/press.js), which the checks below
+  // and the templates then see as ordinary content.
+  content = { ...derivePress(content), writing: content.writing || {} };
 
   for (const { template, content: names } of pages) {
     if (!(template in templates)) fail(`Template not found: ${template}`);

@@ -76,9 +76,9 @@ apps/admin/
                            history (Publishing…/Live hh:mm/failed)
   app/appeals              Donation appeals: homepage donate section + timed modal +
                            download modal, one save (docs/decisions/donation-appeals-page.md)
-  app/settings, /homepage, /team, /statements, /issues, /blog, /coverage,
+  app/settings, /homepage, /team, /statements, /issues, /press,
   /projects                collection editors (generic ListEditor client component;
-                           projects is nested — docs/systems/projects.md)
+                           press = every story, placements derived — docs/systems/press.md)
   app/media/inline-upload.js  InlineImageUpload — upload beside any image field (team/profile
                            headshot, newsletter image block, document og:image; media.md)
   app/media                media library: presigned-PUT uploads, sharp variants
@@ -111,7 +111,7 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 
 | Site need | Where |
 |---|---|
-| Every collection the templates render (settings, homepage, team, statements, policy positions, news articles/videos, projects + press/videos, report coverage) | Site Main editors |
+| Every collection the templates render (settings, homepage, team, statements, policy positions, projects, press — one list feeding News & Media, the homepage cards, the hubs and the coverage strips) | Site Main editors |
 | Long-form pages, their styling, SEO, JSON-LD | Documents + Styles |
 | Images | Media Library |
 | Files (PDFs, spreadsheets, records…) shared between staff, optionally published at `/files/…` and listed on /projects | Files |
@@ -425,7 +425,7 @@ Review fixes 2026-09-13 (the rules every editor page follows):
 
 ## Link previews — "Add from link" (2026-09-30)
 
-On News & Media (articles) and the homepage press list: paste a link →
+On Press & coverage: paste a link →
 **Fetch preview** → a social-feed style card → **Add to top** with the fields
 filled. Nothing saves until **Save**.
 

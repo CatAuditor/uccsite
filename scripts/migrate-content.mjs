@@ -30,9 +30,8 @@ const repo = {
   team: json('team'),
   statements: json('statements'),
   issues: json('issues'),
-  blog: json('blog'),
   projects: json('projects'),
-  coverage: json('coverage'),
+  press: json('press'),
 };
 
 const { region, stackName, outputs } = await resolveEnv(envName, ['DsqlEndpoint']);

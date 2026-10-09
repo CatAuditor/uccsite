@@ -101,7 +101,10 @@ function emptyItem(fields) {
   return Object.fromEntries(fields.map(f => [f.name, f.widget === 'list' ? [] : '']));
 }
 
-function Items({ fields, items, onChange, itemLabelField, readOnly, idPrefix, mediaOptions = {}, visible }) {
+// selectOptions: { [fieldName]: [{ value, label }] } for widget 'select' fields with
+// optionsFrom (the server builds them — collection-page.js); static `options` on
+// the field are [value, label] pairs. widget 'checkbox' stores '1' or ''.
+function Items({ fields, items, onChange, itemLabelField, readOnly, idPrefix, mediaOptions = {}, selectOptions = {}, visible }) {
   const update = (i, field, value) => onChange(items.map((item, j) => (j === i ? { ...item, [field]: value } : item)));
   const move = (i, delta) => {
     const j = i + delta;
@@ -135,14 +138,29 @@ function Items({ fields, items, onChange, itemLabelField, readOnly, idPrefix, me
                 <div key={f.name} className="nested">
                   <div className="nested-title">{f.label} ({children.length})</div>
                   <Items fields={f.fields} items={children} onChange={(v) => update(i, f.name, v)}
-                    itemLabelField={f.itemLabelField || f.fields[0].name} readOnly={readOnly} idPrefix={id} />
+                    itemLabelField={f.itemLabelField || f.fields[0].name} readOnly={readOnly} idPrefix={id} selectOptions={selectOptions} />
+                </div>
+              );
+            }
+            if (f.widget === 'checkbox') {
+              return (
+                <div key={f.name} className="check-field">
+                  <label htmlFor={id}><input type="checkbox" id={id} checked={String(item[f.name] ?? '') === '1'} disabled={readOnly}
+                    onChange={(e) => update(i, f.name, e.target.checked ? '1' : '')} /> {f.label}</label>
+                  {f.hint && <div className="hint">{f.hint}</div>}
                 </div>
               );
             }
             return (
               <div key={f.name}>
                 <label htmlFor={id}>{f.label}</label>
-                {f.widget === 'textarea' ? (
+                {f.widget === 'select' ? (
+                  <select id={id} value={item[f.name] ?? ''} disabled={readOnly} onChange={(e) => update(i, f.name, e.target.value)}>
+                    {(f.options || []).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    {f.optionsFrom && <option value="">— none —</option>}
+                    {f.optionsFrom && (selectOptions[f.name] || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                ) : f.widget === 'textarea' ? (
                   <textarea id={id} value={item[f.name] ?? ''} disabled={readOnly}
                     onChange={(e) => update(i, f.name, e.target.value)} />
                 ) : f.widget === 'media' ? (
@@ -175,7 +193,7 @@ const parseDate = (s) => { const t = parseFreeDate(s); return Number.isNaN(t) ? 
 
 // mediaOptions: { [fieldName]: [{ value, label }] } for widget 'media' fields —
 // the server builds it from READY assets WITH alt text (see lib/media.js).
-export default function ListEditor({ fields, items: initial, itemLabelField, readOnly, name = 'payload', mediaOptions = {}, sortable = false, maxItems }) {
+export default function ListEditor({ fields, items: initial, itemLabelField, readOnly, name = 'payload', mediaOptions = {}, selectOptions = {}, sortable = false, maxItems }) {
   const [items, setItems] = useState(initial);
   const [filter, setFilter] = useState('');
   const q = filter.trim().toLowerCase();
@@ -211,7 +229,7 @@ export default function ListEditor({ fields, items: initial, itemLabelField, rea
         </div>
       )}
       <Items fields={fields} items={items} onChange={setItems} itemLabelField={itemLabelField} readOnly={readOnly}
-        idPrefix={name} mediaOptions={mediaOptions} visible={visible} />
+        idPrefix={name} mediaOptions={mediaOptions} selectOptions={selectOptions} visible={visible} />
     </div>
   );
 }

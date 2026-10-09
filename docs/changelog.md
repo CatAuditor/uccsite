@@ -4,6 +4,33 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.25.0 — 2026-10-09 (branch `refactor`) — Press unification: one table, placements derived
+
+Decision record docs/decisions/press-unification.md; system doc docs/systems/press.md.
+
+- **Database** — `press` table (type, outlet, badge_color, date, region, headline, excerpt, url, read_more, lang_attr,
+  youtube_id, embed_params, youtube_title, project_slug, featured, hide_from_news) + `idx_press_project`. `packages/db/press.js`:
+  PRESS_FIELDS, normalizeUrl, unifyPress (dedupe by URL / YouTube id, field merge, project + featured inheritance,
+  headline-based project inheritance). content.js: FIELD_MAPS.press, COLLECTION_TABLES blog/coverage/homepage/projects →
+  press, loadContent → press.items (blog/coverage no longer loaded), loadHomepage without press, PROJECT_CHILDREN = {},
+  PROJECT_SLUG_REFS + press, saveContent writes press (or unifies a schema ≤ 2 export). export.js: SCHEMA_VERSION 3,
+  COLLECTIONS … projects, press; LEGACY_COLLECTIONS. Six legacy tables keep their DDL, rows removed by the migration.
+- **Render** — `packages/render/press.js derivePress`: blog.articles/videos (unless hidden), homepage.press (featured, first
+  three), coverage['<slug>_coverage'] per project, projects[].articles/videos; runs first in buildSite and before
+  buildDocuments in render-db. Templates unchanged. content/press.json added; blog.json, coverage.json, homepage.press,
+  projects' nested lists removed.
+- **Admin** — Press & coverage page (`/press`, COLLECTIONS.press: select + checkbox widgets, project options from
+  listProjects); list-editor widgets 'select' / 'checkbox'; collection-page selectOptions; News & Media and Report
+  Coverage pages removed; Homepage editor without the press strip; projects editor without nested lists; workspace shows
+  the project's press (count + table); document preview / token validation / builder coverage block / authoring kit use
+  project slugs as coverage keys.
+- **Migration** — `scripts/migrate-press.mjs` (dry run / --apply / --force): 32 legacy rows → 14 press rows, legacy
+  tables emptied, `press-legacy/collection` revision + `press.save` audit. Staging applied + published (6 changed):
+  News 10 articles + 4 videos, 3 homepage cards, hubs and coverage strips intact, Cox video inherited alpr. Prod: see v0.25.1.
+- **Tests** — packages/db/test/press.test.mjs, packages/render/test/press.test.mjs; all suites green; admin build clean.
+- **Docs** — press.md, decision record, projects.md, admin.md, cms.md, content-export.md, documents.md, editing guide,
+  spec addendum 15, dev notes.
+
 ## v0.24.2 — 2026-10-09 (branch `refactor`) — Prod migrated and published: the tree is live
 
 - `cdk deploy UccProd` (PublishFn carries the new renderer), `migrate-project-tree --env prod --apply` (22 steps),

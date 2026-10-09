@@ -56,8 +56,8 @@ export default async function ProjectsPage() {
         <p className="error">{orphanDocs.length} document{orphanDocs.length === 1 ? ' is' : 's are'} assigned to a project that no longer exists ({[...new Set(orphanDocs.map(d => d.projectSlug))].join(', ')}). They publish at the root until reassigned: <Link href="/documents">All documents</Link>.</p>
       )}
       <p className="hint">Documents and files not in any project: <Link href="/documents">{docs.filter(d => !d.projectSlug).length} documents</Link> · <Link href="/files?project=_general">{fileCounts.get('') || 0} files</Link>.</p>
-      <h2 id="editor">All projects: order, record fields and press</h2>
-      <p className="hint">Add a project here (name + slug, then open its workspace), reorder the list, or edit the press coverage and videos shown on each project page.</p>
+      <h2 id="editor">All projects: order and record fields</h2>
+      <p className="hint">Add a project here (name + slug, then open its workspace) or reorder the list. Press coverage is filed on <Link href="/press">Press &amp; coverage</Link>.</p>
       <Collection />
     </div>
   );

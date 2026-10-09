@@ -205,6 +205,23 @@ const STATEMENTS = [
   `ALTER TABLE project_files ADD COLUMN IF NOT EXISTS publish_requested_at TIMESTAMPTZ`,
   `ALTER TABLE project_files ADD COLUMN IF NOT EXISTS publish_requested_by TEXT`,
 
+  // ── press (docs/systems/press.md, packages/db/press.js) ───────────────────
+  // ONE row per story; the hubs, coverage strips, News & Media and the
+  // homepage cards derive from it (packages/render/press.js). Replaces
+  // project_articles / project_videos / coverage_entries / blog_articles /
+  // blog_videos / homepage_press, whose tables stay (empty) until a later
+  // cleanup. Flags are TEXT '1' / NULL like every other collection string.
+  `CREATE TABLE IF NOT EXISTS press (
+    id UUID PRIMARY KEY,
+    sort_order INTEGER NOT NULL,
+    type TEXT, outlet TEXT, badge_color TEXT, date TEXT, region TEXT, headline TEXT,
+    excerpt TEXT, url TEXT, read_more TEXT, lang_attr TEXT,
+    youtube_id TEXT, embed_params TEXT, youtube_title TEXT,
+    project_slug TEXT, featured TEXT, hide_from_news TEXT,
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`,
+  `CREATE INDEX ASYNC IF NOT EXISTS idx_press_project ON press(project_slug, sort_order)`,
+
   // ── project tree (docs/decisions/project-tree-nested-urls.md) ─────────────
   // parent_slug nests a project under another (depth 2; validated by
   // packages/render/projects.js validateProjectTree). summary: markdown intro

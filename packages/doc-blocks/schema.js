@@ -157,8 +157,8 @@ const BLOCK_TYPES = {
   },
   coverage: {
     label: 'Press coverage strip',
-    description: 'The site\'s coverage cards for one of the tracked reports.',
-    fields: [F('key', 'Coverage key', 'coverage')],
+    description: 'The site\'s coverage cards for a project (every article on Press & coverage filed under it).',
+    fields: [F('key', 'Project', 'coverage')],
     empty: () => ({ key: '' }),
     sample: null,
   },

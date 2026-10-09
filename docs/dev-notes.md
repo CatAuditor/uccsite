@@ -6,6 +6,43 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-09 — Press coverage lives in one place now
+
+Until today the same news story had to be entered up to four times: once on
+News & Media, once in the project's press list, once in the report's
+coverage strip and once more for the homepage cards. Outlet names and badge
+colours drifted between the copies, and a new project could not get a
+coverage strip without a developer.
+
+**What changed**
+
+- There is one **Press & coverage** page (under Site Main). Every story or TV
+  segment about the Compact is one entry there. Paste a link under **Add from
+  link** and the card fills itself, as before.
+- Where a story appears is decided by three fields on the entry: its
+  **Project** (puts it on that project's page and in the coverage strip inside
+  that project's reports), **Homepage card** (the first three ticked, in list
+  order, are the homepage's "Recent Coverage"), and **Hide from News & Media**
+  (keep it on the project page only). Everything else is automatic.
+- The old places are gone: News & Media and Report Coverage no longer have
+  their own editors, the Homepage editor has no press strip, and the project
+  list editor has no nested press lists. The existing 32 entries were merged
+  into 14 stories, checked by hand, and published on the test site and the
+  real site; nothing on the pages changed except that the Governor Cox
+  interview video is now also listed under the license-plate investigation.
+- Each project's workspace shows its press under *Folders & files*.
+
+**What editors do differently**
+
+- Add a story once, on Press & coverage, and pick its project. Tick Homepage
+  card to put it on the homepage. That is all.
+
+**Left to do**
+
+- Nothing for editors. A later cleanup drops the six empty old tables.
+
+---
+
 ## 2026-10-09 — Projects get their own pages, documents nest under them, and each project has a workspace
 
 Until now "Projects" was one long page with every project stacked on it, and

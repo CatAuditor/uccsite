@@ -7,12 +7,13 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { ingest, stripNids } from '@uccsite/html-ingest';
 import { applyStyles, explainStyles, validateSelector, matchCountTree, rootedTree, orphanedOverrides } from '@uccsite/style-apply';
 import { parseStyleKit, classNames } from '@uccsite/style-kit';
-import { documents as compose, SITE_URL, memberSlug } from '@uccsite/render';
+import { documents as compose, SITE_URL, memberSlug, derivePress } from '@uccsite/render';
 import { serialize as serializeBlocks, sampleHtml, BLOCK_TYPES, fullWidth, validateBody } from '@uccsite/doc-blocks';
 import {
   listDocuments, getDocument, listStyleRules, listOverrides, loadForeignClassMap,
 } from '@uccsite/db/documents';
 import { loadSettings, list } from '@uccsite/db/content';
+import { withColorClasses } from '@uccsite/render';
 import { config } from './config';
 import { listProjects } from './files';
 
@@ -92,6 +93,13 @@ export function runIngest(doc, { siteCss, foreignClassMap }) {
   });
 }
 
+// coverageFromPress(client, projects) → { '<slug>_coverage': [...] } with
+// badge classes, exactly what the publish expands (packages/render/press.js).
+async function coverageFromPress(client, projects) {
+  const content = derivePress({ press: { items: await list(client, 'press') }, projects: { projects: projects.map(p => ({ slug: p.slug })) } });
+  return withColorClasses(content).content.coverage;
+}
+
 // editorData(client, id) → everything the editor page renders.
 export async function editorData(client, id) {
   const doc = await getDocument(client, { id });
@@ -109,10 +117,7 @@ export async function editorData(client, id) {
   const normalized = doc.bodyHtmlNormalized || '';
   const rows = normalized ? explainStyles(normalized, docRules, overrides) : [];
   const orphans = normalized ? orphanedOverrides(normalized, overrides) : [];
-  const coverage = {
-    alpr_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['alpr']),
-    stratos_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['stratos']),
-  };
+  const coverage = await coverageFromPress(client, projects);
   const preview = normalized ? previewSrcdoc({ doc, normalized, sources, settings, docRules, overrides, coverage }) : '';
   return {
     doc, rules: docRules, allRules: rules, overrides, orphans, kit, rows, preview, projects,
@@ -122,7 +127,7 @@ export async function editorData(client, id) {
     // Builder (docs/systems/document-builder.md): the picker gallery and the
     // choices the block editors offer.
     gallery: blockGallery(sources),
-    coverageKeys: (await client.query('SELECT DISTINCT report_key FROM coverage_entries ORDER BY report_key')).rows.map(r => r.report_key),
+    coverageKeys: projects.map(p => p.slug), // {{coverage:<project slug>}} (docs/systems/press.md)
     publishedFiles: (await client.query(`SELECT original_filename, public_key, project_slug FROM project_files WHERE public_key IS NOT NULL ORDER BY original_filename`)).rows
       .map(r => ({ label: `${r.original_filename}${r.project_slug ? ` (${r.project_slug})` : ''}`, href: `/${r.public_key}` })),
     authorHref: await authorHrefFor(client, doc.author),
@@ -183,10 +188,7 @@ export async function previewBlocksFor(client, { id, body: input, title, author 
   const sources = await loadSiteSources();
   const next = { ...doc, title: title || doc.title, author, bodyHtmlRaw: html };
   const result = runIngest(next, { siteCss: sources.siteCss, foreignClassMap });
-  const coverage = {
-    alpr_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['alpr']),
-    stratos_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['stratos']),
-  };
+  const coverage = await coverageFromPress(client, await listProjects(client));
   const srcdoc = previewSrcdoc({ doc: next, normalized: result.bodyHtmlNormalized, sources, settings, docRules: compose.rulesFor(next, rules), overrides, coverage });
   return { html: srcdoc, report: result.report };
 }
@@ -246,7 +248,7 @@ export async function ruleMatchCounts(client, rule, parsed) {
 // expansion the publish path runs, with every coverage key that exists, so a
 // save can refuse to publish a document whose tokens would fail the run.
 export async function tokenErrors(client, normalizedHtml, sources) {
-  const keys = (await client.query('SELECT DISTINCT report_key FROM coverage_entries')).rows.map(r => r.report_key);
+  const keys = (await listProjects(client)).map(p => p.slug);
   const coverage = Object.fromEntries(keys.map(k => [`${k}_coverage`, []]));
   const errors = [];
   compose.replaceTokens(normalizedHtml || '', { partials: sources.partials, coverage, fail: (m) => errors.push(m) });

@@ -114,7 +114,7 @@ body_html_raw ─ingest(knownClasses = site css ∪ page css, foreignClassMap,
                overrides for id)─▶ styled
   ─stripNids─▶ ─replaceTokens (on the TREE: text nodes only, never attribute
       values or <pre>/<code>; author text around a token is re-escaped)─▶ body
-      {{coverage:alpr}} → coverage-strip partial from coverage_entries
+      {{coverage:<project slug>}} → coverage-strip partial from the press list (press.md)
                           (href="{{url}}" safeUrl+escaped, validated lang)
       {{video:ID}}      → www.youtube.com/embed iframe (the CSP frame-src host)
   ─render(shell, { ...settings, page: slug, current, seo_block,

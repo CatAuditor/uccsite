@@ -1,4 +1,5 @@
-// Homepage editor: six flat-string groups + the hand-curated press list.
+// Homepage editor: six flat-string groups. The press cards derive from the
+// press list (ticked "Homepage card", first three) — docs/systems/press.md.
 // The featured statement is NOT here — it derives from the newest Statement
 // (docs/decisions/homepage-statement-links.md). Save = one transaction
 // (groups upsert + press wipe-and-load + revision + audit) with a
@@ -7,10 +8,9 @@ import { revalidatePath } from 'next/cache';
 import { loadHomepage, saveHomepage } from '@uccsite/db/content';
 import { requireSession, requireRole } from '../../lib/auth';
 import { withDb, withWriteTx, recordChange, singletonStamp } from '../../lib/data';
-import { HOMEPAGE_GROUPS, HOMEPAGE_PRESS_FIELDS } from '../../lib/collections';
-import { sanitizeItems, CONFLICT_MESSAGE } from '../../lib/collection-save';
+import { HOMEPAGE_GROUPS } from '../../lib/collections';
+import { CONFLICT_MESSAGE } from '../../lib/collection-save';
 import { runAction } from '../../lib/actions';
-import ListEditor from '../list-editor';
 import ActionForm from '../action-form';
 import RequestPublish from '../request-publish';
 import { draftHero, liveHero, HeroStatus } from '../../lib/hero-status';
@@ -41,7 +41,6 @@ export default async function HomepagePage() {
           if (v) next[group.key][field] = v;
         }
       }
-      next.press = sanitizeItems(HOMEPAGE_PRESS_FIELDS, formData.get('press'));
       const expected = String(formData.get('baseline') ?? '');
       await withWriteTx(async (client) => {
         const current = await singletonStamp(client, 'homepage');
@@ -61,7 +60,7 @@ export default async function HomepagePage() {
   return (
     <div>
       <h1>Homepage</h1>
-      <p className="notice">The featured statement card comes from the newest entry in Statements — edit it there. The donate section and the timed donation modal are under Donation appeals; the petition hero is under Petition.</p>
+      <p className="notice">The featured statement card comes from the newest entry in Statements — edit it there. The &quot;Recent Coverage&quot; cards are the stories ticked <strong>Homepage card</strong> on Press &amp; coverage (the first three). The donate section and the timed donation modal are under Donation appeals; the petition hero is under Petition.</p>
       {readOnly && <p className="notice">Viewer role — read-only.</p>}
       <HeroStatus draft={draftHero(homepage)} live={live} />
       <p className="notice">The <strong>Hero</strong> fields below are the standing hero — the default whenever no petition headline is set on the Petition page.</p>
@@ -87,9 +86,6 @@ export default async function HomepagePage() {
             })}
           </fieldset>
         ))}
-        <h2>Press strip</h2>
-        <ListEditor fields={HOMEPAGE_PRESS_FIELDS} items={homepage.press || []}
-          itemLabelField="headline" readOnly={readOnly} name="press" maxItems={3} />
         {!readOnly && <><button type="submit">Save Homepage</button><RequestPublish /></>}
       </ActionForm>
     </div>

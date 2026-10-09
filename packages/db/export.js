@@ -14,8 +14,10 @@
 // EXCLUDED from the "did anything change" decision (isContentChanged).
 const { createHash } = require('crypto');
 
-const SCHEMA_VERSION = 2; // 2: documents/ + styles/rules.json (Phase 8)
-const COLLECTIONS = ['settings', 'homepage', 'team', 'statements', 'issues', 'blog', 'projects', 'coverage'];
+const SCHEMA_VERSION = 3; // 2: documents/ + styles/rules.json (Phase 8); 3: press.json replaces blog.json, coverage.json and homepage.press (2026-10-09)
+const COLLECTIONS = ['settings', 'homepage', 'team', 'statements', 'issues', 'projects', 'press'];
+// Collections an older export (schema ≤ 2) carries that saveContent unifies into press.
+const LEGACY_COLLECTIONS = ['blog', 'coverage'];
 
 function stableJson(obj) {
   return JSON.stringify(obj, null, 2) + '\n';
@@ -107,4 +109,4 @@ function removedPaths(files, remotePaths) {
   return [...remotePaths].filter(p => EXPORT_PREFIXES.some(pre => p.startsWith(pre)) && !files.has(p)).sort();
 }
 
-module.exports = { SCHEMA_VERSION, COLLECTIONS, DOC_JSON_KEYS, EXPORT_PREFIXES, stableJson, rowCounts, documentJson, buildContentExport, gitBlobSha, changedPaths, removedPaths };
+module.exports = { SCHEMA_VERSION, COLLECTIONS, LEGACY_COLLECTIONS, DOC_JSON_KEYS, EXPORT_PREFIXES, stableJson, rowCounts, documentJson, buildContentExport, gitBlobSha, changedPaths, removedPaths };

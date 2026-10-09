@@ -5,6 +5,7 @@
 import mammoth from 'mammoth';
 import { listDocuments } from '@uccsite/db/documents';
 import { listNotes } from '@uccsite/db/project-notes';
+import { list } from '@uccsite/db/content';
 import { documentUrl } from '@uccsite/render/projects';
 import { listFiles, listProjects } from './files';
 
@@ -48,6 +49,7 @@ export async function workspace(client, slug) {
   const documents = (await listDocuments(client)).filter(d => d.projectSlug === slug).map(d => ({ ...d, url: documentUrl(d, projects) }));
   const files = (await listFiles(client)).filter(f => f.projectSlug === slug);
   const notes = await listNotes(client, { projectSlug: slug });
+  const press = (await list(client, 'press')).filter(it => String(it.project_slug || '') === slug); // docs/systems/press.md
   const folderMap = new Map([['', { path: '', files: [], notes: [] }]]);
   const folder = (path) => {
     // every ancestor folder exists in the tree, even when empty
@@ -68,8 +70,8 @@ export async function workspace(client, slug) {
     f.name = f.path ? f.path.split('/').pop() : '';
   }
   return {
-    project, projects, parent, children, documents, files, notes, folders,
-    counts: { documents: documents.length, files: files.length, notes: notes.length, published: documents.filter(d => d.status === 'published').length },
+    project, projects, parent, children, documents, files, notes, folders, press,
+    counts: { documents: documents.length, files: files.length, notes: notes.length, press: press.length, published: documents.filter(d => d.status === 'published').length },
   };
 }
 

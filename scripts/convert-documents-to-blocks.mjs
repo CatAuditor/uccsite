@@ -126,10 +126,9 @@ let failures = 0;
 await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) => {
   const settings = await loadSettings(client);
   const rules = await listStyleRules(client);
-  const coverage = {
-    alpr_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['alpr']),
-    stratos_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['stratos']),
-  };
+  // Coverage strips derive from the press table (docs/systems/press.md).
+  const { derivePress, withColorClasses } = require('../packages/render');
+  const coverage = withColorClasses(derivePress({ press: { items: await list(client, 'press') }, projects: { projects: (await client.query('SELECT slug FROM projects')).rows } })).content.coverage;
   const members = (await client.query('SELECT name, slug FROM team_members')).rows;
   const authors = Object.fromEntries(members.filter(m => m.name).map(m => [m.name.trim(), { slug: memberSlug(m), url: `/team/${memberSlug(m)}`, id: `${SITE_URL}/team/${memberSlug(m)}#person` }]));
   const all = await listDocuments(client);

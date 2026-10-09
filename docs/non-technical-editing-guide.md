@@ -114,9 +114,15 @@ puts that version back as a draft; request a publish to take it live.
   on All documents and choosing **Move**; it then lives at
   `/projects/<project>/<slug>`, and the old address redirects after the
   next publish. Renaming a project keeps everything attached.
-- **Statements**, **Policy Positions**, **News & Media** (articles and
-  videos), **Report Coverage** — the lists the site pages are built from.
-  Reorder with the arrows; the order you save is the order on the site.
+- **Press & coverage** — every news story or TV segment about the Compact,
+  once. Paste the link under **Add from link** and the card fills itself.
+  Pick the **Project** it is about and it appears on that project's page and
+  in the coverage strip inside that project's reports; tick **Homepage card**
+  for the three "Recent Coverage" cards on the homepage (the first three
+  ticked, in list order); tick **Hide from News & Media** to keep a story on
+  the project page only. The list order is the order on News & Media.
+- **Statements**, **Policy Positions** — the lists the site pages are built
+  from. Reorder with the arrows; the order you save is the order on the site.
 - **Media Library** — upload images. **Alt text is required** before an
   image can be placed on a page (describe the image for screen readers).
   Pick an image in any "Headshot" field from the drop-down.

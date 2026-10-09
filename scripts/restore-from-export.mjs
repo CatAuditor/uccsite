@@ -18,7 +18,7 @@ import { resolveEnv, argValue } from './lib/stack.mjs';
 const require = createRequire(import.meta.url);
 const { withConnection } = require('../packages/db');
 const { loadContent, saveContent } = require('../packages/db/content');
-const { COLLECTIONS, SCHEMA_VERSION, DOC_JSON_KEYS } = require('../packages/db/export');
+const { COLLECTIONS, LEGACY_COLLECTIONS, SCHEMA_VERSION, DOC_JSON_KEYS } = require('../packages/db/export');
 const {
   listDocuments, getDocument, upsertDocument, deleteDocument, replaceOverrides, listStyleRules, deleteStyleRule, upsertStyleRule,
   listForeignClassMap, deleteForeignClassMapping, setForeignClassMapping, loadForeignClassMap, setPublishedAt,
@@ -51,8 +51,14 @@ if (existsSync(manifestPath)) {
 const repo = {};
 for (const name of COLLECTIONS) {
   const p = join(fromDir, 'content', `${name}.json`);
+  // A schema ≤ 2 export has blog.json + coverage.json instead of press.json; saveContent unifies them.
+  if (!existsSync(p) && name === 'press') { console.log('No content/press.json — unifying the legacy blog/coverage/homepage press (schema ≤ 2 export)'); continue; }
   if (!existsSync(p)) { console.error(`Missing ${p}`); process.exit(2); }
   repo[name] = JSON.parse(readFileSync(p, 'utf8'));
+}
+for (const name of LEGACY_COLLECTIONS) {
+  const p = join(fromDir, 'content', `${name}.json`);
+  if (existsSync(p)) repo[name] = JSON.parse(readFileSync(p, 'utf8'));
 }
 
 // Documents (§14.2 layout, schema 2+): documents/<slug>.html + .json; styles/rules.json.

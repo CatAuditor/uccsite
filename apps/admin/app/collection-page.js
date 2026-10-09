@@ -5,6 +5,7 @@ import { withDb } from '../lib/data';
 import { COLLECTIONS } from '../lib/collections';
 import { loadCollectionItems, loadCollectionBaseline, saveCollection } from '../lib/collection-save';
 import { mediaOptionsFor } from '../lib/media';
+import { listProjects } from '../lib/files';
 import { runAction } from '../lib/actions';
 import ListEditor from './list-editor';
 import ActionForm from './action-form';
@@ -19,11 +20,14 @@ export function makeCollectionPage(...keys) {
       for (const key of keys) {
         const spec = COLLECTIONS[key];
         const mediaOptions = {};
+        const selectOptions = {};
         for (const f of spec.fields) {
           if (f.widget === 'media') mediaOptions[f.name] = await mediaOptionsFor(client, f.targetWidth || 800);
+          // optionsFrom 'projects': the tree in order, sub-projects indented (lib/files.js listProjects).
+          if (f.optionsFrom === 'projects') selectOptions[f.name] = (await listProjects(client)).map(p => ({ value: p.slug, label: p.label }));
         }
         out.push({
-          key, spec, mediaOptions,
+          key, spec, mediaOptions, selectOptions,
           items: await loadCollectionItems(client, key),
           baseline: await loadCollectionBaseline(client, key),
         });
@@ -33,7 +37,7 @@ export function makeCollectionPage(...keys) {
 
     return (
       <div>
-        {sections.map(({ key, spec, items, mediaOptions, baseline }) => {
+        {sections.map(({ key, spec, items, mediaOptions, selectOptions, baseline }) => {
           async function save(prevState, formData) {
             'use server';
             return runAction(async () => {
@@ -54,6 +58,7 @@ export function makeCollectionPage(...keys) {
                   itemLabelField={spec.fields[0].name}
                   readOnly={readOnly}
                   mediaOptions={mediaOptions}
+                  selectOptions={selectOptions}
                   sortable={Boolean(spec.nested || spec.sortable)}
                 />
                 {!readOnly && <><button type="submit">Save {spec.title}</button><RequestPublish /></>}
