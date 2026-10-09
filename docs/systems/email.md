@@ -125,6 +125,36 @@ body. The API (`transactionalTemplate`, SELECT on `transactional_emails`,
 5-minute container cache) fills the tokens with `fillHtml` (text values
 HTML-escaped, `{receipt}` raw, unknown tokens left as typed), swaps the
 renderer's `{{unsubscribe_url}}` for the signed link, and sends html + text.
+The fill helpers, the bracket aliases and the receipt (`fillHtml`,
+`fillText`, `aliasTokens`, `receiptHtml`, `receiptText`, `sampleVars`,
+`formatAmount`, `formatDate`) live in **`packages/newsletter/fill.cjs`**
+(2026-10-10; `aws/api/emails.js` re-exports them) so the admin's test send
+fills the same way. `{receipt}` typed as a line of its own renders as
+`<p …>{receipt}</p>`; `fillHtml` replaces that whole paragraph with the
+table (never a table inside a `<p>`). The plain-text part gets `receiptText`
+(amount / type / date lines + the legal sentence) — the literal token never
+reaches a text-only client.
+
+**Seeing it before a donation** — "Send me a test" on an automatic email
+(`lib/newsletters.js sendTest`, `kind = 'transactional'`) fills every
+placeholder with a stand-in from `sampleVars`: the tester's first name,
+`$25.00`, One-time donation, today's date, the real receipt block, "Sample
+petition headline" / "Sample project". The subject is filled too. A
+newsletter test is unchanged (no placeholders).
+
+**End-to-end (verified in prod logs 2026-10-10)** — Stripe → `POST
+/api/webhook` (signature checked, `processed_events` dedupe) →
+`handleCheckoutComplete` upserts `members`, inserts `donations`, then
+`selfInvoke({ job: 'donation-thanks' })` (IAM: the API role may invoke
+itself) → `index.mjs JOBS` → `donationThanksJob` → `donorFirstName`
+(`members`) → `transactionalTemplate` (attached row or null) → built-in or
+`fillAttached` → `sesSend` (`ses:SendEmail`, From hello@). Prod log group
+`/aws/lambda/UccProd-ApiFunction*` showed `SES sent … subject="Thank you for
+your $25.00 donation"` and `$100.00` on 2026-10-09 — the webhook URL and
+secret are confirmed working (the one `webhook signature failed` is from
+cutover day before the secret was filled). Grants: `API_GRANTS` in
+`packages/db/schema.js` (SELECT/INSERT/UPDATE members, SELECT
+transactional_emails).
 The petition email keeps its `List-Unsubscribe` headers either way; the
 donation email has none. A failed read logs `attached email lookup failed
 (<trigger>): <ErrorName>` and falls back to the built-in body. No two-person

@@ -128,7 +128,9 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
 2. **Save & send me a test** (editor+): saves what is on screen, then sends
    it to the signed-in admin's address only, subject prefixed `[TEST]`, through the admin's SSR role
    (`ses:SendEmail`, From pinned to hello@; same `Reply-To` as the real
-   send). The unsubscribe link points back at the editor. Audit `newsletter.test`.
+   send). The unsubscribe link points back at the editor. For an automatic
+   email the placeholders (and `{receipt}`) are filled with sample values —
+   docs/systems/email.md "Seeing it before a donation". Audit `newsletter.test`.
 3. **Save & request send** (editor+): saves what is on screen first (Save,
    both test buttons and the request are one form, `then` = the clicked
    button — before 2026-10-08 they were separate forms and a test of an

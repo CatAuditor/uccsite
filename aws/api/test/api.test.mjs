@@ -796,6 +796,20 @@ test('donation-thanks job: attached email gets {amount} {type} {date} and the ra
   assert.ok(!html.includes('{receipt}'));
   assert.equal(sent[0].Content.Simple.Body.Text, undefined); // no text part stored → none sent
 
+  // {receipt} as a paragraph of its own (what a text block renders) replaces the
+  // whole <p>; the plain-text part gets the text receipt, never the literal token.
+  sent = fakeSes();
+  const db3 = fakeDb({ 'SELECT subject, html, text FROM transactional_emails': attachedRow('Thanks', '<p class="em-text" style="margin:0">Hi {first_name}</p>\n<p class="em-text" style="margin:0">{receipt}</p>', 'Hi {first_name}\n\n{receipt}') });
+  try {
+    await routes.donationThanksJob({ db: db3, email: 'd@e.f', firstName: 'Dee', amountCents: 1000, recurring: true, origin: 'https://x.test' });
+  } finally { routes._setSesClient(null); routes._resetCampaignCache(); }
+  const html3 = sent[0].Content.Simple.Body.Html.Data;
+  assert.match(html3, /<p class="em-text" style="margin:0">Hi Dee<\/p>\n\s*<table/);
+  assert.ok(!/<p[^>]*>\s*<table/.test(html3));
+  const text3 = sent[0].Content.Simple.Body.Text.Data;
+  assert.match(text3, /^Hi Dee\n\nAmount: \$10\.00 \/ month\nType: Monthly membership\nDate: \w+ \d+, \d{4}\n\nUtah Civic Compact is a 501\(c\)\(4\)[\s\S]*info@utahciviccompact\.org\.$/);
+  assert.ok(!text3.includes('{receipt}'));
+
   sent = fakeSes();
   const db2 = fakeDb({ 'SELECT subject, html, text FROM transactional_emails': () => { const e = new Error('permission denied'); e.name = 'error'; throw e; } });
   try {

@@ -24,11 +24,29 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
   `[$amount]` and it fills in just like `{first_name}` and `{amount}`. Notes
   to yourself in brackets (`[CHECK: …]`) are left alone — delete them before
   attaching. `{receipt}` must still be typed with curly braces.
+- **You can now see the receipt before anyone donates.** "Send me a test" on
+  an automatic email fills in sample values — your first name, $25.00,
+  today's date and the real amount/date table with the "not deductible"
+  line — so the test in your inbox looks like what a donor gets. Before,
+  the test showed the raw `{receipt}` word.
+- Two formatting fixes behind the scenes: `{receipt}` on its own line no
+  longer lands inside a paragraph (some mail apps rendered that oddly), and
+  the plain-text version of the email (what very old or text-only mail apps
+  show) now carries the receipt lines instead of the word `{receipt}`.
+- Checked the whole automatic chain against the live site: Stripe is
+  reaching our webhook, donations are being recorded, and receipts went out
+  for two gifts on 2026-10-09 with the built-in wording. Nothing is attached
+  on the Appeals page yet, so the built-in email is what donors get until
+  you choose one there.
 
 **What editors do differently**
 
 - Make sure each writer's Team card has their utahciviccompact.org email.
-- Nothing else; the thank-you email is still chosen on the Appeals page.
+- To put the new thank-you wording live: Mail → Outgoing emails → new
+  automatic email → paste the draft, put `{receipt}` on its own line, delete
+  the `[CHECK: …]` note and the italic "not deductible" sentence (the
+  receipt block adds it), replace `[website link]` with a Button block →
+  Send me a test → then Appeals → Thank-you email after a donation → pick it.
 
 **Unfinished**
 

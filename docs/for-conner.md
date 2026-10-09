@@ -534,8 +534,9 @@ order, from a clean worktree at the commit that carries them:**
   Jarom owner user in the staging pool; this runbook.
 - [x] 2026-09-30 — **cutover**: DNS flipped to CloudFront 15:26 MDT, donor
   delta re-run (no changes), parity green on the real domain. Admin live at
-  admin.utahciviccompact.org. Remaining: Resend key, Stripe webhook URL check,
-  Jarom sign-in, Airtable copy, GitHub App, Turnstile. Cloudflare idle until
+  admin.utahciviccompact.org. Remaining: Resend key, ~~Stripe webhook URL
+  check~~ (confirmed 2026-10-10: prod logs show checkout events arriving and
+  donation receipts sent), Jarom sign-in, Airtable copy, GitHub App, Turnstile. Cloudflare idle until
   2026-10-30, then §7.8.
 
 ## 12. Email deliverability: DMARC to `p=reject`, and a postal address — `[hand]`

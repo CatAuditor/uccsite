@@ -15,6 +15,7 @@ import { renderEmail, normalizeBlocks, normalizeTheme, fromHeader, rawBlock, UNS
 import { sanitizeRich } from './newsletter-import.mjs';
 import { renderWebBody, archiveSlug } from '@uccsite/newsletter/web';
 import { parseSchedule, formatZoned } from '@uccsite/newsletter/schedule';
+import { fillHtml, fillText, sampleVars } from '@uccsite/newsletter/fill';
 import { requireRole } from './auth';
 import { withDb, withWriteTx, recordChange } from './data';
 import { notifyNewsletterRequested } from './notify';
@@ -326,7 +327,15 @@ export async function sendTest(id, { all = false } = {}) {
   if (!n) throw new Error('This newsletter no longer exists.');
   if (!n.subject.trim()) throw new Error('Give the email a subject line first.');
   const to = all ? [...new Set([s.email, ...PUBLISH_REVIEWERS])] : [s.email];
-  const { html, text } = renderFrozen(n, n.slug || archiveSlug(n.subject));
+  let { html, text } = renderFrozen(n, n.slug || archiveSlug(n.subject));
+  let subject = n.subject;
+  if (n.kind === 'transactional') {
+    // An automatic email: fill every placeholder with a stand-in (the tester's
+    // first name, $25.00, today, the real receipt block) so the test shows
+    // what a signer or donor will get — the API fills the same way.
+    const vars = sampleVars({ firstName: (await withDb((client) => authorNameFor(client, s.email))).split(' ')[0] });
+    html = fillHtml(html, vars); text = fillText(text, vars.text); subject = fillText(subject, vars.text);
+  }
   const link = `${config.appOrigin}/mail/${nid}`;
   const replyTo = await withDb((client) => db.authorReplyTo(client, n.fromName)); // same header the real send carries
   const client = new SESv2Client({ region: config.region, requestHandler: { requestTimeout: 8000 } });
@@ -337,7 +346,7 @@ export async function sendTest(id, { all = false } = {}) {
       ...(replyTo ? { ReplyToAddresses: [replyTo] } : {}),
       ...(config.envName === 'prod' ? { ConfigurationSetName: 'ucc-prod' } : {}),
       Content: { Simple: {
-        Subject: { Data: `TEST: ${n.subject}`, Charset: 'UTF-8' },
+        Subject: { Data: `TEST: ${subject}`, Charset: 'UTF-8' },
         Body: { Html: { Data: html.replaceAll(UNSUBSCRIBE_TOKEN, link), Charset: 'UTF-8' }, Text: { Data: text.replaceAll(UNSUBSCRIBE_TOKEN, link), Charset: 'UTF-8' } },
       } },
     }));

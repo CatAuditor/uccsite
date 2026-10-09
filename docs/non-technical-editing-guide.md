@@ -293,8 +293,13 @@ the whole mailing list after a second admin approves them.
   emails can also use `{headline}` and `{project_name}`. Donation emails can
   use `{amount}`, `{type}` and `{date}`, and **must** contain `{receipt}` —
   that is where the amount/date table and the "not tax-deductible" line go
-  (attaching refuses without it). The Unsubscribe link fills itself in. The
-  *Audience* box is ignored for automatic emails.
+  (attaching refuses without it). Put `{receipt}` on a line of its own, after
+  the thank-you text and before the sign-off, and do not type the
+  "not deductible" sentence yourself — the receipt block carries it. **Send
+  me a test** on an automatic email fills every placeholder with sample
+  values (your first name, $25.00, today's date, the real receipt table) so
+  you can see exactly what a donor gets. The Unsubscribe link fills itself
+  in. The *Audience* box is ignored for automatic emails.
 
 ### Newsletters
 

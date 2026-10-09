@@ -15,7 +15,7 @@ const {
 const { StripeError, stripePost } = require('./stripe');
 const { utahZipSql, isUtahZip } = require('@uccsite/db/audience');
 const {
-  buildPetitionThanksEmail, buildDonationThanksEmail, formatAmount, formatDate, donationType, receiptHtml, fillHtml, fillText,
+  buildPetitionThanksEmail, buildDonationThanksEmail, formatAmount, formatDate, donationType, receiptHtml, receiptText, fillHtml, fillText,
 } = require('./emails');
 
 const UNSUBSCRIBE_TTL = 60 * 60 * 24 * 365; // 1 year
@@ -620,9 +620,10 @@ async function donationThanksJob({ db, email, customerId, firstName: checkoutNam
     if (attached) {
       const amount = formatAmount(amountCents);
       const date = formatDate();
+      const r = { amount, recurring: Boolean(recurring), date };
       built = fillAttached(attached,
-        { first_name: firstName || 'there', amount: amount || 'gift', type: donationType(Boolean(recurring)), date },
-        { receipt: receiptHtml({ amount, recurring: Boolean(recurring), date }) });
+        { first_name: firstName || 'there', amount: amount || 'gift', type: donationType(r.recurring), date, receipt: receiptText(r) }, // text part
+        { receipt: receiptHtml(r) }); // html part (raw wins over text in fillHtml)
     } else {
       built = buildDonationThanksEmail({ firstName, amountCents, recurring: Boolean(recurring), origin });
     }
