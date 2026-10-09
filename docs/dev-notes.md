@@ -26,6 +26,40 @@ step 2. Inboxes will not show the logo until step 2 is done and a mark certifica
 
 ---
 
+## 2026-10-10 — New Financial section: donations with filters, and what the site costs
+
+**What changed**
+
+- The admin has a new **Financial** group in the menu, separate from
+  Operations. **Donations** moved there and **Costs** is new.
+- **Donations** now shows, for every gift, whether it was a **one-time**
+  gift or a **monthly** payment, and the donor's **plan** today (active,
+  past due = a card failed, canceled). Summary tiles at the top: total and
+  number of gifts and donors, average and largest gift, share from Utah,
+  share from monthly plans, how much the active plans bring in per month,
+  share on the public ticker. Filters: when (30 days, 90 days, this year,
+  12 months, all), amount range, Utah / outside / ZIP unknown, one-time or
+  monthly, plan state, on or off the ticker, and a name/email search. The
+  tiles describe everything that matches; the table shows the newest 200.
+  Nothing new is stored about anyone — Utah comes from the ZIP we already
+  hold, monthly from Stripe's plan record.
+- **Costs** shows the AWS hosting bill by service and month (current month
+  to date), what Stripe took in, kept and paid out each month (read from
+  Stripe itself, so it matches the Stripe dashboard), the money still
+  sitting in Stripe, the active monthly plans, and a list of the other
+  services the site relies on with what they cost (Cloudflare, GitHub,
+  Google Fonts: free; the domain renews yearly on the Cloudflare account).
+
+**What editors do differently**: look under **Financial** instead of
+Operations for Donations. Viewers cannot open either page (money and donor
+details are editor and owner only, as before).
+
+**What is left**: someone with Stripe access should open Costs once and
+confirm the Stripe table matches the Stripe dashboard and does not say
+"test mode key" (`docs/for-conner.md` §15). Gifts recorded before today
+are marked monthly only when the donor has a plan of the same amount; from
+today on each monthly charge is tagged exactly.
+
 ## 2026-10-10 — Petitions are organized like everything else: one entry per petition, under a project
 
 **What changed**

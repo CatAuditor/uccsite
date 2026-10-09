@@ -94,7 +94,12 @@ apps/admin/
                            download, publish to /files/* (docs/systems/files.md)
   app/revisions            revisions browser + restore (a draft — goes live
                            through a publish request like any save)
-  app/donations            staff view: every donation + contact info (addendum 2)
+  app/donations            Financial → Donations: every donation + contact info
+                           (addendum 2), filters, monthly / plan columns
+  app/costs                Financial → Costs: AWS bill by service, Stripe fees,
+                           plans, other services (docs/systems/finance.md)
+  lib/finance.js           Cost Explorer + Secrets Manager → Stripe fetches;
+                           lib/finance-shape.mjs = the pure shaping (tested)
   app/audit                audit trail
   app/documents            Documents list/create + [id] editor (Phase 8,
                            docs/systems/documents.md); app/styles rules/kit;
@@ -125,7 +130,8 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Petitions, each under a project with its own page (`/projects/<path>/<slug>`): status draft/open/closed, the homepage hero (featured), copy, thank-you ask, public Utah-only counter; signatures split Utah / outside + CSV | Petitions |
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
 | Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |
-| Donors; the mailing list with audience controls (residency, donors, petition signers) + CSV; remove / restore / erase people on the list | Donations, Mailing list |
+| Donors — every gift with filters (when, amount, Utah / outside, one-time / monthly, plan state, ticker, search) and each donor's monthly-plan state; the mailing list with audience controls (residency, donors, petition signers) + CSV; remove / restore / erase people on the list | Financial → Donations, Mail → Mailing list |
+| What the site costs: AWS by service and month, Stripe gross / fees / net / payouts, active monthly plans, the free services | Financial → Costs (docs/systems/finance.md) |
 | Newsletters: write (blocks or a .docx/.md/.html import), site letterhead look, live audience count, preview (phone, light/dark), test, request → approve → send (now or scheduled) | Mail → Outgoing emails (docs/systems/newsletters.md) |
 | Automatic emails: compose the petition thank-you or the donation receipt as a newsletter under Outgoing emails, then CHOOSE it from the dropdown on a petition's page (after signing — each petition has its own choice) or the Appeals page (after a donation); "Built-in email" returns to the fixed body | Mail → Outgoing emails + Petitions / Appeals (docs/systems/email.md "Attached emails") |
 | Confidential tips: read, triage status, delete | Tips (editor+; delete is owner) |
@@ -225,7 +231,9 @@ Verify after an Amplify deploy: `curl -sI https://admin.utahciviccompact.org/log
 ## Navigation & phone use — PWA (2026-10-05)
 
 - `app/layout.js` (server) builds the nav groups per session role — the
-  dashboard (`/` Publish & Status) is its own first group, *Overview* — and
+  dashboard (`/` Publish & Status) is its own first group, *Overview*;
+  *Financial* (Donations, Costs — 2026-10-10) sits between Mail and
+  Operations — and
   renders `app/nav.js` (client, inside `<Suspense>` because it reads
   `useSearchParams`). The current page is found by longest-prefix match on
   `pathname?query` (so `/documents/abc` lights "All documents" and
@@ -321,9 +329,9 @@ Verify after an Amplify deploy: `curl -sI https://admin.utahciviccompact.org/log
   the callback refuses to set the cookie and `/login?error=nogroup` says why.
 - Sign-out is a POST (`/logout`); redirects in the callback/middleware are
   built from `APP_ORIGIN`, never the request Host.
-- Donor PII (`/donations`) is `editor`+ (spec §11: viewer = read-only
-  content; editor "reads form submissions"). Viewer sees every content
-  editor read-only and the audit/revision lists.
+- Donor PII (`/donations`) and the money pages (`/costs`) are `editor`+
+  (spec §11: viewer = read-only content; editor "reads form submissions").
+  Viewer sees every content editor read-only and the audit/revision lists.
 - Prod Cognito client: SRP only (no `USER_PASSWORD_AUTH` — staging keeps it
   for scripted smoke tests), `preventUserExistenceErrors`, no localhost
   callback. Cognito callback/logout URLs and the media bucket CORS come

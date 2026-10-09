@@ -30,12 +30,22 @@ side is backed by the new `donations(public, created_at)` index. Returns:
 - Successful responses are cached for 60 seconds (`Cache-Control: public, max-age=60`); error responses are `no-store`.
 - `firstName` is user-supplied. `js/main.js` renders it with `textContent`, never `innerHTML`.
 
+## Admin view (2026-10-10)
+
+Staff read every donation under **Financial → Donations** (filters, the
+donor's monthly-plan state) and the money side under **Financial → Costs**
+— docs/systems/finance.md.
+
 ## Schema change
 
 Added `public INTEGER NOT NULL DEFAULT 1` to the `donations` table. Apply to existing D1 database:
 ```sql
 ALTER TABLE donations ADD COLUMN public INTEGER NOT NULL DEFAULT 1;
 ```
+
+2026-10-10 (DSQL, `packages/db/schema.js`): `stripe_subscription_id TEXT`,
+written by `invoice.paid` so a monthly payment is distinguishable from a
+one-time gift (`recordDonation({ subscriptionId })` in `aws/api/webhook.js`).
 
 ## Opt-out
 

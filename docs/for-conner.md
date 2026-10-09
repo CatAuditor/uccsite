@@ -701,3 +701,24 @@ changes on the live site until step 3.
   already lists the live projects underneath (no action); in each project's
   workspace write the *Project page intro* (Overview tab) — the hubs publish
   without one until then.
+
+## 15. Financial section (admin) — DONE 2026-10-10, one check left
+
+The admin has a **Financial** group: **Donations** (every gift, filters,
+whether the donor is on a monthly plan and whether it is still active) and
+**Costs** (the AWS bill by service and month, Stripe's gross / fees / net /
+payouts, the active plans, the services with no bill). docs/systems/finance.md.
+
+- [x] `[agent]` `node scripts/finance-prod-wiring.mjs` — added `ce:GetCostAndUsage`
+  and `secretsmanager:GetSecretValue` (on `ucc/prod/STRIPE_SECRET_KEY` only) to
+  `UccProdAdminCompute` / `admin-runtime`. Rerun after anything that recreates
+  the role; idempotent.
+- [x] `[agent]` `migrate-schema.mjs --env staging` and `--env prod`
+  (`donations.stripe_subscription_id`); `cdk deploy` staging + prod (ApiFunction:
+  the webhook records which plan a charge came from).
+- [ ] `[hand]` Open admin → Financial → Costs once and check the Stripe table
+  says **live** (no "test mode key" chip) and shows the same month totals as the
+  Stripe dashboard → Balance. If it says "Stripe is not connected", the prod
+  secret still holds its placeholder (§3).
+- Note: Cost Explorer bills $0.01 per API call; the page caches for an hour per
+  server instance, so leaving it open costs cents, not dollars.
