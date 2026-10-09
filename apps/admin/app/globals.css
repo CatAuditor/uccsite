@@ -256,9 +256,7 @@ fieldset.item > label:first-of-type { margin-top: 4px; }
 .doc-editor { max-width: none; }
 /* The metadata / SEO boxes sit centred at a reading width; the builder
    (editor + preview) uses the full width of the content area. */
-.doc-form { max-width: none; }
-.doc-form > * { max-width: 960px; margin-left: auto; margin-right: auto; }
-.doc-form > .builder { max-width: none; }
+form.editor.doc-form { max-width: none; } /* form.editor caps the other editors at 680px; the document editor uses the whole content area */
 .doc-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 textarea.code { font: 12.5px/1.45 var(--font-mono); white-space: pre; overflow: auto; }
 .doc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 16px; }
