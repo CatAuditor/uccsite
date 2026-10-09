@@ -4,6 +4,63 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.26.2 — 2026-10-09 (branch `refactor`) — Transactional thank-you emails; petition filed under a project
+
+Push = 0ff2602 (patch-homepage-group script), 4f14b2b (tests restored after the v0.26.0 rebase), ee3e187 (hub card
+template fix), plus this changelog commit. Detail for f0dbfed (pushed inside v0.26.0 by the concurrent session):
+
+**Email (docs/systems/email.md)** — `aws/api/emails.js` (new): `buildPetitionThanksEmail`, `buildDonationThanksEmail`,
+one layout, `{first_name}` / `{headline}` / `{amount}` fill, admin text escaped.
+- `POST /api/petition` dispatches self-invoke job `petition-thanks` on a FIRST signature only (pre-insert SELECT; a
+  re-sign refreshes the row and sends nothing — the route cannot be used to flood an address). Subject/body from
+  `homepage.petition.email_subject` / `email_body` (Petition page); heading = headline with only `<em>` kept; project
+  link; Share (/petition) + Chip in (/petition-thanks) buttons; `List-Unsubscribe` + One-Click headers.
+- Stripe `checkout.session.completed` dispatches `donation-thanks` (one-time and first monthly charge; `invoice.paid`
+  renewals send nothing; `processed_events` keeps it to one per checkout). Receipt table (amount, type, Mountain-time
+  date) + fixed 501(c)(4) not-tax-deductible line; monthly adds "email info@ to change or cancel". Copy from
+  `homepage.donate.thanks_email_subject` / `thanks_email_body` (Appeals page). No unsubscribe headers (a receipt).
+- `petitionCampaign()` reads `homepage.petition` + `projects` (5-min container cache); copy used only while the
+  saved slug equals the slug signed; generic copy otherwise or on any read error (`petition campaign lookup failed`).
+
+**DB / grants** — `petition_signatures.project_slug` (+ backfill `udot-alpr-permits` → `alpr`); `GRANT SELECT ON
+homepage, projects TO api` (ADR amendment: docs/decisions/api-dsql-least-privilege.md). `migrate-schema` run on
+staging and prod (prod: 6 signatures backfilled).
+
+**Site (docs/systems/petition.md "Project")** — `homepage.petition.project_slug`; `derivePetitionProject` (site.js,
+after `deriveProjectTree`) → `petition.project` on /petition ("Part of our … project") and `petition` on the filed
+project's hub → `templates/project.html` card (label, headline, body, Utah counter, sign button; `js/petition.js`
+loaded on hubs). ee3e187: the engine keeps the parent context inside an object section, so the card uses
+`{{petition.*}}` paths (first staging publish rendered an empty card with the project's slug as the counter key).
+CSS: `.hub-petition*`, `.petition-hero-project`. `content/homepage.json` petition gets `project_slug: alpr`.
+
+**Admin** — Petition page: Project dropdown (widget `'project'`, validated against `listProjects`), "Filed under …"
+line, Project column, two Thank-you email fields; CSV gains `project`; Appeals donate group gains two Thank-you
+email fields; project workspace Overview shows the live-campaign flag + signature counts per slug
+(`workspace()` → `petitions`, `activePetition`). `scripts/patch-homepage-group.mjs` (new): set fields inside a
+saved homepage group with a revision + `homepage.patch` audit row — used to file the live campaign on staging and
+prod (`--set project_slug=alpr`) without replacing the editors' copy.
+
+**Tests** — api.test.mjs 44 pass (6 new: first-sign dispatch / re-sign silent, campaign-less fallback, petition
+job copy + headers, generic + escaping, webhook dispatch + failure tolerance, donation receipt); render 37 pass
+(derivePetitionProject). Two stale assertions fixed (soft unsubscribe, 8th insert param). The v0.26.0 rebase had
+resolved the api.test.mjs conflict by dropping this block — restored in 4f14b2b.
+
+**Deployed** — `cdk deploy UccStaging` and `UccProd` from a clean worktree at ee3e187 (prod diff: ApiFunction,
+PublishFn, NewsletterSendFn, ExportContentFn, ViewerRequestFn — the last three carry v0.25.6/v0.26.0 code that had
+not reached prod). Published staging (6 then 2 changed) and prod `publish.mjs --source db` (6 changed, 0 removed:
+petition.html, projects/alpr.html, projects/stratos.html, css/pages/petition.css, css/pages/projects.css,
+css/newsletters.css). Verified: staging first signature → exactly one `SES sent … "Thank you for signing: Tell UDOT…"`,
+re-sign → none; row carries `project_slug = alpr`; prod `/api/health` ok, counter 6; live ALPR hub shows the card,
+/petition shows "Part of our License Plate Reader Investigation project".
+
+**Docs** — systems/email.md, petition.md, api-security.md, projects.md, admin.md, donation-tracker.md;
+legal/data-handling.md (SES + petition_signatures rows); error-handling/debug/api.md (8 rows); dev-notes.md;
+non-technical-editing-guide.md; pending-questions.md (multi-petition model, re-sign policy, renewals, portal page).
+
+Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed (the donation receipt depends on the
+webhook reaching the AWS API), Jarom not signed into prod admin. Not exercised end-to-end: a real Stripe checkout on
+the AWS webhook (unit-tested; verify the first live donation's `SES sent … "Thank you for your $…"` log line).
+
 ## v0.26.1 — 2026-10-09 (branch `refactor`) — Changelog correction (v0.26.0 follow-up hash)
 
 ## v0.26.0 — 2026-10-09 (branch `refactor`) — Newsletters: site letterhead, Apply filters, file import
