@@ -15,6 +15,7 @@ import {
   newsletterPage, saveNewsletter, requestSend, approveSend, declineSend, withdrawSend, cancelSend, retrySend, sendTest, deleteNewsletter,
   duplicateNewsletter, saveDefaults, rescheduleSend,
 } from '../../../lib/newsletters';
+import { transactionalState, attachEmail, detachEmail, TRIGGERS } from '../../../lib/transactional';
 import { runAction } from '../../../lib/actions';
 import { config } from '../../../lib/config';
 import ActionForm from '../../action-form';
@@ -32,6 +33,10 @@ export default async function NewsletterPage({ params }) {
   const page = await newsletterPage(id);
   if (!page) notFound();
   const { newsletter: n, names, count, petitions, deliveries, defaults, diff, opens } = page;
+  // Automatic email (docs/systems/email.md "Attached emails"): no audience, no
+  // send request — it is ATTACHED to a trigger and the API sends it.
+  const isTx = n.kind === 'transactional';
+  const tx = isTx ? await transactionalState(id) : null;
   const canAct = session.role !== 'viewer';
   const isDraft = n.status === 'draft';
   const isRequester = n.requestedByUser === session.username || n.requestedBy === session.email;
@@ -117,6 +122,23 @@ export default async function NewsletterPage({ params }) {
       return { ok: true, message: label ? `Now scheduled for ${label}.` : 'Now sends as soon as it is approved.' };
     });
   }
+  async function attach(prev, formData) {
+    'use server';
+    return runAction(async () => {
+      const trigger = String(formData.get('trigger') || '');
+      const { label, replaced } = await attachEmail(id, trigger);
+      revalidatePath(path); revalidatePath('/mail');
+      return { ok: true, message: `Attached — this email now goes out ${label}.${replaced ? ' It replaces the one that was attached before.' : ''}` };
+    });
+  }
+  async function detach(prev, formData) {
+    'use server';
+    return runAction(async () => {
+      await detachEmail(String(formData.get('trigger') || ''), id);
+      revalidatePath(path); revalidatePath('/mail');
+      return { ok: true, message: 'Detached — the built-in email is used again.' };
+    });
+  }
   async function remove() {
     'use server';
     const res = await runAction(() => deleteNewsletter(id));
@@ -127,11 +149,15 @@ export default async function NewsletterPage({ params }) {
 
   return (
     <div className="mail-page">
-      <p className="hint"><Link href="/mail">← Newsletters</Link></p>
-      <h1>{n.subject || '(no subject)'} <span className={`chip ${statusClass(n.status)}`}>{STATUS_LABEL[n.status]}</span></h1>
+      <p className="hint"><Link href="/mail">← Outgoing emails</Link>{isTx ? ' · automatic email' : ' · newsletter'}</p>
+      <h1>{n.subject || '(no subject)'}{' '}
+        {isTx
+          ? <span className={`chip ${tx.attached ? 'status-succeeded' : 'status-draft'}`}>{tx.attached ? `Attached — ${tx.attached.label}` : 'Not attached'}</span>
+          : <span className={`chip ${statusClass(n.status)}`}>{STATUS_LABEL[n.status]}</span>}
+      </h1>
       <Refresher active={n.status === 'sending'} />
 
-      {n.status !== 'draft' && (
+      {!isTx && n.status !== 'draft' && (
         <section className={`request ${n.status === 'pending' ? 'pending' : ''}`}>
           {n.status === 'pending' && <h2>Send request waiting for review</h2>}
           {n.status === 'approved' && <h2>Approved — scheduled for {formatZoned(n.scheduledFor)}</h2>}
@@ -224,7 +250,7 @@ export default async function NewsletterPage({ params }) {
             <button type="submit" name="then" value="test" className="secondary" title="Saves, then emails it to you only">Save &amp; send me a test ({session.email})</button>
           </div>
         )}
-        {canAct && isDraft && (
+        {canAct && isDraft && !isTx && (
           <div className="request-send">
             <h2>Request the send</h2>
             <p className="hint">
@@ -239,6 +265,40 @@ export default async function NewsletterPage({ params }) {
           </div>
         )}
       </ActionForm>
+
+      {isTx && (
+        <section className="request-send">
+          <h2>Send automatically</h2>
+          {tx.attached ? (
+            <p>
+              Attached to <strong>{tx.attached.label}</strong> since {when(tx.attached.attachedAt)} by {tx.attached.attachedBy || 'an admin'}:
+              it goes out {tx.attached.when}. The live copy was frozen when it was attached — after editing, <strong>save, then attach again</strong> to update what goes out.
+            </p>
+          ) : (
+            <p>Not attached yet: the built-in email goes out. Choose when this email should be sent and attach it. The <em>Audience</em> fieldset above is ignored for automatic emails — each one goes to the person who just acted.</p>
+          )}
+          <p className="hint">
+            Type these anywhere in the text and they are filled in for each recipient:{' '}
+            {TRIGGERS.map((t) => <span key={t.key}><strong>{t.label}</strong>: {t.placeholders.map((p) => `{${p}}`).join(' ')}{t.required.length ? ` (${t.required.map((p) => `{${p}}`).join(' ')} is required — it carries the amount, date and the not-tax-deductible line)` : ''}. </span>)}
+            The Unsubscribe link in the footer is filled in automatically.
+          </p>
+          {canAct && (
+            <ActionForm action={attach} className="inline">
+              <label htmlFor="trigger">Send this email</label>
+              <select id="trigger" name="trigger" defaultValue={tx.attached?.trigger || TRIGGERS[0].key}>
+                {TRIGGERS.map((t) => <option key={t.key} value={t.key}>{t.label} — {t.when}{tx.slots[t.key] && tx.slots[t.key].newsletterId !== n.id ? ` (currently: ${tx.slots[t.key].subject})` : ''}</option>)}
+              </select>
+              <button type="submit">{tx.attached ? 'Attach again (update the live copy)' : 'Attach — make it live'}</button>
+            </ActionForm>
+          )}
+          {canAct && tx.attached && (
+            <ActionForm action={detach} className="inline">
+              <input type="hidden" name="trigger" value={tx.attached.trigger} />
+              <button type="submit" className="secondary">Detach (back to the built-in email)</button>
+            </ActionForm>
+          )}
+        </section>
+      )}
 
       {canAct && (
         <div className="mail-tools">
@@ -258,7 +318,7 @@ export default async function NewsletterPage({ params }) {
           </div>
           {session.role === 'owner' && !['pending', 'approved', 'sending'].includes(n.status) && (
             <ActionForm action={remove} className="inline">
-              <button type="submit" className="danger">Delete this newsletter</button>
+              <button type="submit" className="danger">Delete this email</button>
             </ActionForm>
           )}
         </div>

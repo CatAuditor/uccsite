@@ -14,7 +14,9 @@ const {
 } = require('./lib');
 const { StripeError, stripePost } = require('./stripe');
 const { utahZipSql, isUtahZip } = require('@uccsite/db/audience');
-const { buildPetitionThanksEmail, buildDonationThanksEmail } = require('./emails');
+const {
+  buildPetitionThanksEmail, buildDonationThanksEmail, formatAmount, formatDate, donationType, receiptHtml, fillHtml, fillText,
+} = require('./emails');
 
 const UNSUBSCRIBE_TTL = 60 * 60 * 24 * 365; // 1 year
 const LINK_TTL_SECONDS = 15 * 60;
@@ -123,7 +125,7 @@ function getSesClient() {
 // Tests swap in a fake; never called in production.
 function _setSesClient(client) { sesClient = client; }
 
-async function sesSend({ to, subject, html, headers }) {
+async function sesSend({ to, subject, html, text, headers }) {
   const { SendEmailCommand } = require('@aws-sdk/client-sesv2');
   const configSet = process.env.SES_CONFIGURATION_SET;
   const input = {
@@ -132,7 +134,7 @@ async function sesSend({ to, subject, html, headers }) {
     Content: {
       Simple: {
         Subject: { Data: subject, Charset: 'UTF-8' },
-        Body: { Html: { Data: html, Charset: 'UTF-8' } },
+        Body: { Html: { Data: html, Charset: 'UTF-8' }, ...(text ? { Text: { Data: text, Charset: 'UTF-8' } } : {}) },
         ...(headers ? { Headers: Object.entries(headers).map(([Name, Value]) => ({ Name, Value })) } : {}),
       },
     },
@@ -493,7 +495,37 @@ async function petitionSign({ event, db, secrets, body, origin, selfInvoke }) {
 // Cached per container for CAMPAIGN_TTL_MS: it is read on every signature.
 const CAMPAIGN_TTL_MS = 5 * 60_000;
 let campaignCache = null; // { at, group, project }
-function _resetCampaignCache() { campaignCache = null; }
+function _resetCampaignCache() { campaignCache = null; templateCache.clear(); }
+
+// Attached emails (docs/systems/email.md "Attached emails"): an admin can
+// attach a newsletter composed in the admin to a trigger; its frozen subject/
+// html/text sit in transactional_emails (api role: SELECT). Null = no
+// attachment or a failed read → the built-in body below is used. {tokens}
+// are filled here (emails.js fillHtml), the unsubscribe token by the caller.
+const UNSUBSCRIBE_TOKEN = '{{unsubscribe_url}}';
+const templateCache = new Map(); // trigger → { at, row }
+async function transactionalTemplate(db, trigger) {
+  const hit = templateCache.get(trigger);
+  if (hit && Date.now() - hit.at < CAMPAIGN_TTL_MS) return hit.row;
+  try {
+    const res = await db.query('SELECT subject, html, text FROM transactional_emails WHERE trigger = $1', [trigger]);
+    const row = (res.rows && res.rows[0]) || null;
+    templateCache.set(trigger, { at: Date.now(), row });
+    return row;
+  } catch (err) {
+    console.error(`[api] attached email lookup failed (${trigger}): ${err?.name || 'Error'}`);
+    return null;
+  }
+}
+// fillAttached(row, vars, raw, unsubscribeUrl) → { subject, html, text }
+function fillAttached(row, vars, raw = {}, unsubscribeUrl = '') {
+  const sub = (s) => (unsubscribeUrl ? String(s || '').split(UNSUBSCRIBE_TOKEN).join(unsubscribeUrl) : String(s || ''));
+  return {
+    subject: fillText(row.subject, vars),
+    html: sub(fillHtml(row.html, { text: vars, raw })),
+    text: sub(fillText(row.text || '', vars)),
+  };
+}
 
 async function petitionCampaign(db, slug) {
   try {
@@ -542,11 +574,16 @@ async function petitionThanksJob({ db, secrets, email, firstName, petition, orig
       const token = await signToken(secrets.TOKEN_SECRET, 'unsubscribe', email, UNSUBSCRIBE_TTL);
       unsubscribeUrl = `${origin}/api/unsubscribe?token=${encodeURIComponent(token)}`;
     }
-    const { subject, html } = buildPetitionThanksEmail({
-      firstName, campaign, project: campaign?.project || null, origin, unsubscribeUrl,
-    });
+    const attached = await transactionalTemplate(db, 'petition-thanks');
+    const built = attached
+      ? fillAttached(attached, {
+        first_name: firstName || 'there',
+        headline: String(campaign?.headline || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
+        project_name: campaign?.project?.name || '',
+      }, {}, unsubscribeUrl)
+      : buildPetitionThanksEmail({ firstName, campaign, project: campaign?.project || null, origin, unsubscribeUrl });
     await sesSend({
-      to: email, subject, html,
+      to: email, ...built,
       headers: {
         'List-Unsubscribe': `<${unsubscribeUrl}>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
@@ -561,11 +598,19 @@ async function petitionThanksJob({ db, secrets, email, firstName, petition, orig
 // by the Stripe webhook on checkout.session.completed (webhook.js).
 async function donationThanksJob({ db, email, firstName, amountCents, recurring, origin }) {
   try {
-    const copy = await donateCopy(db);
-    const { subject, html } = buildDonationThanksEmail({
-      firstName, amountCents, recurring: Boolean(recurring), copy, origin,
-    });
-    await sesSend({ to: email, subject, html });
+    const attached = await transactionalTemplate(db, 'donation-thanks');
+    let built;
+    if (attached) {
+      const amount = formatAmount(amountCents);
+      const date = formatDate();
+      built = fillAttached(attached,
+        { first_name: firstName || 'there', amount: amount || 'gift', type: donationType(Boolean(recurring)), date },
+        { receipt: receiptHtml({ amount, recurring: Boolean(recurring), date }) });
+    } else {
+      const copy = await donateCopy(db);
+      built = buildDonationThanksEmail({ firstName, amountCents, recurring: Boolean(recurring), copy, origin });
+    }
+    await sesSend({ to: email, ...built });
   } catch (err) {
     console.error('[api] donation thanks email failed:', err?.message);
   }

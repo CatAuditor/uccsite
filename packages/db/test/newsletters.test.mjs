@@ -73,3 +73,23 @@ test('deleteNewsletter refuses in-flight rows', async () => {
   assert.match(c.calls[1].sql, /DELETE FROM newsletter_opens/);
   assert.match(c.calls[2].sql, /status NOT IN \('pending', 'approved', 'sending'\)/);
 });
+
+test('attached emails: kind in the row, triggers carry their placeholders, attach upserts per trigger, delete clears the attachment first', async () => {
+  assert.equal(nl.rowToNewsletter({ id: 'x', status: 'draft', kind: 'transactional' }).kind, 'transactional');
+  assert.equal(nl.rowToNewsletter({ id: 'x', status: 'draft', kind: null }).kind, 'newsletter');
+  assert.deepEqual(nl.TRIGGERS.map((t) => t.key), ['petition-thanks', 'donation-thanks']);
+  assert.deepEqual(nl.triggerOf('donation-thanks').required, ['receipt']);
+  assert.equal(nl.triggerOf('nope'), null);
+  const c = fakeClient([{ rows: [], rowCount: 1 }]);
+  await nl.attachTransactional(c, { trigger: 'petition-thanks', newsletterId: 'n1', subject: 'S', html: '<p>', text: 't', attachedBy: 'a@b.co' });
+  assert.match(c.calls[0].sql, /INSERT INTO transactional_emails .* ON CONFLICT \(trigger\) DO UPDATE/);
+  assert.deepEqual(c.calls[0].params.slice(0, 2), ['petition-thanks', 'n1']);
+  await assert.rejects(() => nl.attachTransactional(c, { trigger: 'bogus', newsletterId: 'n1', subject: 'S', html: '<p>' }), /Unknown trigger/);
+  const d = fakeClient([{ rows: [], rowCount: 0 }, { rows: [], rowCount: 0 }, { rows: [], rowCount: 1 }, { rows: [], rowCount: 1 }]);
+  assert.equal(await nl.deleteNewsletter(d, 'n1'), true);
+  assert.match(d.calls[3].sql, /DELETE FROM transactional_emails WHERE newsletter_id/);
+  const e = fakeClient([{ rowCount: 0 }, { rowCount: 0 }, { rowCount: 0 }]);
+  assert.equal(await nl.deleteNewsletter(e, 'n2'), false);
+  assert.equal(e.calls.length, 3); // an in-flight row keeps its attachment (none exists for newsletters anyway)
+  assert.equal(CONTENT_ACTION_RE.test('newsletter.attach'), false);
+});

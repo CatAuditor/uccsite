@@ -78,3 +78,11 @@ change the page text if the org decides otherwise.
    info@utahciviccompact.org (no public portal page exists; the portal API
    needs an emailed magic link). Option: build a /manage page that posts to
    `POST /api/create-portal-session`.
+5. **Does attaching an automatic email need a second admin, like a newsletter
+   send?** Options: (a) no — editor+ attaches, audited, detach is one click;
+   (b) reuse request/approve. **Chose (a)** (the admin's newsletter library
+   was being edited by another session; (b) means changing its state machine).
+   Reversible: route `attachEmail` through `requestSend`-style review.
+6. **Should the welcome email be attachable too?** Not offered: it must carry
+   the double opt-in confirm button (a signed URL), which the block builder
+   cannot place. Option: a `{confirm_button}` raw placeholder.

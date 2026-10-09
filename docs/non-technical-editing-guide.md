@@ -248,7 +248,31 @@ visual; a developer changes the code and publishes.
 - Nightly, the content is backed up to the code repository automatically;
   Revisions cover the everyday "undo".
 
-## Newsletters (Mail → Newsletters)
+## Outgoing emails (Mail → Outgoing emails)
+
+The page has two parts. **Automatic emails** are the ones a person gets right
+after doing something — signing the petition, donating. **Newsletters** go to
+the whole mailing list after a second admin approves them.
+
+### Automatic emails
+
+- The table at the top lists each moment an email goes out (*Petition signed*,
+  *Donation received*) and which email is attached to it. With nothing
+  attached, a built-in email goes out; its wording is edited on the Petition
+  page (petition) and the Appeals page (donation).
+- To replace one with your own design: **New automatic email**, write it
+  exactly like a newsletter (blocks, look, preview, *Save & send me a test*),
+  then in **Send automatically** choose the moment and press **Attach — make
+  it live**. It goes out from then on. Edits do not go live until you save and
+  press *Attach again*. **Detach** goes back to the built-in email.
+- Type `{first_name}` where the person's first name should appear. Petition
+  emails can also use `{headline}` and `{project_name}`. Donation emails can
+  use `{amount}`, `{type}` and `{date}`, and **must** contain `{receipt}` —
+  that is where the amount/date table and the "not tax-deductible" line go
+  (attaching refuses without it). The Unsubscribe link fills itself in. The
+  *Audience* box is ignored for automatic emails.
+
+### Newsletters
 
 1. **Start writing**: type the subject line and press *Start writing*.
 2. **Compose** on the left: preview text (the line inboxes show after the

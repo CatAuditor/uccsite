@@ -56,6 +56,21 @@ const DDL = [
   `ALTER TABLE newsletters ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ`,
   `ALTER TABLE newsletters ADD COLUMN IF NOT EXISTS requested_blocks TEXT`,
   `ALTER TABLE newsletters ADD COLUMN IF NOT EXISTS prior_blocks TEXT`,
+  // 2026-10-09 (docs/systems/email.md "Attached emails"): kind = 'newsletter'
+  // (NULL = newsletter, the default) | 'transactional' — an automatic email
+  // composed with the same blocks, never sent to the audience; instead it is
+  // ATTACHED to a trigger. transactional_emails = one row per trigger: the
+  // frozen subject/html/text the API Lambda sends (api role: SELECT only).
+  `ALTER TABLE newsletters ADD COLUMN IF NOT EXISTS kind TEXT`,
+  `CREATE TABLE IF NOT EXISTS transactional_emails (
+    trigger TEXT PRIMARY KEY,
+    newsletter_id UUID NOT NULL,
+    subject TEXT NOT NULL,
+    html TEXT NOT NULL,
+    text TEXT,
+    attached_by TEXT,
+    attached_at TIMESTAMPTZ DEFAULT now()
+  )`,
   `CREATE TABLE IF NOT EXISTS newsletter_deliveries (
     newsletter_id UUID NOT NULL,
     email TEXT NOT NULL,
@@ -71,9 +86,22 @@ const DDL = [
 ];
 
 const STATUSES = ['draft', 'pending', 'approved', 'sending', 'sent', 'failed'];
+const KINDS = ['newsletter', 'transactional'];
+
+// The triggers an automatic email can be attached to (aws/api/routes.js
+// transactionalTemplate reads by key). placeholders: {name} tokens the API
+// fills in (text, HTML-escaped; `receipt` is raw markup); required: tokens
+// the attach refuses without (the receipt carries the 501(c)(4) line).
+const TRIGGERS = [
+  { key: 'petition-thanks', label: 'Petition signed — thank-you', when: 'the first time an address signs the live petition',
+    placeholders: ['first_name', 'headline', 'project_name'], required: [] },
+  { key: 'donation-thanks', label: 'Donation received — thank-you and receipt', when: 'after every completed checkout (one-time, or the first monthly charge)',
+    placeholders: ['first_name', 'amount', 'type', 'date', 'receipt'], required: ['receipt'] },
+];
+const triggerOf = (key) => TRIGGERS.find((t) => t.key === key) || null;
 const STALE_DELIVERY_MINUTES = 10;
 
-const COLS = `id, status, subject, preheader, headline, from_name, blocks, theme, audience, created_by,
+const COLS = `id, status, kind, subject, preheader, headline, from_name, blocks, theme, audience, created_by,
   created_at::text AS created_at, updated_at::text AS updated_at,
   requested_by, requested_by_user, request_note, requested_at::text AS requested_at, scheduled_for::text AS scheduled_for, recipients,
   reviewed_by, review_note, reviewed_at::text AS reviewed_at,
@@ -83,7 +111,7 @@ const COLS = `id, status, subject, preheader, headline, from_name, blocks, theme
 const parseJson = (s, fallback) => { try { return s ? JSON.parse(s) : fallback; } catch { return fallback; } };
 
 const rowToNewsletter = (r) => ({
-  id: r.id, status: r.status, subject: r.subject || '', preheader: r.preheader || '', headline: r.headline || '',
+  id: r.id, status: r.status, kind: r.kind === 'transactional' ? 'transactional' : 'newsletter', subject: r.subject || '', preheader: r.preheader || '', headline: r.headline || '',
   fromName: r.from_name || '', blocks: parseJson(r.blocks, []), theme: parseJson(r.theme, {}), audience: parseJson(r.audience, {}),
   createdBy: r.created_by || '', createdAt: r.created_at, updatedAt: r.updated_at,
   requestedBy: r.requested_by || '', requestedByUser: r.requested_by_user || '', requestNote: r.request_note || '',
@@ -112,11 +140,11 @@ async function pendingNewsletters(client) {
   return res.rows.map(rowToNewsletter);
 }
 
-async function createNewsletter(client, { createdBy, fromName, subject, theme }) {
+async function createNewsletter(client, { createdBy, fromName, subject, theme, kind = 'newsletter' }) {
   const res = await client.query(
-    `INSERT INTO newsletters (id, status, subject, from_name, blocks, theme, audience, created_by)
-     VALUES (gen_random_uuid(), 'draft', $1, $2, '[]', $3, '{}', $4) RETURNING id`,
-    [subject || '', fromName || '', JSON.stringify(theme || {}), createdBy]);
+    `INSERT INTO newsletters (id, status, kind, subject, from_name, blocks, theme, audience, created_by)
+     VALUES (gen_random_uuid(), 'draft', $5, $1, $2, '[]', $3, '{}', $4) RETURNING id`,
+    [subject || '', fromName || '', JSON.stringify(theme || {}), createdBy, KINDS.includes(kind) ? kind : 'newsletter']);
   return res.rows[0].id;
 }
 
@@ -124,8 +152,8 @@ async function createNewsletter(client, { createdBy, fromName, subject, theme })
 // copying the content, look, audience and publish flag of an existing row.
 async function duplicateNewsletter(client, { id, createdBy, fromName, subject }) {
   const res = await client.query(
-    `INSERT INTO newsletters (id, status, subject, preheader, headline, from_name, blocks, theme, audience, publish_to_site, created_by)
-     SELECT gen_random_uuid(), 'draft', $2, preheader, headline, $3, blocks, theme, audience, publish_to_site, $4 FROM newsletters WHERE id = $1
+    `INSERT INTO newsletters (id, status, kind, subject, preheader, headline, from_name, blocks, theme, audience, publish_to_site, created_by)
+     SELECT gen_random_uuid(), 'draft', kind, $2, preheader, headline, $3, blocks, theme, audience, publish_to_site, $4 FROM newsletters WHERE id = $1
      RETURNING id`,
     [id, subject, fromName, createdBy]);
   return res.rows[0]?.id || null;
@@ -293,15 +321,47 @@ async function openCounts(client, ids) {
 }
 
 // deleteNewsletter(client, id) → true. Only rows that are not in flight.
+// ── Attached (automatic) emails ─────────────────────────────────────────────
+// attachTransactional: the newsletter's rendered bytes become the live email
+// for `trigger` (one per trigger — an upsert replaces whatever was attached).
+async function attachTransactional(client, { trigger, newsletterId, subject, html, text, attachedBy }) {
+  if (!triggerOf(trigger)) throw new Error(`Unknown trigger: ${trigger}`);
+  await client.query(
+    `INSERT INTO transactional_emails (trigger, newsletter_id, subject, html, text, attached_by, attached_at)
+     VALUES ($1, $2, $3, $4, $5, $6, now())
+     ON CONFLICT (trigger) DO UPDATE SET newsletter_id = excluded.newsletter_id, subject = excluded.subject, html = excluded.html,
+       text = excluded.text, attached_by = excluded.attached_by, attached_at = now()`,
+    [trigger, newsletterId, subject, html, text || '', attachedBy || null]);
+}
+
+async function detachTransactional(client, trigger) {
+  const res = await client.query(`DELETE FROM transactional_emails WHERE trigger = $1`, [trigger]);
+  return res.rowCount === 1;
+}
+
+// listAttachments(client) → [{ trigger, newsletterId, subject (frozen), attachedBy, attachedAt, currentSubject }]
+async function listAttachments(client) {
+  const res = await client.query(
+    `SELECT a.trigger, a.newsletter_id, a.subject, a.attached_by, a.attached_at::text AS attached_at, n.subject AS current_subject
+     FROM transactional_emails a LEFT JOIN newsletters n ON n.id = a.newsletter_id ORDER BY a.trigger`);
+  return res.rows.map((r) => ({
+    trigger: r.trigger, newsletterId: r.newsletter_id, subject: r.subject || '', attachedBy: r.attached_by || '', attachedAt: r.attached_at || '',
+    currentSubject: r.current_subject || '',
+  }));
+}
+
 async function deleteNewsletter(client, id) {
   await client.query(`DELETE FROM newsletter_deliveries WHERE newsletter_id = $1`, [id]);
   await client.query(`DELETE FROM newsletter_opens WHERE newsletter_id = $1`, [id]);
   const res = await client.query(`DELETE FROM newsletters WHERE id = $1 AND status NOT IN ('pending', 'approved', 'sending')`, [id]);
+  // A deleted automatic email can no longer be the live one for its trigger.
+  if (res.rowCount === 1) await client.query(`DELETE FROM transactional_emails WHERE newsletter_id = $1`, [id]);
   return res.rowCount === 1;
 }
 
 module.exports = {
-  DDL, STATUSES, STALE_DELIVERY_MINUTES, rowToNewsletter, listNewsletters, getNewsletter, pendingNewsletters, createNewsletter, duplicateNewsletter, saveNewsletter,
+  DDL, STATUSES, KINDS, TRIGGERS, triggerOf, STALE_DELIVERY_MINUTES, rowToNewsletter,
+  attachTransactional, detachTransactional, listAttachments, listNewsletters, getNewsletter, pendingNewsletters, createNewsletter, duplicateNewsletter, saveNewsletter,
   requestSend, reschedule, reviewSend, cancelScheduled, retryFailed, getDefaults, setDefaults, claimForSending, dueNewsletters, beginDelivery, finishDelivery,
   deliveryCounts, deliveriesFor, finishNewsletter, listArchive, openCounts, deleteNewsletter,
 };

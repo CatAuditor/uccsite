@@ -24,6 +24,15 @@ function fill(text, vars) {
   return String(text).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
 }
 
+// Placeholders in an ATTACHED email (an admin-composed newsletter frozen as
+// HTML — docs/systems/email.md "Attached emails"): text values are
+// HTML-escaped, raw values (the receipt table) are inserted as markup, an
+// unknown {token} stays as typed. fillText is the plain-text / subject twin.
+function fillHtml(html, { text = {}, raw = {} } = {}) {
+  return String(html || '').replace(/\{(\w+)\}/g, (m, k) => (k in raw ? String(raw[k]) : k in text ? escapeHtml(String(text[k])) : m));
+}
+function fillText(str, vars = {}) { return fill(str, vars); }
+
 function button(url, label, { bg = '#1a3a2a', fg = '#ffffff' } = {}) {
   return `<table cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
           <tr><td style="background:${bg};border-radius:4px;">
@@ -137,21 +146,34 @@ function formatAmount(cents) {
   return `$${(n / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function buildDonationThanksEmail({ firstName, amountCents, recurring, copy, origin, when = new Date() }) {
-  const amount = formatAmount(amountCents);
-  const vars = { first_name: firstName || 'there', amount: amount || 'gift' };
-  const subject = fill(copy?.thanks_email_subject || (recurring ? DONATION_SUBJECT_MONTHLY : DONATION_SUBJECT_ONETIME), vars);
-  const body = paragraphs(copy?.thanks_email_body || DONATION_BODY, vars);
-  const date = when.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Denver' });
-  const receipt = `
+// Mountain-time date for the receipt.
+function formatDate(when = new Date()) {
+  return when.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Denver' });
+}
+const donationType = (recurring) => (recurring ? 'Monthly membership' : 'One-time donation');
+
+// The receipt block: amount, type, date and the fixed 501(c)(4) line. Used by
+// the built-in email and inserted for {receipt} in an attached one (an
+// attached donation email is refused without that placeholder).
+function receiptHtml({ amount, recurring, date }) {
+  return `
         <table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 28px;border:1px solid #e8e4d9;border-radius:4px;font-family:sans-serif;font-size:14px;color:#2c2c2c;">
           <tr><td style="padding:12px 16px;border-bottom:1px solid #e8e4d9;">Amount</td><td style="padding:12px 16px;border-bottom:1px solid #e8e4d9;text-align:right;font-weight:700;">${escapeHtml(amount || '—')}${recurring ? ' / month' : ''}</td></tr>
-          <tr><td style="padding:12px 16px;border-bottom:1px solid #e8e4d9;">Type</td><td style="padding:12px 16px;border-bottom:1px solid #e8e4d9;text-align:right;">${recurring ? 'Monthly membership' : 'One-time donation'}</td></tr>
+          <tr><td style="padding:12px 16px;border-bottom:1px solid #e8e4d9;">Type</td><td style="padding:12px 16px;border-bottom:1px solid #e8e4d9;text-align:right;">${donationType(recurring)}</td></tr>
           <tr><td style="padding:12px 16px;">Date</td><td style="padding:12px 16px;text-align:right;">${escapeHtml(date)}</td></tr>
         </table>
         <p style="margin:0 0 28px;color:#555;font-family:sans-serif;font-size:13px;line-height:1.6;">
           Utah Civic Compact is a 501(c)(4) social welfare organization. Contributions are <strong>not</strong> tax-deductible as charitable donations. Keep this email for your records.${recurring ? ' To change or cancel your monthly membership, email <a href="mailto:info@utahciviccompact.org" style="color:#1a3a2a;">info@utahciviccompact.org</a>.' : ''}
         </p>`;
+}
+
+function buildDonationThanksEmail({ firstName, amountCents, recurring, copy, origin, when = new Date() }) {
+  const amount = formatAmount(amountCents);
+  const vars = { first_name: firstName || 'there', amount: amount || 'gift' };
+  const subject = fill(copy?.thanks_email_subject || (recurring ? DONATION_SUBJECT_MONTHLY : DONATION_SUBJECT_ONETIME), vars);
+  const body = paragraphs(copy?.thanks_email_body || DONATION_BODY, vars);
+  const date = formatDate(when);
+  const receipt = receiptHtml({ amount, recurring, date });
   const html = layout({
     title: subject,
     heading: recurring ? 'You’re a member. Thank you.' : 'Thank you.',
@@ -163,6 +185,6 @@ function buildDonationThanksEmail({ firstName, amountCents, recurring, copy, ori
 }
 
 module.exports = {
-  buildPetitionThanksEmail, buildDonationThanksEmail, formatAmount,
+  buildPetitionThanksEmail, buildDonationThanksEmail, formatAmount, formatDate, donationType, receiptHtml, fillHtml, fillText,
   PETITION_SUBJECT, PETITION_BODY, DONATION_SUBJECT_ONETIME, DONATION_SUBJECT_MONTHLY, DONATION_BODY,
 };

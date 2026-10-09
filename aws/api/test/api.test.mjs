@@ -690,3 +690,53 @@ test('donation-thanks job: receipt (amount, type, date), the not-tax-deductible 
   assert.match(body, /\$10\.00 \/ month/);
   assert.match(body, /info@utahciviccompact\.org/);
 });
+
+// ── Attached emails (transactional_emails; docs/systems/email.md "Attached emails") ──
+
+const attachedRow = (subject, html, text = '') => ({ rows: [{ subject, html, text }], rowCount: 1 });
+
+test('petition-thanks job: an attached email replaces the built-in body — placeholders filled and escaped, unsubscribe token swapped, text part sent', async () => {
+  routes._resetCampaignCache();
+  const sent = fakeSes();
+  const db = campaignDb({
+    'SELECT subject, html, text FROM transactional_emails': attachedRow('You signed: {headline}', '<p>Hi {first_name}, part of {project_name}. <a href="{{unsubscribe_url}}">Unsubscribe</a> {unknown}</p>', 'Hi {first_name}\nUnsubscribe: {{unsubscribe_url}}'),
+  });
+  try {
+    await routes.petitionThanksJob({ db, secrets: { TOKEN_SECRET: SECRET }, email: 'a@b.co', firstName: '<Ada>', petition: 'udot-alpr-permits', origin: 'https://x.test' });
+  } finally { routes._setSesClient(null); routes._resetCampaignCache(); }
+  const m = sent[0];
+  assert.equal(m.Content.Simple.Subject.Data, 'You signed: Tell UDOT: no cameras');
+  const html = m.Content.Simple.Body.Html.Data;
+  assert.match(html, /Hi &lt;Ada&gt;, part of License plates\./);
+  assert.match(html, /href="https:\/\/x\.test\/api\/unsubscribe\?token=/);
+  assert.match(html, /\{unknown\}/); // unknown tokens stay as typed
+  assert.ok(!html.includes('{{unsubscribe_url}}'));
+  assert.match(m.Content.Simple.Body.Text.Data, /^Hi <Ada>\nUnsubscribe: https:\/\/x\.test\/api\/unsubscribe\?token=/);
+  const headers = Object.fromEntries(m.Content.Simple.Headers.map(h => [h.Name, h.Value]));
+  assert.equal(headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
+  assert.equal(db.calls.filter(c => c.text.includes('FROM transactional_emails')).length, 1);
+});
+
+test('donation-thanks job: attached email gets {amount} {type} {date} and the raw {receipt} table with the legal line; read failure falls back to the built-in', async () => {
+  routes._resetCampaignCache();
+  let sent = fakeSes();
+  const db = fakeDb({ 'SELECT subject, html, text FROM transactional_emails': attachedRow('Thanks for {amount}', '<p>{first_name}: {type} on {date}</p>{receipt}') });
+  try {
+    await routes.donationThanksJob({ db, email: 'd@e.f', firstName: 'Dee', amountCents: 1000, recurring: true, origin: 'https://x.test' });
+  } finally { routes._setSesClient(null); routes._resetCampaignCache(); }
+  assert.equal(sent[0].Content.Simple.Subject.Data, 'Thanks for $10.00');
+  const html = sent[0].Content.Simple.Body.Html.Data;
+  assert.match(html, /Dee: Monthly membership on \w+ \d+, \d{4}<\/p>/);
+  assert.match(html, /<table[^>]*>[\s\S]*\$10\.00 \/ month[\s\S]*<\/table>/);
+  assert.match(html, /<strong>not<\/strong> tax-deductible/);
+  assert.ok(!html.includes('{receipt}'));
+  assert.equal(sent[0].Content.Simple.Body.Text, undefined); // no text part stored → none sent
+
+  sent = fakeSes();
+  const db2 = fakeDb({ 'SELECT subject, html, text FROM transactional_emails': () => { const e = new Error('permission denied'); e.name = 'error'; throw e; } });
+  try {
+    const { lines } = await spyConsole(() => routes.donationThanksJob({ db: db2, email: 'd@e.f', firstName: 'Dee', amountCents: 2500, recurring: false, origin: 'https://x.test' }));
+    assert.ok(lines.some(l => l.includes('attached email lookup failed (donation-thanks): error')));
+  } finally { routes._setSesClient(null); routes._resetCampaignCache(); }
+  assert.equal(sent[0].Content.Simple.Subject.Data, 'Thank you for your $25.00 donation');
+});

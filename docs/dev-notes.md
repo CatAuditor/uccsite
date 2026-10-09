@@ -6,6 +6,43 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-09 — Design the automatic emails yourself; "Outgoing emails" tab
+
+**What changed**
+
+- The Mail tab **Newsletters** is now **Outgoing emails**, and it sorts what
+  the site sends into two kinds: **Automatic emails** (what one person gets
+  right after signing the petition or donating) and **Newsletters** (what the
+  whole list gets after a second admin approves).
+- An automatic email can now be **one you design in the newsletter builder**
+  instead of the built-in one. Write it like any newsletter, preview it, send
+  yourself a test, then **attach** it to the moment it should go out
+  (*Petition signed* or *Donation received*). Only one email is attached per
+  moment; attaching another replaces it, and **Detach** goes back to the
+  built-in email. What goes out is frozen when you attach — after editing,
+  save and attach again.
+- Placeholders: `{first_name}` everywhere; `{headline}` and `{project_name}`
+  for the petition; `{amount}`, `{type}`, `{date}` for donations, which must
+  also contain `{receipt}` — the amount/date table and the required
+  "not tax-deductible" line are inserted there. The unsubscribe link fills
+  itself in.
+
+**What editors do differently**
+
+- Look for the Mail tab under its new name. Nothing changes for newsletters.
+- To change the look of a thank-you email, build it as an automatic email and
+  attach it; to change only its words, the fields on the Petition and Appeals
+  pages still work for the built-in version.
+
+**Left to do**
+
+- Attaching does not ask a second admin (newsletter sends do); noted in
+  docs/pending-questions.md. The *Audience* box still shows on automatic
+  emails and is ignored — a hint says so; hiding it waits for the newsletter
+  composer work in progress in another session.
+- Staging and production have the new table and permissions; the admin
+  deploys from this push.
+
 ## 2026-10-09 — Newsletters look like the site, count the audience on demand, and import a file
 
 **What changed**

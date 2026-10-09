@@ -21,6 +21,7 @@ Log group: `/aws/lambda/UccStaging-ApiFunction*` (or UccProd). Prefix: `[api]`.
 | `petition campaign lookup failed: <ErrorName>` | routes.js petitionCampaign | the `homepage` / `projects` read failed; the signature is still recorded WITHOUT a project and the thank-you uses generic copy. `error` with 42501 = `GRANT SELECT ON homepage/projects` missing (re-run migrate-schema); `Error` "homepage singleton missing" = content never migrated |
 | `petition thanks dispatch failed: <message>` | routes.js petitionSign | the async self-invoke for the thank-you failed; signer got 200, no email |
 | `petition thanks email failed: <message>` | routes.js petitionThanksJob | something other than the SES call threw inside the job (token signing, campaign read) |
+| `attached email lookup failed (<trigger>): <ErrorName>` | routes.js transactionalTemplate | the `transactional_emails` read failed; the built-in body goes out. 42501 = `GRANT SELECT ON transactional_emails` missing (re-run migrate-schema); 42P01 = table missing (same fix) |
 | `donate copy lookup failed: <ErrorName>` | routes.js donateCopy | `homepage` read failed; the receipt goes out with the default subject/body |
 | `donation thanks dispatch failed: <message>` | webhook.js handleCheckoutComplete | the self-invoke failed; the donation IS recorded, no receipt email, webhook still 200 (Stripe does not retry) |
 | `donation thanks email failed: <message>` | routes.js donationThanksJob | the job threw outside the SES call |

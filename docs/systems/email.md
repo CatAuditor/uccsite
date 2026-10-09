@@ -18,7 +18,12 @@ aws/api/routes.js            sesSend() — THE send path (welcome email, portal 
 aws/api/emails.js            the thank-you bodies (pure): buildPetitionThanksEmail,
                              buildDonationThanksEmail, shared layout, {placeholder} fill,
                              default subjects/bodies. Welcome body stays in routes.js.
+                             transactionalTemplate() / fillAttached() — an ATTACHED email (below) replaces the built-in body
 aws/api/webhook.js           checkout.session.completed → self-invoke 'donation-thanks'
+packages/db/newsletters.js   TRIGGERS (petition-thanks, donation-thanks: label, when, placeholders, required),
+                             newsletters.kind, transactional_emails table, attach/detach/listAttachments
+apps/admin/lib/transactional.js  createTransactional, attachEmail (renders + freezes), detachEmail, listSlots, transactionalState
+apps/admin/app/mail/          Outgoing emails: Automatic emails (slots + drafts) and Newsletters; [id] editor "Send automatically" panel
 aws/api/index.mjs            JOBS: welcome-email, portal-link, petition-thanks, donation-thanks
 aws/api/secrets.js           TOKEN_SECRET (signs unsubscribe/portal links); RESEND_API_KEY removed
 aws/newsletter/              NewsletterSendFn — the newsletter send path (docs/systems/newsletters.md)
@@ -72,9 +77,39 @@ the ops topic and reputation metrics are not tagged.
 Volume is tiny (tens per month). No message bodies or recipient lists are
 ever logged (`[api] SES error: <ErrorName>` / `[api] SES sent <MessageId>` only).
 
+### Attached emails (2026-10-09)
+
+Either thank-you can be replaced by an email **composed in the admin's
+newsletter builder**. Admin → Mail → **Outgoing emails** → *Automatic emails*:
+"New automatic email" creates a `newsletters` row with `kind = 'transactional'`
+(same composer, preview, test send; no audience, no send request). The editor
+page's **Send automatically** panel attaches it to a trigger:
+
+| trigger | fires | placeholders (filled per recipient) | required |
+|---|---|---|---|
+| `petition-thanks` | first signature of an address on the live petition | `{first_name}` `{headline}` `{project_name}` | — |
+| `donation-thanks` | every completed checkout (one-time, first monthly charge) | `{first_name}` `{amount}` `{type}` `{date}` `{receipt}` | `{receipt}` — the amount/type/date table AND the 501(c)(4) not-tax-deductible line (`emails.js receiptHtml`) |
+
+`attachEmail` renders the saved draft with the newsletter renderer
+(`renderEmail`, UTM campaign = the trigger key), refuses without a subject, a
+block or a required placeholder, and upserts `transactional_emails`
+(`trigger` PK, `newsletter_id`, frozen `subject/html/text`, `attached_by/_at`)
+— one live email per trigger; attaching another replaces it (audit
+`newsletter.attach`, `diff.replaced` = the previous id). **Frozen**: editing
+the draft changes nothing until it is attached again. Detach (audit
+`newsletter.detach`) or deleting the draft returns the trigger to the built-in
+body. The API (`transactionalTemplate`, SELECT on `transactional_emails`,
+5-minute container cache) fills the tokens with `fillHtml` (text values
+HTML-escaped, `{receipt}` raw, unknown tokens left as typed), swaps the
+renderer's `{{unsubscribe_url}}` for the signed link, and sends html + text.
+The petition email keeps its `List-Unsubscribe` headers either way; the
+donation email has none. A failed read logs `attached email lookup failed
+(<trigger>): <ErrorName>` and falls back to the built-in body. No two-person
+review on attach (docs/pending-questions.md 2026-10-09 #5).
+
 ### Admin copy for the thank-yous
 
-Both thank-you emails read their subject and message from the homepage
+When nothing is attached, both thank-you emails read their subject and message from the homepage
 singleton at send time (the API role has read-only `SELECT` on `homepage`
 and `projects` — docs/systems/api-security.md). The text is plain: a blank
 line starts a paragraph, `{first_name}` / `{headline}` / `{amount}` are

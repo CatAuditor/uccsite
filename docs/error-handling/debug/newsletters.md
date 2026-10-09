@@ -28,3 +28,11 @@ per-recipient outcome.
 E2E without touching the real audience:
 `$env:AWS_PROFILE='uccsite'; node scripts/newsletter-smoke.mjs --env staging`
 (mailbox simulator; prints the delivery ledger; cleans up).
+
+## Automatic (attached) emails — `[admin]` (docs/systems/email.md "Attached emails")
+
+| Where | Log | Normal | Broken |
+|---|---|---|---|
+| lib/transactional.js `attachEmail` | `email <id> attached to <trigger> by <admin> (replaced <id>)` | one per attach | a user reports the old email still going out → the API's 5-minute container cache; wait, or check the row in `transactional_emails` |
+| lib/transactional.js `detachEmail` | `email <id> detached from <trigger> by <admin>` | one per detach | — |
+| API (docs/error-handling/debug/api.md) | `attached email lookup failed (<trigger>): <ErrorName>` | never | grant/table missing → built-in body used |

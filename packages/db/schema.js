@@ -177,6 +177,9 @@ const API_GRANTS = [
   // the admin's copy. Both are public-site content; never INSERT/UPDATE.
   `GRANT SELECT ON homepage TO ${API_ROLE}`,
   `GRANT SELECT ON projects TO ${API_ROLE}`,
+  // Attached automatic emails (packages/db/newsletters.js transactional_emails,
+  // docs/systems/email.md "Attached emails"): the frozen subject/html per trigger.
+  `GRANT SELECT ON transactional_emails TO ${API_ROLE}`,
 ];
 
 module.exports = { STATEMENTS, API_ROLE, API_GRANTS };
