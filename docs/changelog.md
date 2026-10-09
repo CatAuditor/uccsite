@@ -4,6 +4,33 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.22.4 — 2026-10-08 (branch `refactor`) — Officials lookup integration
+
+**API** (`aws/api/index.mjs`, `lib.js`, `routes.js`; commit 0df5136)
+- CORS for exactly `https://lookup.utahciviccompact.org` on `/api/subscribe` only: new
+  `OPTIONS /api/subscribe` (204, Allow-Methods POST, Allow-Headers Content-Type, Max-Age 86400);
+  `withLookupCors` adds `Vary: Origin` always and `Access-Control-Allow-Origin` only on an exact
+  Origin match. Route-table flag `cors: true`. CloudFront `/api/*` unchanged. Test added;
+  aws/api 35/37 (same 2 pre-existing failures).
+
+**Site** (`packages/render/navigation.js`)
+- Footer "Get Involved" gains Find Your Officials → `https://lookup.utahciviccompact.org`.
+  Header unchanged (a 10th item overflows at 861–1100 px). Prod `site_settings.navigation` is
+  NULL, so the defaults apply. render tests 30/30.
+
+**Docs** (commit ba56d5c): api-security.md CORS section, decisions/subscribe-cors-lookup-origin.md,
+legal/data-handling.md; navigation.md, dev-notes.
+
+**Deployed:** `cdk deploy UccProd` of 0df5136 (ApiFunction + PublishFn only, per `cdk diff`),
+run from the lookup session on Conner's instruction. Verified live: preflight from the lookup
+origin → 204 with the CORS headers; other origins get no `Access-Control-Allow-Origin`.
+Footer link appears on the next site publish.
+
+Before setting `TURNSTILE_SECRET_KEY`: add the lookup hostname to the Turnstile widget and render
+it on the lookup form, or its opt-ins 403.
+
+Open P1s: unchanged from v0.22.3.
+
 ## v0.22.3 — 2026-10-07 (branch `refactor`) — Sitemap namespace fix
 
 **Site** (`packages/render/site.js` makeSitemap; `packages/render/test/parity.test.mjs`)

@@ -6,6 +6,19 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-08 — Officials lookup joins the mailing list
+
+The officials lookup (lookup.utahciviccompact.org) has a "Send me the Utah
+Civic Compact newsletter" checkbox. Browsers used to block it from reaching
+our mailing list because the lookup lives at a different web address. The
+sign-up endpoint now accepts sign-ups from that one address (no other). People
+who tick the box get the same welcome email as the join form and must press its
+confirm button before they receive newsletters. Live now.
+
+Needs a person later: when Turnstile (the anti-bot check) is switched on, add
+lookup.utahciviccompact.org to the Turnstile widget's hostnames in Cloudflare,
+or the lookup's sign-ups will be refused.
+
 ## 2026-10-08 — "Find Your Officials" link in the footer
 
 The footer's **Get Involved** column now links to the officials lookup
