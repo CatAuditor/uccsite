@@ -9,7 +9,7 @@
 // stay in the repo for the git/build.js path until cutover, but once a
 // Document has claimed that address (as its slug, its short path or the
 // path it last published at) the database wins.
-const { buildSite, PAGES, withColorClasses, authorIndex, documents: docs, documentUrl, projectUrl, derivePress } = require('@uccsite/render');
+const { buildSite, PAGES, withColorClasses, authorIndex, documents: docs, documentUrl, projectUrl, derivePress, petitionUrl } = require('@uccsite/render');
 const { loadContent, contentMeta, makeDbLastmod } = require('@uccsite/db/content');
 const { loadPublishBundle, markDocumentLive, markDocumentPublishError, archivedPaths } = require('@uccsite/db/documents');
 const { listRedirects, kvsEntries } = require('@uccsite/db/redirects');
@@ -46,6 +46,17 @@ function documentRedirects(documents, projects, livePaths) {
     }
   }
   return out;
+}
+
+// petitionRedirects(petitions, projects, livePaths) → [{ from, to }]: the
+// pre-collection addresses /petition and /petition-thanks 301 to the featured
+// open petition (its page and its thank-you page), else to /petitions
+// (docs/systems/petition.md). Same shadowing rule as documentRedirects.
+function petitionRedirects(petitions, projects, livePaths) {
+  const featured = (petitions || []).find(p => String(p.status || '') === 'open' && String(p.featured || '') === '1');
+  const url = featured ? petitionUrl(featured, projects) : '';
+  const pairs = [['/petition', url || '/petitions'], ['/petition-thanks', url ? `${url}/thanks` : '/petitions']];
+  return pairs.filter(([from]) => !livePaths.has(from)).map(([from, to]) => ({ from, to }));
 }
 
 // renderSiteFromDb({ inputs, siteCss, content, meta, bundle, siteUrl, projectFiles, newsletters })
@@ -112,6 +123,12 @@ function renderSiteFromDb({ inputs, siteCss, content: rawContent, meta, bundle, 
 
   const site = buildSite({ ...inputs, content: { ...content, project_files: projectFiles, documents_index: documentsIndex }, lastmod, pages, siteUrl, sitemapExtra: [...built.pages, ...archive.pages] });
   const errors = [...site.errors, ...built.errors, ...archive.errors];
+  // A fixed or expanded page (a petition page, a hub) and a document must
+  // never claim the same address: the admin refuses the clash on save, and
+  // the render refuses it too rather than letting one silently overwrite the other.
+  for (const key of Object.keys(site.files)) {
+    if (key.endsWith('.html') && key in built.files) errors.push(`two pages claim /${key.replace(/\.html$/, '')} (a document and a site page)`);
+  }
   const files = errors.length ? {} : { ...site.files, ...built.files, ...archive.files };
   const livePaths = new Set(Object.keys(files).filter(k => k.endsWith('.html')).map(k => `/${k.replace(/\.html$/, '')}`));
   return {
@@ -120,7 +137,7 @@ function renderSiteFromDb({ inputs, siteCss, content: rawContent, meta, bundle, 
     // A run that failed anywhere writes nothing — no document went live.
     documentHashes: errors.length ? {} : built.hashes,
     documentPaths: errors.length ? {} : built.paths,
-    documentRedirects: errors.length ? [] : documentRedirects(bundle.documents, projects, livePaths),
+    documentRedirects: errors.length ? [] : [...documentRedirects(bundle.documents, projects, livePaths), ...petitionRedirects(content.petitions?.items, projects, livePaths)],
     projectUrls: Object.fromEntries(projects.map(p => [p.slug, projectUrl(p, projects)])),
   };
 }
@@ -161,4 +178,4 @@ async function publishRedirects({ client, kvsArn, region, documentRedirects = []
   return syncRedirects({ kvsArn, entries: kvsEntries(rows.filter(r => r.active), { documentRedirects, gonePaths }), region, log });
 }
 
-module.exports = { loadSiteFromDb, renderSiteFromDb, recordDocumentPublish, publishRedirects, documentRedirects };
+module.exports = { loadSiteFromDb, renderSiteFromDb, recordDocumentPublish, publishRedirects, documentRedirects, petitionRedirects };

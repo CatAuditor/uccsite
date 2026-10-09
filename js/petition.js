@@ -1,6 +1,6 @@
 /* Utah Civic Compact — petition pages (docs/systems/petition.md)
-   /petition        : the signature form → POST /api/petition → /petition-thanks
-   /petition-thanks : "I can help" payment modal → POST /api/create-checkout-session
+   /projects/<path>/<slug>        : the signature form → POST /api/petition → …/thanks
+   /projects/<path>/<slug>/thanks : "I can help" payment modal → POST /api/create-checkout-session
    The signer's name/email/zip ride along in sessionStorage so the checkout
    is prefilled; nothing else is stored client-side. Debug prefix: [petition]. */
 
@@ -65,7 +65,7 @@
             email: payload.email, zip: payload.zip,
           }));
         } catch (_) {}
-        window.location.href = '/petition-thanks';
+        window.location.href = form.dataset.thanksUrl || '/petitions';
         return;
       }
       const data = await res.json().catch(() => ({}));

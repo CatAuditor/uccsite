@@ -1,0 +1,84 @@
+/* Page styles for templates/petitions.html — the petitions index (docs/systems/petition.md).
+   Loaded after css/pages/petition.css (shares .petition-hero-label / .petition-hero-body / .petition-count). */
+
+.petitions-hero {
+  background: var(--navy-dark);
+  padding: 140px 0 64px;
+  position: relative;
+  overflow: hidden;
+}
+.petitions-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 60% 40%, rgba(192,57,43,0.14) 0%, transparent 70%);
+  pointer-events: none;
+}
+.petitions-hero .container { position: relative; }
+.petitions-hero h1 {
+  font-family: var(--font-sans);
+  font-size: clamp(32px, 4.5vw, 52px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  color: var(--white);
+  margin-bottom: 20px;
+}
+.petitions-hero .petition-hero-body { margin-bottom: 0; max-width: 560px; }
+
+.petitions-list { background: var(--cream); padding: 64px 0 96px; }
+.petitions-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px; }
+.petitions-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px 32px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+}
+.petitions-card-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 14px;
+}
+.petitions-card-headline {
+  font-family: var(--font-sans);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+}
+.petitions-card-headline a { color: inherit; text-decoration: none; }
+.petitions-card-headline a:hover { text-decoration: underline; }
+.petitions-card-headline em { font-style: normal; color: var(--red); }
+.petitions-card-project { font-size: 13px; color: var(--text-muted, #666); margin-bottom: 16px; }
+.petitions-card-project a { color: inherit; }
+.petitions-card-body { font-size: 15px; line-height: 1.65; margin-bottom: 20px; flex: 1; }
+.petitions-card-count { font-size: 14px; margin: -8px 0 18px; }
+.petitions-card-count strong { font-weight: 800; }
+
+.petitions-empty { text-align: center; padding: 24px 0 8px; }
+.petitions-empty h2 { font-family: var(--font-sans); font-size: 26px; font-weight: 800; margin-bottom: 12px; }
+.petitions-empty p { margin-bottom: 20px; }
+
+.petitions-closed-title {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 56px 0 14px;
+}
+.petitions-closed { list-style: none; padding: 0; margin: 0; }
+.petitions-closed li { padding: 12px 0; border-top: 1px solid rgba(0,0,0,0.08); }
+.petitions-closed-meta { font-size: 13px; color: var(--text-muted, #666); margin-left: 8px; }
+
+@media (max-width: 720px) {
+  .petitions-hero { padding: 110px 0 48px; }
+  .petitions-list { padding: 40px 0 72px; }
+  .petitions-card { padding: 28px 22px 24px; }
+}

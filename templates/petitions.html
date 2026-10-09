@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- /petitions — every open petition (and the closed ones), docs/systems/petition.md.
+       Each petition's own page is /projects/<project path>/<slug>. -->
+  <title>Petitions | Utah Civic Compact</title>
+  <meta name="description" content="Open petitions from the Utah Civic Compact — add your name to the record." />
+  <link rel="canonical" href="https://utahciviccompact.org/petitions" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://utahciviccompact.org/petitions" />
+  <meta property="og:title" content="Petitions | Utah Civic Compact" />
+  <meta property="og:description" content="Open petitions from the Utah Civic Compact — add your name to the record." />
+  <meta property="og:site_name" content="Utah Civic Compact" />
+  <meta property="og:image" content="https://utahciviccompact.org/assets/share-default.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://utahciviccompact.org/assets/share-default.png" />
+  <meta name="twitter:title" content="Petitions | Utah Civic Compact" />
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon-512.png" />
+  <link rel="stylesheet" href="/css/fonts.css" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/colors.css" />
+  <link rel="stylesheet" href="/css/pages/petition.css" />
+  <link rel="stylesheet" href="/css/pages/petitions.css" />
+</head>
+<body>
+
+{{> header}}
+
+  <section class="petitions-hero">
+    <div class="container">
+      <p class="petition-hero-label">Petitions</p>
+      <h1>Add your name to the record.</h1>
+      <p class="petition-hero-body">Every petition below belongs to one of our projects. Sign the ones that matter to you and pass them on.</p>
+    </div>
+  </section>
+
+  <section class="petitions-list">
+    <div class="container">
+      {{#has_open}}
+      <div class="petitions-cards">
+        {{#open}}
+        <article class="petitions-card">
+          <p class="petitions-card-label">{{label}}</p>
+          <h2 class="petitions-card-headline"><a href="{{url}}">{{{headline}}}</a></h2>
+          <p class="petitions-card-project">Part of our <a href="{{project.url}}">{{project.name}}</a> project</p>
+          <p class="petitions-card-body">{{body}}</p>
+          <p class="petition-count petitions-card-count" data-petition-count="{{slug}}" data-count-label="{{count_label}}" hidden></p>
+          <a href="{{url}}" class="btn btn-donate">{{cta}}</a>
+        </article>
+        {{/open}}
+      </div>
+      {{/has_open}}
+      {{^has_open}}
+      <div class="petitions-empty">
+        <h2>No petition is open right now.</h2>
+        <p>Check back soon, or sign up for updates on the homepage so you hear first.</p>
+        <a href="/#join" class="btn btn-ghost">Get updates</a>
+      </div>
+      {{/has_open}}
+
+      {{#has_closed}}
+      <h2 class="petitions-closed-title">Closed petitions</h2>
+      <ul class="petitions-closed">
+        {{#closed}}
+        <li><a href="{{url}}">{{headline_text}}</a> <span class="petitions-closed-meta">{{project.name}}</span></li>
+        {{/closed}}
+      </ul>
+      {{/has_closed}}
+    </div>
+  </section>
+
+{{> footer}}
+
+  <script src="/js/main.js"></script>
+  <script src="/js/petition.js"></script>
+</body>
+</html>

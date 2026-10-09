@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { buildSite, PAGES, expandPages, deriveTeam } = require('../index.js');
+const { buildSite, PAGES, expandPages, deriveTeam, derivePetitions, deriveProjectTree } = require('../index.js');
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..', '..');
@@ -43,8 +43,9 @@ const FIXED_LASTMOD = () => '2026-09-12';
 test('buildSite renders with no errors', () => {
   const { files, errors } = buildSite({ ...loadInputs(), lastmod: FIXED_LASTMOD });
   assert.deepEqual(errors, []);
-  // pages (author pages expand to one per team member) + sitemap.xml + css/colors.css
-  assert.equal(Object.keys(files).length, expandPages(PAGES, deriveTeam(loadInputs().content)).length + 2);
+  // pages (author pages expand to one per team member, petition pages one per
+  // open/closed petition + a thank-you page per open one) + sitemap.xml + css/colors.css
+  assert.equal(Object.keys(files).length, expandPages(PAGES, derivePetitions(deriveProjectTree(deriveTeam(loadInputs().content)))).length + 2);
 });
 
 test('rendered pages match the golden baseline byte-for-byte (except named diffs)', () => {
@@ -86,7 +87,9 @@ test('sitemap: structure, exclusions, priorities, injected lastmod', () => {
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
   // tip + success excluded
   assert.ok(!locs.some(l => /tip|success|404/.test(l)), 'tip/success/404 must not be in the sitemap');
-  assert.equal(locs.length, expandPages(PAGES, deriveTeam(loadInputs().content)).filter(p => p.sitemap !== false).length);
+  assert.equal(locs.length, expandPages(PAGES, derivePetitions(deriveProjectTree(deriveTeam(loadInputs().content)))).filter(p => p.sitemap !== false).length);
+  assert.ok(locs.includes('https://utahciviccompact.org/projects/alpr/udot-alpr-permits'), 'petition pages are in the sitemap');
+  assert.ok(!locs.some(l => l.endsWith('/thanks')), 'petition thank-you pages are not');
   assert.ok(locs.includes('https://utahciviccompact.org/team/jarom-gillins'), 'author pages are in the sitemap');
   assert.ok(locs.includes('https://utahciviccompact.org/'));
   // Clean URLs (spec addenda 10/12): no .html extensions in the sitemap
