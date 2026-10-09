@@ -4,6 +4,52 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.23.0 — 2026-10-09 (branch `refactor`) — Documents: block builder, legacy pages converted
+
+Four commits (8ea1a2c, e6db6dd, 192bdff, 7ab119e); docs/systems/document-builder.md is the system doc,
+docs/decisions/document-builder-blocks.md the decision.
+
+**Model** (`packages/doc-blocks`, ES module; tests 19/19)
+- `schema.js` block registry (prose, quote, pullquote, callout ×7 variants, stats, figure, table ×4, files,
+  cta ×3, sources ×2, accordion, partsnav, asks, cards, byline, video, coverage, raw), header/section fields,
+  `validateBody`; `serialize.js` blocks → `body_html_raw` (hero, byline strip, contents list, bands, bare
+  Text children tagged `data-block`); `parse.js` HTML → blocks (kit markers, site markup, heuristics; unknown
+  → raw); `convert.js` class aliases. Legacy fidelity fields: `header.frame`, `bandClasses`, section
+  `classes`, `legacyClass`/`legacyWrap`/`bare`, `eyebrowTag`, `ctasBare`, button icons.
+- `scripts/blocks-roundtrip.mjs` (text/tag round-trip) and `scripts/convert-documents-to-blocks.mjs`
+  (DB conversion + headless-Chrome pixel diff; `puppeteer-core`, `pixelmatch`, `pngjs` dev deps; output
+  under `.tmp/`, now gitignored).
+
+**Site CSS** (`css/styles.css`): "Document blocks" group (54 annotated entries) + "Document block parts"
+(hidden from the kit): the canonical copy of release-meta, paper-toc, scope-box, finding-box (navy),
+violation-box (grey), update-note, draft-def, stats-grid, pull-quote, evidence-figure, doc-table/own-table/
+rank-table/timeline-table, table-downloads/btn-file, related-cta/download-cta/contact-cta, sources-*, ask-list,
+join-grid, doc-accordion, parts-nav, part-header, hero-ctas/hero-download/hero-secondary/hero-provenance,
+doc-body/doc-inner. Style Kit undocumented count unchanged (8).
+
+**Database**: `documents.body_blocks TEXT` (JSON; NULL = legacy HTML box). Applied on **staging**; prod pending.
+
+**Admin** (tests 33/33)
+- `[id]/builder.js` + `field-editors.js` + `rich-text.js` + `block-picker.js`: header groups, sections, block
+  cards (variant, Style chips, move/remove), add bars, picker dialog with a gallery rendered from the live
+  site CSS, live preview via `previewBlocks` (serialize → ingest → compose, no save; click ↔ card, scroll kept),
+  ingest report under the preview, Start from a file (`parseUpload`), Advanced page CSS/frame.
+- `saveDocument` reads `bodyBlocks` → generates `body_html_raw`; `createDocument` is upload-first (title/slug
+  from the file); `convertToBlocks` for legacy rows (revision + `document.convert_blocks` audit).
+- `lib/documents.js`: `blocksToRaw`, `authorHrefFor`, `previewBlocksFor`, `previewSrcdoc`, `blockGallery`;
+  `convert-upload.mjs uploadToHtml` (images kept). `next.config.js transpilePackages`.
+- Authoring kit: three routes → builder; section 5 "Builder markers" (`<!-- ucc:… -->`) with a tested example
+  (`test/upload-blocks.test.mjs`); live-page class warning narrowed to private wrappers.
+
+**Legacy conversion**: all eight tracked documents parse with 0 raw blocks (Dignity statement: 4, letterhead
+kept verbatim), text identical, **0.000% differing pixels** at 1280 px old vs new
+(docs/migration/blocks-conversion.md). `--apply` run on staging; staging published from the database
+(27 changed, 2 page-CSS files replaced) so the stylesheet and converted pages are live there.
+
+**Runbook**: docs/for-conner.md §13 (prod: migrate-schema, convert check, apply, publish).
+
+Open P1s: unchanged from v0.22.3. aws/api still 34/36 (the two pre-existing subscriber/petition failures).
+
 ## v0.22.5 — 2026-10-09 (branch `refactor`) — Find Your Officials in the header
 
 **Site** (`packages/render/navigation.js`; commit 47d16af)
