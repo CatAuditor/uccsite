@@ -4,6 +4,38 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.28.0 — 2026-10-10 (branch `refactor`) — Admin Financial section: Donations with filters + monthly status, Costs page
+
+Push = aba3580 (80fb26b, ac88b0a, aba3580 on top of v0.27.2, which already carried c9d8941). Org ask: a financial section
+apart from Operations — donations, AWS costs and any attached service we can pull costs from; monthly / monthly-active
+on each donation; filters (amount, timeframe, Utah…) without storing more PII. Doc: docs/systems/finance.md.
+
+- **Nav** (`apps/admin/app/layout.js`): new group **Financial** = `/donations` (moved out of Operations) + `/costs`.
+- **Donations** (`app/donations/page.js`, `packages/db/donations.js` 8 tests): summary tiles over the whole filtered set
+  (total / gifts / donors, average + largest, % Utah, % from monthly plans, active plans × $/mo, % on the ticker); GET
+  filters `timeframe` (30d/90d/ytd/12m/all), `min`/`max` dollars, `residency`, `kind` (one-time/monthly), `monthly`
+  plan state, `ticker`, `q`; columns Type (monthly = `stripe_subscription_id` set, else the donor holds a plan of that
+  amount) and Plan (newest subscription, active first). Residency derived from ZIP at read time; nothing new stored.
+  Verified on DSQL against staging and prod with every filter at once.
+- **Costs** (`app/costs/page.js`, `lib/finance.js`, `lib/finance-shape.mjs` 4 tests): AWS Cost Explorer
+  `GetCostAndUsage` monthly × SERVICE for 6 months (cached 1 h; $0.01/call), Stripe `balance` +
+  `balance_transactions` → gross / refunds / fees / net / paid out per month + balance (key read once from Secrets
+  Manager `ucc/<env>/STRIPE_SECRET_KEY`, placeholder = "not connected", cached 10 min, test-mode flagged), monthly plans
+  from `subscriptions`, static "Other services" table (Cloudflare, GitHub, Google Fonts free; Stripe fees above).
+  Each source fails alone. New deps `@aws-sdk/client-cost-explorer`, `@aws-sdk/client-secrets-manager`.
+- **CSS** (`globals.css`): `.stats`/`.stat` tiles, `table.numbers`, `.list-tools input.short`, `.chip.ut`.
+- **Infra / ops (done this push)**: `migrate-schema` staging + prod (`donations.stripe_subscription_id`);
+  `cdk deploy UccStaging` + `UccProd` from a clean worktree at 80fb26b (ApiFunction: webhook writes the subscription
+  id; prod `/api/health` ok); `scripts/finance-prod-wiring.mjs` (new, idempotent) added `FinanceRead`
+  (`ce:GetCostAndUsage`) + `FinanceReadStripe` (`GetSecretValue` on the prod Stripe secret) to
+  `UccProdAdminCompute`/`admin-runtime`. Cost Explorer confirmed enabled on the account.
+- **Docs**: finance.md (new), error-handling/debug/finance.md (`[finance]`), admin.md (code map, needs table, nav,
+  roles), donation-tracker.md, legal/data-handling.md (donations row), for-conner.md §15, dev-notes, editing guide.
+- Open: a human with Stripe access opens prod `/costs` once (live key, totals match the Stripe dashboard —
+  for-conner §15). Unverified from here: the Stripe fetch path on prod (unit-tested shaping only).
+
+Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed, Jarom not signed into prod admin.
+
 ## v0.27.2 — 2026-10-09 — claude-wip merged into refactor; BIMI logo live
 
 - Merged `origin/claude-wip` into `refactor` (f937e12): v0.27.1 petitions prod-migration docs, `static/bimi-logo.svg`,
