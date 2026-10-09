@@ -100,10 +100,29 @@ puts that version back as a draft; request a publish to take it live.
   Statement.)
 - **Team & Bios** — name, title, headshot, bio, and the person's admin email
   (that link lets them edit their own bio from their profile).
-- **Statements**, **Policy Positions**, **News & Media** (articles and
-  videos), **Projects** (each with its press articles and videos), **Report
-  Coverage** — the lists the site pages are built from. Reorder with the
-  arrows; the order you save is the order on the site.
+- **Projects** — every project has its own page on the site
+  (`/projects/<slug>`) and a **workspace** in the admin: open a project from
+  the table at the top of the Projects page. *Overview* is the record (name,
+  status, button, intro; **Part of** makes it a sub-project of another).
+  *Folders & files* shows everything under it: its documents, and folders
+  holding files and notes. *Notes* are internal working notes — type
+  Markdown or upload a `.md`/`.docx`; nobody outside the admin ever sees
+  them; a note can become a draft document with one click. *Activity* is
+  who changed what. The list editor underneath adds projects, reorders them
+  (the order on the site) and holds the press articles and videos. A
+  document joins a project in its editor (**Project**) or by ticking several
+  on All documents and choosing **Move**; it then lives at
+  `/projects/<project>/<slug>`, and the old address redirects after the
+  next publish. Renaming a project keeps everything attached.
+- **Press & coverage** — every news story or TV segment about the Compact,
+  once. Paste the link under **Add from link** and the card fills itself.
+  Pick the **Project** it is about and it appears on that project's page and
+  in the coverage strip inside that project's reports; tick **Homepage card**
+  for the three "Recent Coverage" cards on the homepage (the first three
+  ticked, in list order); tick **Hide from News & Media** to keep a story on
+  the project page only. The list order is the order on News & Media.
+- **Statements**, **Policy Positions** — the lists the site pages are built
+  from. Reorder with the arrows; the order you save is the order on the site.
 - **Media Library** — upload images. **Alt text is required** before an
   image can be placed on a page (describe the image for screen readers).
   Pick an image in any "Headshot" field from the drop-down.
@@ -115,8 +134,11 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
 `[link text](https://…)`, blank line for a new paragraph.
 
 ### Documents (long-form pages: reports, whitepapers, the privacy policy)
-- Open **All documents** → pick one, or **New document** (title + the URL
-  slug, e.g. `box-elder-report` becomes utahciviccompact.org/box-elder-report).
+- Open **All documents** → pick one, or **New document**: choose the file
+  the piece was written in (a `.docx` from Word, Google Docs or Claude Docs,
+  a Markdown `.md`, or an `.html`) and leave the title and URL slug blank to
+  take them from the file, or type them (`box-elder-report` becomes
+  utahciviccompact.org/box-elder-report). The draft opens in the builder.
 - **Start with the authoring and style kit.** At the top of All documents,
   download the kit (one `.html` file: open it in a browser to read it, hand
   the file as it is to Claude) and give it to Claude, or to whoever is
@@ -125,17 +147,32 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
   the fields the admin asks for, the HTML the editor accepts, and the site's
   own styling: the page frame a document sits in, a sample page that shows
   every site pattern in use, and every class Claude may use with the CSS
-  behind each one. Ask Claude for prose, or for the HTML
-  fragment; the kit explains both. The HTML fragment is the one that arrives
-  already looking like the site, so prefer it when the piece is finished.
-- Fill the body box one of three ways: paste HTML; **upload a file** (a
-  `.docx` from Word, Google Docs or Claude Docs, a Markdown `.md`, or an
-  `.html`; Word and Markdown are converted to HTML for you, and any pictures
-  inside are replaced by a placeholder you swap for an image from Media); or
-  type. On save the site cleans it: scripts, inline styles and anything unsafe are
-  removed and the **ingest report** tells you exactly what changed. Fix
-  anything it flags (an image without alt text, two `<h1>`s, a skipped
-  heading level) — a page cannot be published with those.
+  behind each one. Ask Claude for prose, for Markdown with the kit's block
+  markers (the piece arrives with its boxes, figures and tables already
+  styled), or for the HTML fragment; the kit explains all three.
+- **The builder.** A document is a *Page header* (eyebrow, headline, summary,
+  hero buttons, the byline strip with badge, date and author title, the
+  contents list) and then *sections*, each a heading with its *blocks*: Text,
+  Quotation, Callout box, Key figures, Image, Table, File downloads, Call to
+  action, Sources, Collapsible sections and more. Every block has its own
+  fields, a style choice (which kind of box, which kind of table) and a
+  *Style* button for extra site classes. The thin **+ Add a block** bars
+  between blocks open a gallery that shows each block type as it will look
+  on the site; **+ Add a section here** sits between sections. Arrows move a
+  block or section; × removes it.
+- **Preview** on the right redraws a moment after every change, before you
+  save. Click a piece in the preview to jump to its block. Anything that would
+  stop publishing (an image without alt text, a skipped heading level, a class
+  the site does not know) shows under the preview as you work, and in the
+  ingest report after a save.
+- **Start from a file** (top of the builder) replaces the whole document with
+  a new file. Pictures inside a Word file become Image blocks waiting for an
+  upload: open the block, type the alt text, upload.
+- An older document still shows the HTML box instead; **Convert to blocks**
+  under its form reads it into the builder (a revision is saved first, so
+  Revisions can undo it). The eight long-form pages were converted this way
+  and look exactly as before; boxes and tables that came with them show "This
+  page's own style" until you pick a site style for them.
 - **SEO** panel: meta title/description (description is required to
   publish), social-card fields, JSON-LD. The preview shows how a search
   result will look.

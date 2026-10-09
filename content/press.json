@@ -1,99 +1,32 @@
 {
-  "articles": [
+  "items": [
     {
+      "type": "article",
       "outlet": "Telemundo Utah",
-      "lang_attr": "lang=\"es\"",
       "badge_color": "#1a2a8f",
       "date": "August 20, 2026",
       "region": "Utah",
       "headline": "Crece la preocupación sobre la instalación de cámaras “Flock” en Utah",
       "excerpt": "El gobernador Spencer Cox se mostró profundamente preocupado por el uso de las cámaras de vigilancia ALPR y solicitó una revisión de la normativa de Utah. Telemundo Utah cita los registros publicados por Utah Civic Compact: las diez cámaras Flock del condado Weber fueron consultadas 5.1 millones de veces entre 2022 y 2026, principalmente por agencias de fuera del estado.",
       "url": "https://www.telemundoutah.com/noticias/local/crece-preocupacion-instalacion-camaras-flock-utah/2412405/",
-      "read_more": "Leer en Telemundo Utah →"
+      "read_more": "Leer en Telemundo Utah →",
+      "lang_attr": "lang=\"es\"",
+      "project_slug": "alpr",
+      "featured": "1"
     },
     {
-      "outlet": "Utah News Dispatch",
-      "badge_color": "#1c3f60",
+      "type": "article",
+      "outlet": "KSL News Utah",
+      "badge_color": "#0057a8",
       "date": "August 20, 2026",
-      "region": "Utah",
-      "headline": "Utah governor says he’s ‘deeply troubled’ by Flock cameras, calls for review to protect privacy",
-      "excerpt": "Responding to Utah Civic Compact’s Weber County records, Gov. Spencer Cox said he is “deeply troubled” by how the county’s ten Flock cameras have been searched and asked the Utah Privacy Governing Board and the Utah Privacy Commission to review the state’s rules and enforcement. “We have legislation that puts those guardrails in place,” Cox said. “The question is: is the legislation being followed?”",
-      "url": "https://utahnewsdispatch.com/2026/08/20/utah-governor-deeply-troubled-by-flock-cameras-calls-for-review/",
-      "read_more": "Read on Utah News Dispatch →"
+      "headline": "Gov. Spencer Cox answers questions on Flock cameras, data centers and his new grandson",
+      "url": "https://www.youtube.com/live/8y01KiiE838?t=1094",
+      "read_more": "Watch on KSL News Utah →",
+      "project_slug": "alpr",
+      "featured": "1"
     },
     {
-      "outlet": "Utah News Dispatch",
-      "badge_color": "#1c3f60",
-      "date": "August 14, 2026",
-      "region": "Weber County",
-      "headline": "Most of this Utah county's license plate camera data is searched by out-of-state law enforcement",
-      "excerpt": "Records obtained by Utah Civic Compact show ten Flock Safety cameras in Weber County were searched 5.1 million times between February 2022 and July 2026, with almost 97% of those searches coming from agencies outside Utah. The Houston Police Department alone accounted for more than a third of all activity.",
-      "url": "https://utahnewsdispatch.com/2026/08/14/weber-county-license-plate-camera-data-searched-by-out-of-state-law-enforcement/",
-      "read_more": "Read on Utah News Dispatch →"
-    },
-    {
-      "outlet": "KSL",
-      "badge_color": "#0057a8",
-      "date": "August 13, 2026",
-      "region": "Weber County",
-      "headline": "Group cites 'striking' Weber County data on Flock cameras as reason for lawmakers to act",
-      "excerpt": "Utah Civic Compact released public records at the Capitol showing Weber County's license plate reader cameras were searched more than 5 million times since early 2022, overwhelmingly by out-of-state agencies. The group is calling on state lawmakers to tighten the rules governing how outside agencies access Utah data.",
-      "url": "https://www.ksl.com/article/51609507/group-cites-striking-weber-county-data-on-flock-cameras-as-reason-for-lawmakers-to-act",
-      "read_more": "Read on KSL →"
-    },
-    {
-      "outlet": "Semafor",
-      "badge_color": "#1a1a1a",
-      "date": "June 23, 2026",
-      "region": "Utah",
-      "headline": "How a data center backlash is twisting Utah's primary",
-      "excerpt": "Utah Representative Blake Moore faces a primary challenge from state legislator Karianne Lisonbee, who is capitalizing on voter opposition to the massive Stratos data center project. The race exemplifies growing Republican tensions between pro-business interests and populist concerns about AI-driven infrastructure.",
-      "url": "https://www.semafor.com/article/06/23/2026/how-a-data-center-backlash-is-twisting-utahs-primary",
-      "read_more": "Read on Semafor →"
-    },
-    {
-      "outlet": "Forbes",
-      "badge_color": "#cc0000",
-      "date": "June 9, 2026",
-      "region": "Box Elder County",
-      "headline": "One Utah County's Fight Over a $100 Billion Data Center — And What It Means for All of Us",
-      "excerpt": "Forbes examines Box Elder County's battle over the proposed Stratos data center and the broader national questions it raises about community consent, AI infrastructure, and who bears the costs when massive development projects are fast-tracked without public input.",
-      "url": "https://www.forbes.com/sites/michaelposner/2026/06/09/one-utah-countys-fight-over-a-100-billion-data-center---and-what-it-means-for-all-of-us/",
-      "read_more": "Read on Forbes →"
-    },
-    {
-      "outlet": "KSL TV",
-      "badge_color": "#0057a8",
-      "date": "June 9, 2026",
-      "region": "Box Elder County",
-      "headline": "Utah Civic Compact files conflict of interest complaint regarding Stratos data center",
-      "excerpt": "Utah Civic Compact submitted a formal complaint to Utah Attorney General Derek Brown alleging Box Elder County Commissioner Boyd Bingham violated state conflict of interest law by voting on the Stratos Project without disclosing his employer's lien on the land in question.",
-      "url": "https://ksltv.com/youtube_videos/video-utah-civic-compact-files-conflict-of-interest-complaint-regarding-stratos-data-center/",
-      "read_more": "Watch on KSL TV →"
-    },
-    {
-      "outlet": "KSL",
-      "badge_color": "#0057a8",
-      "date": "May 27, 2026",
-      "region": "Box Elder County",
-      "headline": "Data center official counters worries about project footprint; foes raise new concerns",
-      "excerpt": "O'Leary Digital's CEO argues the proposed Hansel Valley development will occupy a limited footprint with most land preserved as open space, while Utah Civic Compact challenges whether state officials followed proper legal procedures in approving the controversial project.",
-      "url": "https://www.ksl.com/article/51502781/data-center-official-counters-worries-about-project-footprint-foes-raise-new-concerns",
-      "read_more": "Read on KSL →"
-    },
-    {
-      "outlet": "FOX 13",
-      "badge_color": "#e8272a",
-      "date": "May 26, 2026",
-      "region": "Box Elder County",
-      "headline": "MIDA violated state law in approval process of Box Elder County data center, group claims",
-      "excerpt": "Utah Civic Compact released a detailed briefing alleging that the Military Installation Development Authority broke three provisions of state law in fast-tracking approval of the Stratos Project — a proposed 9-gigawatt natural gas data center in Hansel Valley backed by Kevin O'Leary.",
-      "url": "https://www.fox13now.com/news/local-news/box-elder-county/mida-violated-state-law-in-approval-process-of-box-elder-county-data-center-group-claims",
-      "read_more": "Read on Fox 13 →"
-    }
-  ],
-  "videos": [
-    {
+      "type": "video",
       "outlet": "KSL News Utah",
       "badge_color": "#0057a8",
       "date": "August 20, 2026",
@@ -104,6 +37,56 @@
       "youtube_title": "Utah governor answers questions on flock cameras, data centers and his new grandson — KSL News Utah"
     },
     {
+      "type": "article",
+      "outlet": "Utah News Dispatch",
+      "badge_color": "#1c3f60",
+      "date": "August 20, 2026",
+      "region": "Utah",
+      "headline": "Utah governor says he’s ‘deeply troubled’ by Flock cameras, calls for review to protect privacy",
+      "excerpt": "Responding to Utah Civic Compact’s Weber County records, Gov. Spencer Cox said he is “deeply troubled” by how the county’s ten Flock cameras have been searched and asked the Utah Privacy Governing Board and the Utah Privacy Commission to review the state’s rules and enforcement. “We have legislation that puts those guardrails in place,” Cox said. “The question is: is the legislation being followed?”",
+      "url": "https://utahnewsdispatch.com/2026/08/20/utah-governor-deeply-troubled-by-flock-cameras-calls-for-review/",
+      "read_more": "Read on Utah News Dispatch →",
+      "project_slug": "alpr",
+      "featured": "1"
+    },
+    {
+      "type": "article",
+      "outlet": "Utah News Dispatch",
+      "badge_color": "#1c3f60",
+      "date": "August 14, 2026",
+      "region": "Weber County",
+      "headline": "Most of this Utah county's license plate camera data is searched by out-of-state law enforcement",
+      "excerpt": "Records obtained by Utah Civic Compact show ten Flock Safety cameras in Weber County were searched 5.1 million times between February 2022 and July 2026, with almost 97% of those searches coming from agencies outside Utah. The Houston Police Department alone accounted for more than a third of all activity.",
+      "url": "https://utahnewsdispatch.com/2026/08/14/weber-county-license-plate-camera-data-searched-by-out-of-state-law-enforcement/",
+      "read_more": "Read on Utah News Dispatch →",
+      "project_slug": "alpr"
+    },
+    {
+      "type": "article",
+      "outlet": "KSL",
+      "badge_color": "#0057a8",
+      "date": "August 13, 2026",
+      "region": "Weber County",
+      "headline": "Group cites 'striking' Weber County data on Flock cameras as reason for lawmakers to act",
+      "excerpt": "Utah Civic Compact released public records at the Capitol showing Weber County's license plate reader cameras were searched more than 5 million times since early 2022, overwhelmingly by out-of-state agencies. The group is calling on state lawmakers to tighten the rules governing how outside agencies access Utah data.",
+      "url": "https://www.ksl.com/article/51609507/group-cites-striking-weber-county-data-on-flock-cameras-as-reason-for-lawmakers-to-act",
+      "read_more": "Read on KSL →",
+      "project_slug": "alpr"
+    },
+    {
+      "type": "article",
+      "outlet": "Semafor",
+      "badge_color": "#1a1a1a",
+      "date": "June 23, 2026",
+      "region": "Utah",
+      "headline": "How a data center backlash is twisting Utah’s primary",
+      "excerpt": "Utah Representative Blake Moore faces a primary challenge from state legislator Karianne Lisonbee, who is capitalizing on voter opposition to the massive Stratos data center project. The race exemplifies growing Republican tensions between pro-business interests and populist concerns about AI-driven infrastructure.",
+      "url": "https://www.semafor.com/article/06/23/2026/how-a-data-center-backlash-is-twisting-utahs-primary",
+      "read_more": "Read on Semafor →",
+      "project_slug": "stratos"
+    },
+    {
+      "type": "video",
       "outlet": "KSL News Utah",
       "badge_color": "#0057a8",
       "date": "June 9, 2026",
@@ -113,22 +96,74 @@
       "youtube_title": "Commissioner responds to Stratos Project conflict of interest claims — KSL News Utah"
     },
     {
+      "type": "article",
+      "outlet": "Forbes",
+      "badge_color": "#cc0000",
+      "date": "June 9, 2026",
+      "region": "Box Elder County",
+      "headline": "One Utah County’s Fight Over a $100 Billion Data Center — And What It Means for All of Us",
+      "excerpt": "Forbes examines Box Elder County's battle over the proposed Stratos data center and the broader national questions it raises about community consent, AI infrastructure, and who bears the costs when massive development projects are fast-tracked without public input.",
+      "url": "https://www.forbes.com/sites/michaelposner/2026/06/09/one-utah-countys-fight-over-a-100-billion-data-center---and-what-it-means-for-all-of-us/",
+      "read_more": "Read on Forbes →",
+      "project_slug": "stratos"
+    },
+    {
+      "type": "article",
+      "outlet": "KSL TV",
+      "badge_color": "#0057a8",
+      "date": "June 9, 2026",
+      "region": "Box Elder County",
+      "headline": "Utah Civic Compact files conflict of interest complaint regarding Stratos data center",
+      "excerpt": "Utah Civic Compact submitted a formal complaint to Utah Attorney General Derek Brown alleging Box Elder County Commissioner Boyd Bingham violated state conflict of interest law by voting on the Stratos Project without disclosing his employer's lien on the land in question.",
+      "url": "https://ksltv.com/youtube_videos/video-utah-civic-compact-files-conflict-of-interest-complaint-regarding-stratos-data-center/",
+      "read_more": "Watch on KSL TV →",
+      "project_slug": "stratos"
+    },
+    {
+      "type": "article",
+      "outlet": "KSL",
+      "badge_color": "#0057a8",
+      "date": "May 27, 2026",
+      "region": "Box Elder County",
+      "headline": "Data center official counters worries about project footprint; foes raise new concerns",
+      "excerpt": "O'Leary Digital's CEO argues the proposed Hansel Valley development will occupy a limited footprint with most land preserved as open space, while Utah Civic Compact challenges whether state officials followed proper legal procedures in approving the controversial project.",
+      "url": "https://www.ksl.com/article/51502781/data-center-official-counters-worries-about-project-footprint-foes-raise-new-concerns",
+      "read_more": "Read on KSL →",
+      "project_slug": "stratos"
+    },
+    {
+      "type": "article",
+      "outlet": "FOX 13",
+      "badge_color": "#e8272a",
+      "date": "May 26, 2026",
+      "region": "Box Elder County",
+      "headline": "MIDA violated state law in approval process of Box Elder County data center, group claims",
+      "excerpt": "Utah Civic Compact released a detailed briefing alleging that the Military Installation Development Authority broke three provisions of state law in fast-tracking approval of the Stratos Project — a proposed 9-gigawatt natural gas data center in Hansel Valley backed by Kevin O'Leary.",
+      "url": "https://www.fox13now.com/news/local-news/box-elder-county/mida-violated-state-law-in-approval-process-of-box-elder-county-data-center-group-claims",
+      "read_more": "Read on Fox 13 →",
+      "project_slug": "stratos"
+    },
+    {
+      "type": "video",
       "outlet": "FOX 13",
       "badge_color": "#e8272a",
       "date": "May 26, 2026",
       "region": "Box Elder County",
       "headline": "MIDA violated state law in approval process of Box Elder County data center, group claims",
       "youtube_id": "SoMlZxDFHHw",
-      "youtube_title": "MIDA violated state law in approval process of Box Elder County data center, group claims — Fox 13"
+      "youtube_title": "MIDA violated state law in approval process of Box Elder County data center, group claims — Fox 13",
+      "project_slug": "stratos"
     },
     {
+      "type": "video",
       "outlet": "KUTV 2",
       "badge_color": "#1a6bbd",
       "date": "May 2026",
       "region": "Box Elder County",
       "headline": "Group claims Stratos data center approval process in Box Elder County violated state law",
       "youtube_id": "12Tm7xid80s",
-      "youtube_title": "Group claims Stratos data center approval process in Box Elder County violated state law — KUTV 2"
+      "youtube_title": "Group claims Stratos data center approval process in Box Elder County violated state law — KUTV 2",
+      "project_slug": "stratos"
     }
   ]
 }

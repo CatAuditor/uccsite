@@ -4,6 +4,224 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.25.4 — 2026-10-09 (branch `refactor`) — Changelog correction (v0.25.3 counts)
+
+## v0.25.3 — 2026-10-09 (branch `refactor`) — Prod press filed under projects
+
+- On the owner's instruction, the four September Flock stories (2 articles, 2 videos) → `alpr`, the Commissioner
+  Stratos video → `stratos` (direct UPDATE + `press.save` audit row), prod published (3 changed). Live: ALPR hub 6 + 3
+  videos, its strip 6; Stratos 5 + 3. No unfiled press rows remain on prod.
+
+## v0.25.2 — 2026-10-09 (branch `refactor`) — Changelog correction (live counts after the re-run)
+
+## v0.25.1 — 2026-10-09 (branch `refactor`) — Press live on prod; video-wins merge; migration re-runs from its snapshot
+
+- `unifyPress`: an article card whose link is a YouTube page keys on the video id (`youtubeIdFromUrl`), and a story that is
+  a video in any source becomes a video (the Cox interview: coverage card + news video → one video under alpr).
+- `migrate-press.mjs`: when the legacy tables are already empty it rebuilds from the `press-legacy/collection`
+  revision, so a merge-rule fix can be re-applied (`--apply --force`).
+- Prod: schema, migration (36 → 17 rows), `cdk deploy UccStaging UccProd` (publish Lambdas carry derivePress),
+  published twice (5 then 3 changed). Live: News 11 articles + 6 videos, 3 homepage cards unchanged, ALPR hub 4 + 1 video,
+  its strip 4, Stratos 5 + 2. Staging re-run (32 → 13) and republished. Amplify admin build from this push: see next entry if any.
+- Note for editors: the four September stories on prod carry no project yet (they came from News & Media only) —
+  set Project on Press & coverage to file them under the license-plate investigation.
+- Open P1: none.
+
+## v0.25.0 — 2026-10-09 (branch `refactor`) — Press unification: one table, placements derived
+
+Decision record docs/decisions/press-unification.md; system doc docs/systems/press.md.
+
+- **Database** — `press` table (type, outlet, badge_color, date, region, headline, excerpt, url, read_more, lang_attr,
+  youtube_id, embed_params, youtube_title, project_slug, featured, hide_from_news) + `idx_press_project`. `packages/db/press.js`:
+  PRESS_FIELDS, normalizeUrl, unifyPress (dedupe by URL / YouTube id, field merge, project + featured inheritance,
+  headline-based project inheritance). content.js: FIELD_MAPS.press, COLLECTION_TABLES blog/coverage/homepage/projects →
+  press, loadContent → press.items (blog/coverage no longer loaded), loadHomepage without press, PROJECT_CHILDREN = {},
+  PROJECT_SLUG_REFS + press, saveContent writes press (or unifies a schema ≤ 2 export). export.js: SCHEMA_VERSION 3,
+  COLLECTIONS … projects, press; LEGACY_COLLECTIONS. Six legacy tables keep their DDL, rows removed by the migration.
+- **Render** — `packages/render/press.js derivePress`: blog.articles/videos (unless hidden), homepage.press (featured, first
+  three), coverage['<slug>_coverage'] per project, projects[].articles/videos; runs first in buildSite and before
+  buildDocuments in render-db. Templates unchanged. content/press.json added; blog.json, coverage.json, homepage.press,
+  projects' nested lists removed.
+- **Admin** — Press & coverage page (`/press`, COLLECTIONS.press: select + checkbox widgets, project options from
+  listProjects); list-editor widgets 'select' / 'checkbox'; collection-page selectOptions; News & Media and Report
+  Coverage pages removed; Homepage editor without the press strip; projects editor without nested lists; workspace shows
+  the project's press (count + table); document preview / token validation / builder coverage block / authoring kit use
+  project slugs as coverage keys.
+- **Migration** — `scripts/migrate-press.mjs` (dry run / --apply / --force): 32 legacy rows → 14 press rows, legacy
+  tables emptied, `press-legacy/collection` revision + `press.save` audit. Staging applied + published (6 changed):
+  News 10 articles + 4 videos, 3 homepage cards, hubs and coverage strips intact, Cox video inherited alpr. Prod: see v0.25.1.
+- **Tests** — packages/db/test/press.test.mjs, packages/render/test/press.test.mjs; all suites green; admin build clean.
+- **Docs** — press.md, decision record, projects.md, admin.md, cms.md, content-export.md, documents.md, editing guide,
+  spec addendum 15, dev notes.
+
+## v0.24.2 — 2026-10-09 (branch `refactor`) — Prod migrated and published: the tree is live
+
+- `cdk deploy UccProd` (PublishFn carries the new renderer), `migrate-project-tree --env prod --apply` (22 steps),
+  `publish.mjs --env prod --source db --allow-bulk-delete` (34 changed, 9 removed, invalidation verified). Live checks:
+  `/alpr` `/stratos` `/weber-county` `/how-did-this-happen` `/license-plate-has-a-price` → 301 to the nested addresses,
+  `/privacy-report` 410, `/projects`, `/projects/alpr`, `/projects/stratos`, nested documents 200, canonicals nested,
+  sitemap 23 locs, Projects menu lists both projects. Amplify admin builds 78/79 succeeded.
+- for-conner §14 marked done; projects.md status; dev note updated.
+- Open P1: none from this work. Next: press unification (deferred by design).
+
+## v0.24.1 — 2026-10-09 (branch `refactor`) — Prod schema for the tree; runbook adds the stack deploy
+
+- `migrate-schema --env prod` run right after the v0.24.0 push (columns, `project_notes`, slug constraint → unique index) so the
+  Amplify-deployed admin finds its columns. Prod data NOT migrated: `migrate-project-tree --env prod` dry run recorded (22 steps,
+  same plan as staging) — awaiting `[go]` (for-conner §14).
+- for-conner §14 step 3 now starts with `cdk deploy UccProd` (the prod publish Lambda still bundles the old renderer until then).
+- `cdk deploy UccStaging` run so admin-triggered staging publishes use the new renderer.
+- Open P1: prod `[go]` (deploy + migrate + `publish --allow-bulk-delete`).
+
+## v0.24.0 — 2026-10-09 (branch `refactor`) — Projects as a tree: hub pages, nested document URLs, workspace + notes
+
+Decision record docs/decisions/project-tree-nested-urls.md; system doc docs/systems/projects.md (rewritten).
+**Staging migrated and published; prod needs for-conner.md §14 (`[go]`).**
+
+- **Render** — `packages/render/projects.js`: `projectPath`/`projectUrl`/`documentUrl`, `validateProjectTree`,
+  `deriveProjectTree` (hub data, documents by category, children, breadcrumbs, CollectionPage + BreadcrumbList
+  JSON-LD, `top_projects`); `projectOf` is the explicit `project_slug` only (CTA fallback removed).
+  `site.js`: `project.html` rendered once per project to `projects/<path>.html` (`expandPages` `pathKey`);
+  deriveTeam/writing use hub and nested URLs. `documents.js`: a document under a project renders at
+  `/projects/<path>/<slug>` (file, canonical, sitemap, page CSS key `projects-alpr-report.<hash>.css`),
+  BreadcrumbList + `isPartOf`, foot bar with path and "More in <project>", hashes/paths keyed by id, errors
+  labelled by path; a stored canonical naming one of the page's own aliases is ignored. `navigation.js`:
+  header item `auto: 'projects'` → dropdown of the live top-level projects (default Projects item carries it).
+- **Templates / CSS** — new `templates/project.html` (hub); `projects.html` → card index (filters kept,
+  `#project-<slug>` anchors kept); homepage cards `top_projects`, name → hub; `report.html` breadcrumb block;
+  `css/pages/projects.css` hub/card styles, `css/styles.css` breadcrumb list, `css/pages/index.css` card link.
+- **Database** — `projects.parent_slug`, `projects.summary`; `project_notes` table; `documents.short_path`,
+  `documents.live_path`; `documents_slug_key` DROPPED (DSQL `DROP CONSTRAINT`), `project_slug` default `''`,
+  unique index `idx_documents_address (project_slug, slug)`. `replaceProjects` upserts by id/slug (stable ids),
+  cascades slug renames to documents/files/notes, refuses deleting a referenced project, validates the tree;
+  `loadProjects(client, { ids })`. `documents.js`: `shortPath`, `livePath`, `getDocument({ slug, projectSlug })`,
+  `markDocumentLive({ path })`, `archivedPaths`. `redirects.js kvsEntries(rows, { documentRedirects, gonePaths })`.
+  `project-notes.js` CRUD.
+- **Publish** — `render-db.js`: `documents_index.url`; fixed templates dropped for every claimed address
+  (slug, short path, live path); `documentRedirects` (short + previous live paths → 301, de-duplicated,
+  never shadowing a live page) computed before `live_path` is overwritten and passed to `publishRedirects`
+  by the Lambda and `scripts/publish.mjs`; 410s at archived documents' last live paths.
+- **Admin** — `/projects` tree table (counts, workspace links, orphan warning) + list editor (`parent_slug`,
+  `summary` fields; rows carry `id`, `sanitizeItems keepIds`); `/projects/[slug]` workspace: Overview
+  (single-record save through `replaceProjects`), Folders & files (documents by category, folders of files +
+  notes, uploader), Notes (Markdown or `.md`/`.txt`/`.docx` upload via `mammoth.convertToMarkdown`, pin),
+  Activity; `/projects/[slug]/notes/[id]` (edit, preview, move, delete, "Start a document from this note").
+  Documents: address column, bulk **Move**, Project select with sub-project indent, **Short link** field,
+  `validateAddress` (per-project slug uniqueness, sub-project clash, fixed pages, short path), `assignDocuments`.
+  Menus editor: "List the live projects underneath". Files page: indented project tabs/selects.
+  `lib/files.js listProjects` returns tree order with `path`/`url`/`label`; `lib/projects.js` workspace/activity/
+  noteUploadToMarkdown.
+- **Migration** — `scripts/migrate-project-tree.mjs` (dry run / `--apply`): weber-county project → document of
+  alpr; `alpr`→`alpr/report` (short `/alpr`), `stratos`→`stratos/report` (`/stratos`), weber-county,
+  how-did-this-happen, license-plate-has-a-price under alpr with short paths; `live_path` backfill; stale
+  canonicals cleared; buttons repointed. **Staging**: schema + migration applied, published with
+  `--allow-bulk-delete` (34 changed, 9 removed), verified: 5 old URLs 301, hubs/nested pages 200, unknown nested
+  404, sitemap + canonicals nested, `isPartOf` present. Admin `next build` clean.
+- **Tests** — projects.test.mjs rewritten (paths, validation, derive), navigation auto-projects, redirects
+  document entries; golden `expected-diffs` for `projects/alpr.html`, `projects/stratos.html`, index/projects.
+- **Docs** — projects.md, documents.md ("Addresses"), publish-pipeline.md, navigation.md, site-structure.md,
+  admin.md, files.md, data-handling.md (`project_notes`), non-technical-editing-guide.md, spec addendum 14,
+  for-conner.md §14, dev-notes, error-handling/debug/projects.md.
+- Deferred: press unification (project articles/videos + coverage + News & Media), file actions inside the
+  workspace, top-of-page document breadcrumb, project members.
+- Open P1 at push: prod data migration + first publish (`--allow-bulk-delete`) awaiting `[go]`; prod admin
+  needs `migrate-schema --env prod` immediately after this push (run by the dev session, see below).
+
+## v0.23.5 — 2026-10-09 (branch `refactor`) — Prod published
+
+- `scripts/publish.mjs --env prod --source db` on the owner's instruction (bypassing the admin's request/approve
+  for this one run): 39 changed, 2 page-CSS files removed (alpr, weber-county re-fingerprinted), invalidation
+  read-back verified; `/privacy-report` stays 410 (archived earlier). Verified live: how-did-this-happen keeps
+  its own frame, license-plate-has-a-price on doc-body > doc-inner with byline strip + contents list,
+  css/styles.css carries the Document blocks group. Staging republished from the database as well.
+- for-conner.md §13 complete.
+
+## v0.23.4 — 2026-10-09 (branch `refactor`) — Prod prepared: stacks deployed, documents converted
+
+- `cdk deploy UccProd` and `UccStaging` (PublishFn, ExportContentFn, MediaProcessFn code; no IAM change).
+- Prod: `convert-documents-to-blocks --env prod` check (8 × PASS 0.000%, license-plate RESTYLED) then
+  `--apply`: nine documents now carry `body_blocks`, each with a revision + `document.convert_blocks` audit.
+- Amplify admin build of fc6de37 running at the time of the push; 527aed3 succeeded.
+- **Pending `[go]`**: a prod publish via Publish & Status (docs/for-conner.md §13). Nothing on the live site
+  changes until then.
+
+## v0.23.3 — 2026-10-09 (branch `refactor`) — Kit brought up to date; uploads take the standard frame
+
+- `parse(html, { keepFrame })`: a page's own wrapper chain is kept only for conversions (script, Convert
+  to blocks, copy-document, round-trip test); an upload (kit frame included) gets doc-body > doc-inner.
+  Test added. Editor form uses the full content width (`form.editor` 680 px cap lifted; commit 527aed3).
+- Authoring kit: Claude instructions prefer Markdown + markers; page fields add Eyebrow / Author title /
+  Date; images allowed in the draft (Image blocks awaiting upload); skeleton note; hand-over checklist
+  (Markdown route, New document > Start from a file). Editing guide's Documents section rewritten for the
+  builder. Staging published (stylesheet underline fix live).
+
+## v0.23.2 — 2026-10-09 (branch `refactor`) — License-plate rebuilt on staging; editor layout
+
+- `scripts/copy-document.mjs` (commit 75fc1a0): copy a document between environments as a builder
+  document; used to rebuild `license-plate-has-a-price` from prod on staging with `--standard-frame`
+  (7 sections, 8 blocks, 0 raw; every source word kept, the byline's trailing period moved into the strip).
+- Admin editor layout (globals.css, `[id]/page.js`): Document/SEO boxes centred at 960 px inside a
+  full-width form; builder editor and preview are exact halves (`1fr 1fr`) on desktop, preview stacks
+  below under 1100 px; Save + Request publish in a `.doc-actions` row.
+
+## v0.23.1 — 2026-10-09 (branch `refactor`) — License-plate statement on the standard frame; prod column
+
+- **Prod database**: `documents.body_blocks` applied (the live admin deploys from `refactor` and selects it).
+- **Parser** (`packages/doc-blocks/parse.js`): a kit-era byline paragraph under the hero
+  ("By Name, Title. October 6, 2026.") becomes author title + date; a hand-written "In this statement" /
+  "Contents" callout of anchor links is replaced by the automatic contents list.
+- **Conversion script**: `STANDARD_FRAME` set (license-plate-has-a-price) drops the page's own frame for
+  doc-body > doc-inner, byline strip and contents list; text/pixel changes are reported as RESTYLED, not
+  failures, and `--apply` is allowed. Checked read-only against prod: 7 sections, 8 blocks, 0 raw.
+- **CSS**: contents-list links no longer inherit the column's underline.
+- Runbook §13 updated. Prod conversion + publish still pending (for-conner.md).
+
+## v0.23.0 — 2026-10-09 (branch `refactor`) — Documents: block builder, legacy pages converted
+
+Four commits (8ea1a2c, e6db6dd, 192bdff, 7ab119e); docs/systems/document-builder.md is the system doc,
+docs/decisions/document-builder-blocks.md the decision.
+
+**Model** (`packages/doc-blocks`, ES module; tests 19/19)
+- `schema.js` block registry (prose, quote, pullquote, callout ×7 variants, stats, figure, table ×4, files,
+  cta ×3, sources ×2, accordion, partsnav, asks, cards, byline, video, coverage, raw), header/section fields,
+  `validateBody`; `serialize.js` blocks → `body_html_raw` (hero, byline strip, contents list, bands, bare
+  Text children tagged `data-block`); `parse.js` HTML → blocks (kit markers, site markup, heuristics; unknown
+  → raw); `convert.js` class aliases. Legacy fidelity fields: `header.frame`, `bandClasses`, section
+  `classes`, `legacyClass`/`legacyWrap`/`bare`, `eyebrowTag`, `ctasBare`, button icons.
+- `scripts/blocks-roundtrip.mjs` (text/tag round-trip) and `scripts/convert-documents-to-blocks.mjs`
+  (DB conversion + headless-Chrome pixel diff; `puppeteer-core`, `pixelmatch`, `pngjs` dev deps; output
+  under `.tmp/`, now gitignored).
+
+**Site CSS** (`css/styles.css`): "Document blocks" group (54 annotated entries) + "Document block parts"
+(hidden from the kit): the canonical copy of release-meta, paper-toc, scope-box, finding-box (navy),
+violation-box (grey), update-note, draft-def, stats-grid, pull-quote, evidence-figure, doc-table/own-table/
+rank-table/timeline-table, table-downloads/btn-file, related-cta/download-cta/contact-cta, sources-*, ask-list,
+join-grid, doc-accordion, parts-nav, part-header, hero-ctas/hero-download/hero-secondary/hero-provenance,
+doc-body/doc-inner. Style Kit undocumented count unchanged (8).
+
+**Database**: `documents.body_blocks TEXT` (JSON; NULL = legacy HTML box). Applied on **staging**; prod pending.
+
+**Admin** (tests 33/33)
+- `[id]/builder.js` + `field-editors.js` + `rich-text.js` + `block-picker.js`: header groups, sections, block
+  cards (variant, Style chips, move/remove), add bars, picker dialog with a gallery rendered from the live
+  site CSS, live preview via `previewBlocks` (serialize → ingest → compose, no save; click ↔ card, scroll kept),
+  ingest report under the preview, Start from a file (`parseUpload`), Advanced page CSS/frame.
+- `saveDocument` reads `bodyBlocks` → generates `body_html_raw`; `createDocument` is upload-first (title/slug
+  from the file); `convertToBlocks` for legacy rows (revision + `document.convert_blocks` audit).
+- `lib/documents.js`: `blocksToRaw`, `authorHrefFor`, `previewBlocksFor`, `previewSrcdoc`, `blockGallery`;
+  `convert-upload.mjs uploadToHtml` (images kept). `next.config.js transpilePackages`.
+- Authoring kit: three routes → builder; section 5 "Builder markers" (`<!-- ucc:… -->`) with a tested example
+  (`test/upload-blocks.test.mjs`); live-page class warning narrowed to private wrappers.
+
+**Legacy conversion**: all eight tracked documents parse with 0 raw blocks (Dignity statement: 4, letterhead
+kept verbatim), text identical, **0.000% differing pixels** at 1280 px old vs new
+(docs/migration/blocks-conversion.md). `--apply` run on staging; staging published from the database
+(27 changed, 2 page-CSS files replaced) so the stylesheet and converted pages are live there.
+
+**Runbook**: docs/for-conner.md §13 (prod: migrate-schema, convert check, apply, publish).
+
+Open P1s: unchanged from v0.22.3. aws/api still 34/36 (the two pre-existing subscriber/petition failures).
+
 ## v0.22.6 — 2026-10-09 (branch `refactor`) — Get Involved dropdown (replaces the Projects one)
 
 **Site** (`packages/render/navigation.js`, `css/styles.css`; commit 35e40c4)

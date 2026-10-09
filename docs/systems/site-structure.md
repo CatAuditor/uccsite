@@ -9,7 +9,8 @@ build.js                 thin shell: read inputs → packages/render → write d
 packages/render/         THE template engine + site assembly (pure, golden-file tested;
                          PAGES manifest now lives in packages/render/site.js)
 package.json             `npm run build` / `npm run dev` (wrangler pages dev); npm workspaces root
-templates/*.html         one per page (20; team-member.html renders once per team member → team/<slug>.html, author-pages.md)
+templates/*.html         one per page (21; team-member.html renders once per team member → team/<slug>.html, author-pages.md;
+                         project.html once per project → projects/<path>.html, projects.md)
 templates/partials/      header.html, footer.html  ← THE nav/footer; edit here only
                          (footer.html also carries the download modal, files.md)
 content/*.json           CMS-managed content (see cms.md)
@@ -83,7 +84,8 @@ Hard rules:
 | `blog.html` | settings, blog | |
 | `statements.html` | settings, statements | |
 | `issues.html` | settings, issues | |
-| `projects.html` | settings, projects | |
+| `projects.html` | settings, projects | card index of the top-level projects (docs/systems/projects.md) |
+| `projects/<path>.html` (× projects) | projects, settings | **expanded** from `project.html` by `expandPages` (`pathKey: 'path'`) — one hub page per project, sub-projects at `projects/<parent>/<slug>.html`; documents under a project publish at `projects/<path>/<slug>.html` (documents.md "Addresses") |
 | `privacy-report.html` | settings | |
 | `stratos.html` | settings, coverage | |
 | `weber-county.html` | settings | |

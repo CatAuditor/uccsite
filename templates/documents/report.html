@@ -16,7 +16,14 @@
 <body>
 {{> header}}
 {{{body}}}
-{{#project_href}}<nav class="doc-breadcrumb" aria-label="Project">This page is part of <a href="{{project_href}}">{{project_name}}</a> · <a href="/projects">All projects</a></nav>
+{{#project_href}}<nav class="doc-breadcrumb" aria-label="Project">
+  <p class="doc-breadcrumb-path"><a href="/projects">Projects</a> › {{#project_parent_href}}<a href="{{project_parent_href}}">{{project_parent_name}}</a> › {{/project_parent_href}}<a href="{{project_href}}">{{project_name}}</a> › <span aria-current="page">{{title}}</span></p>
+  {{#has_siblings}}<p class="doc-breadcrumb-label">More in {{project_name}}</p>
+  <ul class="doc-breadcrumb-list">
+    {{#siblings}}<li><a href="{{url}}">{{title}}</a></li>{{/siblings}}
+  </ul>{{/has_siblings}}
+  <p><a href="{{project_href}}">Everything in {{project_name}} →</a></p>
+</nav>
 {{/project_href}}{{> footer}}
   <script src="/js/main.js"></script>
 </body>

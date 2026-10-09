@@ -562,3 +562,86 @@ Do these in Cloudflare DNS, **in this order**, a week apart:
 Not DNS, already done by the dev: double opt-in for the join form, bounce
 and complaint suppression, List-Id/Precedence headers, UTM tagging, the web
 archive at /newsletters.
+
+## 13. Document builder: production column, conversion, publish
+
+The Documents editor is now a block builder (docs/systems/document-builder.md).
+Staging has the column and the eight long-form pages converted (pixel-identical,
+docs/migration/blocks-conversion.md). Production needs the same three steps,
+in this order, and nothing changes on the live site until step 3.
+
+- [x] `[agent]` Add the column (idempotent; applies every pending DDL). Done 2026-10-09
+  right after the push, because Amplify deploys the admin from `refactor` and the
+  Documents pages select the column:
+  ```
+  $env:AWS_PROFILE='uccsite'; node scripts/migrate-schema.mjs --env prod
+  ```
+- [x] `[agent]` Check the conversion against production content (read-only; needs Chrome on the machine).
+  Done 2026-10-09: eight documents `PASS` at `0.000%`, `license-plate-has-a-price` `RESTYLED (expected)`
+  (moved onto the site's standard document frame by design).
+  ```
+  node scripts/convert-documents-to-blocks.mjs --env prod
+  ```
+- [x] `[agent]` Apply (writes blocks + regenerated HTML, with a revision per document). Done 2026-10-09.
+  ```
+  node scripts/convert-documents-to-blocks.mjs --env prod --apply --no-shots
+  ```
+- [x] `[agent]` `cdk deploy UccProd` and `UccStaging` (PublishFn bundles the new stylesheet; without this an
+  admin publish would ship the old sheet and strip the block classes). Done 2026-10-09, Lambda code only.
+- [x] `[go]` Publish. Done 2026-10-09 on Jarom's instruction from the repo
+  (`node scripts/publish.mjs --env prod --source db`: 39 changed, 2 removed, invalidation verified);
+  live pages checked (how-did-this-happen on its own frame, license-plate on the standard frame,
+  styles.css carries the Document blocks group). Later publishes go through Publish & Status as usual.
+
+## 14. Projects as a tree: production migration — DONE 2026-10-09
+
+Projects now have their own pages (`/projects/alpr`), documents under a
+project publish at nested addresses (`/projects/alpr/report`), the Weber
+County complaint becomes a document of the license-plate investigation
+instead of a project, and every old address 301s to the new one
+(docs/systems/projects.md, docs/decisions/project-tree-nested-urls.md).
+Staging is migrated and published (2026-10-09; old URLs verified 301, hubs
+200, sitemap and canonicals nested). Production needs three steps; nothing
+changes on the live site until step 3.
+
+- [x] `[agent]` Schema (idempotent; adds `projects.parent_slug/summary`,
+  `documents.short_path/live_path`, `project_notes`, drops the global UNIQUE
+  on `documents.slug` for a unique index on `(project_slug, slug)`). Run right
+  after the push: Amplify deploys the admin from `refactor` and the Projects
+  and Documents pages select these columns.
+  ```
+  $env:AWS_PROFILE='uccsite'; node scripts/migrate-schema.mjs --env prod
+  ```
+- [x] `[agent]` Dry run the data migration and read the plan (nothing written):
+  ```
+  node scripts/migrate-project-tree.mjs --env prod
+  ```
+  Expected: delete project `weber-county` (0 press), five documents moved
+  (`alpr`→`alpr/report` short `/alpr`, `stratos`→`stratos/report` short
+  `/stratos`, `weber-county`, `how-did-this-happen`,
+  `license-plate-has-a-price` under `alpr`), canonicals cleared, both
+  project buttons repointed, `live_path` recorded for the rest. If
+  `license-plate-has-a-price` should NOT sit under the license-plate
+  investigation, say so before step 3 (it can also be moved later in the
+  admin).
+- [x] `[go]` Deploy, apply, publish — in this order. Done 2026-10-09 on Jarom's instruction (34 changed, 9 removed; every old URL verified 301, hubs 200, /privacy-report 410, canonicals nested, Projects dropdown live). The stack deploy puts the
+  new renderer (hub pages, nested addresses, redirects) into the publish
+  Lambda; until it runs, an admin-triggered publish on prod would still use
+  the old code. The first publish removes 9 objects (old pages + their
+  stylesheets), which the bulk-delete guard refuses from the admin, so this
+  one run goes from the repo:
+  ```
+  cd infra/cdk; npx cdk deploy UccProd --require-approval never --profile uccsite; cd ../..
+  node scripts/migrate-project-tree.mjs --env prod --apply
+  node scripts/publish.mjs --env prod --source db --allow-bulk-delete
+  ```
+  Then check: `curl -sI https://utahciviccompact.org/alpr` → 301 to
+  `/projects/alpr/report`; `/projects/alpr` 200; `/weber-county` → 301. Google
+  re-crawls over the following weeks; expect rank flux, not loss (301s pass
+  equity). Later publishes go through Publish & Status as usual.
+- [ ] `[hand]` Search Console: add the `/projects/` prefix as a saved filter
+  and resubmit the sitemap (it now lists the hubs and nested documents).
+- [ ] `[hand]` Later, optional: in the admin's Menus page the Projects item
+  already lists the live projects underneath (no action); in each project's
+  workspace write the *Project page intro* (Overview tab) — the hubs publish
+  without one until then.

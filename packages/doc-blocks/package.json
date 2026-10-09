@@ -1,0 +1,18 @@
+{
+  "name": "@uccsite/doc-blocks",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Document builder model: a document body as header fields + sections of typed blocks (docs/systems/document-builder.md). serialize() turns blocks into the body HTML the ingest expects; parse() turns uploaded or legacy HTML into blocks. Pure: strings and objects in, strings and objects out.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  },
+  "dependencies": {
+    "@uccsite/html-ingest": "*",
+    "@uccsite/render": "*",
+    "dom-serializer": "^2.0.0",
+    "domhandler": "^5.0.3",
+    "domutils": "^3.1.0"
+  }
+}

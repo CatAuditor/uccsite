@@ -27,7 +27,7 @@ function deriveWriting(content, authorUrl = () => '') {
 
   for (const d of documents) {
     if (SKIP_CATEGORIES.has(d.category)) continue;
-    const url = `/${d.slug}`;
+    const url = d.url || `/${d.slug}`; // nested under its project when it has one (render-db.js documents_index)
     items.set(url, {
       url, title: d.title, author: d.author || '', summary: d.summary || '',
       type: TYPE[d.category] || 'Report', rawDate: d.date || '',

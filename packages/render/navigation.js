@@ -35,7 +35,10 @@ const DEFAULT_NAVIGATION = {
       { label: 'Newsletters', href: '/newsletters' },
     ] },
     { label: 'News & Media', href: '/blog.html' },
-    { label: 'Projects', href: '/projects.html' },
+    // auto: the live top-level projects are listed underneath at render
+    // (docs/decisions/project-tree-nested-urls.md); a plain link where the
+    // render path has no projects (newsletter archive).
+    { label: 'Projects', href: '/projects.html', auto: 'projects' },
     { label: 'Submit a Tip', href: '/tip.html' },
     { label: 'Donate', href: '/#donate', style: 'donate' },
     { label: 'Get Involved', style: 'cta', children: [
@@ -100,6 +103,7 @@ function normalizeNavigation(value) {
     const l = link(raw);
     if (!l) continue;
     if (raw.style && STYLES[raw.style]) l.style = raw.style;
+    if (raw.auto === 'projects') l.auto = 'projects'; // "list the projects underneath" (navFields)
     header.push(l);
   }
   const f = nav.footer && typeof nav.footer === 'object' ? nav.footer : {};
@@ -132,12 +136,24 @@ function anchor(l, settings, page, { styled = false, current = true } = {}) {
   return `<a ${attrs.join(' ')}${isCurrent ? ' aria-current="page"' : ''}>${escapeHtml(fill(l.label, settings))}</a>`;
 }
 
-// navFields(settings, page) → the three HTML blocks the header and footer
-// partials print with {{{…}}}. `page` is the current page key.
-function navFields(settings = {}, page = '') {
+// navFields(settings, page, { projects }) → the three HTML blocks the header
+// and footer partials print with {{{…}}}. `page` is the current page key.
+// projects: the top-level projects ([{ name, url }], deriveProjectTree) a
+// header item with auto: 'projects' expands into a dropdown — its own link
+// first ("All projects"), then one entry per project. Without projects the
+// item stays a plain link.
+function navFields(settings = {}, page = '', { projects } = {}) {
   const nav = normalizeNavigation(settings.navigation) || DEFAULT_NAVIGATION;
   const headerLines = [];
-  for (const item of nav.header) {
+  for (const raw of nav.header) {
+    let item = raw;
+    if (item.auto === 'projects' && Array.isArray(projects) && projects.length) {
+      item = {
+        label: item.label,
+        children: [{ label: `All ${item.label.toLowerCase()}`, href: item.href },
+          ...projects.filter(p => p && p.name && p.url).slice(0, LIMITS.children - 1).map(p => ({ label: String(p.name), href: String(p.url) }))],
+      };
+    }
     if (item.children) {
       const styled = item.style ? ` ${STYLES[item.style]}` : '';
       headerLines.push(`<li class="nav-dropdown${item.style ? ' nav-dropdown-styled' : ''}">`,

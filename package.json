@@ -20,6 +20,9 @@
   "devDependencies": {
     "@aws-sdk/client-amplify": "^3.1146.0",
     "@aws-sdk/client-iam": "^3.1146.0",
+    "pixelmatch": "^6.0.0",
+    "pngjs": "^7.0.0",
+    "puppeteer-core": "^23.11.1",
     "wrangler": "^4"
   }
 }

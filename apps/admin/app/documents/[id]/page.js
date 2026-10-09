@@ -8,13 +8,14 @@ import { requireSession } from '../../../lib/auth';
 import { withDb } from '../../../lib/data';
 import { editorData } from '../../../lib/documents';
 import { STATUSES, TEMPLATE_KEYS } from '@uccsite/db/documents';
-import { projectOf } from '@uccsite/render';
+import { documentUrl } from '@uccsite/render/projects';
 import ActionForm from '../../action-form';
 import RequestPublish from '../../request-publish';
 import HtmlEditor from './html-editor';
+import Builder from './builder';
 import StyleEditor from './style-editor';
 import ImageUrlField from '../../media/image-url-field';
-import { saveDocument, deleteDocument, archiveDocument, unarchiveDocument } from '../actions';
+import { saveDocument, deleteDocument, archiveDocument, unarchiveDocument, convertToBlocks } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,7 @@ const SEO_FIELDS = [
   ['metaTitle', 'Meta title', 'blank = "Title | Organization"'],
   ['metaDescription', 'Meta description', 'REQUIRED to publish; aim for ≤160 characters'],
   ['metaKeywords', 'Meta keywords', 'optional'],
-  ['canonicalUrl', 'Canonical URL', 'blank = https://utahciviccompact.org/slug'],
+  ['canonicalUrl', 'Canonical URL', 'blank = https://utahciviccompact.org + the page address shown at the top'],
   ['ogType', 'og:type', 'blank = article'],
   ['ogTitle', 'og:title', 'blank = meta title'],
   ['ogDescription', 'og:description', 'blank = meta description'],
@@ -46,10 +47,11 @@ export default async function DocumentEditorPage({ params }) {
   const { id } = await params;
   const data = await withDb((client) => editorData(client, id));
   if (!data) notFound();
-  const { doc, rows, kit, preview, overrides, orphans, unstyledCount, rules, foreignClassMap, siteCssDrift, projects } = data;
-  // Nesting (docs/systems/projects.md): explicit project, or the project whose button opens this page.
-  const impliedProject = !doc.projectSlug ? projectOf(doc, projects) : null;
+  const { doc, rows, kit, preview, overrides, orphans, unstyledCount, rules, foreignClassMap, siteCssDrift, projects, gallery, coverageKeys, publishedFiles } = data;
+  const isBuilder = Boolean(doc.bodyBlocks); // docs/systems/document-builder.md; null = legacy HTML box
+  // The tree (docs/systems/projects.md): the project sets the page's address.
   const orphanProject = doc.projectSlug && !projects.some(p => p.slug === doc.projectSlug) ? doc.projectSlug : '';
+  const url = documentUrl(doc, projects);
   const readOnly = session.role === 'viewer';
   const archived = doc.status === 'archived';
   const report = doc.ingestReport || null;
@@ -57,7 +59,7 @@ export default async function DocumentEditorPage({ params }) {
 
   return (
     <div className="doc-editor">
-      <h1>{doc.title} <span className="hint">/{doc.slug} · {doc.status}</span></h1>
+      <h1>{doc.title} <span className="hint">{url} · {doc.status}</span></h1>
       {archived && (
         <div className="notice">
           <strong>Archived.</strong> This document is off the site: it is not rendered, listed or in the sitemap, and
@@ -93,11 +95,16 @@ export default async function DocumentEditorPage({ params }) {
             <div>
               <label htmlFor="projectSlug">Project</label>
               <select id="projectSlug" name="projectSlug" defaultValue={doc.projectSlug} disabled={readOnly}>
-                <option value="">{impliedProject ? `${impliedProject.name} (via its button)` : '— none —'}</option>
-                {projects.map(p => <option key={p.slug} value={p.slug}>{p.name}</option>)}
+                <option value="">— none (publishes at /slug) —</option>
+                {projects.map(p => <option key={p.slug} value={p.slug}>{p.label}</option>)}
                 {orphanProject && <option value={orphanProject}>{orphanProject} (project no longer exists)</option>}
               </select>
-              <div className="hint">Lists this page under the project on /projects and adds a link back at the foot of the page.</div>
+              <div className="hint">The page publishes under the project at <code>{url}</code>, is listed on the project&apos;s page and links back to it. Moving it redirects the old address on the next publish.</div>
+            </div>
+            <div>
+              <label htmlFor="shortPath">Short link (optional)</label>
+              <input type="text" id="shortPath" name="shortPath" defaultValue={doc.shortPath} disabled={readOnly} placeholder="/alpr" pattern="/[a-z0-9][a-z0-9-]*" />
+              <div className="hint">One word after the slash, e.g. <code>/alpr</code> for print and broadcast. It redirects to the page&apos;s address.{doc.livePath && doc.livePath !== url ? <> Last published at <code>{doc.livePath}</code>, which will redirect here.</> : ''}</div>
             </div>
             <div>
               <label htmlFor="status">Status</label>
@@ -126,13 +133,16 @@ export default async function DocumentEditorPage({ params }) {
             {rows.length > 0 && <> Pre-publish check: <strong>{unstyledCount}</strong> unstyled block{unstyledCount === 1 ? '' : 's'} (see Styling below).</>}</div>
         </fieldset>
 
-        <HtmlEditor bodyHtmlRaw={doc.bodyHtmlRaw} pageCss={doc.pageCss} readOnly={readOnly} report={report} orphans={orphans} />
+        {isBuilder
+          ? <Builder documentId={doc.id} initialBody={doc.bodyBlocks} initialPreview={preview} gallery={gallery} kit={kit.entries}
+              coverageKeys={coverageKeys} publishedFiles={publishedFiles} pageCss={doc.pageCss} readOnly={readOnly} />
+          : <HtmlEditor bodyHtmlRaw={doc.bodyHtmlRaw} pageCss={doc.pageCss} readOnly={readOnly} report={report} orphans={orphans} />}
 
         <fieldset className="item">
           <legend>SEO</legend>
           <div className="serp">
             <div className="serp-title">{serp.title}</div>
-            <div className="serp-url">utahciviccompact.org › {doc.slug}</div>
+            <div className="serp-url">utahciviccompact.org › {url.slice(1).split('/').join(' › ')}</div>
             <div className="serp-desc">{doc.metaDescription || <em>No description — search engines will pick text from the page.</em>}</div>
           </div>
           {serp.w.length > 0 && <div className="error">{serp.w.join(' ')}</div>}
@@ -161,8 +171,24 @@ export default async function DocumentEditorPage({ params }) {
           </div>
         </fieldset>
 
-        {!readOnly && <><button type="submit">Save document</button><RequestPublish /></>}
+        {!readOnly && <div className="doc-actions"><button type="submit">Save document</button><RequestPublish /></div>}
       </ActionForm>
+
+      {!isBuilder && !readOnly && (
+        <fieldset className="item">
+          <legend>Block builder</legend>
+          <p className="hint">
+            This document is edited as raw HTML. Converting reads it into blocks (header fields, sections, text, quotations, boxes,
+            tables, figures) so it can be edited piece by piece with a live preview. The words stay the same; anything the builder
+            has no block for is kept as custom HTML. Its page CSS is rewritten to the shared document frame. A revision is saved first,
+            so Revisions can undo it.
+          </p>
+          <ActionForm className="inline" action={convertToBlocks} successMessage="Converted.">
+            <input type="hidden" name="id" value={doc.id} />
+            <button type="submit">Convert to blocks</button>
+          </ActionForm>
+        </fieldset>
+      )}
 
       <StyleEditor
         documentId={doc.id}

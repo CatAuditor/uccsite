@@ -10,14 +10,16 @@ const DOCUMENT_FIELDS = {
   slug: 'slug', title: 'title', category: 'category', author: 'author', project_slug: 'projectSlug', template_key: 'templateKey',
   status: 'status', sort_order: 'sortOrder',
   body_html_raw: 'bodyHtmlRaw', body_html_normalized: 'bodyHtmlNormalized', ingest_report: 'ingestReport',
+  body_blocks: 'bodyBlocks', // builder model (docs/systems/document-builder.md); null = legacy raw HTML
   page_css: 'pageCss',
   meta_title: 'metaTitle', meta_description: 'metaDescription', meta_keywords: 'metaKeywords',
   canonical_url: 'canonicalUrl', og_type: 'ogType', og_title: 'ogTitle', og_description: 'ogDescription',
   og_image: 'ogImage', twitter_card: 'twitterCard', noindex: 'noindex', nofollow: 'nofollow',
   jsonld_type: 'jsonldType', jsonld_overrides: 'jsonldOverrides', allow_scripts: 'allowScripts',
   sitemap_priority: 'sitemapPriority',
+  short_path: 'shortPath', // optional one-segment alias (/alpr) → 301 to the nested URL (docs/decisions/project-tree-nested-urls.md)
 };
-const JSON_COLS = new Set(['ingest_report', 'jsonld_overrides']);
+const JSON_COLS = new Set(['ingest_report', 'jsonld_overrides', 'body_blocks']);
 const INT_COLS = new Set(['noindex', 'nofollow', 'allow_scripts', 'sort_order']);
 // 'archived': taken down for good unless restored — not rendered, not in the
 // sitemap or author pages, its slug still blocks the fixed template, and the
@@ -27,7 +29,7 @@ const STATUSES = ['draft', 'published', 'archived'];
 const TEMPLATE_KEYS = ['report'];
 
 const SELECT_COLS = `id, ${Object.keys(DOCUMENT_FIELDS).join(', ')},
-  published_at::text AS published_at, content_hash, live_hash, live_at::text AS live_at,
+  published_at::text AS published_at, content_hash, live_hash, live_at::text AS live_at, live_path,
   last_publish_error, created_at::text AS created_at, updated_at::text AS updated_at`;
 
 function rowToDocument(row) {
@@ -43,6 +45,7 @@ function rowToDocument(row) {
   doc.contentHash = row.content_hash || null;
   doc.liveHash = row.live_hash || null;
   doc.liveAt = row.live_at || null;
+  doc.livePath = row.live_path || null; // the path the last publish wrote (bookkeeping, not editable)
   doc.lastPublishError = row.last_publish_error || '';
   doc.createdAt = row.created_at;
   doc.updatedAt = row.updated_at;
@@ -54,6 +57,7 @@ function documentToParams(doc) {
     const v = doc[key];
     if (JSON_COLS.has(col)) return v == null ? null : JSON.stringify(v);
     if (INT_COLS.has(col)) return Number(v || 0);
+    if (col === 'project_slug') return String(v || ''); // '' = no project, never NULL (unique index on (project_slug, slug))
     return v == null || v === '' ? null : String(v);
   });
 }
@@ -67,10 +71,15 @@ async function listDocuments(client, { status } = {}) {
   return res.rows.map(rowToDocument);
 }
 
-async function getDocument(client, { id, slug }) {
-  const res = id
-    ? await client.query(`SELECT ${SELECT_COLS} FROM documents WHERE id = $1`, [id])
-    : await client.query(`SELECT ${SELECT_COLS} FROM documents WHERE slug = $1`, [slug]);
+// getDocument(client, { id } | { slug, projectSlug? }). Slugs are unique PER
+// PROJECT (docs/decisions/project-tree-nested-urls.md): with projectSlug
+// (''/null = no project) the lookup is exact; a bare slug returns the first
+// match, root-level first — enough for the scripts that predate the tree.
+async function getDocument(client, { id, slug, projectSlug }) {
+  let res;
+  if (id) res = await client.query(`SELECT ${SELECT_COLS} FROM documents WHERE id = $1`, [id]);
+  else if (projectSlug !== undefined) res = await client.query(`SELECT ${SELECT_COLS} FROM documents WHERE slug = $1 AND coalesce(project_slug, '') = $2`, [slug, String(projectSlug || '')]);
+  else res = await client.query(`SELECT ${SELECT_COLS} FROM documents WHERE slug = $1 ORDER BY project_slug NULLS FIRST LIMIT 1`, [slug]);
   return res.rows[0] ? rowToDocument(res.rows[0]) : null;
 }
 
@@ -102,10 +111,12 @@ async function setPublishedAt(client, id, iso) {
 }
 
 // Publish bookkeeping (§9: content_hash / live_hash / live_at / last_publish_error).
-async function markDocumentLive(client, { id, contentHash }) {
+// path: the site path the run wrote (/projects/alpr/report) — the next run
+// 301s from it if the document's URL changes (render-db.js documentRedirects).
+async function markDocumentLive(client, { id, contentHash, path }) {
   await withRetry(() => client.query(
-    `UPDATE documents SET live_hash = $2, live_at = now(), last_publish_error = NULL WHERE id = $1`,
-    [id, contentHash]));
+    `UPDATE documents SET live_hash = $2, live_at = now(), last_publish_error = NULL, live_path = coalesce($3, live_path) WHERE id = $1`,
+    [id, contentHash, path || null]));
 }
 async function markDocumentPublishError(client, { id, error }) {
   await withRetry(() => client.query(
@@ -218,19 +229,35 @@ async function loadExportBundle(client) {
   };
 }
 
-// archivedSlugs(client) → ['slug', …] of every archived document; the publish
-// turns each into a 410 Gone KeyValueStore entry (redirects.js kvsEntries).
-async function archivedSlugs(client) {
-  return (await client.query(`SELECT slug FROM documents WHERE status = 'archived' ORDER BY slug`)).rows.map(r => r.slug);
+// archivedPaths(client) → ['/path', …]: every archived document's last live
+// address (live_path, else /<slug> for rows archived before the tree); the
+// publish turns each into a 410 Gone KeyValueStore entry (redirects.js
+// kvsEntries). An archived document's short path is gone too.
+async function archivedPaths(client) {
+  const rows = (await client.query(`SELECT slug, live_path, short_path FROM documents WHERE status = 'archived' ORDER BY slug`)).rows;
+  const paths = new Set();
+  for (const r of rows) {
+    paths.add(r.live_path || `/${r.slug}`);
+    if (r.short_path) paths.add(r.short_path);
+  }
+  return [...paths];
 }
 
 // loadPublishBundle(client) → everything the publish path needs in one shot.
-// allSlugs: every document row regardless of status — a slug that exists as a
-// document (even a draft) must never fall back to the old fixed template.
+// allAddresses: every root-level name any document row (any status) has
+// claimed — its slug, its short path, the path it last published at — so a
+// fixed template with that name never renders underneath a document, a
+// redirect or a 410 (render-db.js).
 async function loadPublishBundle(client) {
+  const rows = (await client.query('SELECT slug, short_path, live_path FROM documents')).rows;
+  const allAddresses = new Set();
+  for (const r of rows) for (const v of [r.slug, r.short_path, r.live_path]) {
+    const name = String(v || '').replace(/^\//, '');
+    if (name && !name.includes('/')) allAddresses.add(name);
+  }
   return {
     documents: await listDocuments(client, { status: 'published' }),
-    allSlugs: (await client.query('SELECT slug FROM documents')).rows.map(r => r.slug),
+    allAddresses: [...allAddresses],
     rules: await listStyleRules(client),
     overrides: await listOverrides(client),
     foreignClassMapRows: await listForeignClassMap(client),
@@ -244,5 +271,5 @@ module.exports = {
   listStyleRules, upsertStyleRule, deleteStyleRule,
   listOverrides, setOverride, replaceOverrides,
   loadForeignClassMap, listForeignClassMap, setForeignClassMapping, deleteForeignClassMapping,
-  loadPublishBundle, loadExportBundle, archivedSlugs,
+  loadPublishBundle, loadExportBundle, archivedPaths,
 };

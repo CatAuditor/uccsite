@@ -2406,6 +2406,593 @@ input, textarea, select { font: inherit; }
 .callout-dark p:last-child { margin: 0; }
 .callout-dark .callout-label { color: rgba(255,255,255,0.6); }
 
+/* ============================================================
+   DOCUMENT BLOCKS (admin Documents builder; docs/systems/document-builder.md)
+   The components the builder writes. Until 2026-10-08 every one of these
+   lived in a migrated report's own page CSS (how-did-this-happen, alpr,
+   stratos, weber-county), copied page to page, so a new document could not
+   use them: the ingest strips any class the site sheet does not know. This
+   group is the one canonical copy, modelled on how-did-this-happen where the
+   pages disagreed (finding-box = navy; the grey red-bar box is violation-box).
+   The reading column is div.doc-body > div.doc-inner; blocks sit inside it.
+   Converted legacy documents keep their page CSS (selectors rewritten to
+   .doc-inner) so their look is unchanged.
+   ============================================================ */
+
+/* ---- hero additions ---- */
+.subpage-hero p strong { color: var(--white); font-weight: 700; }
+
+/* @class hero-ctas
+   @label Hero buttons row
+   @applies div
+   @group Document blocks
+   @desc Centred row of buttons under the hero text (hero-download / hero-secondary links inside). */
+.hero-ctas { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin: 32px auto 8px; }
+
+/* @class hero-download
+   @label Hero button, red
+   @applies a
+   @group Document blocks
+   @desc Red filled button in the hero: the main download or the next page. */
+.hero-download { display: inline-flex; align-items: center; gap: 10px; background: var(--red); color: var(--white); padding: 14px 28px; border-radius: var(--radius); font-size: 15px; font-weight: 700; transition: background 0.2s; }
+.hero-download:hover { background: var(--red-light); }
+
+/* @class hero-secondary
+   @label Hero button, outline
+   @applies a
+   @group Document blocks
+   @desc White-outline button in the hero for the secondary action. */
+.hero-secondary { display: inline-flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.35); color: var(--white); padding: 14px 28px; border-radius: var(--radius); font-size: 15px; font-weight: 700; transition: background 0.2s, border-color 0.2s; }
+.hero-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.6); }
+
+/* @class hero-provenance
+   @label Hero note
+   @applies p
+   @group Document blocks
+   @desc Small muted line under the hero buttons: where every figure on the page comes from. */
+.hero-provenance { font-size: 13px; color: rgba(255,255,255,0.45); margin-top: 20px; }
+
+/* ---- the reading column ---- */
+
+/* @class doc-body
+   @label Document band
+   @applies div
+   @group Document blocks
+   @desc White full-width band holding the reading column (doc-inner). A multi-part piece has one per part. */
+.doc-body { background: var(--white); padding: 72px 48px 104px; }
+
+/* @class doc-inner
+   @label Reading column
+   @applies div
+   @group Document blocks
+   @desc 780px centred column; styles the plain headings, paragraphs, lists and quotations inside a document body. */
+.doc-inner { max-width: 780px; margin: 0 auto; }
+.doc-inner h2 { font-size: clamp(20px, 3vw, 26px); font-weight: 800; color: var(--navy-dark); letter-spacing: -0.02em; margin: 56px 0 20px; padding-top: 10px; border-top: 3px solid var(--red); scroll-margin-top: 100px; }
+.doc-inner h3 { font-size: 17px; font-weight: 700; color: var(--navy-dark); margin: 32px 0 12px; }
+.doc-inner h4 { font-size: 15px; font-weight: 700; color: var(--navy); margin: 24px 0 8px; }
+.doc-inner p { font-size: 16px; color: var(--gray-600); line-height: 1.8; margin-bottom: 16px; }
+.doc-inner p a, .doc-inner li a { color: var(--navy); text-decoration: underline; }
+.doc-inner p a:hover, .doc-inner li a:hover { color: var(--red); }
+.doc-inner ul { list-style: none; margin: 0 0 20px; padding: 0; }
+.doc-inner ul li { font-size: 16px; color: var(--gray-600); line-height: 1.75; padding: 6px 0 6px 24px; position: relative; }
+.doc-inner ul li::before { content: ''; position: absolute; left: 4px; top: 15px; width: 6px; height: 6px; border-radius: 50%; background: var(--red); }
+.doc-inner ol { margin: 0 0 20px; padding-left: 24px; }
+.doc-inner ol li { font-size: 16px; color: var(--gray-600); line-height: 1.75; padding: 6px 0; }
+.doc-inner hr { border: 0; border-top: 1px solid var(--gray-200); margin: 40px 0; }
+.doc-inner img { max-width: 100%; height: auto; }
+.doc-inner > :last-child { margin-bottom: 0; }
+
+/* @class doc-part
+   @label Section wrapper
+   @applies div
+   @group Document block parts
+   @desc Wrapper the builder writes around a section that carries extra classes (migrated per-part styles). */
+.doc-part { display: block; }
+
+/* ---- byline strip ---- */
+
+/* @class release-meta
+   @label Byline strip
+   @applies div
+   @group Document blocks
+   @desc Row above a rule: organisation badge, optional status pill, date line, "By Author, Title", optional download link. */
+.release-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 32px; padding-bottom: 28px; border-bottom: 1px solid var(--gray-200); }
+
+/* @class release-badge
+   @label Byline badge
+   @applies span
+   @group Document block parts
+   @desc Navy uppercase pill ("Utah Civic Compact") in the byline strip. */
+.release-badge { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; background: var(--navy-dark); color: var(--white); padding: 5px 12px; border-radius: 4px; }
+
+/* @class release-badge-status
+   @label Byline status pill
+   @applies span
+   @group Document block parts
+   @desc Red uppercase pill for a status word ("Active") beside the badge. */
+.release-badge-status { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: var(--red); color: var(--white); padding: 5px 12px; border-radius: 4px; }
+
+/* @class release-date
+   @label Byline date
+   @applies span
+   @group Document block parts
+   @desc Grey date line in the byline strip. */
+.release-date { font-size: 14px; color: var(--gray-400); }
+
+/* @class release-author
+   @label Byline author
+   @applies span
+   @group Document block parts
+   @desc Bold navy "By Name, Title" in the byline strip; the name links to the author page. */
+.release-author { font-size: 14px; font-weight: 700; color: var(--navy); }
+.release-author a { color: inherit; }
+.release-author a:hover { color: var(--red); }
+
+/* @class download-inline
+   @label Byline download link
+   @applies a
+   @group Document block parts
+   @desc Small red-outlined download link at the right end of the byline strip. */
+.download-inline { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--red); border: 1.5px solid var(--red); padding: 8px 18px; border-radius: var(--radius); transition: background 0.15s, color 0.15s; }
+.download-inline:hover { background: var(--red); color: var(--white); }
+
+/* @class paper-provenance
+   @label Byline note
+   @applies p
+   @group Document blocks
+   @desc Italic grey paragraph with a left rule under the byline: adapted from testimony, how to read citations. */
+.doc-inner .paper-provenance { font-size: 14.5px; font-style: italic; color: var(--gray-400); line-height: 1.75; margin-bottom: 40px; padding-left: 18px; border-left: 3px solid var(--gray-200); }
+.paper-provenance a { color: var(--gray-400); text-decoration: underline; }
+.paper-provenance a:hover { color: var(--red); }
+
+/* ---- contents ---- */
+
+/* @class paper-toc
+   @label Contents list
+   @applies nav div
+   @group Document blocks
+   @desc Cream rounded box with a "Contents" label and a two-column list of links to the section headings. */
+.paper-toc { background: var(--cream); border-radius: var(--radius-lg); padding: 24px 28px; margin-bottom: 8px; }
+
+/* @class paper-toc-label
+   @label Contents label
+   @applies div
+   @group Document block parts
+   @desc Small uppercase "Contents" label in the contents box. */
+.paper-toc-label { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--navy); margin-bottom: 14px; }
+.paper-toc ol { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 32px; }
+.paper-toc li { font-size: 14.5px; line-height: 1.6; margin-bottom: 8px; padding: 0; break-inside: avoid; }
+.paper-toc a, .doc-inner .paper-toc li a { color: var(--navy-dark); text-decoration: none; }
+.paper-toc a:hover, .doc-inner .paper-toc li a:hover { color: var(--red); text-decoration: underline; }
+
+/* @class part-header
+   @label Part header
+   @applies div
+   @group Document blocks
+   @desc Eyebrow, large heading and a standfirst at the start of a part of a multi-part piece, above a rule. */
+.part-header { margin-bottom: 40px; padding-bottom: 28px; border-bottom: 1px solid var(--gray-200); }
+
+/* @class part-header-eyebrow
+   @label Part eyebrow
+   @applies div
+   @group Document block parts
+   @desc Small red uppercase label above a part heading ("Part 1 · May 26, 2026"). */
+.part-header-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); margin-bottom: 10px; }
+.doc-inner .part-header h2 { font-size: clamp(22px, 3.5vw, 30px); font-weight: 900; letter-spacing: -0.025em; line-height: 1.2; margin: 0 0 8px; border-top: none; padding-top: 0; }
+.doc-inner .part-header p { font-size: 17px; color: var(--gray-600); font-weight: 500; line-height: 1.5; margin: 0; }
+
+/* @class parts-nav
+   @label Part navigation
+   @applies div nav
+   @group Document blocks
+   @desc Full-width navy row of linked cards, one per part, under a red rule. */
+.parts-nav { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--navy-dark); border-bottom: 3px solid var(--red); }
+
+/* @class part-card
+   @label Part card
+   @applies a
+   @group Document block parts
+   @desc One card in the part navigation: number, title, description. */
+.part-card { display: block; padding: 28px 32px; border-right: 1px solid rgba(255,255,255,0.1); transition: background 0.15s; text-decoration: none; }
+.part-card:last-child { border-right: none; }
+.part-card:hover { background: rgba(255,255,255,0.06); }
+/* @class part-card-num
+   @label Part card number
+   @applies div
+   @group Document block parts
+   @desc Red uppercase label in a part card ("Part 1 · May 26, 2026"). */
+.part-card-num { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); margin-bottom: 6px; }
+/* @class part-card-title
+   @label Part card title
+   @applies div
+   @group Document block parts
+   @desc White title line in a part card. */
+.part-card-title { font-size: 15px; font-weight: 700; color: var(--white); line-height: 1.4; margin-bottom: 8px; }
+/* @class part-card-desc
+   @label Part card description
+   @applies div
+   @group Document block parts
+   @desc Muted description line in a part card. */
+.part-card-desc { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+
+/* ---- quotations ---- */
+.doc-inner blockquote { margin: 24px 0 32px; padding: 24px 32px; background: var(--cream); border-radius: var(--radius-lg); border-left: 4px solid var(--navy); }
+.doc-inner blockquote p { font-size: 16.5px; font-style: italic; color: var(--navy-dark); line-height: 1.7; margin-bottom: 8px; }
+.doc-inner blockquote cite { font-size: 13px; font-style: normal; font-weight: 600; color: var(--gray-400); }
+.doc-inner blockquote cite a { color: var(--gray-400); text-decoration: underline; }
+.doc-inner blockquote cite a:hover { color: var(--red); }
+
+/* @class quote-source
+   @label Quotation source label
+   @applies span
+   @group Document block parts
+   @desc Small red uppercase label at the top of a quotation ("Utah Code", "Contract § 1.3"). */
+.quote-source { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); font-style: normal; margin-bottom: 10px; }
+
+/* @class pull-quote
+   @label Pull quote
+   @applies div blockquote
+   @group Document blocks
+   @desc Navy centred card with one sentence set large in white and a small attribution. */
+.pull-quote { margin: 36px 0; padding: 36px 40px; background: var(--navy-dark); border-radius: var(--radius-lg); text-align: center; }
+.doc-inner .pull-quote p { font-family: var(--font-serif); font-size: clamp(22px, 3.5vw, 30px); font-weight: 700; color: var(--white); line-height: 1.4; margin-bottom: 10px; }
+.pull-quote cite { font-size: 13px; font-style: normal; color: rgba(255,255,255,0.5); }
+
+/* ---- boxes ---- */
+
+/* @class scope-box
+   @label Scope box
+   @applies div aside
+   @group Document blocks
+   @desc Cream box with a navy border and a labelled rule: what this analysis does and does not claim. */
+.scope-box { background: var(--cream); border: 2px solid var(--navy); border-radius: var(--radius-lg); padding: 32px 36px; margin: 32px 0; box-shadow: 0 4px 20px rgba(27,47,78,0.08); }
+
+/* @class scope-box-label
+   @label Scope box label
+   @applies div
+   @group Document block parts
+   @desc Small navy uppercase label with a hairline to the right, first line of a scope box. */
+.scope-box-label { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--navy); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.scope-box-label::after { content: ''; flex: 1; height: 1px; background: rgba(27,47,78,0.2); }
+.doc-inner .scope-box p { margin-bottom: 14px; font-size: 16px; color: var(--navy-dark); line-height: 1.75; }
+.doc-inner .scope-box p:last-child { margin-bottom: 0; }
+
+/* @class finding-box
+   @label Finding, navy
+   @applies div aside
+   @group Document blocks
+   @desc Navy box with a faint uppercase heading and one large white statement: the finding a section lands on. */
+.finding-box { background: var(--navy-dark); border-radius: var(--radius-lg); padding: 28px 32px; margin: 32px 0; }
+.doc-inner .finding-box h3 { font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin: 0 0 12px; }
+.doc-inner .finding-box p { font-size: 18px; font-weight: 600; color: var(--white); line-height: 1.6; margin: 0; }
+.doc-inner .finding-box strong { color: var(--white); }
+
+/* @class violation-box
+   @label Finding, grey
+   @applies div aside
+   @group Document blocks
+   @desc Grey box with a red left bar and a red uppercase heading: a violation, a key finding in a briefing. */
+.violation-box { background: var(--gray-50); border-left: 4px solid var(--red); border-radius: 0 var(--radius-lg) var(--radius-lg) 0; padding: 28px 32px; margin: 32px 0; }
+.doc-inner .violation-box h3 { margin: 0 0 10px; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--red); }
+.doc-inner .violation-box p { margin-bottom: 0; font-size: 15px; }
+
+/* @class update-note
+   @label Update note
+   @applies div aside
+   @group Document blocks
+   @desc Grey box with a navy left bar and a small navy label: an update added after publication. */
+.update-note { background: var(--gray-50); border-left: 4px solid var(--navy); border-radius: 0 var(--radius-lg) var(--radius-lg) 0; padding: 26px 32px; margin: 32px 0; }
+
+/* @class update-note-label
+   @label Update note label
+   @applies div
+   @group Document block parts
+   @desc Small navy uppercase label on the first line of an update note. */
+.update-note-label { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--navy); margin-bottom: 12px; }
+.doc-inner .update-note p { font-size: 15.5px; margin-bottom: 12px; }
+.doc-inner .update-note p:last-child { margin-bottom: 0; }
+
+/* @class draft-def
+   @label Draft definition
+   @applies div
+   @group Document blocks
+   @desc Cream box with a navy left bar for proposed statutory language; the defined term in bold (def-term). */
+.draft-def { background: var(--cream); border-left: 4px solid var(--navy); border-radius: var(--radius); padding: 24px 28px; margin: 20px 0; }
+.doc-inner .draft-def p { font-size: 15.5px; color: var(--navy-dark); line-height: 1.75; }
+.doc-inner .draft-def p:last-child { margin-bottom: 0; }
+.doc-inner .draft-def li { color: var(--navy-dark); }
+
+/* @class def-term
+   @label Defined term
+   @applies span
+   @group Document block parts
+   @desc Bold defined term at the start of a draft definition. */
+.def-term { font-weight: 800; }
+
+/* ---- key figures ---- */
+
+/* @class stats-grid
+   @label Stat cards
+   @applies div
+   @group Document blocks
+   @desc Two-column grid of grey cards, each a large red number with a description. */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 28px 0 8px; }
+
+/* @class stat-card
+   @label Stat card
+   @applies div
+   @group Document block parts
+   @desc One grey card in a stats grid; add "wide" to span both columns. */
+.stat-card { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 26px 28px; }
+/* @class wide
+   @label Full width (stat card)
+   @applies div
+   @group Document block parts
+   @desc On a stat card: span both columns of the grid. */
+.stat-card.wide { grid-column: 1 / -1; }
+/* @class stat-num
+   @label Stat number
+   @applies div
+   @group Document block parts
+   @desc The large red number in a stat card. */
+.stat-num { font-size: clamp(30px, 5vw, 40px); font-weight: 900; color: var(--red); letter-spacing: -0.03em; line-height: 1; margin-bottom: 10px; }
+/* @class stat-desc
+   @label Stat description
+   @applies div
+   @group Document block parts
+   @desc The description under a stat card's number. */
+.stat-desc { font-size: 14.5px; color: var(--gray-600); line-height: 1.65; }
+.stat-desc strong { color: var(--navy-dark); }
+
+/* ---- figures and tables ---- */
+
+/* @class evidence-figure
+   @label Figure
+   @applies figure
+   @group Document blocks
+   @desc Full-width bordered image with a small grey caption underneath. */
+.evidence-figure { margin: 32px 0; }
+.evidence-figure img { width: 100%; height: auto; border-radius: var(--radius-lg); border: 1px solid var(--gray-200); display: block; }
+.evidence-figure figcaption { font-size: 13px; color: var(--gray-400); margin-top: 10px; line-height: 1.5; }
+
+/* @class table-wrap
+   @label Table wrapper
+   @applies div
+   @group Document block parts
+   @desc Horizontal-scroll wrapper around a wide table. */
+.table-wrap { overflow-x: auto; margin: 24px 0 32px; }
+
+/* @class doc-table-wrap
+   @label Data table wrapper
+   @applies div
+   @group Document block parts
+   @desc Bordered, rounded, horizontal-scroll wrapper around a data table. */
+.doc-table-wrap { overflow-x: auto; margin: 24px 0 32px; border-radius: var(--radius); border: 1px solid var(--gray-200); }
+
+/* @class doc-table
+   @label Data table
+   @applies table
+   @group Document blocks
+   @desc Table with a navy header row, light row rules and a bold first column. */
+.doc-table { width: 100%; border-collapse: collapse; background: var(--white); font-size: 14.5px; }
+.doc-table caption { caption-side: bottom; text-align: left; font-size: 13px; color: var(--gray-400); padding: 10px 16px; }
+.doc-table th { background: var(--navy-dark); color: var(--white); text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.doc-table td { padding: 14px 16px; border-top: 1px solid var(--gray-200); color: var(--gray-600); line-height: 1.6; vertical-align: top; }
+.doc-table td:first-child { font-weight: 700; color: var(--navy-dark); white-space: nowrap; }
+
+/* @class own-table
+   @label Plain table
+   @applies table
+   @group Document blocks
+   @desc Table with a grey uppercase header row and a bold first column; no outer border. */
+.own-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.own-table th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray-400); padding: 10px 16px; border-bottom: 2px solid var(--gray-200); }
+.own-table td { padding: 16px; color: var(--gray-600); line-height: 1.6; vertical-align: top; border-bottom: 1px solid var(--gray-100); }
+.own-table td:first-child { font-weight: 600; color: var(--navy-dark); width: 210px; }
+
+/* @class own-no
+   @label Row number tag
+   @applies span
+   @group Document block parts
+   @desc Small red uppercase tag before a table cell's text. */
+.own-no { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); margin-right: 6px; }
+
+/* @class table-scroll
+   @label Scrolling table wrapper
+   @applies div
+   @group Document block parts
+   @desc Bordered box that scrolls vertically for a long ranked table with a sticky header. */
+.table-scroll { max-height: 620px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); margin: 24px 0; }
+
+/* @class rank-table
+   @label Ranked table
+   @applies table
+   @group Document blocks
+   @desc Dense table with a sticky navy header, right-aligned numbers in columns 3 and 4, and bold subtotal rows (tr.subtotal). */
+.rank-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.rank-table th { position: sticky; top: 0; background: var(--navy-dark); color: var(--white); text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 14px; }
+.rank-table td { padding: 8px 14px; color: var(--gray-600); line-height: 1.5; border-bottom: 1px solid var(--gray-100); }
+.rank-table td:first-child { font-weight: 600; color: var(--gray-400); width: 60px; }
+.rank-table td:nth-child(3), .rank-table td:nth-child(4), .rank-table th:nth-child(3), .rank-table th:nth-child(4) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* @class subtotal
+   @label Subtotal row
+   @applies tr
+   @group Document block parts
+   @desc On a ranked table row: bold, grey background, rule above. */
+.rank-table tr.subtotal td { font-weight: 700; color: var(--navy-dark); background: var(--gray-50); border-top: 2px solid var(--gray-200); }
+
+/* @class timeline-table
+   @label Timeline table
+   @applies table
+   @group Document blocks
+   @desc Date-first table with a grey header row; tr.highlight tints a row pink. */
+.timeline-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.timeline-table th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray-400); padding: 10px 16px; border-bottom: 2px solid var(--gray-200); }
+.timeline-table td { padding: 14px 16px; color: var(--gray-600); line-height: 1.6; vertical-align: top; border-bottom: 1px solid var(--gray-100); }
+.timeline-table td:first-child { white-space: nowrap; font-weight: 600; color: var(--navy-dark); width: 130px; }
+/* @class highlight
+   @label Highlighted row
+   @applies tr
+   @group Document block parts
+   @desc On a timeline table row: pink tint. */
+.timeline-table tr.highlight td { background: #fff5f5; }
+
+/* ---- downloads, calls to action ---- */
+
+/* @class table-downloads
+   @label Download buttons row
+   @applies div
+   @group Document blocks
+   @desc Wrapping row of red file buttons (btn-file). */
+.table-downloads { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0 8px; }
+
+/* @class btn-file
+   @label File button
+   @applies a
+   @group Document block parts
+   @desc Red filled button for a file download; navy inside a related-cta box. */
+.btn-file { display: inline-flex; align-items: center; gap: 10px; background: var(--red); color: var(--white); padding: 12px 24px; border-radius: var(--radius); font-size: 14px; font-weight: 700; transition: background 0.2s; }
+.btn-file:hover { background: var(--red-light); }
+
+/* @class related-cta
+   @label Related reading box
+   @applies div
+   @group Document blocks
+   @desc Centred cream box with a heading, a sentence and navy buttons: the full investigation, the archive. */
+.related-cta { background: var(--cream); border-radius: var(--radius-lg); padding: 32px 36px; margin-top: 56px; text-align: center; }
+.doc-inner .related-cta h3 { margin-top: 0; }
+.doc-inner .related-cta p { margin-bottom: 20px; }
+.related-cta .btn-file { background: var(--navy-dark); font-size: 14.5px; margin: 4px; }
+.related-cta .btn-file:hover { background: var(--red); }
+
+/* @class download-cta
+   @label Download box
+   @applies div
+   @group Document blocks
+   @desc Centred navy box with a sentence and one red download button (btn-download). */
+.download-cta { background: var(--navy-dark); border-radius: var(--radius-lg); padding: 40px; text-align: center; margin-top: 64px; }
+.doc-inner .download-cta p { color: rgba(255,255,255,0.65); margin-bottom: 20px; }
+/* @class btn-download
+   @label Download button
+   @applies a
+   @group Document block parts
+   @desc Large red button inside a download box. */
+.btn-download { display: inline-flex; align-items: center; gap: 10px; background: var(--red); color: var(--white); padding: 15px 32px; border-radius: var(--radius); font-size: 16px; font-weight: 700; transition: background 0.2s; }
+.btn-download:hover { background: var(--red-light); }
+
+/* @class contact-cta
+   @label Contact box
+   @applies div
+   @group Document blocks
+   @desc Centred navy box with a white heading, a muted sentence and a red email button (btn-contact). */
+.contact-cta { background: var(--navy-dark); border-radius: var(--radius-lg); padding: 40px; text-align: center; margin-top: 40px; }
+.doc-inner .contact-cta h3 { color: var(--white); font-size: 22px; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 10px; }
+.doc-inner .contact-cta p { color: rgba(255,255,255,0.65); font-size: 15px; max-width: 460px; margin: 0 auto 24px; }
+/* @class btn-contact
+   @label Contact button
+   @applies a
+   @group Document block parts
+   @desc Large red button inside a contact box. */
+.btn-contact { display: inline-flex; align-items: center; gap: 10px; background: var(--red); color: var(--white); padding: 15px 32px; border-radius: var(--radius); font-size: 16px; font-weight: 700; transition: background 0.2s; }
+.btn-contact:hover { background: var(--red-light); }
+
+/* ---- sources, asks, cards, accordion ---- */
+
+/* @class sources-list
+   @label Sources, paragraphs
+   @applies div
+   @group Document blocks
+   @desc Slightly smaller paragraphs for an appendix of sources; bold source names in navy. */
+.doc-inner .sources-list p { font-size: 15px; line-height: 1.75; }
+.sources-list strong { color: var(--navy-dark); }
+
+/* @class sources-grid
+   @label Sources, cards
+   @applies div
+   @group Document blocks
+   @desc Two-column grid of small grey source cards (source-item), each with a name, a line of detail and a link. */
+.sources-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+
+/* @class source-item
+   @label Source card
+   @applies div
+   @group Document block parts
+   @desc One card in a sources grid. */
+.source-item { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 14px 16px; font-size: 13px; color: var(--gray-600); line-height: 1.5; }
+.source-item strong { display: block; font-weight: 600; color: var(--navy-dark); margin-bottom: 4px; }
+.doc-inner .source-item p { font-size: 13px; line-height: 1.5; margin: 0; }
+.source-item a { color: var(--red); word-break: break-all; font-size: 12px; text-decoration: none; }
+.source-item a:hover { text-decoration: underline; }
+
+/* @class ask-list
+   @label Asks
+   @applies div
+   @group Document blocks
+   @desc Stacked headed items (ask-item: h3 + p): what we are asking for. */
+.ask-list { margin: 8px 0; }
+/* @class ask-item
+   @label Ask
+   @applies div
+   @group Document block parts
+   @desc One headed item (h3 + p) in an asks list. */
+.ask-item { margin-bottom: 28px; }
+.doc-inner .ask-item h3 { margin: 0 0 8px; }
+.doc-inner .ask-item p { margin-bottom: 0; }
+
+/* @class join-grid
+   @label Card grid
+   @applies div
+   @group Document blocks
+   @desc Two-column grid of grey cards (join-card), each a red uppercase heading and a short paragraph. */
+.join-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 28px 0; }
+
+/* @class join-card
+   @label Card
+   @applies div
+   @group Document block parts
+   @desc One grey card in a card grid. */
+.join-card { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 24px 26px; }
+.join-card strong { display: block; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--red); margin-bottom: 8px; }
+.doc-inner .join-card p { font-size: 14.5px; line-height: 1.7; margin-bottom: 0; }
+.join-card a { color: var(--red); font-weight: 600; text-decoration: none; }
+.join-card a:hover { text-decoration: underline; }
+
+/* @class doc-accordion
+   @label Collapsible sections
+   @applies div
+   @group Document blocks
+   @desc A run of details/summary sections: large heading with a red disc marker, opens to its text (section-body). */
+.doc-accordion details { border-top: 3px solid var(--red); margin-top: 32px; }
+.doc-accordion details + details { margin-top: 8px; }
+.doc-accordion summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0 16px; cursor: pointer; list-style: none; font-size: clamp(18px, 3vw, 24px); font-weight: 800; color: var(--navy-dark); letter-spacing: -0.02em; user-select: none; }
+.doc-accordion summary::-webkit-details-marker { display: none; }
+.doc-accordion summary::after { content: ''; flex-shrink: 0; width: 22px; height: 22px; background: var(--red); border-radius: 50%; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; transition: transform 0.2s var(--ease); }
+.doc-accordion details[open] summary::after { transform: rotate(180deg); }
+.doc-accordion summary:hover { color: var(--red); }
+
+/* @class section-body
+   @label Collapsible section body
+   @applies div
+   @group Document block parts
+   @desc The text inside one collapsible section. */
+.section-body { padding-bottom: 32px; }
+.section-body > :first-child { margin-top: 0; }
+
+@media (max-width: 700px) {
+  .doc-body { padding: 56px 24px 80px; }
+  .release-meta { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .download-inline { margin-left: 0; }
+  .paper-toc ol { columns: 1; }
+  .scope-box { padding: 24px 22px; }
+  .doc-inner blockquote { padding: 20px 22px; }
+  .stats-grid, .sources-grid, .join-grid { grid-template-columns: 1fr; }
+  .parts-nav { grid-template-columns: 1fr; }
+  .part-card { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .part-card:last-child { border-bottom: none; }
+  .timeline-table td:first-child { white-space: normal; width: auto; }
+  .download-cta, .contact-cta { padding: 28px 20px; }
+}
+
 /* @class video-meta
    @label Video Meta
    @applies div
@@ -2514,4 +3101,8 @@ input, textarea, select { font: inherit; }
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.doc-breadcrumb p { margin: 0 0 8px; }
+.doc-breadcrumb-path span[aria-current] { color: var(--gray-600); font-weight: 400; }
+.doc-breadcrumb-label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); margin-top: 16px; }
+.doc-breadcrumb-list { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 6px 20px; }
 @media (max-width: 768px) { .doc-breadcrumb { padding: 16px 24px; } }

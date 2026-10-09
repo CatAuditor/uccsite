@@ -14,16 +14,18 @@ const { applyStyles } = require('@uccsite/style-apply');
 const { parseStyleKit, classNames } = require('@uccsite/style-kit');
 const { render } = require('./engine');
 const { navFields } = require('./navigation');
-const { projectOf, projectAnchor } = require('./projects');
+const { projectOf, projectUrl, documentUrl } = require('./projects');
 
 const TEMPLATE_KEYS = ['report'];
 const DEFAULT_OG_IMAGE = '/assets/share-default.png'; // logo on navy (transparent UCC.png let apps paint their own background)
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 
-// pageCssKey(slug, css) → 'css/pages/<slug>.<hash8>.css'
-function pageCssKey(slug, css) {
-  return `css/pages/${slug}.${sha(css).slice(0, 8)}.css`;
+// pageCssKey(name, css) → 'css/pages/<name>.<hash8>.css'. name: the page's
+// path with slashes as dashes ('theory', 'projects-alpr-report') so two
+// projects' `report` documents never share a stylesheet key.
+function pageCssKey(name, css) {
+  return `css/pages/${String(name).replace(/^\/+/, '').replace(/\//g, '-')}.${sha(css).slice(0, 8)}.css`;
 }
 
 // Attribute values: escape only what can break out of a double-quoted
@@ -31,17 +33,25 @@ function pageCssKey(slug, css) {
 // content against the production crawl, and `'` is what the templates emit).
 const attr = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-// seoBlock(doc, settings, siteUrl) → { html, errors }. Fallback chain:
+// seoBlock(doc, settings, siteUrl, path?) → { html, errors }. Fallback chain:
 // document → template default → settings (§12). Never an empty title or
-// description — that's an error, not a silent blank.
-function seoBlock(doc, settings, siteUrl) {
+// description — that's an error, not a silent blank. path: the page's site
+// path ('/projects/alpr/report'; default '/<slug>') for the canonical URL
+// and the error label.
+function seoBlock(doc, settings, siteUrl, path = `/${doc.slug}`) {
   const errors = [];
   const orgName = settings.orgName || 'Utah Civic Compact';
+  const label = path.replace(/^\//, '');
   const title = doc.metaTitle || (doc.title ? `${doc.title} | ${orgName}` : '');
   const description = doc.metaDescription || '';
-  if (!title) errors.push(`document ${doc.slug}: empty title`);
-  if (!description) errors.push(`document ${doc.slug}: empty meta description (required, §12)`);
-  const canonical = doc.canonicalUrl || `${siteUrl}/${doc.slug}`;
+  if (!title) errors.push(`document ${label}: empty title`);
+  if (!description) errors.push(`document ${label}: empty meta description (required, §12)`);
+  // An explicit canonical that names one of this page's OWN former or alias
+  // addresses (its short path, where it last published, its bare slug) would
+  // point search engines at a 301 — the page's address wins over it.
+  const aliases = new Set([doc.shortPath, doc.livePath, `/${doc.slug}`].filter(Boolean).map(p => `${siteUrl}${p}`));
+  const explicit = String(doc.canonicalUrl || '').replace(/\.html$/, '');
+  const canonical = explicit && !aliases.has(explicit) ? doc.canonicalUrl : `${siteUrl}${path}`;
   const ogTitle = doc.ogTitle || title;
   const ogDescription = doc.ogDescription || description;
   const ogImage = doc.ogImage || `${siteUrl}${DEFAULT_OG_IMAGE}`;
@@ -66,13 +76,23 @@ function seoBlock(doc, settings, siteUrl) {
   return { html: lines.join('\n'), errors, title, description, canonical };
 }
 
-// jsonldBlock(doc, seo, settings, siteUrl, authors?) → '' | '<script type="application/ld+json">…'
+// jsonldBlock(doc, seo, settings, siteUrl, authors?, { project, crumbs }?) → '' | '<script type="application/ld+json">…'
 // authors: { name → { url, id } } (packages/render/site.js authorIndex). A
 // document's `author` becomes a Person; when the name is a team member the
 // Person carries the author page's @id/url so every page by that person
 // resolves to ONE entity (docs/systems/author-pages.md). Overrides still win.
-function jsonldBlock(doc, seo, settings, siteUrl, authors = {}) {
-  if (!doc.jsonldType) return '';
+// project ({ name, url }): isPartOf the project's hub page; crumbs
+// ([{ name, url }]): a second script with the BreadcrumbList — it is what
+// drives the search-result breadcrumb, not the URL shape
+// (docs/decisions/project-tree-nested-urls.md). Both only when the document
+// is under a project.
+function jsonldBlock(doc, seo, settings, siteUrl, authors = {}, { project = null, crumbs = [] } = {}) {
+  const scripts = [];
+  if (project && crumbs.length) {
+    const list = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: `${siteUrl}${c.url}` })) };
+    scripts.push(`  <script type="application/ld+json">\n${JSON.stringify(list, null, 2).replace(/</g, '\\u003c')}\n  </script>`);
+  }
+  if (!doc.jsonldType) return scripts.join('\n');
   const authorName = String(doc.author || '').trim();
   const known = authors[authorName];
   const base = {
@@ -81,6 +101,7 @@ function jsonldBlock(doc, seo, settings, siteUrl, authors = {}) {
     headline: doc.ogTitle || doc.title,
     description: seo.description,
     url: seo.canonical,
+    ...(project ? { isPartOf: { '@type': 'CollectionPage', name: project.name, url: `${siteUrl}${project.url}` } } : {}),
     ...(doc.publishedAt ? { datePublished: String(doc.publishedAt).slice(0, 10) } : {}),
     ...(authorName ? {
       author: {
@@ -95,7 +116,8 @@ function jsonldBlock(doc, seo, settings, siteUrl, authors = {}) {
   const merged = { ...base, ...(doc.jsonldOverrides && typeof doc.jsonldOverrides === 'object' ? doc.jsonldOverrides : {}) };
   // JSON inside <script>: '<' must not be able to close the element.
   const json = JSON.stringify(merged, null, 2).replace(/</g, '\\u003c');
-  return `  <script type="application/ld+json">\n${json}\n  </script>`;
+  scripts.unshift(`  <script type="application/ld+json">\n${json}\n  </script>`);
+  return scripts.join('\n');
 }
 
 // Tokens are the only way dynamic markup enters a Document (§5 YouTube note,
@@ -136,12 +158,20 @@ function overridesFor(doc, overrides) {
 }
 
 // composeDocument({ doc, shell, partials, settings, siteUrl, siteCss, rules,
-//   overrides, foreignClassMap, coverage }) → { html, cssKey, css, ingestResult, errors }
+//   overrides, foreignClassMap, coverage, authors, projects, siblings })
+//   → { html, cssKey, css, ingestResult, errors, path }
 // projects: content.projects.projects — the document's project (projects.js
-// projectOf) becomes the "part of" bar under the body (templates/documents/report.html).
-function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss = '', rules = [], overrides = [], foreignClassMap = {}, coverage = {}, authors = {}, projects = [] }) {
+// projectOf) sets its URL (/projects/<path>/<slug>, projects.js documentUrl),
+// the "part of" bar under the body (templates/documents/report.html) with the
+// project's other documents (siblings: [{ title, url }]), the canonical URL
+// and the JSON-LD isPartOf + BreadcrumbList. Without a project the page is
+// /<slug>, as before.
+function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss = '', rules = [], overrides = [], foreignClassMap = {}, coverage = {}, authors = {}, projects = [], siblings = [] }) {
   const errors = [];
-  const fail = (m) => errors.push(`document ${doc.slug}: ${m}`);
+  const project = projectOf(doc, projects);
+  const path = documentUrl(doc, projects);
+  const label = path.replace(/^\//, '');
+  const fail = (m) => errors.push(`document ${label}: ${m}`);
 
   const ingestResult = ingest(doc.bodyHtmlRaw || '', {
     knownClasses: knownClassesFor(siteCss, doc.pageCss),
@@ -154,58 +184,84 @@ function composeDocument({ doc, shell, partials, settings = {}, siteUrl, siteCss
   const styled = applyStyles(ingestResult.bodyHtmlNormalized, rulesFor(doc, rules), overridesFor(doc, overrides));
   const body = replaceTokens(stripNids(styled), { partials, coverage, fail });
 
-  const seo = seoBlock(doc, settings, siteUrl);
+  const seo = seoBlock(doc, settings, siteUrl, path);
   errors.push(...seo.errors);
   const css = doc.pageCss || '';
-  const cssKey = css ? pageCssKey(doc.slug, css) : null;
-  const project = projectOf(doc, projects);
+  const cssKey = css ? pageCssKey(label, css) : null;
+  const hub = project ? { name: project.name, url: projectUrl(project, projects) } : null;
+  const parentSlug = project ? String(project.parent_slug || '').trim() : '';
+  const parent = parentSlug ? projects.find(p => String(p.slug || '').trim() === parentSlug) : null;
+  const crumbs = hub ? [{ name: 'Projects', url: '/projects' }, ...(parent ? [{ name: parent.name, url: projectUrl(parent, projects) }] : []), hub, { name: doc.title, url: path }] : [];
+  // Nav state: a nested document lights the Projects menu item; a root
+  // document its own page key (a menu link to /<slug> gets aria-current).
+  const pageKey = project ? 'projects' : doc.slug;
+  const others = siblings.filter(s => s && s.url && s.url !== path);
   const data = {
     ...settings,
-    page: doc.slug,
-    current: { [doc.slug]: true },
-    ...navFields(settings, doc.slug), // header + footer menus (docs/systems/navigation.md)
+    page: pageKey,
+    current: { [pageKey]: true },
+    ...navFields(settings, pageKey, { projects: projects.filter(p => !String(p.parent_slug || '').trim()).map(p => ({ name: p.name, url: projectUrl(p, projects) })) }),
     seo_block: seo.html,
-    jsonld_block: jsonldBlock(doc, seo, settings, siteUrl, authors),
+    jsonld_block: jsonldBlock(doc, seo, settings, siteUrl, authors, { project: hub, crumbs }),
     page_css_link: cssKey ? `  <link rel="stylesheet" href="/${cssKey}" />` : '',
     body,
-    project_name: project ? project.name : '',
-    project_href: project ? `/projects#${projectAnchor(project.slug)}` : '',
+    project_name: hub ? hub.name : '',
+    project_href: hub ? hub.url : '',
+    project_parent_name: parent ? parent.name : '',
+    project_parent_href: parent ? projectUrl(parent, projects) : '',
+    siblings: others,
+    has_siblings: others.length > 0,
   };
   const html = render(shell, data, partials, fail);
-  return { html, cssKey, css, ingestResult, errors };
+  return { html, cssKey, css, ingestResult, errors, path };
 }
 
 // buildDocuments({ documents, shells, partials, settings, siteUrl, siteCss,
-//   rules, overrides, foreignClassMaps, coverage }) →
-//   { files: { '<slug>.html', 'css/pages/…' }, errors: [], pages: [{template, priority, lastmodAt}] , hashes: {slug: contentHash} }
-// pages entries feed the sitemap through the same makeSitemap as fixed pages.
+//   rules, overrides, foreignClassMaps, coverage, authors, projects }) →
+//   { files: { '<path>.html', 'css/pages/…' }, errors: [],
+//     pages: [{ template, priority, sitemap, lastmodAt }],
+//     hashes: { id → contentHash }, paths: { id → '/path' } }
+// A document's file is its URL path ('/projects/alpr/report' →
+// projects/alpr/report.html; '/theory' → theory.html). Two documents may not
+// share a path, and a path may not be a project hub's. pages entries feed the
+// sitemap through the same makeSitemap as fixed pages. Errors are labelled
+// by path so the admin can show them per document.
 function buildDocuments({ documents = [], shells, partials, settings, siteUrl, siteCss, rules, overrides, foreignClassMaps = {}, coverage, authors = {}, projects = [] }) {
   const files = {};
   const errors = [];
   const pages = [];
   const hashes = {};
-  const slugs = new Set();
+  const paths = {};
+  const taken = new Map(projects.map(p => [projectUrl(p, projects), `project "${p.name || p.slug}"`]));
+  const labelOf = (doc) => documentUrl(doc, projects).replace(/^\//, '');
+  const siblingsOf = (doc) => {
+    const slug = String(doc.projectSlug || '').trim();
+    if (!slug) return [];
+    return documents.filter(d => d !== doc && String(d.projectSlug || '').trim() === slug).map(d => ({ title: d.title, url: documentUrl(d, projects) }));
+  };
   for (const doc of documents) {
     if (!TEMPLATE_KEYS.includes(doc.templateKey) || !shells[doc.templateKey]) {
-      errors.push(`document ${doc.slug}: unknown template_key "${doc.templateKey}"`);
+      errors.push(`document ${labelOf(doc)}: unknown template_key "${doc.templateKey}"`);
       continue;
     }
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(doc.slug || '')) { errors.push(`document ${doc.slug}: invalid slug`); continue; }
-    if (slugs.has(doc.slug)) { errors.push(`document ${doc.slug}: duplicate slug`); continue; }
-    slugs.add(doc.slug);
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(doc.slug || '')) { errors.push(`document ${labelOf(doc)}: invalid slug`); continue; }
+    const path = documentUrl(doc, projects);
+    if (taken.has(path)) { errors.push(`document ${labelOf(doc)}: its address ${path} is already used by ${taken.get(path)}`); continue; }
+    taken.set(path, `document "${doc.title || doc.slug}"`);
     const out = composeDocument({
       doc, shell: shells[doc.templateKey], partials, settings, siteUrl, siteCss, rules, overrides,
-      foreignClassMap: foreignClassMaps[doc.templateKey] || {}, coverage, authors, projects,
+      foreignClassMap: foreignClassMaps[doc.templateKey] || {}, coverage, authors, projects, siblings: siblingsOf(doc),
     });
     errors.push(...out.errors);
     if (out.errors.length) continue;
-    files[`${doc.slug}.html`] = out.html;
+    files[`${path.replace(/^\//, '')}.html`] = out.html;
     if (out.cssKey) files[out.cssKey] = out.css;
-    hashes[doc.slug] = sha(out.html + (out.css || ''));
+    hashes[doc.id] = sha(out.html + (out.css || ''));
+    paths[doc.id] = path;
     const priority = /^(0(\.\d)?|1(\.0)?)$/.test(doc.sitemapPriority || '') ? doc.sitemapPriority : undefined;
-    pages.push({ template: `${doc.slug}.html`, priority, sitemap: !doc.noindex, lastmodAt: doc.updatedAt });
+    pages.push({ template: `${path.replace(/^\//, '')}.html`, priority, sitemap: !doc.noindex, lastmodAt: doc.updatedAt });
   }
-  return { files, errors, pages, hashes };
+  return { files, errors, pages, hashes, paths };
 }
 
 module.exports = {

@@ -144,6 +144,11 @@ export default function NavEditor({ initial, options, baseline, save, readOnly, 
                 onChange={(e) => setHeader(replace(header, i, { ...item, style: e.target.value || undefined }))}>
                 {STYLE_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
+              <label className="nav-auto">
+                <input type="checkbox" checked={item.auto === 'projects'} disabled={readOnly}
+                  onChange={(e) => setHeader(replace(header, i, { ...item, auto: e.target.checked ? 'projects' : undefined }))} />
+                {' '}List the live projects underneath (becomes a dropdown: this link first, then one entry per top-level project)
+              </label>
             </>
           )}
         </fieldset>

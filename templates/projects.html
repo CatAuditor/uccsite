@@ -31,7 +31,7 @@
   <div class="subpage-hero">
     <div class="section-label">Our Work</div>
     <h1>Active Fights</h1>
-    <p>Every project is a fight for community voice and government accountability in Utah.</p>
+    <p>Every project is a fight for community voice and government accountability in Utah. Each one has its own page with the reports, records and press behind it.</p>
   </div>
 
   <div class="bg-cream">
@@ -60,7 +60,7 @@
     </div>
 
     <div id="project-list">
-    {{#projects}}
+    {{#top_projects}}
     <div class="project-block" id="{{anchor}}" data-name="{{name}}" data-status="{{status_key}}" data-region="{{region_key}}" data-date="{{date_ts}}">
       <div class="project-block-inner">
 
@@ -70,69 +70,22 @@
           <span class="project-region">{{date}}</span>
         </div>
 
-        <h2 class="project-name">{{name}}</h2>
+        <h2 class="project-name"><a class="project-name-link" href="{{url}}">{{name}}</a></h2>
         <p class="project-tagline">{{tagline}}</p>
         <div class="project-byline">By {{#author_url}}<a href="{{author_url}}">{{author}}</a>{{/author_url}}{{^author_url}}{{author}}{{/author_url}}</div>
 
-        <div class="project-cta">
-          <a href="{{cta_url}}" class="btn btn-primary">{{cta_text}}</a>
+        {{#has_children}}<ul class="project-parts">
+          {{#children}}<li><a href="{{url}}">{{name}}</a>{{#status}} <span class="project-file-meta">{{status}}</span>{{/status}}</li>{{/children}}
+        </ul>{{/has_children}}
+
+        <div class="project-cta project-cta-row">
+          <a href="{{url}}" class="btn btn-primary">Open the project</a>
+          {{#cta_url}}<a href="{{cta_url}}" class="btn btn-outline">{{cta_text}}</a>{{/cta_url}}
         </div>
-
-        {{#documents.length}}<div class="project-media-label">Documents</div>
-        <ul class="project-files">
-          {{#documents}}
-          <li class="project-file">
-            <a href="{{url}}">{{title}}</a>{{#category}}<span class="project-file-meta">{{category}}</span>{{/category}}
-            {{#summary}}<div class="project-file-note">{{summary}}</div>{{/summary}}
-          </li>
-          {{/documents}}
-        </ul>{{/documents.length}}
-
-        {{#files.length}}<div class="project-media-label">Files</div>
-        <ul class="project-files">
-          {{#files}}
-          <li class="project-file">
-            <a href="{{url}}" download data-download-ask>{{name}}</a>
-            <span class="project-file-meta">{{#folder}}{{folder}} · {{/folder}}{{size}}</span>
-            {{#note}}<div class="project-file-note">{{note}}</div>{{/note}}
-          </li>
-          {{/files}}
-        </ul>{{/files.length}}
-
-        {{#articles.length}}<div class="project-media-label">In the Press</div>{{/articles.length}}
-        {{#articles}}
-        <a class="news-card" href="{{url}}" target="_blank" rel="noopener">
-          <div class="news-outlet">
-            <span class="outlet-badge {{badge_class}}">{{outlet}}</span>
-          </div>
-          <div class="news-content">
-            <div class="news-meta">{{date}} &nbsp;·&nbsp; {{region}}</div>
-            <h3 class="news-headline" {{#lang}}lang="{{lang}}"{{/lang}}>{{headline}}</h3>
-            <div class="news-excerpt">{{excerpt}}</div>
-            <div class="news-read-more">{{read_more}}</div>
-          </div>
-        </a>
-        {{/articles}}
-
-        {{#videos.length}}<div class="project-media-label mt-40">On Television</div>{{/videos.length}}
-        {{#videos}}
-        <div class="video-card">
-          <div class="video-card-header">
-            <span class="outlet-badge {{badge_class}}">{{outlet}}</span>
-            <div>
-              <div class="video-meta">{{date}} &nbsp;·&nbsp; {{region}}</div>
-              <h3 class="video-headline">{{headline}}</h3>
-            </div>
-          </div>
-          <div class="video-embed">
-            <iframe src="https://www.youtube.com/embed/{{youtube_id}}" title="{{youtube_title}}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-          </div>
-        </div>
-        {{/videos}}
 
       </div>
     </div>
-    {{/projects}}
+    {{/top_projects}}
     </div>
 
   </div>

@@ -38,7 +38,7 @@ async function renderFromDb(dbConfig, log) {
   const outputs = collectStaticFiles(SITE_SRC);
   const siteCss = outputs.get('css/styles.css')?.toString('utf8') || '';
   const rendered = errors.length
-    ? { files: {}, errors: [], documentHashes: {}, documentIds: {} }
+    ? { files: {}, errors: [], documents: [], documentHashes: {}, documentPaths: {}, documentRedirects: [] }
     : renderSiteFromDb({ inputs, siteCss, ...db, siteUrl: SITE_URL });
   const allErrors = [...errors, ...rendered.errors];
   if (allErrors.length) {
@@ -97,7 +97,7 @@ export async function handler(event = {}) {
     await withConnection(dbConfig, (client) => recordDocumentPublish(client, rendered))
       .catch((err) => log(`[publish] WARNING: could not record document live state: ${err.message}`));
     // Redirects follow the pages (never point at a page that isn't live yet).
-    await withConnection(dbConfig, (client) => publishRedirects({ client, kvsArn: REDIRECT_KVS_ARN, region, log: (m) => log(`[publish] ${m}`) }))
+    await withConnection(dbConfig, (client) => publishRedirects({ client, kvsArn: REDIRECT_KVS_ARN, region, documentRedirects: rendered.documentRedirects, log: (m) => log(`[publish] ${m}`) }))
       .catch(async (err) => {
         log(`[publish] WARNING: redirects sync failed: ${err.message}`);
         await store.annotateRun({ runId, note: `pages live; redirects sync failed: ${err.message}` }).catch(() => {});

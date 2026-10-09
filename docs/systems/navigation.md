@@ -42,6 +42,11 @@ packages/render/test/navigation.test.mjs  6 tests (normalize, aria-current, esca
 ```
 
 - **NULL / unreadable → `DEFAULT_NAVIGATION`.** The site can never lose its menus to a bad value.
+- **`auto: 'projects'`** (2026-10-09) on a plain header link: at render it becomes a dropdown — the link
+  itself first ("All projects") then one entry per top-level project (name → `/projects/<slug>`),
+  capped at the children limit. `navFields(settings, page, { projects })`; render paths without projects
+  (the newsletter archive) show the plain link. The default Projects item carries it. The Menus editor
+  offers it as "List the live projects underneath" on a plain link.
 - One dropdown level. `style`: `donate` → `class="nav-donate"`, `cta` → `class="nav-cta"`, top-level items only. On a
   dropdown (since 2026-10-08) the class goes on the toggle `<button>` and the `<li>` gets `nav-dropdown-styled`
   (css/styles.css: white text kept over the toggle's dark-text rules, menu right-aligned, chevron inline on mobile).

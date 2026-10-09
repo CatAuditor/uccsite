@@ -6,6 +6,9 @@ const appOrigin = process.env.APP_ORIGIN || 'http://localhost:3000';
 
 /** @type {import('next').NextConfig} */
 module.exports = {
+  // The builder's client components import the block registry
+  // (packages/doc-blocks/schema.js, an ES module) into the browser bundle.
+  transpilePackages: ['@uccsite/doc-blocks'],
   // Runtime reads of the copied site sources on Amplify (see amplify.yml).
   outputFileTracingIncludes: { '/documents/**': ['./site-src/**/*'], '/styles': ['./site-src/**/*'], '/revisions': ['./site-src/**/*'], '/dev-notes': ['./site-src/docs/**/*'] },
   experimental: {

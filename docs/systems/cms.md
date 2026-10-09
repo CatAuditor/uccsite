@@ -24,13 +24,12 @@ dist/                    ← Cloudflare Pages serves this (.gitignored)
 | Collection | Content file | Fields |
 |---|---|---|
 | Site Settings | `content/settings.json` | org name, contact email, Instagram, footer tagline, copyright (rendered by the footer partial) |
-| Homepage | `content/homepage.json` | hero, mission, about, join, donate, modal, featured press (hand-curated) |
+| Homepage | `content/homepage.json` | hero, mission, about, join, donate, modal (the press cards derive from press.json since 2026-10-09) |
 | Team & Bios | `content/team.json` | members (name, title, photo, bio) |
 | Statements | `content/statements.json` | statements (newest first — the top one is auto-featured on the homepage; optional `url`/`more` override the featured card's link and read-more text) |
 | Policy Positions | `content/issues.json` | issues |
-| News & Press | `content/blog.json` | articles, videos |
-| Projects | `content/projects.json` | projects incl. nested press `articles` and `videos` |
-| Report Media Coverage | `content/coverage.json` | "Read About This in the Media" cards on `alpr.html` and `stratos.html` (`alpr_coverage`, `stratos_coverage`) |
+| Press & coverage | `content/press.json` | every story once (`items`); News & Media, the homepage cards, each project's press and the `{{coverage:<project>}}` strips derive from it (docs/systems/press.md). Replaced `blog.json`, `coverage.json` and `homepage.press` 2026-10-09 |
+| Projects | `content/projects.json` | projects (record fields, `parent_slug`, `summary`) |
 
 Pillars, the issues grid, stats, and nav links are hardcoded in templates/partials.
 

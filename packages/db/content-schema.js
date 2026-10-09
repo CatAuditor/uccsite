@@ -205,6 +205,48 @@ const STATEMENTS = [
   `ALTER TABLE project_files ADD COLUMN IF NOT EXISTS publish_requested_at TIMESTAMPTZ`,
   `ALTER TABLE project_files ADD COLUMN IF NOT EXISTS publish_requested_by TEXT`,
 
+  // ── press (docs/systems/press.md, packages/db/press.js) ───────────────────
+  // ONE row per story; the hubs, coverage strips, News & Media and the
+  // homepage cards derive from it (packages/render/press.js). Replaces
+  // project_articles / project_videos / coverage_entries / blog_articles /
+  // blog_videos / homepage_press, whose tables stay (empty) until a later
+  // cleanup. Flags are TEXT '1' / NULL like every other collection string.
+  `CREATE TABLE IF NOT EXISTS press (
+    id UUID PRIMARY KEY,
+    sort_order INTEGER NOT NULL,
+    type TEXT, outlet TEXT, badge_color TEXT, date TEXT, region TEXT, headline TEXT,
+    excerpt TEXT, url TEXT, read_more TEXT, lang_attr TEXT,
+    youtube_id TEXT, embed_params TEXT, youtube_title TEXT,
+    project_slug TEXT, featured TEXT, hide_from_news TEXT,
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`,
+  `CREATE INDEX ASYNC IF NOT EXISTS idx_press_project ON press(project_slug, sort_order)`,
+
+  // ── project tree (docs/decisions/project-tree-nested-urls.md) ─────────────
+  // parent_slug nests a project under another (depth 2; validated by
+  // packages/render/projects.js validateProjectTree). summary: markdown intro
+  // for the project's hub page. Since 2026-10-09 projects keep their ids
+  // across saves (replaceProjects upserts), so the slug links below are
+  // rename-safe (the save cascades a rename).
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS parent_slug TEXT`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS summary TEXT`,
+  // Internal project notes (admin only, never rendered): markdown typed in
+  // the admin or converted from an uploaded .md/.docx. folder matches the
+  // project_files folder convention so notes and files share one tree.
+  `CREATE TABLE IF NOT EXISTS project_notes (
+    id UUID PRIMARY KEY,
+    project_slug TEXT NOT NULL,
+    folder TEXT NOT NULL DEFAULT '',
+    title TEXT NOT NULL,
+    body_md TEXT NOT NULL DEFAULT '',
+    source_filename TEXT,
+    pinned INTEGER NOT NULL DEFAULT 0,
+    author TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`,
+  `CREATE INDEX ASYNC IF NOT EXISTS idx_project_notes_project ON project_notes(project_slug, folder, updated_at)`,
+
   // ── redirects (spec §9; packages/db/redirects.js) ─────────────────────────
   ...REDIRECTS_DDL,
 
@@ -221,7 +263,7 @@ const STATEMENTS = [
   // file). SEO fields are structured (§12) — the head is generated.
   `CREATE TABLE IF NOT EXISTS documents (
     id UUID PRIMARY KEY,
-    slug TEXT UNIQUE NOT NULL,
+    slug TEXT NOT NULL,
     title TEXT NOT NULL,
     category TEXT,
     template_key TEXT NOT NULL DEFAULT 'report',
@@ -258,11 +300,31 @@ const STATEMENTS = [
   // Author (team member's full name) → JSON-LD Person with the author page's
   // @id + listing on /team/<slug> (docs/systems/author-pages.md). Existing clusters: ADD COLUMN.
   `ALTER TABLE documents ADD COLUMN IF NOT EXISTS author TEXT`,
+  // Builder blocks (docs/systems/document-builder.md): the editing model as
+  // JSON; body_html_raw is generated from it on save. NULL = a legacy
+  // raw-HTML document edited in the HTML box. Existing clusters: ADD COLUMN.
+  `ALTER TABLE documents ADD COLUMN IF NOT EXISTS body_blocks TEXT`,
   // The project a document sits under (projects.slug — a soft link like
   // project_files.project_slug: projects are re-inserted with new ids on every
   // save, so no FK). NULL = none, unless a project's CTA points at the page
   // (packages/render/projects.js projectOf). docs/systems/projects.md "Nesting".
   `ALTER TABLE documents ADD COLUMN IF NOT EXISTS project_slug TEXT`,
+  // Nested URLs (docs/decisions/project-tree-nested-urls.md): a document
+  // under a project publishes at /projects/<path>/<slug>. short_path: an
+  // optional one-segment alias (e.g. /alpr) published as a 301 to it.
+  // live_path: the path the last successful publish wrote, so the next
+  // publish can 301 from it when the URL changes (and an archived document's
+  // 410 lands on its last address). Both ride the KeyValueStore sync.
+  `ALTER TABLE documents ADD COLUMN IF NOT EXISTS short_path TEXT`,
+  `ALTER TABLE documents ADD COLUMN IF NOT EXISTS live_path TEXT`,
+  // Slugs are unique PER PROJECT (two projects may each have a "report"):
+  // the table-level UNIQUE on slug goes, project_slug stores '' (never NULL —
+  // NULLs are distinct in a unique index) for "no project", and the unique
+  // index is on the pair. documents.js documentToParams keeps '' for this
+  // column; scripts/migrate-project-tree.mjs backfills existing NULLs.
+  `ALTER TABLE documents DROP CONSTRAINT IF EXISTS documents_slug_key`,
+  `ALTER TABLE documents ALTER COLUMN project_slug SET DEFAULT ''`,
+  `CREATE UNIQUE INDEX ASYNC IF NOT EXISTS idx_documents_address ON documents(project_slug, slug)`,
   // Rules match structure (selector subset, §6.2); scope 'template' rules
   // apply to every document with that template_key, 'page' rules to one.
   `CREATE TABLE IF NOT EXISTS style_rules (

@@ -61,6 +61,7 @@ const FIELD_MAPS = {
     name: 'name', slug: 'slug', date: 'date', author: 'author', status: 'status',
     status_color: 'status_color', region: 'region', tagline: 'tagline',
     cta_url: 'cta_url', cta_text: 'cta_text',
+    parent_slug: 'parent_slug', summary: 'summary', // the tree + hub intro (docs/decisions/project-tree-nested-urls.md)
   },
   project_articles: {
     outlet: 'outlet', badge_color: 'badge_color', date: 'date', region: 'region',
@@ -75,6 +76,11 @@ const FIELD_MAPS = {
     outlet: 'outlet', badge_color: 'badge_color', date: 'date', headline: 'headline',
     url: 'url', read_more: 'read_more', lang_attr: 'lang_attr',
   },
+  // THE press table (docs/systems/press.md, packages/db/press.js). The six
+  // tables above it (homepage_press, blog_*, project_*, coverage_entries) are
+  // legacy: kept in FIELD_MAPS so the one-time unification and an old export
+  // can still be read; no longer loaded, saved or exported.
+  press: Object.fromEntries(require('./press').PRESS_FIELDS.map(f => [f, f])),
 };
 
 // homepage singleton: [column, jsonKey] (join is a SQL keyword → join_section)
@@ -85,15 +91,18 @@ const HOMEPAGE_GROUP_COLS = [
 ];
 
 // content name → the tables whose rows/updated_at constitute that collection.
+// blog / coverage are DERIVED from press at render (packages/render/press.js);
+// the PAGES entries still name them, so their lastmod follows the press table.
 const COLLECTION_TABLES = {
   settings: ['site_settings'],
-  homepage: ['homepage', 'homepage_press'],
+  homepage: ['homepage', 'press'],
   team: ['team_members'],
   statements: ['statements'],
   issues: ['issues'],
-  blog: ['blog_articles', 'blog_videos'],
-  projects: ['projects', 'project_articles', 'project_videos'],
-  coverage: ['coverage_entries'],
+  blog: ['press'],
+  projects: ['projects', 'press'],
+  coverage: ['press'],
+  press: ['press'],
 };
 const CONTENT_TABLES = [...new Set(Object.values(COLLECTION_TABLES).flat())];
 
@@ -133,8 +142,7 @@ async function loadHomepage(client) {
   for (const [col, key] of HOMEPAGE_GROUP_COLS) {
     if (hp[col] !== null && hp[col] !== undefined) homepage[key] = JSON.parse(hp[col]);
   }
-  homepage.press = await list(client, 'homepage_press');
-  return homepage;
+  return homepage; // press cards derive from the press table (packages/render/press.js)
 }
 
 // loadContent(client) → the renderer's full content map. Project children are
@@ -143,11 +151,16 @@ async function loadHomepage(client) {
 // loadProjects/replaceProjects AND is asserted against the admin's
 // collection spec (apps/admin/lib/collections.js) so a rename in one place
 // cannot silently wipe the other's rows.
-const PROJECT_CHILDREN = { articles: 'project_articles', videos: 'project_videos' };
+// Since 2026-10-09 a project has NO child lists: its press lives in the press
+// table keyed by project_slug (docs/systems/press.md). Kept as the (empty)
+// single source so the save path and the admin's drift guard still agree.
+const PROJECT_CHILDREN = {};
 
-// loadProjects(client) → projects with nested articles/videos (the projects.json shape).
-async function loadProjects(client) {
-
+// loadProjects(client, { ids }) → projects with nested articles/videos (the
+// projects.json shape). ids: true adds each project's `id` (the admin's
+// editor carries it back so replaceProjects can tell a rename from a new
+// project); the renderer and the export never see ids.
+async function loadProjects(client, { ids = false } = {}) {
   const projectRows = (await client.query(`SELECT * FROM projects ORDER BY sort_order`)).rows;
   const groupByProject = (rows, table) => {
     const map = new Map();
@@ -162,6 +175,7 @@ async function loadProjects(client) {
     byField[field] = groupByProject((await client.query(`SELECT * FROM ${table} ORDER BY project_id, sort_order`)).rows, table);
   }
   return projectRows.map(row => ({
+    ...(ids ? { id: row.id } : {}),
     ...rowToObject('projects', row),
     ...Object.fromEntries(Object.keys(PROJECT_CHILDREN).map(field => [field, byField[field].get(row.id) || []])),
   }));
@@ -178,15 +192,8 @@ async function loadContent(client) {
     team: { members: await list(client, 'team_members') },
     statements: { statements: await list(client, 'statements') },
     issues: { issues: await list(client, 'issues') },
-    blog: {
-      articles: await list(client, 'blog_articles'),
-      videos: await list(client, 'blog_videos'),
-    },
     projects: { projects },
-    coverage: {
-      alpr_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['alpr']),
-      stratos_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['stratos']),
-    },
+    press: { items: await list(client, 'press') },
   };
 }
 
@@ -298,20 +305,88 @@ async function saveHomepage(client, homepage, { tx = true } = {}) {
      VALUES ($1, ${HOMEPAGE_GROUP_COLS.map((_, i) => `$${i + 2}`).join(', ')})
      ON CONFLICT (id) DO UPDATE SET ${HOMEPAGE_GROUP_COLS.map(([c], i) => `${c} = $${i + 2}`).join(', ')}, updated_at = now()`,
     params);
-  await replaceCollectionRows(client, 'homepage_press', homepage.press || [], { tx });
+  void tx; // press cards are no longer stored with the homepage (press table)
 }
 
-// replaceProjects(client, projects, { tx }) — projects + children in ONE
-// transaction (a 40001 abort or a crash between the parent wipe and the
+// Tables whose rows point at a project by slug (soft links). A rename
+// cascades to each inside the save; a delete is refused while any row still
+// points at the project (docs/decisions/project-tree-nested-urls.md).
+const PROJECT_SLUG_REFS = [
+  ['documents', 'project_slug', 'document', 'documents'],
+  ['project_files', 'project_slug', 'file', 'files'],
+  ['project_notes', 'project_slug', 'note', 'notes'],
+  ['press', 'project_slug', 'press story', 'press stories'], // docs/systems/press.md
+];
+
+async function assertProjectUnreferenced(client, slug) {
+  const parts = [];
+  for (const [table, col, one, many] of PROJECT_SLUG_REFS) {
+    const n = Number((await client.query(`SELECT count(*)::int AS n FROM ${table} WHERE ${col} = $1`, [slug])).rows[0].n);
+    if (n) parts.push(`${n} ${n === 1 ? one : many}`);
+  }
+  if (parts.length) throw new Error(`Project "${slug}" still has ${parts.join(', ')} under it. Move or delete them first, then remove the project.`);
+}
+
+function updateRowSql(table, extra) {
+  const cols = [...Object.keys(extra), ...Object.keys(FIELD_MAPS[table])];
+  return `UPDATE ${table} SET ${cols.map((c, i) => `${c} = $${i + 2}`).join(', ')}, updated_at = now() WHERE id = $1`;
+}
+
+// replaceProjects(client, projects, { tx }) — the whole project list in ONE
+// transaction (a 40001 abort or a crash between the parent write and the
 // child inserts must not publish empty projects). tx: false when the caller
 // owns the transaction (the admin's projects editor).
+//
+// Projects KEEP THEIR IDS: each incoming project matches an existing row by
+// `id` (the admin editor carries ids; revisions snapshots too), else by slug
+// (export restore, migration); matched rows are UPDATEd, unmatched ones
+// INSERTed, rows nobody claimed are deleted — refused while documents, files
+// or notes still point at them. A slug change is a rename: it cascades to
+// every reference (and to the sub-projects' parent_slug in this payload)
+// before the tree is validated. Child lists (articles, videos) are leaf
+// data and are still wiped and re-inserted.
 async function replaceProjects(client, projects, { tx = true } = {}) {
+  const { validateProjectTree } = require('@uccsite/render/projects');
   const body = async () => {
+    const slug = (p) => String(p.slug || '').trim();
+    const existing = (await client.query('SELECT id, slug FROM projects')).rows;
+    const byId = new Map(existing.map(r => [r.id, r]));
+    const bySlug = new Map(existing.map(r => [r.slug, r]));
+    const claimed = new Set();
+    const matched = projects.map(p => {
+      const row = (p.id && byId.get(p.id)) || bySlug.get(slug(p)) || null;
+      if (row) {
+        if (claimed.has(row.id)) throw new Error(`Two projects would save onto the same record ("${row.slug}")`);
+        claimed.add(row.id);
+      }
+      return { p: { ...p }, row };
+    });
+    // Renames: old slug → new slug, applied to the payload's parent links too
+    // (an editor who renames a parent did not retype it on each child).
+    const renames = new Map(matched.filter(m => m.row && m.row.slug !== slug(m.p)).map(m => [m.row.slug, slug(m.p)]));
+    for (const m of matched) {
+      const parent = String(m.p.parent_slug || '').trim();
+      if (parent && renames.has(parent)) m.p.parent_slug = renames.get(parent);
+      if (!parent) delete m.p.parent_slug;
+    }
+    const errors = validateProjectTree(matched.map(m => m.p));
+    if (errors.length) throw new Error(errors.join('. '));
+
+    for (const row of existing) if (!claimed.has(row.id)) await assertProjectUnreferenced(client, row.slug);
     for (const table of Object.values(PROJECT_CHILDREN)) await client.query(`DELETE FROM ${table}`);
-    await client.query('DELETE FROM projects');
-    for (let i = 0; i < projects.length; i++) {
-      const p = projects[i];
-      const projectId = await insertRow(client, 'projects', p, { sort_order: i });
+    for (const row of existing) if (!claimed.has(row.id)) await client.query('DELETE FROM projects WHERE id = $1', [row.id]);
+    for (const [from, to] of renames) {
+      for (const [table, col] of PROJECT_SLUG_REFS) await client.query(`UPDATE ${table} SET ${col} = $2 WHERE ${col} = $1`, [from, to]);
+    }
+    for (let i = 0; i < matched.length; i++) {
+      const { p, row } = matched[i];
+      let projectId;
+      if (row) {
+        projectId = row.id;
+        await client.query(updateRowSql('projects', { sort_order: i }), [row.id, i, ...objectToParams('projects', p)]);
+      } else {
+        projectId = await insertRow(client, 'projects', p, { sort_order: i });
+      }
       for (const [field, table] of Object.entries(PROJECT_CHILDREN)) {
         const children = Array.isArray(p[field]) ? p[field] : [];
         for (let j = 0; j < children.length; j++) {
@@ -327,7 +402,7 @@ async function replaceProjects(client, projects, { tx = true } = {}) {
   });
 }
 
-// saveContent(client, repo) — the inverse of loadContent: load the eight
+// saveContent(client, repo) — the inverse of loadContent: load the seven
 // content/*.json shapes into the tables (singletons upsert, lists
 // wipe-and-load). THE write path for the initial migration and for
 // restore-from-export (§14.4) — one implementation, so a restore can never
@@ -338,13 +413,12 @@ async function saveContent(client, repo) {
   await replaceCollectionRows(client, 'team_members', repo.team.members);
   await replaceCollectionRows(client, 'statements', repo.statements.statements);
   await replaceCollectionRows(client, 'issues', repo.issues.issues);
-  await replaceCollectionRows(client, 'blog_articles', repo.blog.articles);
-  await replaceCollectionRows(client, 'blog_videos', repo.blog.videos);
-
   await replaceProjects(client, repo.projects.projects);
-
-  await replaceCollectionRows(client, 'coverage_entries', repo.coverage.alpr_coverage, { where: ['report_key', 'alpr'] });
-  await replaceCollectionRows(client, 'coverage_entries', repo.coverage.stratos_coverage, { where: ['report_key', 'stratos'] });
+  // press.json (schema 3) — or, for an older export, the four legacy sources
+  // unified the same way the one-time migration did (packages/db/press.js).
+  const press = repo.press?.items
+    || require('./press').unifyPress({ projects: repo.projects.projects, blog: repo.blog, coverage: repo.coverage, homepagePress: repo.homepage?.press }).items;
+  await replaceCollectionRows(client, 'press', press);
 }
 
 module.exports = {

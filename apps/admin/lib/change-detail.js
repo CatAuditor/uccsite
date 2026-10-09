@@ -9,7 +9,7 @@
 import { loadSettings, loadHomepage, list, loadProjects } from '@uccsite/db/content';
 import { getDocument, listOverrides } from '@uccsite/db/documents';
 import { DEFAULT_NAVIGATION } from '@uccsite/render/navigation';
-import { COLLECTIONS, HOMEPAGE_GROUPS, SETTINGS_FIELDS, APPEAL_SETTINGS_FIELDS, HOMEPAGE_PRESS_FIELDS } from './collections';
+import { COLLECTIONS, HOMEPAGE_GROUPS, SETTINGS_FIELDS, APPEAL_SETTINGS_FIELDS } from './collections';
 import { diffFields, diffList, diffNavigation, diffDocument } from './change-detail-core.mjs';
 
 const ADMIN_PAGE = {
@@ -75,9 +75,7 @@ async function describe(client, entityType, entityId, before, saves) {
       const name = g.page === 'petition' ? 'Petition' : g.page === 'appeals' ? 'Donation appeals' : 'Homepage';
       out.push({ name, lines: [{ kind: 'changed', text: g.title, fields }] });
     }
-    const press = diffList(before.press || [], after.press || [], labelMap(HOMEPAGE_PRESS_FIELDS))
-      .map((l) => ({ ...l, text: `Press strip — ${l.text}` }));
-    if (press.length) out.push({ name: 'Homepage', lines: press });
+    // The homepage press strip moved to the press collection (docs/systems/press.md); its diffs show as press.save.
     return out;
   }
   if (entityType === 'settings') {

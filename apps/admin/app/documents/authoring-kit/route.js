@@ -17,7 +17,7 @@ export async function GET() {
   if (!session) return new Response('Forbidden', { status: 403 });
   const { rules, coverageKeys } = await withDb(async (client) => ({
     rules: await listStyleRules(client),
-    coverageKeys: (await client.query('SELECT DISTINCT report_key FROM coverage_entries ORDER BY report_key')).rows.map(r => r.report_key),
+    coverageKeys: (await client.query(`SELECT slug FROM projects WHERE slug IS NOT NULL AND slug <> '' ORDER BY sort_order`)).rows.map(r => r.slug), // {{coverage:<project slug>}}
   }));
   const sources = await loadSiteSources();
   const kit = styleKitFor(sources.siteCss, '');

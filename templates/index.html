@@ -180,15 +180,15 @@
       <h2 class="section-title" data-animate>Active Fights</h2>
       <p class="section-sub" data-animate>These are the campaigns we're running right now — organized, documented, and pushing for accountability.</p>
       <div class="fights-grid">
-        {{#projects}}
+        {{#top_projects}}
         <div class="fight-card">
           <span class="fight-status {{status_class}}">{{status}}</span>
           <div class="fight-region">{{region}}</div>
-          <h3 class="fight-name">{{name}}</h3>
+          <h3 class="fight-name"><a class="fight-name-link" href="{{url}}">{{name}}</a></h3>
           <p class="fight-tagline">{{tagline}}</p>
-          <a href="{{cta_url}}" class="fight-link">{{cta_text}} →</a>
+          <a href="{{#cta_url}}{{cta_url}}{{/cta_url}}{{^cta_url}}{{url}}{{/cta_url}}" class="fight-link">{{#cta_text}}{{cta_text}}{{/cta_text}}{{^cta_text}}Open the project{{/cta_text}} →</a>
         </div>
-        {{/projects}}
+        {{/top_projects}}
       </div>
       <div class="fights-all-link">
         <a href="/projects.html" class="btn btn-outline btn-sm">All Projects →</a>

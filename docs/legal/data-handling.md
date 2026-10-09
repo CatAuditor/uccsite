@@ -22,6 +22,7 @@ user data, or a third-party integration changes (CLAUDE.md rule).
 | `publish_requests.requested_by` / `reviewed_by` (+ notes) | **admin** emails, free-text review notes | Publish & Status | indefinite (who approved what) |
 | `media_assets.uploaded_by` | **admin** email | media library uploads | until the asset is deleted |
 | `project_files.uploaded_by`, `published_by` | **admin** email | admin /files uploads and publishes | until the file is deleted |
+| `project_notes` | **admin** email (`author`) and free-text internal notes (typed or converted from uploaded .md/.docx) that may name third parties — never published, never exported with the content | admin project workspace (/projects/<slug> → Notes) | until deleted in the admin (snapshot kept in `revisions`, last 20 per note) |
 | `project_files` (the files themselves, in the media bucket) | whatever staff upload — may include records-request responses and other documents with third-party personal data; private to signed-in admins unless an editor publishes the file | admin /files | until deleted (+90 days noncurrent versions) |
 | `team_members.email` | **staff** email (links a bio to an admin account; never published, exported to the private content repo) | Team editor | until removed |
 | `team_members.links`, `slug` | **staff** public profile URLs (LinkedIn, X, personal site) — **published** on `/team/<slug>` and in Person `sameAs` structured data; entered by the member or an editor | Team editor | until removed |

@@ -22,9 +22,11 @@ function Removed({ removed }) {
   );
 }
 
-// Per-page classes of the migrated reports: the usual sign that a writer's
-// tool imitated a live page instead of using the authoring kit's frame.
-const LIVE_PAGE_CLASSES = /\b(paper-body|paper-inner|release-meta|release-badge|release-date|release-author|paper-toc|ask-box|sources-list|related-cta|hero-ctas|hero-secondary|btn-file|report-body|report-section|report-callout|report-table|briefing-body|briefing-inner|acknowledgment|stats-grid|stat-card)\b/;
+// Private per-page wrappers of the migrated reports: the usual sign that a
+// writer's tool imitated a live page. (The shared pieces, release-meta,
+// paper-toc, stats-grid and the rest, are site classes since 2026-10-08:
+// css/styles.css "Document blocks".)
+const LIVE_PAGE_CLASSES = /\b(paper-body|paper-inner|ask-box|report-body|report-section|report-callout|report-table|briefing-body|briefing-inner|acknowledgment|theory-body|theory-section|theory-stat|privacy-body)\b/;
 
 export default function HtmlEditor({ bodyHtmlRaw, pageCss, readOnly, report, orphans }) {
   const [html, setHtml] = useState(bodyHtmlRaw || '');

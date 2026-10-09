@@ -95,7 +95,7 @@ async function main() {
   if (rendered && dbConfig) {
     await withConnection(dbConfig, (client) => recordDocumentPublish(client, rendered));
     // Pages are live at this point; a redirect-sync failure is reported, not fatal.
-    await withConnection(dbConfig, (client) => publishRedirects({ client, kvsArn: stack.RedirectStoreArn, region, log: (m) => console.log(`[publish] ${m}`) }))
+    await withConnection(dbConfig, (client) => publishRedirects({ client, kvsArn: stack.RedirectStoreArn, region, documentRedirects: rendered.documentRedirects, log: (m) => console.log(`[publish] ${m}`) }))
       .catch((err) => console.error(`[publish] WARNING: redirects sync failed: ${err.message}`));
   }
   console.log(JSON.stringify({ status: result.status, changed: result.changed.length, removed: result.removed.length, invalidationId: result.invalidationId }));

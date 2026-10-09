@@ -115,12 +115,21 @@ for prod:** `node scripts/migrate-redirects.mjs --env prod` once, so the
 seeded `/auth` key is in the table; the admin's Redirects page is the source
 of truth afterwards.
 
+**Document redirects (2026-10-09):** the render (`renderSiteFromDb`) returns
+`documentRedirects` — for every published document its `short_path` and,
+when its address changed, its previous `live_path`, each → the current
+address as a 301 (never a path this render writes). They are computed
+BEFORE `recordDocumentPublish` overwrites `live_path`, and the handler /
+CLI pass them to `publishRedirects`. Logged as `redirects: N document
+redirect(s) → 301: …`. Docs: docs/systems/projects.md "Addresses".
+
 **Archived documents (2026-10-06):** the same sync also writes one
-`/<slug>` → `{"status":410}` entry per `documents.status='archived'` row
-(`archivedSlugs` + `kvsEntries(rows, { goneSlugs })`); the viewer-request
-function answers those with 410 Gone and a small inline body. An active
-redirect from the same path takes precedence. The empty-table guard above
-skips these too (logged). Details: docs/systems/documents.md "Archiving".
+`{"status":410}` entry per `documents.status='archived'` row at its last
+live path (and its short path) — `archivedPaths` + `kvsEntries(rows,
+{ documentRedirects, gonePaths })`; the viewer-request function answers
+those with 410 Gone and a small inline body. Precedence: table rows, then
+document redirects, then 410s. The empty-table guard above skips these too
+(logged). Details: docs/systems/documents.md "Archiving".
 
 ## Publish mutex (review fix 2026-09-13)
 

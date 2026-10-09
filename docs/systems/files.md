@@ -37,7 +37,8 @@ js/main.js                      createModal() shared focus trap; download modal 
 css/pages/projects.css          .project-files / .project-file* styles
 apps/admin/app/appeals/page.js  Donation appeals editor (docs/decisions/
                                 donation-appeals-page.md)
-apps/admin/lib/files.js         listProjects, listFiles (+ presigned GET per row),
+apps/admin/lib/files.js         listProjects (tree order, indented labels, hub urls —
+                                projects.md), listFiles (+ presigned GET per row),
                                 createUpload (presign → pending row), confirmUpload,
                                 requestFilePublish / cancelFilePublish (record the ask),
                                 promoteRequestedFiles (the S3 copy, called by

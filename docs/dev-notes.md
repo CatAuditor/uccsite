@@ -6,6 +6,185 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-09 — Press coverage lives in one place now
+
+Until today the same news story had to be entered up to four times: once on
+News & Media, once in the project's press list, once in the report's
+coverage strip and once more for the homepage cards. Outlet names and badge
+colours drifted between the copies, and a new project could not get a
+coverage strip without a developer.
+
+**What changed**
+
+- There is one **Press & coverage** page (under Site Main). Every story or TV
+  segment about the Compact is one entry there. Paste a link under **Add from
+  link** and the card fills itself, as before.
+- Where a story appears is decided by three fields on the entry: its
+  **Project** (puts it on that project's page and in the coverage strip inside
+  that project's reports), **Homepage card** (the first three ticked, in list
+  order, are the homepage's "Recent Coverage"), and **Hide from News & Media**
+  (keep it on the project page only). Everything else is automatic.
+- The old places are gone: News & Media and Report Coverage no longer have
+  their own editors, the Homepage editor has no press strip, and the project
+  list editor has no nested press lists. The existing 32 entries were merged
+  into 14 stories, checked by hand, and published on the test site and the
+  real site; nothing on the pages changed except that the Governor Cox
+  interview video is now also listed under the license-plate investigation.
+- Each project's workspace shows its press under *Folders & files*.
+
+**What editors do differently**
+
+- Add a story once, on Press & coverage, and pick its project. Tick Homepage
+  card to put it on the homepage. That is all.
+
+**Left to do**
+
+- Nothing for editors. A later cleanup drops the six empty old tables.
+
+---
+
+## 2026-10-09 — Projects get their own pages, documents nest under them, and each project has a workspace
+
+Until now "Projects" was one long page with every project stacked on it, and
+a report such as the license-plate investigation lived at its own address
+with nothing tying it back to the project except a line at the very bottom.
+That changes in three ways. It is **live on the real site** (published
+2026-10-09, after a run on the test site).
+
+**On the site**
+
+- Every project has its own page: `/projects/alpr`, `/projects/stratos`.
+  The page shows the status, the lead, the main button, an intro you can
+  write, every document that belongs to the project grouped by category,
+  the published files, the press coverage and the TV segments. A project can
+  also sit inside another project (two levels), and the parent's page lists
+  its parts.
+- Documents that belong to a project now live under it:
+  `/projects/alpr/weber-county`, `/projects/alpr/report`. **Every old
+  address keeps working**: `/alpr`, `/weber-county`, `/stratos`,
+  `/how-did-this-happen` and `/license-plate-has-a-price` send readers (and
+  search engines, properly) to the new page. The short address is kept on
+  purpose for print and broadcast; it is a field on the document called
+  **Short link**.
+- The Weber County complaint is no longer a project of its own: it is one
+  document of the license-plate investigation, which is what it is.
+- The Projects menu at the top of the site lists the live projects. The
+  Projects page is now a set of cards; the homepage cards link to the
+  project pages. Every document ends with "Projects › project › this page"
+  and "More in this project".
+
+**In the admin**
+
+- **Projects** opens with a table of the projects and their counts. Click a
+  project to open its **workspace**: *Overview* (its record; **Part of**
+  makes it a sub-project), *Folders & files* (its documents, then folders
+  holding files and notes, with the uploader right there), *Notes*, and
+  *Activity* (who changed what under this project).
+- **Notes** are new: internal working notes for the people on a project.
+  Type Markdown or upload a `.md` or `.docx` straight from Word, Google Docs
+  or Claude; put it in a folder; pin the important ones. Nobody outside the
+  admin can ever see a note. A note can become a draft document with one
+  click ("Start a document from this note").
+- **All documents** shows each document's address, and you can tick several
+  and **Move** them to a project at once. The document editor's **Project**
+  field now also sets the address; moving a document redirects the old
+  address at the next publish, so links never break.
+- Renaming a project keeps every document, file and note attached. A project
+  that still has things under it cannot be deleted by accident.
+
+**What is left**
+
+- The press articles and TV segments are still edited in the Projects list
+  editor, not in the workspace; combining them with Report Coverage and News
+  & Media into one place is the next step once this has settled.
+- Write a *Project page intro* for each project (Overview tab); the pages
+  publish without one until you do.
+
+---
+
+## 2026-10-08 — Documents: a block builder is replacing the paste-HTML editor (step 1 of several)
+
+Uploading a document was meant to be easy and was not: the file became one
+big box of HTML, images had to be re-inserted by hand, and the styling only
+showed up after saving. The editor is being rebuilt so a document is a set
+of **blocks** (text, a quotation, a callout box, key figures, an image, a
+table, file downloads, and so on) under a fixed header (eyebrow, title,
+summary, date and author, contents list), each block with its own styling
+choices and a live preview that updates while you type.
+
+This first step is the engine underneath, not yet the screen: the model of
+what a document is made of, the code that writes the page from it, and the
+code that reads an uploaded or existing page into blocks. Every one of the
+eight existing long-form pages reads into blocks and comes back out with
+exactly the same words, so the new system will be able to host them.
+
+The second step moves the styling of those pieces (the byline strip, the
+contents box, the scope and finding boxes, stat cards, pull quotes, figures,
+tables, download buttons, source cards, the collapsible sections and the
+part navigation) into the site's one shared stylesheet. Until now each of
+them lived only inside the page that first used it, which is why a new
+document could not use any of them and the license-plate statement
+published as plain text. The existing pages are not affected: they keep
+their own copies until they are moved over.
+
+The third step is the screen itself, on the test site first:
+
+- **New document** now starts from a file. Pick a .docx, .md or .html, leave
+  the title and slug blank if you like, and the draft opens in the builder
+  with the eyebrow, title, summary, byline and sections already filled in.
+  Pictures inside a Word file come in as Image blocks waiting for an upload.
+- **The builder** replaces the HTML box: a Page header (hero, byline,
+  contents list), then sections, each with its blocks. Every block has its
+  own fields, a style choice (for instance which kind of box a callout is)
+  and a small "Style" button for extra site classes. Thin "+ Add a block"
+  bars sit between blocks; "+ Add a section here" between sections.
+- **Add a block** opens a gallery: every block type drawn exactly as it will
+  look on the site. Hover a type to see it, click to add it.
+- **Live preview** on the right redraws a moment after each change, before
+  anything is saved. Click a piece in the preview to jump to it; problems
+  that would stop publishing (a missing picture description, for instance)
+  show under the preview as you work.
+- **Existing documents** keep their HTML box and gain a "Convert to blocks"
+  button. Converting keeps every word and saves a revision first, so it can
+  be undone from Revisions. The eight long-form pages will be converted and
+  checked against their current look in the next step; do not convert them
+  by hand yet.
+
+The fourth step moved the eight existing long-form pages onto the builder,
+on the test site. Each one was read into blocks, written back out, and the
+old and new pages were photographed in a browser and compared pixel by
+pixel: all eight match exactly (the comparison is kept in
+`docs/migration/blocks-conversion.md`). Each conversion saved a revision
+first. Those pages keep their own styling; a converted page shows "This
+page's own style" on boxes and tables that came from it, and choosing a
+site style replaces it.
+
+The authoring kit (the file handed to Claude before writing) now explains
+the three ways to hand back a piece and the small markers a writing tool
+can put in a Markdown file so a quotation, a scope box, key figures or a
+table arrive as the right block, already styled. Its page-fields block asks
+for the eyebrow, author title and date; pictures may be in the draft; the
+hand-over checklist matches the builder. Download it again to get the
+current version. An uploaded HTML fragment written on the kit's older
+section-container-prose frame now takes the site's standard document frame
+on upload (only converted pages keep their own). The editing guide's
+Documents section describes the builder.
+
+Layout, from Jarom's notes: the Document and SEO boxes sit centred at a
+reading width; the builder's editor and preview each take half of the
+screen on desktop and stack (preview below) on a narrow one.
+
+The statement "Your license plate has a price" was never styled like the
+reports, so it is the one page meant to change: it was copied from
+production to the test site and rebuilt on the site's standard document
+frame (badge, date and author strip, contents box, the reports' headings)
+with its words untouched. Review it in the test admin's builder; the same
+rebuild runs on production as part of the conversion there.
+
+Live on the public site since 2026-10-09 (published on Jarom's say-so): the
+new styling, the eight pages (unchanged in look) and the restyled
+license-plate statement. Every document in the production admin now opens
+in the builder. Nothing left for a person on this one.
 ## 2026-10-08 — Officials lookup joins the mailing list
 
 The officials lookup (lookup.utahciviccompact.org) has a "Send me the Utah

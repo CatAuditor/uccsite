@@ -7,6 +7,7 @@
 const { render, mdToHtml } = require('./engine');
 const { navFields } = require('./navigation');
 const { deriveWriting } = require('./writing');
+const { derivePress } = require('./press');
 
 const SITE_URL = 'https://utahciviccompact.org';
 
@@ -26,6 +27,10 @@ const PAGES = [
   { template: 'issues.html',   content: ['settings', 'issues'] },
   { template: 'privacy-report.html', content: ['settings'] },
   { template: 'projects.html', content: ['settings', 'projects'] },
+  // Project hub pages (docs/decisions/project-tree-nested-urls.md): ONE
+  // template rendered once per project to projects/<path>.html, where path is
+  // 'alpr' or 'alpr/<sub>' (deriveProjectTree); `pathKey` names the field.
+  { template: 'project.html', content: ['projects', 'settings'], each: 'projects', dir: 'projects', pathKey: 'path', priority: '0.8' },
   { template: 'stratos.html',      content: ['settings', 'coverage'] },
   { template: 'weber-county.html', content: ['settings'] },
   { template: 'alpr.html',         content: ['settings', 'coverage'], priority: '0.9' },
@@ -158,7 +163,7 @@ function withColorClasses(content) {
 }
 
 const { parseFreeDate } = require('./dates');
-const { deriveProjectDocuments } = require('./projects');
+const { deriveProjectTree } = require('./projects');
 
 // deriveProjectFilters(content) → content with project_statuses /
 // project_regions (distinct, in first-seen order) and per-project date_ts
@@ -267,8 +272,11 @@ function deriveTeam(content, siteUrl = SITE_URL) {
       seen.add(url);
       works.push({ ...w, url });
     };
-    for (const p of projects.filter(byAuthor)) add({ title: p.name, date: p.date || '', url: p.cta_url, kind: 'Investigation' });
-    for (const d of documents.filter(byAuthor)) add({ title: d.title, date: d.date || '', url: `/${d.slug}`, kind: d.category || 'Report' });
+    // A project links to its hub page (deriveProjectTree `url`; the git build
+    // without the tree step falls back to the button), a document to its
+    // nested URL (documents_index `url`, aws/publish/render-db.js).
+    for (const p of projects.filter(byAuthor)) add({ title: p.name, date: p.date || '', url: p.url || p.cta_url, kind: 'Investigation' });
+    for (const d of documents.filter(byAuthor)) add({ title: d.title, date: d.date || '', url: d.url || `/${d.slug}`, kind: d.category || 'Report' });
     for (const s of statements.filter(byAuthor)) add({ title: s.title, date: s.date || '', url: s.url || `/statements#${s.slug}`, kind: 'Statement' });
     for (const i of issues.filter(byAuthor)) add({ title: i.title, date: '', url: `/issues#${i.slug}`, kind: 'Policy position' });
 
@@ -311,7 +319,9 @@ function deriveTeam(content, siteUrl = SITE_URL) {
     ...content,
     team: { ...content.team, members: derivedMembers, org_members_json, org_sameas_json },
     statements: content.statements ? { ...content.statements, statements: linkAuthors(statements) } : content.statements,
-    projects: content.projects ? { ...content.projects, projects: linkAuthors(projects) } : content.projects,
+    projects: content.projects
+      ? (() => { const linked = linkAuthors(projects); return { ...content.projects, projects: linked, ...(content.projects.top_projects ? { top_projects: linked.filter(p => !p.is_sub) } : {}) }; })()
+      : content.projects,
     issues: content.issues ? { ...content.issues, issues: linkAuthors(issues) } : content.issues,
   };
 }
@@ -320,6 +330,9 @@ function deriveTeam(content, siteUrl = SITE_URL) {
 // entry per list item: { template: 'team/<slug>.html', source: 'team-member.html',
 // item, content, priority }. Callers' lastmod providers read `source` for the
 // template file and `content` for the collections, as for fixed pages.
+// `pathKey` (project pages) names an item field holding a nested path
+// ('alpr/records'); without it, or before the derive step fills it, the slug
+// is the path.
 function expandPages(pages, content) {
   const out = [];
   for (const p of pages) {
@@ -328,7 +341,8 @@ function expandPages(pages, content) {
     if (!Array.isArray(list)) continue;
     for (const item of list) {
       if (!item.slug) continue;
-      out.push({ ...p, each: undefined, template: `${p.dir}/${item.slug}.html`, source: p.template, item });
+      const path = (p.pathKey && item[p.pathKey]) || item.slug;
+      out.push({ ...p, each: undefined, template: `${p.dir}/${path}.html`, source: p.template, item });
     }
   }
   return out;
@@ -346,8 +360,11 @@ function expandPages(pages, content) {
 function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteUrl = SITE_URL, sitemapExtra = [] }) {
   const errors = [];
   const fail = (msg) => errors.push(msg);
-  // Derived page data that no content file carries (filled in below).
-  content = { ...content, writing: content.writing || {} };
+  // Derived page data that no content file carries (filled in below). Press
+  // first: it supplies blog / coverage / homepage.press / project press from
+  // the one press list (packages/render/press.js), which the checks below
+  // and the templates then see as ordinary content.
+  content = { ...derivePress(content), writing: content.writing || {} };
 
   for (const { template, content: names } of pages) {
     if (!(template in templates)) fail(`Template not found: ${template}`);
@@ -358,7 +375,7 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
   if (errors.length) return { files: {}, errors };
 
   const colored = withColorClasses(content);
-  const teamed = deriveTeam(deriveProjectDocuments(deriveProjectFiles(deriveProjectFilters(derivePetitionShare(deriveHomepage(colored.content), siteUrl)))), siteUrl);
+  const teamed = deriveTeam(deriveProjectTree(deriveProjectFiles(deriveProjectFilters(derivePetitionShare(deriveHomepage(colored.content), siteUrl))), siteUrl), siteUrl);
   const authors = authorIndex(teamed.team?.members || [], siteUrl);
   // Wrapped like every content file ({ statements: { statements: [...] } }): a
   // page's data merges each content object's keys, so the template reads writing.items.
@@ -372,9 +389,9 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
     const page = (source ? template.split('/')[0] : template).replace(/\.html$/, '');
     const data = Object.assign(
       { page, is_home: page === 'index', current: { [page]: true } }, // used by partials for nav state
-      navFields(derived.settings, page), // header + footer menus (docs/systems/navigation.md)
+      navFields(derived.settings, page, { projects: derived.projects?.top_projects }), // header + footer menus (docs/systems/navigation.md)
       ...names.map(n => derived[n]),
-      item ? { ...item, bio: mdToHtml(item.bio) } : {}
+      item ? { ...item, ...(item.bio !== undefined ? { bio: mdToHtml(item.bio) } : {}) } : {}
     );
 
     for (const [arrayKey, field] of Object.entries(MARKDOWN_FIELDS)) {

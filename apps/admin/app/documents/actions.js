@@ -14,15 +14,46 @@ import {
 import { requireRole } from '../../lib/auth';
 import { withWriteTx, withDb, recordChange } from '../../lib/data';
 import { runAction } from '../../lib/actions';
-import { runIngest, loadSiteSources, styleKitFor, ruleMatchCounts, validateSelector, tokenErrors } from '../../lib/documents';
+import { runIngest, loadSiteSources, styleKitFor, ruleMatchCounts, validateSelector, tokenErrors, blocksToRaw, previewBlocksFor } from '../../lib/documents';
 import { CONFLICT_MESSAGE } from '../../lib/collection-save';
-import { docxToHtml, markdownToHtml, uploadKind } from '../../lib/convert-upload.mjs';
+import { docxToHtml, markdownToHtml, uploadKind, uploadToHtml } from '../../lib/convert-upload.mjs';
+import { parse as parseBlocks, rewritePageCss, slugify as slugifyText } from '@uccsite/doc-blocks';
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,80}$/;
 const RESERVED_SLUGS = new Set(['index', 'team', 'blog', 'statements', 'issues', 'projects', 'tip', 'success', '404', 'admin', 'api', 'media', 'css', 'js', 'assets']);
 
+const SHORT_PATH_RE = /^\/[a-z0-9][a-z0-9-]{0,80}$/;
+
 const str = (fd, name, max = 2000) => String(fd.get(name) ?? '').trim().slice(0, max);
 const flag = (fd, name) => (fd.get(name) ? 1 : 0);
+
+// validateAddress(client, { id, slug, projectSlug, shortPath }) — the
+// document's place in the tree (docs/decisions/project-tree-nested-urls.md):
+// the slug is unique within its project (root documents also keep clear of
+// the fixed pages and reserved paths), it may not collide with a sub-project
+// under the same parent, the project must exist, and the optional short path
+// is one root segment nobody else has claimed. Throws the message to show.
+async function validateAddress(client, { id = null, slug, projectSlug = '', shortPath = '' }) {
+  if (!SLUG_RE.test(slug)) throw new Error('Slug must be lowercase letters, digits and dashes');
+  if (projectSlug && !SLUG_RE.test(projectSlug)) throw new Error('Bad project');
+  if (!projectSlug && RESERVED_SLUGS.has(slug)) throw new Error(`"${slug}" is a fixed page or reserved path`);
+  if (projectSlug) {
+    if (!(await client.query('SELECT 1 FROM projects WHERE slug = $1', [projectSlug])).rows[0]) throw new Error(`Project "${projectSlug}" does not exist`);
+    if ((await client.query('SELECT 1 FROM projects WHERE parent_slug = $1 AND slug = $2', [projectSlug, slug])).rows[0]) {
+      throw new Error(`"${slug}" is a sub-project of that project; the document needs another slug`);
+    }
+  }
+  const other = await getDocument(client, { slug, projectSlug });
+  if (other && other.id !== id) throw new Error(`Slug "${slug}" is already used ${projectSlug ? 'in this project' : 'at the root'} by "${other.title}"`);
+  if (shortPath) {
+    if (!SHORT_PATH_RE.test(shortPath)) throw new Error('Short link must be a slash and one word, e.g. /alpr');
+    const name = shortPath.slice(1);
+    if (RESERVED_SLUGS.has(name)) throw new Error(`"${shortPath}" is a fixed page or reserved path`);
+    const taken = (await client.query(
+      `SELECT title FROM documents WHERE id IS DISTINCT FROM $1 AND (short_path = $2 OR (coalesce(project_slug, '') = '' AND slug = $3)) LIMIT 1`, [id, shortPath, name])).rows[0];
+    if (taken) throw new Error(`"${shortPath}" is already the address of "${taken.title}"`);
+  }
+}
 
 // Snapshot shape (restore path in app/revisions): the document's editable
 // fields + its overrides. body_html_raw is included verbatim (§9).
@@ -33,26 +64,114 @@ async function snapshotOf(client, id) {
   return { ...fields, overrides: (await listOverrides(client, id)).map(({ nid, classes, mode }) => ({ nid, classes, mode })) };
 }
 
+// Upload-first (docs/systems/document-builder.md): an optional file fills
+// the title, author and blocks; title/slug fall back to what the file says.
 export async function createDocument(prevState, formData) {
   let newId = null;
   const result = await runAction(async () => {
     const s = await requireRole('editor');
-    const title = str(formData, 'title', 200);
-    const slug = str(formData, 'slug', 80).toLowerCase();
+    const file = formData.get('file');
+    const parsed = file && typeof file.arrayBuffer === 'function' && file.size > 0 ? await parseUploadFile(file) : null;
+    const title = str(formData, 'title', 200) || (parsed ? parsed.title : '');
+    const slug = (str(formData, 'slug', 80) || slugifyText(title)).toLowerCase();
     const category = str(formData, 'category', 60) || 'Reports';
     const projectSlug = str(formData, 'projectSlug', 80);
     if (projectSlug && !SLUG_RE.test(projectSlug)) throw new Error('Bad project');
-    if (!title) throw new Error('Title is required');
-    if (!SLUG_RE.test(slug)) throw new Error('Slug must be lowercase letters, digits and dashes');
-    if (RESERVED_SLUGS.has(slug)) throw new Error(`"${slug}" is a fixed page or reserved path`);
+    if (!title) throw new Error(parsed ? 'The file has no heading to use as the title; type one' : 'Title is required');
     await withWriteTx(async (client) => {
-      if (await getDocument(client, { slug })) throw new Error(`A document with slug "${slug}" already exists`);
-      newId = await upsertDocument(client, { title, slug, category, projectSlug, templateKey: 'report', status: 'draft', sortOrder: 0, bodyHtmlRaw: '', pageCss: '' });
-      await recordChange(client, { actor: s.email, action: 'document.create', entityType: 'document', entityId: newId, diff: { slug, title, project: projectSlug } });
+      await validateAddress(client, { slug, projectSlug });
+      // Every new document is a builder document (empty blocks when no file).
+      const author = parsed ? parsed.author : '';
+      const { body, html } = await blocksToRaw(client, parsed ? parsed.body : { v: 1, header: {}, sections: [] }, { title, author });
+      newId = await upsertDocument(client, { title, slug, category, author, projectSlug, templateKey: 'report', status: 'draft', sortOrder: 0, bodyHtmlRaw: html, bodyBlocks: body, pageCss: '' });
+      await recordChange(client, { actor: s.email, action: 'document.create', entityType: 'document', entityId: newId, diff: { slug, title, project: projectSlug, upload: parsed ? { file: file.name, blocks: parsed.report.blocks, raw: parsed.report.raw } : undefined } });
     });
+    if (parsed) console.log(`[documents] upload-first "${file.name}" ${file.size}B -> ${parsed.report.sections} sections, ${parsed.report.blocks} blocks, ${parsed.report.raw} raw, ${parsed.report.imagesPending} images pending`);
   });
   if (result.ok && newId) redirect(`/documents/${newId}`);
   return result;
+}
+
+// parseUploadFile(file) → { title, author, body, report } — the shared
+// upload → blocks step (createDocument and parseUpload). Embedded images
+// (data: URLs from a .docx) become Image blocks with an empty src that the
+// editor fills from the Media library; nothing is stored here.
+async function parseUploadFile(file) {
+  if (file.size > UPLOAD_MAX_BYTES) throw new Error('File is larger than 8 MB');
+  const conv = await uploadToHtml(file);
+  const res = parseBlocks(conv.html);
+  let imagesPending = 0;
+  for (const s of res.body.sections) for (const b of s.blocks) {
+    if (b.type === 'figure' && /^data:/i.test(b.src || '')) { b.src = ''; b.caption = b.caption || `Image ${++imagesPending}`; b.pending = true; }
+    else if (b.type === 'figure' && b.src) { /* external or site path: kept, the ingest warns if it is not from the media library */ }
+  }
+  if (res.title && res.title !== res.title.trim()) res.title = res.title.trim();
+  const blocks = res.body.sections.reduce((n, s) => n + s.blocks.length, 0);
+  return {
+    title: res.title, author: res.author, body: res.body,
+    report: { kind: conv.kind, sections: res.body.sections.length, blocks, raw: res.report.raw, notes: res.report.notes, imagesPending, warnings: conv.warnings || [] },
+  };
+}
+
+// parseUpload(formData{file}) → { ok, title, author, body, report } for the
+// builder's "Replace from a file" (nothing stored; the editor saves).
+export async function parseUpload(formData) {
+  return runAction(async () => {
+    await requireRole('editor');
+    const file = formData.get('file');
+    if (!file || typeof file.arrayBuffer !== 'function') throw new Error('No file received');
+    const parsed = await parseUploadFile(file);
+    console.log(`[documents] parse upload "${file.name}" ${file.size}B -> ${parsed.report.sections} sections, ${parsed.report.blocks} blocks, ${parsed.report.raw} raw, ${parsed.report.imagesPending} images pending`);
+    return { ok: true, ...parsed };
+  });
+}
+
+// previewBlocks({ id, body, title, author }) → { ok, html, report }: the
+// live preview while editing. Nothing is stored. Editor+ because the
+// composed page carries the site sources.
+export async function previewBlocks(payload) {
+  return runAction(async () => {
+    await requireRole('editor');
+    const { id, body, title, author } = payload || {};
+    if (!/^[0-9a-f-]{36}$/.test(String(id))) throw new Error('Bad document id');
+    const out = await withDb((client) => previewBlocksFor(client, { id, body, title: String(title || '').slice(0, 200), author: String(author || '').slice(0, 120) }));
+    return { ok: true, ...out };
+  });
+}
+
+// convertToBlocks(formData{id}) — a legacy raw-HTML document becomes a
+// builder document: parse the body into blocks, regenerate body_html_raw from
+// them, rewrite the page CSS wrapper selectors to the new frame. One
+// transaction with a revision snapshot, so Revisions can undo it.
+export async function convertToBlocks(prevState, formData) {
+  return runAction(async () => {
+    const s = await requireRole('editor');
+    const id = str(formData, 'id', 80);
+    const sources = await loadSiteSources();
+    let report;
+    await withWriteTx(async (client) => {
+      const current = await getDocument(client, { id });
+      if (!current) throw new Error('Document not found');
+      if (current.bodyBlocks) throw new Error('Already a builder document');
+      const before = await snapshotOf(client, id);
+      const res = parseBlocks(current.bodyHtmlRaw, { keepFrame: true }); // its page CSS targets its own frame
+      if (res.title && res.title !== current.title) res.body.header.headline = res.title;
+      const author = current.author || res.author;
+      const { body, html } = await blocksToRaw(client, res.body, { title: current.title, author });
+      const pageCss = rewritePageCss(current.pageCss);
+      const next = { ...current, author, bodyBlocks: body, bodyHtmlRaw: html, pageCss };
+      const foreignClassMap = await loadForeignClassMap(client, current.templateKey);
+      const result = runIngest(next, { siteCss: sources.siteCss, foreignClassMap });
+      next.bodyHtmlNormalized = result.bodyHtmlNormalized;
+      next.ingestReport = result.report;
+      await upsertDocument(client, next);
+      report = { sections: body.sections.length, blocks: body.sections.reduce((n, sec) => n + sec.blocks.length, 0), raw: res.report.raw, notes: res.report.notes };
+      await recordChange(client, { actor: s.email, action: 'document.convert_blocks', entityType: 'document', entityId: id, snapshot: before, diff: report });
+    });
+    revalidatePath(`/documents/${id}`);
+    console.log(`[documents] convert to blocks ${id}: ${report.sections} sections, ${report.blocks} blocks, ${report.raw} raw`);
+    return { ok: true, message: `Converted: ${report.sections} sections, ${report.blocks} blocks${report.raw ? `, ${report.raw} kept as custom HTML` : ''}. Review the preview, then save.` };
+  });
 }
 
 // saveDocument: metadata + body + css in one go. Ingest runs here (spec §5
@@ -69,8 +188,6 @@ export async function saveDocument(prevState, formData) {
     const templateKey = str(formData, 'templateKey', 40) || 'report';
     if (!TEMPLATE_KEYS.includes(templateKey)) throw new Error('Unknown template');
     const slug = str(formData, 'slug', 80).toLowerCase();
-    if (!SLUG_RE.test(slug)) throw new Error('Slug must be lowercase letters, digits and dashes');
-    if (RESERVED_SLUGS.has(slug)) throw new Error(`"${slug}" is a fixed page or reserved path`);
     let jsonldOverrides = null;
     const jsonldText = str(formData, 'jsonldOverrides', 20000);
     if (jsonldText) {
@@ -85,16 +202,31 @@ export async function saveDocument(prevState, formData) {
       if (baseline && current.updatedAt !== baseline) throw new Error(CONFLICT_MESSAGE);
       if (status === 'archived' && current.status !== 'archived') throw new Error('Use the Archive button to archive a document.');
       if (status !== 'archived' && current.status === 'archived') throw new Error('This document is archived. Use "Restore as draft" to bring it back.');
-      const other = await getDocument(client, { slug });
-      if (other && other.id !== id) throw new Error(`Slug "${slug}" is used by "${other.title}"`);
+      await validateAddress(client, { id, slug, projectSlug: str(formData, 'projectSlug', 80), shortPath: str(formData, 'shortPath', 90).toLowerCase() });
       const before = await snapshotOf(client, id);
       const allowScripts = s.role === 'owner' ? flag(formData, 'allowScripts') : current.allowScripts; // owner-only field
+      const title = str(formData, 'title', 200);
+      const author = str(formData, 'author', 120);
+      // Builder documents post their blocks as JSON; body_html_raw is
+      // generated from them (docs/systems/document-builder.md). A legacy
+      // document posts the HTML box.
+      const blocksText = formData.get('bodyBlocks');
+      let bodyBlocks = current.bodyBlocks || null;
+      let bodyHtmlRaw = String(formData.get('bodyHtmlRaw') ?? '');
+      if (typeof blocksText === 'string' && blocksText.trim()) {
+        let input;
+        try { input = JSON.parse(blocksText); } catch { throw new Error('The block data could not be read; reload the page and try again.'); }
+        const out = await blocksToRaw(client, input, { title, author });
+        bodyBlocks = out.body;
+        bodyHtmlRaw = out.html;
+      }
       const next = {
         ...current,
-        title: str(formData, 'title', 200), slug, category: str(formData, 'category', 60), author: str(formData, 'author', 120), templateKey, status,
-        projectSlug: str(formData, 'projectSlug', 80), // projects.slug soft link (docs/systems/projects.md "Nesting")
+        title, slug, category: str(formData, 'category', 60), author, templateKey, status,
+        projectSlug: str(formData, 'projectSlug', 80), // projects.slug soft link — sets the page's address (docs/systems/projects.md)
+        shortPath: str(formData, 'shortPath', 90).toLowerCase(), // optional /alias → 301 (validated above)
         sortOrder: Number(str(formData, 'sortOrder', 10) || 0),
-        bodyHtmlRaw: String(formData.get('bodyHtmlRaw') ?? ''),
+        bodyHtmlRaw, bodyBlocks,
         pageCss: String(formData.get('pageCss') ?? ''),
         metaTitle: str(formData, 'metaTitle', 200), metaDescription: str(formData, 'metaDescription', 400),
         metaKeywords: str(formData, 'metaKeywords', 400), canonicalUrl: str(formData, 'canonicalUrl', 300),
@@ -104,7 +236,6 @@ export async function saveDocument(prevState, formData) {
         jsonldType: str(formData, 'jsonldType', 60), jsonldOverrides, allowScripts,
         sitemapPriority: str(formData, 'sitemapPriority', 5),
       };
-      if (next.projectSlug && !SLUG_RE.test(next.projectSlug)) throw new Error('Bad project');
       if (next.sitemapPriority && !/^(0(\.\d)?|1(\.0)?)$/.test(next.sitemapPriority)) {
         throw new Error('Sitemap priority must be 0.0–1.0 (e.g. 0.7) or blank');
       }
@@ -150,6 +281,36 @@ export async function saveDocument(prevState, formData) {
     if (summary.a11y.length) parts.push(`${summary.a11y.length} accessibility issues`);
     if (summary.match) parts.push(`${summary.match.matched ?? ''} matched`);
     return { ok: true, message: `Saved.${parts.length ? ' Ingest: ' + parts.join(', ') + ' — see the report below.' : ''}` };
+  });
+}
+
+// assignDocuments: move the ticked documents to a project (or out of one).
+// Each move is validated like a save (slug free in the target, no clash with
+// a sub-project) and recorded as its own revision + 'document.move' audit
+// row; the next publish writes the new addresses and 301s from the old ones.
+export async function assignDocuments(prevState, formData) {
+  return runAction(async () => {
+    const s = await requireRole('editor');
+    const ids = formData.getAll('ids').map(String).filter(v => /^[0-9a-f-]{36}$/.test(v));
+    if (!ids.length) throw new Error('Tick at least one document first');
+    if (ids.length > 200) throw new Error('Too many at once');
+    const projectSlug = str(formData, 'projectSlug', 80);
+    let moved = 0;
+    await withWriteTx(async (client) => {
+      for (const id of ids) {
+        const current = await getDocument(client, { id });
+        if (!current) continue;
+        if ((current.projectSlug || '') === projectSlug) continue;
+        await validateAddress(client, { id, slug: current.slug, projectSlug, shortPath: current.shortPath });
+        const before = await snapshotOf(client, id);
+        await client.query('UPDATE documents SET project_slug = $2, updated_at = now() WHERE id = $1', [id, projectSlug || null]);
+        await recordChange(client, { actor: s.email, action: 'document.move', entityType: 'document', entityId: id, snapshot: before, diff: { slug: current.slug, from: current.projectSlug || '', to: projectSlug } });
+        moved++;
+      }
+    });
+    revalidatePath('/documents');
+    revalidatePath('/projects');
+    return { ok: true, message: moved ? `Moved ${moved} document${moved === 1 ? '' : 's'}. Publish to make the new addresses live (the old ones redirect).` : 'Nothing to move — already there.' };
   });
 }
 

@@ -26,11 +26,17 @@ to that document, and a `--source db` publish ships every other saved
 change too, so look at the dashboard's pending list and `publish_requests`
 before running it against prod.
 
+**Block builder (2026-10-08):** a document whose row has `body_blocks` is
+edited as header fields + sections of typed blocks, and `body_html_raw` is
+GENERATED from them on save; everything below still applies to that HTML.
+docs/systems/document-builder.md has the model, the editor and the upload
+flow; a legacy row (no `body_blocks`) keeps the HTML box described here.
+
 ## Code Map
 
 ```
-packages/db/content-schema.js     documents, style_rules, style_overrides,
-                                  foreign_class_map DDL
+packages/db/content-schema.js     documents (+ body_blocks, the builder JSON), style_rules,
+                                  style_overrides, foreign_class_map DDL
 packages/db/documents.js          DOCUMENT_FIELDS, STATUSES (draft/published/archived),
                                   row⇄object, list/get/upsert/delete, rules/overrides/
                                   foreign-map CRUD, loadPublishBundle, archivedSlugs,
@@ -42,7 +48,8 @@ packages/render/documents.js      composeDocument / buildDocuments: ingest →
                                   block + JSON-LD generation; pageCssKey;
                                   project_name/project_href for the shell's
                                   "part of <project>" bar (projects.md "Nesting")
-packages/render/projects.js       projectOf — which project a document is under
+packages/render/projects.js       projectOf / documentUrl — a document under a project publishes at
+                                  /projects/<path>/<slug> (docs/systems/projects.md "Addresses")
 templates/documents/report.html   the 'report' shell (developer-owned head/body
                                   wrapper; header/footer partials carry <main>;
                                   .doc-breadcrumb project bar under the body)
@@ -84,6 +91,19 @@ apps/admin/app/styles/            rules with match counts, foreign class map,
 apps/admin/app/revisions/page.js  restore path for entity_type 'document'
 ```
 
+## Addresses (2026-10-09)
+
+A document's page is its URL path: `/projects/<project path>/<slug>` under a
+project (`projects.js documentUrl`), `/<slug>` without one. The file key,
+the canonical URL, the sitemap entry, `documents_index.url` (author pages,
+Writing, hubs) and the page CSS key (`css/pages/projects-alpr-report.<hash>.css`)
+all come from it. Slugs are unique per project; `buildDocuments` refuses an
+address two things claim (another document, a project hub). Optional
+`short_path` (`/alpr`) and the previous `live_path` publish as 301s; an
+archived document is 410 at its last live path. A stored `canonical_url`
+that names one of the page's own aliases is ignored. Full table:
+docs/systems/projects.md. Decision: docs/decisions/project-tree-nested-urls.md.
+
 ## Compose (every publish, `packages/render/documents.js`)
 
 ```
@@ -94,7 +114,7 @@ body_html_raw ─ingest(knownClasses = site css ∪ page css, foreignClassMap,
                overrides for id)─▶ styled
   ─stripNids─▶ ─replaceTokens (on the TREE: text nodes only, never attribute
       values or <pre>/<code>; author text around a token is re-escaped)─▶ body
-      {{coverage:alpr}} → coverage-strip partial from coverage_entries
+      {{coverage:<project slug>}} → coverage-strip partial from the press list (press.md)
                           (href="{{url}}" safeUrl+escaped, validated lang)
       {{video:ID}}      → www.youtube.com/embed iframe (the CSP frame-src host)
   ─render(shell, { ...settings, page: slug, current, seo_block,
@@ -123,11 +143,15 @@ cannot wedge publishing.
 
 ## Admin editor
 
-- **Project** (`project_slug`, select): the project the page is nested under
-  (docs/systems/projects.md "Nesting") — listed under that project's block on
-  /projects and linked back from the foot of the page. Blank = the project
-  whose button opens this page, if any, else none. Also on the New document
-  form (defaulted from the list's `?project=` filter).
+- **Project** (`project_slug`, select; sub-projects indented): sets the page's
+  address (`/projects/<path>/<slug>`), lists it on the project's hub page and
+  links back from the foot bar (path + "More in <project>"). Blank = none,
+  address `/<slug>`. Also on the New document form (defaulted from the list's
+  `?project=` filter). **Short link** (`short_path`): optional `/word` alias
+  → 301. `validateAddress` (actions.js) checks slug uniqueness within the
+  project, no clash with a sub-project or a fixed page, and that the short
+  path is a free root segment. Moving a document (editor or the list's bulk
+  "Move") redirects the old address on the next publish (`live_path`).
 - **Save** (`saveDocument`): one transaction — baseline (`updated_at`) lost-
   update check, slug uniqueness/reserved check, canonical on-site / og:image
   https / sitemap priority validation, ingest with the template's
@@ -205,7 +229,8 @@ The markdown is built from
 - live data: the Style Kit catalog (`styleKitFor(siteCss)`; annotated
   entries only, with each entry's **CSS declarations** printed under it;
   only the true chrome groups Navigation / Footer / Forms / Modal /
-  Donations / Hero are hidden, so the section patterns (Impact stats,
+  Donations / Hero and the builder's inner pieces ("Document block parts",
+  2026-10-08) are hidden, so the section patterns (Impact stats,
   Mission & pillars, Policy positions, About, News & coverage) are offered
   for reuse inside a body), the **design tokens** (the `:root` block of the
   live stylesheet, extracted by the route with a regex and passed as
@@ -342,7 +367,13 @@ After `/license-plate-has-a-price` published as bare text
   request publish until the report is clean. Nothing is blocked server-side:
   the two-person publish review stays the gate.
 
-## Upload a file (.html / .docx / .md) (2026-10-05)
+## Upload a file (.html / .docx / .md) (2026-10-05; builder documents use parseUpload instead, 2026-10-08)
+
+**Superseded for builder documents** (every new document, and every converted
+one): the file goes through `parseUpload` / `createDocument`'s upload-first
+path into blocks (docs/systems/document-builder.md "Upload-first and
+conversion"). The flow below remains for a legacy document still edited in
+the HTML box.
 
 The HTML box's file input accepts `.html/.htm` (read in the browser,
 unchanged, as before — also any file the browser types as `text/html`, since
@@ -395,8 +426,10 @@ are read; default = monorepo root from `apps/admin`; Amplify copies them to
 
 ## Data
 
-`documents` columns: see content-schema.js (`project_slug` added 2026-10-06,
-soft link to `projects.slug`). Nothing personal. Revisions for
+`documents` columns: see content-schema.js (`project_slug` 2026-10-06, '' =
+none; `short_path`, `live_path` 2026-10-09; the table-level UNIQUE on slug is
+replaced by the unique index `idx_documents_address` on `(project_slug, slug)`).
+Nothing personal. Revisions for
 `entity_type='document'` carry the full raw body (§9) — the 20-per-entity
 prune keeps them bounded.
 
@@ -406,7 +439,8 @@ prune keeps them bounded.
   the site bucket CSS is unreadable (fallback used). `[admin] nav categories
   unavailable` if the layout's category query fails (nav degrades, page
   still renders).
-- Publish: `[publish] RENDER ERROR: document <slug>: …` in CloudWatch + the
+- Publish: `[publish] RENDER ERROR: document <path>: …` (path = the address
+  without the leading slash, e.g. `projects/alpr/report`) in CloudWatch + the
   document's `last_publish_error` shown on the list and editor.
 
 ## Status / not yet
