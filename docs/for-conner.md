@@ -537,7 +537,14 @@ mail that claims to be @utahciviccompact.org but is not from SES or Zoho.
 That is a DNS change in Cloudflare (DNS → Records), done in three steps so a
 forgotten sender shows up in the reports before mail is refused.
 
-**Step 1 — now.**
+**Step 1 — done 2026-10-09** (verified on Cloudflare's nameservers): DMARC
+Management on, `_dmarc` = `v=DMARC1; p=none; fo=1; rua=mailto:61b8bacc…@dmarc-reports.cloudflare.net`,
+apex SPF `v=spf1 include:zohomail.com ~all`, `default._bimi` added; Resend
+(`send.` MX/TXT, `resend._domainkey`) and Mailgun (`email.` CNAME,
+`k1._domainkey`) records deleted. Still to do from step 1: the Zoho DKIM
+check (4) and the two Show-original checks (5).
+
+**Step 1 — original instructions.**
 1. Cloudflare → utahciviccompact.org → **Email → DMARC Management → Enable**.
    Free; it collects the aggregate reports (Mailgun's address is dead, and
    nobody is known to read OnDMARC). Accept the record change it offers.
