@@ -279,16 +279,35 @@ test('rate limiter identity is the LAST X-Forwarded-For entry', async () => {
   assert.equal(insert.params[0], '203.0.113.9'); // not the spoofed first entry
 });
 
-test('unsubscribe: valid token deletes subscriber and flips opt-in; bad token 400', async () => {
+test('unsubscribe: GET only shows the button (scanners prefetch links); POST soft-unsubscribes; bad token 400', async () => {
   const db = fakeDb();
   const secrets = { TOKEN_SECRET: SECRET };
   const token = await cfSign(SECRET, 'unsubscribe', 'gone@x.y', 3600); // signed by the OLD stack
   let res = await routes.unsubscribe({ event: httpEvent({ method: 'GET', query: { token } }), db, secrets });
   assert.equal(res.statusCode, 200);
-  assert.ok(db.calls.some(c => c.text.startsWith('DELETE FROM subscribers') && c.params[0] === 'gone@x.y'));
+  assert.equal(db.calls.length, 0);
+  assert.ok(res.body.includes(`<form method="post" action="/api/unsubscribe?token=${encodeURIComponent(token)}">`));
+  assert.ok(res.body.includes('gone@x.y'));
+
+  // RFC 8058 one-click: what Gmail/Yahoo POST, body List-Unsubscribe=One-Click.
+  res = await routes.unsubscribe({ event: { ...httpEvent({ method: 'POST', query: { token } }), body: 'List-Unsubscribe=One-Click' }, db, secrets });
+  assert.equal(res.statusCode, 200);
+  assert.ok(db.calls.some(c => c.text.startsWith('UPDATE subscribers SET unsubscribed_at') && c.text.includes("'self'") && c.params[0] === 'gone@x.y'));
   assert.ok(db.calls.some(c => c.text.includes('UPDATE members SET newsletter_opt_in = 0')));
-  res = await routes.unsubscribe({ event: httpEvent({ method: 'GET', query: { token: 'junk' } }), db, secrets });
-  assert.equal(res.statusCode, 400);
+
+  for (const method of ['GET', 'POST']) {
+    res = await routes.unsubscribe({ event: httpEvent({ method, query: { token: 'junk' } }), db, secrets });
+    assert.equal(res.statusCode, 400);
+  }
+});
+
+test('welcome email without TOKEN_SECRET carries no one-click headers', async () => {
+  const sent = fakeSes();
+  try {
+    await routes.welcomeEmailJob({ secrets: {}, email: 'a@b.co', origin: 'https://x.test' });
+  } finally { routes._setSesClient(null); }
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].Content.Simple.Headers, undefined);
 });
 
 test('portal POST 503s without secrets; with secrets always 202 + constant self-invoke', async () => {

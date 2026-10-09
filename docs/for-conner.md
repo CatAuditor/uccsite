@@ -527,41 +527,69 @@ copy exists in production.
   Jarom sign-in, Airtable copy, GitHub App, Turnstile. Cloudflare idle until
   2026-10-30, then §7.8.
 
-## 12. Email deliverability: DMARC to quarantine, and a postal address — `[hand]`
+## 12. Email deliverability: DMARC to `p=reject`, and a postal address — `[hand]`
 
-Everything the site sends is now SES (DKIM-aligned) or Zoho (your mailboxes).
-Once Mailgun is cancelled (§10.4) nothing else sends as @utahciviccompact.org,
-so DMARC can stop merely *reporting* and start *quarantining* spoofed mail.
-Do these in Cloudflare DNS, **in this order**, a week apart:
+Audited 2026-10-08 (docs/systems/email.md "Domain authentication"). The site's
+mail (SES) already passes DMARC on both DKIM and SPF; Gmail/Yahoo bulk-sender
+rules are met (SPF, DKIM, DMARC published, aligned From, RFC 8058 one-click
+unsubscribe, TLS). "Full" DMARC means `p=reject`: receivers then refuse any
+mail that claims to be @utahciviccompact.org but is not from SES or Zoho.
+That is a DNS change in Cloudflare (DNS → Records), done in three steps so a
+forgotten sender shows up in the reports before mail is refused.
 
-1. **Now** — apex TXT (`utahciviccompact.org`), replace the SPF record with
-   exactly:
+**Step 1 — now.**
+1. Cloudflare → utahciviccompact.org → **Email → DMARC Management → Enable**.
+   Free; it collects the aggregate reports (Mailgun's address is dead, and
+   nobody is known to read OnDMARC). Accept the record change it offers.
+2. Apex TXT (`utahciviccompact.org`), replace the `v=spf1 …` record with:
    ```
-   v=spf1 include:spf.efwd.registrar-servers.com include:zohomail.com ~all
+   v=spf1 include:zohomail.com ~all
    ```
-   (that is the current record minus ` include:mailgun.org`). And the
-   `_dmarc` TXT, replace with exactly:
+   Mailgun is retired; `spf.efwd.registrar-servers.com` is Namecheap email
+   forwarding, unused since the MX moved to Zoho. SES does not need the apex
+   (its SPF is on `mail.utahciviccompact.org`).
+3. `_dmarc` TXT, replace with (keep the `rua` address Cloudflare added in 1):
    ```
-   v=DMARC1; p=none; pct=100; fo=1; ri=3600; rua=mailto:c0666316@inbox.ondmarc.com; ruf=mailto:c0666316@inbox.ondmarc.com;
+   v=DMARC1; p=none; sp=none; adkim=r; aspf=r; fo=1; rua=mailto:<cloudflare address>
    ```
-   (current record minus the two `mailto:b5510ee5@dmarc.mailgun.org,` entries).
-2. **After 7 days of OnDMARC reports showing only aligned senders** (SES
-   via `mail.utahciviccompact.org` + Zoho; no unknown sources), change
-   `p=none` to `p=quarantine`:
-   ```
-   v=DMARC1; p=quarantine; pct=100; fo=1; ri=3600; rua=mailto:c0666316@inbox.ondmarc.com; ruf=mailto:c0666316@inbox.ondmarc.com;
-   ```
-   If a legitimate sender shows up as failing in the reports (e.g. a
-   Google Workspace alias, a CRM), stop and tell the dev before step 2.
-3. **Postal address.** CAN-SPAM wants a physical or PO-box address in every
-   bulk email; the newsletter footer defaults to "Utah Civic Compact ·
-   Salt Lake City, UT". When the org has an address (a PO box is fine), an
-   editor puts it in the footer of any newsletter and presses **Use this
-   look as the default** in the admin — no developer needed.
+   `ruf=` is dropped: failure reports carry message samples to a third
+   party and few receivers send them.
+4. Zoho Mail Admin → Domains → utahciviccompact.org → **DKIM**: selector
+   `zmail` shows Verified and is the default. If Zoho offers a 2048-bit key,
+   add it as a new selector, verify, make it default, then delete `zmail`.
+5. Check two real messages in Gmail (**⋮ → Show original**): one from your
+   Zoho mailbox, one admin newsletter **Send me a test**. Both must say
+   `SPF: PASS`, `DKIM: PASS with domain utahciviccompact.org`,
+   `DMARC: PASS`. The newsletter's `DKIM-Signature h=` list must include
+   `List-Unsubscribe` and `List-Unsubscribe-Post`.
 
-Not DNS, already done by the dev: double opt-in for the join form, bounce
-and complaint suppression, List-Id/Precedence headers, UTM tagging, the web
-archive at /newsletters.
+**Step 2 — after 7 days** of Cloudflare's DMARC report showing only SES
+(Amazon) and Zoho as passing sources. Anything else legitimate failing (a
+CRM, Google, Stripe custom domain, Zoho Campaigns) → stop and tell the dev.
+```
+v=DMARC1; p=quarantine; sp=quarantine; adkim=r; aspf=r; fo=1; rua=mailto:<cloudflare address>
+```
+
+**Step 3 — after 14 more clean days:**
+```
+v=DMARC1; p=reject; sp=reject; adkim=r; aspf=r; fo=1; rua=mailto:<cloudflare address>
+```
+Rollback at any step: set `p=none` again (TTL 1 hour).
+
+**Postal address (CAN-SPAM).** Every newsletter must show a valid street
+address, PO box, or registered mailbox. The default footer says only
+"Salt Lake City, UT" — not compliant. When the org has one, an editor puts
+it in the footer of any newsletter and presses **Use this look as the
+default** in the admin.
+
+Optional: Google Postmaster Tools (postmaster.google.com, add the domain,
+one TXT record) shows the Gmail spam-complaint rate, which must stay under
+0.3%.
+
+Not DNS, already done by the dev: double opt-in, bounce/complaint
+suppression, List-Id/Precedence headers, one-click unsubscribe on every
+bulk send (POST-only since 2026-10-08 so link scanners cannot unsubscribe
+people), UTM tagging, the web archive at /newsletters.
 
 ## 13. Document builder: production column, conversion, publish
 

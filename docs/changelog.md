@@ -4,6 +4,16 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.25.5 — 2026-10-08 (branch `claude-wip`) — Unsubscribe is POST-only; DMARC enforcement plan
+
+- `GET /api/unsubscribe` now shows an Unsubscribe button and writes nothing; `POST` (RFC 8058 one-click or the
+  button) unsubscribes. Link scanners no longer unsubscribe people. Decision: docs/decisions/unsubscribe-post-only.md.
+- Welcome email sends no `List-Unsubscribe` headers when `TOKEN_SECRET` is missing.
+- Email/DNS audit (docs/systems/email.md "Domain authentication"); for-conner §12 rewritten as a staged path to
+  DMARC `p=reject` (Cloudflare DMARC Management for reports, SPF cleanup, Zoho DKIM check, postal address).
+- Tests: stale unsubscribe test (expected DELETE) replaced; API suite 37 pass, 1 pre-existing failure
+  ("petition signers are confirmed at insert" — the subscribe upsert now mentions confirmed_at by design).
+
 ## v0.25.4 — 2026-10-09 (branch `refactor`) — Changelog correction (v0.25.3 counts)
 
 ## v0.25.3 — 2026-10-09 (branch `refactor`) — Prod press filed under projects

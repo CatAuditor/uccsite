@@ -156,21 +156,25 @@ async function sendWelcomeEmail(secrets, origin, email, firstName) {
   const greeting = firstName ? `Hi ${escapeHtml(firstName)},` : 'Welcome,';
   let unsubscribeUrl = `${origin}/#join`;
   let confirmUrl = '';
+  // One-click headers only with a real signed link — never advertise
+  // List-Unsubscribe-Post on a URL that cannot unsubscribe.
+  let headers;
   if (secrets.TOKEN_SECRET) {
     const token = await signToken(secrets.TOKEN_SECRET, 'unsubscribe', email, UNSUBSCRIBE_TTL);
     unsubscribeUrl = `${origin}/api/unsubscribe?token=${encodeURIComponent(token)}`;
     const confirmToken = await signToken(secrets.TOKEN_SECRET, 'confirm', email, CONFIRM_TTL);
     confirmUrl = `${origin}/api/confirm?token=${encodeURIComponent(confirmToken)}`;
+    headers = {
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    };
   }
 
   await sesSend({
     to: email,
     subject: "You're in. Here's what that means.",
     html: buildWelcomeEmail(greeting, unsubscribeUrl, confirmUrl),
-    headers: {
-      'List-Unsubscribe': `<${unsubscribeUrl}>`,
-      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-    },
+    headers,
   });
 }
 
@@ -299,12 +303,20 @@ async function confirmSubscription({ event, db, secrets }) {
 }
 
 // ── GET/POST /api/unsubscribe?token=... ─────────────────────────────────────
-// POST supports RFC 8058 one-click unsubscribe from mail clients.
+// POST unsubscribes: RFC 8058 one-click from mail clients (body
+// `List-Unsubscribe=One-Click`, token in the URL) or the button below.
+// GET only shows that button — link scanners and inbox prefetchers GET every
+// URL in a message, so a GET that unsubscribed would drop real readers.
 async function unsubscribe({ event, db, secrets }) {
   const token = event.queryStringParameters?.token;
   const email = secrets.TOKEN_SECRET ? await verifyToken(secrets.TOKEN_SECRET, 'unsubscribe', token) : null;
 
   if (!email) return unsubPage('This unsubscribe link is invalid or has expired.', 400);
+
+  if (event.requestContext.http.method !== 'POST') {
+    return unsubPage(`Stop Utah Civic Compact emails to ${escapeHtml(email)}?</p>
+<form method="post" action="/api/unsubscribe?token=${encodeURIComponent(token)}"><button type="submit">Unsubscribe</button></form><p>`);
+  }
 
   // Soft: the row stays, stamped unsubscribed_at / unsubscribed_by = 'self',
   // so the admin's Mailing list shows who left and when (the audience query

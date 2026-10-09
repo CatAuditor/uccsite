@@ -83,11 +83,47 @@ aws sesv2 get-email-identity --profile uccsite --region us-west-2 --email-identi
 then SES is also in the **sandbox** (`ProductionAccessEnabled: false`, 200
 sends/day, recipients must be verified identities or the mailbox simulator).
 
-Existing DNS that stays as-is: apex `v=spf1 include:spf.efwd.registrar-servers.com
-include:zohomail.com include:mailgun.org ~all`, Zoho MX, `_dmarc` `p=none`
-with Mailgun/OnDMARC reporting. SES mail will pass DMARC via DKIM alignment
-and via SPF on the MAIL FROM subdomain; `p=none` can later move to
-`quarantine` once reports show only aligned senders.
+## Unsubscribe (`GET|POST /api/unsubscribe?token=…`)
+
+Every bulk-style email (welcome, newsletter Lambda, `send-periodical.js`)
+carries `List-Unsubscribe: <https://…/api/unsubscribe?token=…>` and
+`List-Unsubscribe-Post: List-Unsubscribe=One-Click` (RFC 8058) plus a body
+link to the same URL. RFC 8058 requires both headers under the DKIM
+signature; check the `h=` list of `DKIM-Signature` in a received copy
+(Gmail → Show original) includes `List-Unsubscribe:List-Unsubscribe-Post`.
+
+- **POST** unsubscribes: Gmail/Yahoo/Apple's one-click (body
+  `List-Unsubscribe=One-Click`; the body is ignored, the token is in the
+  URL) or the button on the GET page. Soft: `unsubscribed_at` +
+  `unsubscribed_by = 'self'`, `members.newsletter_opt_in = 0`. 200 HTML,
+  never a redirect.
+- **GET** writes nothing: it shows the address and an **Unsubscribe**
+  button that POSTs to the same URL. Link scanners (Outlook Safe Links,
+  corporate gateways) prefetch every URL in a message, so a GET that
+  unsubscribed would remove people who never clicked
+  (docs/decisions/unsubscribe-post-only.md).
+- Bad/expired token → 400 on both. Tokens last 1 year.
+- The welcome email omits both headers when `TOKEN_SECRET` is missing (its
+  body link then falls back to `/#join`), so no message ever advertises a
+  one-click URL that cannot unsubscribe.
+
+Internal mail (publish/newsletter review requests, test sends, billing-portal
+links) has no unsubscribe — transactional, not marketing.
+
+## Domain authentication (audited 2026-10-08)
+
+| Check | State |
+|---|---|
+| SES DKIM | 3 CNAMEs, `SUCCESS`, RSA-2048, `d=utahciviccompact.org` (aligned) |
+| SES SPF | MAIL FROM `mail.utahciviccompact.org`: MX `feedback-smtp.us-west-2.amazonses.com`, TXT `v=spf1 include:amazonses.com ~all` (relaxed-aligned) |
+| Zoho (staff mailboxes) | apex MX, SPF `include:zohomail.com`, DKIM selector `zmail` (RSA-1024) |
+| Apex SPF | `v=spf1 include:spf.efwd.registrar-servers.com include:zohomail.com include:mailgun.org ~all` — Namecheap forwarding and Mailgun are dead weight |
+| DMARC | `p=none`, reports to Mailgun (retired) + OnDMARC |
+| Suppression | account + `ucc-prod` config set: BOUNCE, COMPLAINT |
+
+DMARC passes for SES mail on both legs. Enforcement (`p=reject`) is a DNS
+change only Conner can make (wrangler's token has no DNS scope); the staged
+plan is docs/for-conner.md §12.
 
 ## Built 2026-10-05
 
