@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  renderEmail, previewHtml, normalizeBlocks, normalizeTheme, fromHeader, safeUrl, UNSUBSCRIBE_TOKEN, DEFAULT_THEME, MAX_BLOCKS,
+  renderEmail, previewHtml, normalizeBlocks, normalizeTheme, fromHeader, safeUrl, UNSUBSCRIBE_TOKEN, DEFAULT_THEME, MAX_BLOCKS, LOGO_URL,
 } from '../render.mjs';
 
 const doc = {
@@ -25,7 +25,7 @@ test('renders every block type with escaped text and the unsubscribe token', () 
   assert.match(html, /<a href="https:\/\/utahciviccompact.org\/mida" class="em-link"/);
   assert.match(html, /<li class="em-text"[^>]*>one<\/li>/);
   assert.match(html, /<p class="em-h"[^>]*>Next<\/p>/);
-  assert.match(html, /<a href="https:\/\/utahciviccompact.org" style="[^"]*">Read more<\/a>/);
+  assert.match(html, /<a href="https:\/\/utahciviccompact.org" class="em-btn" style="[^"]*">Read more<\/a>/);
   assert.match(html, /<img src="https:\/\/utahciviccompact.org\/media\/x\/a-800.webp" alt="Capitol"/);
   assert.match(html, /<blockquote[^>]*>Sunlight is the best disinfectant\.<p[^>]*>— Brandeis<\/p><\/blockquote>/);
   assert.match(html, /<hr class="em-rule"/);
@@ -61,9 +61,26 @@ test('dark mode: auto carries the media query, dark applies it unconditionally, 
   assert.ok(auto.includes('@media (prefers-color-scheme: dark)'));
   assert.ok(auto.includes('[data-ogsc] .em-bg'));
   assert.ok(!dark.includes('@media (prefers-color-scheme: dark)'));
-  assert.ok(dark.includes('.em-bg{background:#111412!important;}'));
-  assert.ok(!light.includes('.em-bg{background:#111412'));
+  assert.ok(dark.includes('.em-bg{background:#0f1e33!important;}'));
+  assert.ok(!light.includes('.em-bg{background:#0f1e33'));
   assert.ok(auto.includes('<meta name="color-scheme" content="light dark">'));
+});
+
+test('letterhead copies the site: logo mark + org name linking home, navy bands, sans type', () => {
+  const { html } = renderEmail(doc);
+  assert.ok(html.includes(`<img src="${LOGO_URL}" alt="" width="38" height="44"`));
+  assert.match(html, /<a href="https:\/\/utahciviccompact.org" style="color:#ffffff;[^"]*">Utah Civic Compact<\/a>/);
+  assert.equal((html.match(/class="em-band" bgcolor="#1b2f4e"/g) || []).length, 2, 'header and footer bands carry the accent');
+  assert.ok(html.includes("font-family:'Inter', -apple-system"));
+  assert.ok(html.includes('background:#f5f1ea'));
+  assert.ok(html.includes('501(c)(4)'));
+  assert.equal(DEFAULT_THEME.eyebrow, '');
+  // No eyebrow by default; one that only repeats the org name (older drafts) is not drawn.
+  assert.ok(!/text-transform:uppercase/.test(html));
+  assert.ok(!/text-transform:uppercase/.test(renderEmail({ ...doc, theme: { eyebrow: 'Utah Civic Compact' } }).html));
+  assert.match(renderEmail({ ...doc, theme: { eyebrow: 'October update' } }).html, /text-transform:uppercase;[^"]*">October update<\/p>/);
+  // The logo link is a site link, so a campaign tags it like any other.
+  assert.ok(renderEmail(doc, { siteUrl: 'https://utahciviccompact.org', campaign: 'c1' }).html.includes('<a href="https://utahciviccompact.org?utm_source=newsletter&utm_medium=email&utm_campaign=c1" style="text-decoration:none;"><img'));
 });
 
 test('previewHtml neutralises the unsubscribe token', () => {

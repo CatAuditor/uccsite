@@ -8,6 +8,7 @@
 import { useMemo, useState } from 'react';
 import { previewHtml, BLOCK_TYPES, DEFAULT_THEME, FONTS } from '@uccsite/newsletter/render';
 import InlineImageUpload from '../../media/inline-upload';
+import { importUpload } from './actions';
 
 const RESIDENCIES = [['all', 'everyone'], ['utah', 'Utah residents'], ['outside', 'outside Utah'], ['unknown', 'ZIP unknown']];
 const BLOCK_LABEL = { heading: 'Heading', text: 'Text', button: 'Button', image: 'Image', quote: 'Quote', divider: 'Divider' };
@@ -89,6 +90,45 @@ export default function Composer({ newsletter, names, count, petitions, readOnly
   const setT = (field) => (e) => setTheme((t) => ({ ...t, [field]: e.target.value }));
   const fromOptions = names.includes(fromName) || !fromName ? names : [fromName, ...names];
 
+  // Audience: the page's count is for the SAVED filters; "Apply filters"
+  // counts the chosen ones (GET /mail/audience-count) without saving.
+  const [audience, setAudience] = useState({
+    residency: newsletter.audience.residency || 'all', petition: newsletter.audience.petition || '', donors: Boolean(newsletter.audience.donors),
+  });
+  const [live, setLive] = useState({ count, applied: false, busy: false, error: '' });
+  const setA = (field) => (e) => { setAudience((a) => ({ ...a, [field]: field === 'donors' ? e.target.checked : e.target.value })); setLive((l) => ({ ...l, applied: false })); };
+  async function applyFilters() {
+    setLive((l) => ({ ...l, busy: true, error: '' }));
+    try {
+      const q = new URLSearchParams({ residency: audience.residency, petition: audience.petition, donors: audience.donors ? '1' : '' });
+      const res = await fetch(`/mail/audience-count?${q}`, { cache: 'no-store' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || typeof body.count !== 'number') throw new Error(body.error || `Count failed (${res.status})`);
+      setLive({ count: body.count, applied: true, busy: false, error: '' });
+    } catch (err) {
+      setLive((l) => ({ ...l, busy: false, error: err.message || 'Could not count the audience' }));
+    }
+  }
+
+  // Import a .docx / .md / .html file: converted on the server into blocks,
+  // appended after the current ones; an h1 fills an empty headline.
+  const [imported, setImported] = useState('');
+  async function onImport(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImported(`Converting ${file.name}…`);
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('existing', String(blocks.length));
+    fd.append('headline', headline);
+    const res = await importUpload(fd);
+    if (res?.error) { setImported(`Could not import ${file.name}: ${res.error}`); return; }
+    setBlocks((list) => [...list, ...res.blocks.map((b) => withKey({ ...b }))]);
+    if (res.headline && res.headline !== headline) setHeadline(res.headline);
+    setImported(`Added ${res.blocks.length} block${res.blocks.length === 1 ? '' : 's'} from ${file.name}${res.notes?.length ? ` — ${res.notes.join(' — ')}` : ''}. Check them in the preview, then save.`);
+  }
+
   return (
     <div className="mail-split">
       <div className="mail-editor">
@@ -112,22 +152,24 @@ export default function Composer({ newsletter, names, count, petitions, readOnly
         </fieldset>
 
         <fieldset className="item">
-          <legend>Audience — {count} {count === 1 ? 'person' : 'people'} match the saved filters</legend>
+          <legend>Audience — {live.count} {live.count === 1 ? 'person' : 'people'} match {live.applied ? 'these filters' : 'the saved filters'}</legend>
           <div className="mail-row">
             <label>Residency
-              <select name="residency" defaultValue={newsletter.audience.residency || 'all'} disabled={readOnly}>
+              <select name="residency" value={audience.residency} onChange={setA('residency')} disabled={readOnly}>
                 {RESIDENCIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </label>
             <label>Signed petition
-              <select name="petition" defaultValue={newsletter.audience.petition || ''} disabled={readOnly}>
+              <select name="petition" value={audience.petition} onChange={setA('petition')} disabled={readOnly}>
                 <option value="">any / none</option>
                 {petitions.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             </label>
-            <label className="mail-check"><input type="checkbox" name="donors" value="1" defaultChecked={Boolean(newsletter.audience.donors)} disabled={readOnly} /> donors only</label>
+            <label className="mail-check"><input type="checkbox" name="donors" value="1" checked={audience.donors} onChange={setA('donors')} disabled={readOnly} /> donors only</label>
+            {!readOnly && <button type="button" className="secondary" onClick={applyFilters} disabled={live.busy}>{live.busy ? 'Counting…' : 'Apply filters'}</button>}
           </div>
-          <div className="hint">Same rules as the Mailing list page. Save to refresh the count.</div>
+          {live.error && <div className="error" role="alert">{live.error}</div>}
+          <div className="hint">Same rules as the Mailing list page. Apply filters shows how many people the chosen filters reach; saving keeps them.</div>
           <label className="mail-check"><input type="checkbox" name="publishToSite" value="1" defaultChecked={newsletter.publishToSite !== false} disabled={readOnly} /> Also publish a web copy at utahciviccompact.org/newsletters (adds a &ldquo;View in browser&rdquo; link)</label>
         </fieldset>
 
@@ -170,21 +212,30 @@ export default function Composer({ newsletter, names, count, petitions, readOnly
               Add: {BLOCK_TYPES.map((t) => <button key={t} type="button" className="secondary" onClick={() => add(t)}>{BLOCK_LABEL[t]}</button>)}
             </div>
           )}
+          {!readOnly && (
+            <div>
+              <label htmlFor="mail-import">Or import a file (.docx from Word, Google Docs or Claude Docs; .md Markdown; .html) — its headings, paragraphs, lists, quotes, links and images become blocks after the ones above, in the email&rsquo;s own look</label>
+              <input type="file" id="mail-import" accept=".docx,.md,.markdown,.txt,.html,.htm,text/markdown,text/plain,text/html,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={onImport} />
+              {imported && <div className="notice">{imported}</div>}
+            </div>
+          )}
         </fieldset>
 
         <fieldset className="item" hidden={rawOn}>
           <legend>Look</legend>
+          <div className="hint">The letterhead (logo and name, linking to the site) is always there. The defaults copy the live site: navy bands, red accent, the site&rsquo;s type.</div>
           <div className="mail-row">
-            <label>Header &amp; headings colour <input type="color" value={theme.accent} onChange={setT('accent')} disabled={readOnly} /></label>
+            <label>Bands, headings &amp; buttons colour <input type="color" value={theme.accent} onChange={setT('accent')} disabled={readOnly} /></label>
             <label>Highlight colour <input type="color" value={theme.highlight} onChange={setT('highlight')} disabled={readOnly} /></label>
             <label>Font
               <select value={theme.font} onChange={setT('font')} disabled={readOnly}>
-                {Object.keys(FONTS).map((f) => <option key={f} value={f}>{f === 'serif' ? 'Serif (Georgia)' : 'Sans-serif (system)'}</option>)}
+                {Object.keys(FONTS).map((f) => <option key={f} value={f}>{f === 'serif' ? 'Serif (Playfair / Georgia)' : 'Sans-serif (the site’s)'}</option>)}
               </select>
             </label>
+            {!readOnly && <button type="button" className="secondary" onClick={() => setTheme({ ...DEFAULT_THEME })}>Reset to the site look</button>}
           </div>
-          <label>Small line above the headline</label>
-          <input value={theme.eyebrow} onChange={setT('eyebrow')} maxLength={80} disabled={readOnly} />
+          <label>Small line above the headline (optional)</label>
+          <input value={theme.eyebrow} onChange={setT('eyebrow')} maxLength={80} placeholder="e.g. October update" disabled={readOnly} />
           <label>Footer (the unsubscribe link is always added after it)</label>
           <textarea value={theme.footer} onChange={setT('footer')} rows={2} maxLength={600} disabled={readOnly} />
         </fieldset>

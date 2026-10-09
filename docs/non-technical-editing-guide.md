@@ -252,15 +252,22 @@ visual; a developer changes the code and publishes.
 
 1. **Start writing**: type the subject line and press *Start writing*.
 2. **Compose** on the left: preview text (the line inboxes show after the
-   subject), an optional headline for the green band, **From** (your name —
-   the email arrives as "Your Name from Utah Civic Compact"), the
-   **audience** (same choices as the Mailing list page), then the content
-   as blocks — *Heading*, *Text* (plain writing; `**bold**`, `*italic*`,
+   subject), an optional headline for the navy letterhead band (the logo
+   and "Utah Civic Compact" are always there, copying the site), **From**
+   (your name — the email arrives as "Your Name from Utah Civic Compact"),
+   the **audience** (same choices as the Mailing list page; press **Apply
+   filters** to see how many people the chosen filters reach before you
+   save), then the content as blocks — *Heading*, *Text* (plain writing; `**bold**`, `*italic*`,
    `[link text](https://…)`, "- " for bullets), *Button*, *Image* (paste the
    *Upload an image* right in the block after typing its alt text, or paste
    an address from the Media Library), *Quote*,
-   *Divider*. Use ↑ ↓ ✕ to reorder or remove. *Look* changes colours, font,
-   the small line above the headline and the footer.
+   *Divider*. Use ↑ ↓ ✕ to reorder or remove. Or **import a file** (.docx
+   from Word / Google Docs / Claude Docs, Markdown or .html): its headings,
+   paragraphs, lists, quotes, links and images become blocks after the ones
+   you have, already in the email's look; images from inside a Word file
+   need an upload in their block. *Look* changes colours, font, the optional
+   small line above the headline and the footer; **Reset to the site look**
+   puts the site's navy-and-red defaults back.
 3. **Preview** on the right is what a phone shows. Switch **Light / Dark**
    and **Phone / Desktop** to check both. Gmail does its own dark-mode
    recolouring, so also use **Send me a test** — it emails the saved version

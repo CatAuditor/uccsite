@@ -19,18 +19,31 @@
 export const ORG_NAME = 'Utah Civic Compact';
 export const FROM_EMAIL = 'hello@utahciviccompact.org';
 export const UNSUBSCRIBE_TOKEN = '{{unsubscribe_url}}';
+// The letterhead: the site's logo mark (the one the site shows on navy — the
+// header over the hero, the footer) beside the org name, linking home. The
+// asset is served by the live site, which is what every email client loads
+// it from; the admin preview shows the same file.
+export const SITE_URL = 'https://utahciviccompact.org';
+export const LOGO_URL = `${SITE_URL}/assets/logo-icon-dark.png`;
 
 export const BLOCK_TYPES = ['heading', 'text', 'button', 'image', 'quote', 'divider'];
+// The site's own stacks (css/styles.css --font-sans / --font-serif). Inter
+// is not embedded — email clients fall through to their system sans, which
+// is what the site does too where Inter is missing.
 export const FONTS = {
-  serif: "Georgia, 'Times New Roman', serif",
-  sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+  sans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+  serif: "'Playfair Display', Georgia, 'Times New Roman', serif",
 };
+// Defaults copy the live site (css/styles.css :root): navy bands, red
+// accent, cream page, sans type. `eyebrow` is an optional small label above
+// the headline — the org name itself is always in the letterhead, so an
+// eyebrow that only repeats it is not drawn.
 export const DEFAULT_THEME = {
-  accent: '#1a3a2a',     // header band + headings
-  highlight: '#c8a84b',  // eyebrow + links on dark
-  font: 'serif',
-  eyebrow: ORG_NAME,
-  footer: 'Utah Civic Compact · Salt Lake City, UT\nYou are getting this because you signed up at utahciviccompact.org.',
+  accent: '#1b2f4e',     // --navy: header/footer bands, headings, buttons
+  highlight: '#e74c3c',  // --red-light: eyebrow, quote rule, headings + links on dark
+  font: 'sans',
+  eyebrow: '',
+  footer: 'Utah Civic Compact · Salt Lake City, UT\nUtah Civic Compact is a 501(c)(4) social welfare organization. Contributions are not tax-deductible as charitable donations.\nYou are getting this because you signed up at utahciviccompact.org.',
 };
 export const MAX_BLOCKS = 60;
 // 'raw' is not in BLOCK_TYPES (no "Add" button): the composer's "Ignore all
@@ -195,30 +208,37 @@ export function renderEmail({ subject = '', preheader = '', headline = '', block
   if (raw) return renderRaw(raw.html);
   const theme = normalizeTheme(rawTheme);
   const font = FONTS[theme.font];
-  const dark = { bg: '#111412', card: '#1b1f1b', text: '#e9e9e3', muted: '#a9afa6', rule: '#343a34', quoteBg: '#232823' };
+  // Light values are the site's tokens (css/styles.css :root): cream page,
+  // white card, gray-900 text, gray-600 muted, gray-200 rules. Dark values
+  // are the site's navy-dark palette.
+  const light = { bg: '#f5f1ea', text: '#111827', muted: '#4b5563', rule: '#e5e7eb' };
+  const dark = { bg: '#0f1e33', card: '#16263f', band: '#0f1e33', text: '#f3f4f6', muted: '#9ca3af', rule: '#2a3c58', quoteBg: '#1f3250' };
   const s = {
-    body: `margin:0;padding:0;background:#f5f5f0;font-family:${font};`,
-    p: `margin:0 0 20px;color:#2c2c2c;font-size:17px;line-height:1.7;font-family:${font};`,
-    li: `margin:0 0 8px;color:#2c2c2c;font-size:17px;line-height:1.6;font-family:${font};`,
+    body: `margin:0;padding:0;background:${light.bg};font-family:${font};`,
+    p: `margin:0 0 20px;color:${light.text};font-size:17px;line-height:1.7;font-family:${font};`,
+    li: `margin:0 0 8px;color:${light.text};font-size:17px;line-height:1.6;font-family:${font};`,
     ul: 'margin:0 0 20px;padding-left:24px;',
     sub: `margin:0 0 8px;color:${theme.accent};font-size:17px;font-weight:700;line-height:1.7;font-family:${font};`,
-    h2: `margin:28px 0 12px;color:${theme.accent};font-size:22px;font-weight:700;line-height:1.3;font-family:${font};`,
+    h2: `margin:28px 0 12px;color:${theme.accent};font-size:24px;font-weight:800;line-height:1.2;letter-spacing:-0.02em;font-family:${font};`,
     link: `color:${theme.accent};text-decoration:underline;`,
-    button: `display:inline-block;background:${theme.accent};color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;line-height:1;padding:14px 26px;border-radius:4px;font-family:${font};`,
-    quote: `margin:0 0 20px;padding:16px 20px;border-left:4px solid ${theme.highlight};background:#f7f6f1;color:#2c2c2c;font-size:17px;line-height:1.6;font-style:italic;font-family:${font};`,
-    cite: `margin:8px 0 0;color:#5c5c58;font-size:14px;font-style:normal;font-family:${font};`,
-    caption: `margin:8px 0 0;color:#5c5c58;font-size:13px;line-height:1.5;text-align:center;font-family:${font};`,
-    footer: `margin:0;color:#6b6b66;font-size:13px;line-height:1.6;font-family:${font};`,
+    button: `display:inline-block;background:${theme.accent};color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;line-height:1;letter-spacing:0.02em;padding:14px 28px;border-radius:4px;font-family:${font};`,
+    quote: `margin:0 0 20px;padding:16px 20px;border-left:4px solid ${theme.highlight};background:${light.bg};color:${light.text};font-size:17px;line-height:1.6;font-style:italic;font-family:${font};`,
+    cite: `margin:8px 0 0;color:${light.muted};font-size:14px;font-style:normal;font-family:${font};`,
+    caption: `margin:8px 0 0;color:${light.muted};font-size:13px;line-height:1.5;text-align:center;font-family:${font};`,
+    footer: `margin:0;color:#aeb6c4;font-size:13px;line-height:1.6;font-family:${font};`,
+    footerLink: 'color:#ffffff;text-decoration:underline;',
   };
   const darkRules = (prefix) => [
     `${prefix}.em-bg{background:${dark.bg}!important;}`,
     `${prefix}.em-card{background:${dark.card}!important;}`,
+    `${prefix}.em-band{background:${dark.band}!important;}`,
     `${prefix}.em-text{color:${dark.text}!important;}`,
     `${prefix}.em-h{color:${theme.highlight}!important;}`,
     `${prefix}.em-link{color:${theme.highlight}!important;}`,
     `${prefix}.em-muted{color:${dark.muted}!important;}`,
     `${prefix}.em-rule{border-color:${dark.rule}!important;}`,
     `${prefix}.em-quote{background:${dark.quoteBg}!important;color:${dark.text}!important;}`,
+    `${prefix}.em-btn{background:${theme.highlight}!important;}`, // navy on navy-dark would vanish; the site's buttons on navy are red too
   ].join('');
   let css = `body{${s.body}} img{max-width:100%;height:auto;} a{word-break:break-word;}`;
   if (mode === 'dark') css += darkRules('');
@@ -230,7 +250,7 @@ export function renderEmail({ subject = '', preheader = '', headline = '', block
       case 'heading': parts.push(`<h2 class="em-h" style="${s.h2}">${escapeHtml(b.text)}</h2>`); break;
       case 'text': parts.push(textBlockHtml(b.markdown, s)); break;
       case 'button':
-        parts.push(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="${b.align}" style="margin:8px ${b.align === 'center' ? 'auto' : '0'} 28px;"><tr><td bgcolor="${theme.accent}" style="border-radius:4px;"><a href="${escapeHtml(b.url)}" style="${s.button}">${escapeHtml(b.label)}</a></td></tr></table>`);
+        parts.push(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="${b.align}" style="margin:8px ${b.align === 'center' ? 'auto' : '0'} 28px;"><tr><td class="em-btn" bgcolor="${theme.accent}" style="border-radius:4px;"><a href="${escapeHtml(b.url)}" class="em-btn" style="${s.button}">${escapeHtml(b.label)}</a></td></tr></table>`);
         break;
       case 'image': {
         const img = `<img src="${escapeHtml(b.url)}" alt="${escapeHtml(b.alt)}" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;margin:0 auto;">`;
@@ -240,13 +260,16 @@ export function renderEmail({ subject = '', preheader = '', headline = '', block
       case 'quote':
         parts.push(`<blockquote class="em-quote" style="${s.quote}">${inline(b.text, s.link)}${b.cite ? `<p class="em-muted" style="${s.cite}">— ${escapeHtml(b.cite)}</p>` : ''}</blockquote>`);
         break;
-      case 'divider': parts.push(`<hr class="em-rule" style="border:0;border-top:1px solid #e4e6e2;margin:8px 0 28px;">`); break;
+      case 'divider': parts.push(`<hr class="em-rule" style="border:0;border-top:1px solid ${light.rule};margin:8px 0 28px;">`); break;
       default: break;
     }
   }
 
   const title = escapeHtml(subject || headline || ORG_NAME);
-  const footerLines = theme.footer.split('\n').map((l) => inline(l, s.link)).filter(Boolean).join('<br>');
+  const footerLines = theme.footer.split('\n').map((l) => inline(l, s.footerLink)).filter(Boolean).join('<br>');
+  // The letterhead says the org name; an eyebrow that only repeats it (the
+  // old default, still stored on older drafts) adds nothing.
+  const eyebrow = theme.eyebrow.trim().toLowerCase() === ORG_NAME.toLowerCase() ? '' : theme.eyebrow.trim();
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -259,20 +282,23 @@ export function renderEmail({ subject = '', preheader = '', headline = '', block
 </head>
 <body class="em-bg" style="${s.body}">
 ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;font-size:1px;line-height:1px;">${escapeHtml(preheader)}${'&#847;&zwnj;&nbsp;'.repeat(30)}</div>` : ''}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="em-bg" style="background:#f5f5f0;padding:32px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="em-bg" style="background:${light.bg};padding:32px 0;">
 <tr><td align="center" style="padding:0 12px;">
-${viewUrl ? `<p class="em-muted" style="margin:0 0 10px;font-size:12px;font-family:${font};color:#6b6b66;"><a href="${escapeHtml(viewUrl)}" class="em-link" style="color:#6b6b66;text-decoration:underline;">View in browser</a></p>` : ''}
+${viewUrl ? `<p class="em-muted" style="margin:0 0 10px;font-size:12px;font-family:${font};color:${light.muted};"><a href="${escapeHtml(viewUrl)}" class="em-link" style="color:${light.muted};text-decoration:underline;">View in browser</a></p>` : ''}
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="em-card" style="background:#ffffff;border-radius:8px;overflow:hidden;max-width:600px;width:100%;">
-<tr><td bgcolor="${theme.accent}" style="background:${theme.accent};padding:32px 36px;">
-<p style="margin:0;color:${theme.highlight};font-size:12px;letter-spacing:3px;text-transform:uppercase;font-family:${font};">${escapeHtml(theme.eyebrow)}</p>
-${headline ? `<h1 style="margin:8px 0 0;color:#ffffff;font-size:28px;font-weight:400;line-height:1.3;font-family:${font};">${escapeHtml(headline)}</h1>` : ''}
+<tr><td class="em-band" bgcolor="${theme.accent}" style="background:${theme.accent};padding:28px 36px 32px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 ${headline || eyebrow ? '24px' : '0'};"><tr>
+<td style="padding:0 12px 0 0;vertical-align:middle;"><a href="${SITE_URL}" style="text-decoration:none;"><img src="${LOGO_URL}" alt="" width="38" height="44" style="display:block;width:38px;height:44px;border:0;"></a></td>
+<td style="vertical-align:middle;"><a href="${SITE_URL}" style="color:#ffffff;font-size:17px;font-weight:700;letter-spacing:-0.01em;text-decoration:none;font-family:${font};">${ORG_NAME}</a></td>
+</tr></table>
+${eyebrow ? `<p style="margin:0 0 8px;color:${theme.highlight};font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:${font};">${escapeHtml(eyebrow)}</p>` : ''}
+${headline ? `<h1 style="margin:0;color:#ffffff;font-size:30px;font-weight:800;line-height:1.15;letter-spacing:-0.02em;font-family:${font};">${escapeHtml(headline)}</h1>` : ''}
 </td></tr>
 <tr><td style="padding:36px 36px 16px;">
 ${parts.join('\n')}
 </td></tr>
-<tr><td style="padding:8px 36px 32px;">
-<hr class="em-rule" style="border:0;border-top:1px solid #e4e6e2;margin:0 0 20px;">
-<p class="em-muted" style="${s.footer}">${footerLines}${footerLines ? '<br>' : ''}<a href="${UNSUBSCRIBE_TOKEN}" class="em-link" style="color:#6b6b66;text-decoration:underline;">Unsubscribe</a></p>
+<tr><td class="em-band" bgcolor="${theme.accent}" style="background:${theme.accent};padding:24px 36px 28px;">
+<p style="${s.footer}">${footerLines}${footerLines ? '<br>' : ''}<a href="${UNSUBSCRIBE_TOKEN}" class="em-link" style="${s.footerLink}">Unsubscribe</a></p>
 </td></tr>
 </table>
 </td></tr>

@@ -20,7 +20,7 @@
 .nl-figure { margin: 24px 0 28px; text-align: center; }
 .nl-figure img { max-width: 100%; height: auto; }
 .nl-figure figcaption { color: #5c5c58; font-size: .9rem; margin-top: 8px; }
-.nl-quote { margin: 24px 0; padding: 16px 20px; border-left: 4px solid #c8a84b; background: #f7f6f1; font-style: italic; }
+.nl-quote { margin: 24px 0; padding: 16px 20px; border-left: 4px solid var(--red); background: var(--cream); font-style: italic; }
 .nl-quote cite { display: block; margin-top: 8px; font-style: normal; color: #5c5c58; font-size: .95rem; }
 .nl-quote cite::before { content: "— "; }
 .nl-join { margin: 40px 0 0; text-align: center; }

@@ -37,7 +37,11 @@ apps/admin/lib/newsletters.js      every rule: create/save/request/approve/decli
 apps/admin/lib/notify.js           notifyNewsletterRequested (reviewer email, same recipients as publish)
 apps/admin/app/mail/page.js        list + "new newsletter"
 apps/admin/app/mail/[id]/page.js   editor page: review panel, Composer in an ActionForm, test/request/delete
-apps/admin/app/mail/[id]/composer.js  client: block editor (image block has inline upload) + theme + audience | phone/desktop, light/dark preview
+apps/admin/app/mail/[id]/composer.js  client: block editor (image block has inline upload; file import) + look (reset to site look)
+                                   + audience ("Apply filters" live count) | phone/desktop, light/dark preview
+apps/admin/app/mail/[id]/actions.js   importUpload(formData): .docx/.md/.html → blocks (convert-upload.mjs → newsletter-import.mjs)
+apps/admin/lib/newsletter-import.mjs  htmlToBlocks(html, {headline}) → {blocks, headline, notes} (tested)
+apps/admin/app/mail/audience-count/route.js  GET ?residency&donors&petition → {count, description} (signed-in; no write)
 apps/admin/app/mail/status.js      status labels
 apps/admin/app/page.js             dashboard "Newsletters needing attention" (pending/approved/sending)
 scripts/newsletter-smoke.mjs       E2E of the Lambda with recipientsOverride (mailbox simulator)
@@ -54,7 +58,7 @@ moved from Operations).
 |---|---|
 | `status` | `draft` → `pending` → `approved` → `sending` → `sent` \| `failed`; decline / withdraw / cancel-before-start return to `draft` |
 | `subject, preheader, headline, from_name` | what the composer edits; `from_name` is the author shown in the From display name |
-| `blocks, theme, audience` | JSON: the block list (`heading, text, button, image, quote, divider`), the look (`accent, highlight, font, eyebrow, footer`), the audience filters (`residency, donors, petition` — packages/db/audience.js, same as the Mailing list page) |
+| `blocks, theme, audience` | JSON: the block list (`heading, text, button, image, quote, divider`), the look (`accent, highlight, font, eyebrow` (optional label; '' by default), `footer`; the letterhead itself is fixed), the audience filters (`residency, donors, petition` — packages/db/audience.js, same as the Mailing list page) |
 | `html, text` | **frozen at request time** — what the reviewer approves is what is sent, even though the send happens later |
 | `requested_by/_user, request_note, requested_at, scheduled_for, recipients` | the request; `recipients` = the audience count the writer saw |
 | `reviewed_by, review_note, reviewed_at` | the latest review (kept on a declined draft so the writer sees the note) |
@@ -77,6 +81,24 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    from the same renderer; toggles: Light / Dark (dark = the email's own
    `prefers-color-scheme` rules applied unconditionally), Phone (375 px) /
    Desktop.
+   - **Audience**: the legend shows the count for the SAVED filters;
+     **Apply filters** fetches the count for the chosen ones
+     (`GET /mail/audience-count`, same `audienceCount`) without saving — the
+     legend then says "match these filters" until a filter changes again.
+     Saving stores the filters (and the page reloads the saved count).
+   - **Import a file** (Content fieldset): a .docx (Word / Google Docs /
+     Claude Docs), .md or .html file goes to `importUpload` (server action,
+     editor+, 8 MB): `convert-upload.mjs` (mammoth / marked, deterministic)
+     → `newsletter-import.mjs htmlToBlocks` → blocks appended after the
+     current ones; an `h1` fills an empty headline. Mapping: h2 → heading,
+     h3+ → `## ` line, p/lists → text (renderer markdown; nested lists
+     flattened), a paragraph that is only a link → button, img → image
+     (data:/relative addresses arrive empty — upload in the block), blockquote
+     → quote (trailing "— name" = cite), hr → divider, table → "- a | b"
+     lines. Notes (images, tables, mammoth warnings) show under the input.
+     Nothing is stored until save.
+   - **Look**: defaults copy the live site; **Reset to the site look** puts
+     `DEFAULT_THEME` back on a draft that carries an older look.
 2. **Save & send me a test** (editor+): saves what is on screen, then sends
    it to the signed-in admin's address only, subject prefixed `[TEST]`, through the admin's SSR role
    (`ses:SendEmail`, From pinned to hello@). The unsubscribe link points
@@ -278,6 +300,24 @@ postal address (CAN-SPAM). Editors are trusted; the admin preview iframe is
 
 ## Rendering
 
+- **Letterhead copies the live site** (2026-10-09; css/styles.css tokens):
+  header band = `theme.accent` (default `--navy #1b2f4e`) with the site's
+  logo mark (`LOGO_URL` = `https://utahciviccompact.org/assets/logo-icon-dark.png`,
+  the mark the site shows on navy; 38×44, served by the live site) beside
+  "Utah Civic Compact" in white, both linking to `SITE_URL`; optional
+  eyebrow (`theme.highlight`, default `--red-light #e74c3c`, uppercase
+  12 px) and the headline (white, 800). Body: white card on cream
+  `#f5f1ea`, gray-900 text, navy headings/links/buttons, cream quote with a
+  highlight rule. Footer band = accent again: theme footer lines + the
+  Unsubscribe link in white. Default font `sans` = the site's Inter stack
+  (not embedded; clients fall back to their system sans); `serif` =
+  Playfair/Georgia. Dark mode: navy-dark page `#0f1e33`, card `#16263f`,
+  bands `#0f1e33` (`.em-band`), highlight for headings/links.
+  `DEFAULT_THEME.eyebrow` is '' — an eyebrow equal to the org name (older
+  drafts) is not drawn, the letterhead already says it. Existing drafts keep
+  their stored look; "Reset to the site look" in the composer applies the
+  new defaults. `newsletter_defaults` on prod was `{}` at the change, so
+  new drafts get the site look without any action.
 - Table-based 600 px card, inline styles (Gmail strips `<style>` partially),
   `<meta name="color-scheme" content="light dark">` + a
   `@media (prefers-color-scheme: dark)` block and `[data-ogsc]` twins

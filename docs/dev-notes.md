@@ -6,6 +6,45 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-09 — Newsletters look like the site, count the audience on demand, and import a file
+
+**What changed**
+
+- **Letterhead and look.** Every newsletter now opens with the site's
+  letterhead: the logo mark and "Utah Civic Compact" on a navy band, both
+  linking to the site, then the headline. The body uses the site's colours
+  and type (navy headings and buttons, red accents, cream page, the site's
+  sans-serif), and the footer is a navy band like the site's. The old green
+  and gold look is gone from the defaults. The footer text now also carries
+  the 501(c)(4) "not tax-deductible" line by default.
+- **Apply filters.** Under Audience there is an **Apply filters** button. It
+  shows how many people the filters you have chosen would reach, right away,
+  without saving. (Before, the count only changed after pressing Save at the
+  bottom.) Saving still stores the filters.
+- **Import a file.** Under Content there is an **import a file** control.
+  Pick a .docx (Word, Google Docs, Claude Docs export), a Markdown file or an
+  .html file and its headings, paragraphs, lists, quotes, links and images
+  become blocks in the email's own look, added after any blocks already
+  there. A first-level heading fills the headline if it is empty. A
+  paragraph that is only a link becomes a button. Tables become bulleted
+  lines (emails have no tables).
+
+**What editors do differently**
+
+- Drafts written before today keep the look they were saved with. Open the
+  draft and press **Reset to the site look** (in the Look box) to switch it.
+  New drafts get the site look automatically.
+- The "small line above the headline" is now optional and empty by default;
+  the org name is always in the letterhead, so it does not need repeating.
+- After importing a file: images from inside a Word file arrive without an
+  address — upload each one in its block (or paste a Media Library address).
+  Check the preview, then save.
+
+**Left to do**
+
+- Nothing needs a person. Prod deploys with the next push (the admin builds
+  from `refactor`).
+
 ## 2026-10-09 — Thank-you emails for signers and donors; petitions filed under a project
 
 Until now the site sent only two emails on its own: the welcome email when

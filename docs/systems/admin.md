@@ -121,7 +121,7 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
 | Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |
 | Donors; the mailing list with audience controls (residency, donors, petition signers) + CSV; remove / restore / erase people on the list | Donations, Mailing list |
-| Newsletters: write, preview (phone, light/dark), test, request → approve → send (now or scheduled) | Mail → Newsletters (docs/systems/newsletters.md) |
+| Newsletters: write (blocks or a .docx/.md/.html import), site letterhead look, live audience count, preview (phone, light/dark), test, request → approve → send (now or scheduled) | Mail → Newsletters (docs/systems/newsletters.md) |
 | Confidential tips: read, triage status, delete | Tips (editor+; delete is owner) |
 | Accounts, roles, MFA, security keys | Users (owners), My profile (everyone) |
 
