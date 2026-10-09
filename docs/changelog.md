@@ -4,6 +4,15 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.24.1 — 2026-10-09 (branch `refactor`) — Prod schema for the tree; runbook adds the stack deploy
+
+- `migrate-schema --env prod` run right after the v0.24.0 push (columns, `project_notes`, slug constraint → unique index) so the
+  Amplify-deployed admin finds its columns. Prod data NOT migrated: `migrate-project-tree --env prod` dry run recorded (22 steps,
+  same plan as staging) — awaiting `[go]` (for-conner §14).
+- for-conner §14 step 3 now starts with `cdk deploy UccProd` (the prod publish Lambda still bundles the old renderer until then).
+- `cdk deploy UccStaging` run so admin-triggered staging publishes use the new renderer.
+- Open P1: prod `[go]` (deploy + migrate + `publish --allow-bulk-delete`).
+
 ## v0.24.0 — 2026-10-09 (branch `refactor`) — Projects as a tree: hub pages, nested document URLs, workspace + notes
 
 Decision record docs/decisions/project-tree-nested-urls.md; system doc docs/systems/projects.md (rewritten).

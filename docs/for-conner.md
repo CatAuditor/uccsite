@@ -624,10 +624,14 @@ changes on the live site until step 3.
   `license-plate-has-a-price` should NOT sit under the license-plate
   investigation, say so before step 3 (it can also be moved later in the
   admin).
-- [ ] `[go]` Apply + publish. The first publish removes 9 objects (old pages +
-  their stylesheets), which the bulk-delete guard refuses from the admin, so
-  this one run goes from the repo:
+- [ ] `[go]` Deploy, apply, publish — in this order. The stack deploy puts the
+  new renderer (hub pages, nested addresses, redirects) into the publish
+  Lambda; until it runs, an admin-triggered publish on prod would still use
+  the old code. The first publish removes 9 objects (old pages + their
+  stylesheets), which the bulk-delete guard refuses from the admin, so this
+  one run goes from the repo:
   ```
+  cd infra/cdk; npx cdk deploy UccProd --require-approval never --profile uccsite; cd ../..
   node scripts/migrate-project-tree.mjs --env prod --apply
   node scripts/publish.mjs --env prod --source db --allow-bulk-delete
   ```
