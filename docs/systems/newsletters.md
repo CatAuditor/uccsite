@@ -8,7 +8,8 @@ owner approves their own — with an optional Mountain-time schedule. The
 actual sending is a Lambda (`NewsletterSendFn`), one SES message per
 recipient with a signed unsubscribe link, recorded per recipient so a
 resume never mails anyone twice. Every email goes out as
-`"<Author> from Utah Civic Compact" <hello@utahciviccompact.org>`.
+`"<Author> from Utah Civic Compact" <hello@utahciviccompact.org>`, with
+`Reply-To` set to the author's own org mailbox (see "Reply-To" below).
 
 Supersedes `scripts/send-periodical.js` for routine newsletters (the script
 still works as an operator fallback and uses the same audience filters).
@@ -126,8 +127,8 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
      `DEFAULT_THEME` back on a draft that carries an older look.
 2. **Save & send me a test** (editor+): saves what is on screen, then sends
    it to the signed-in admin's address only, subject prefixed `[TEST]`, through the admin's SSR role
-   (`ses:SendEmail`, From pinned to hello@). The unsubscribe link points
-   back at the editor. Audit `newsletter.test`.
+   (`ses:SendEmail`, From pinned to hello@; same `Reply-To` as the real
+   send). The unsubscribe link points back at the editor. Audit `newsletter.test`.
 3. **Save & request send** (editor+): saves what is on screen first (Save,
    both test buttons and the request are one form, `then` = the clicked
    button — before 2026-10-08 they were separate forms and a test of an
@@ -434,3 +435,19 @@ node scripts/migrate-schema.mjs --env <env>                                    #
   within ~60 s of its time.
 - Deliveries are kept with the newsletter (deleted with it) — see
   docs/legal/data-handling.md.
+
+## Reply-To (2026-10-10)
+
+The From address is IAM-pinned to hello@, so the person is carried by
+`Reply-To`. `packages/db/newsletters.js authorReplyTo(client, fromName)`
+looks up `team_members.email` for the card whose `name` equals the From
+name and returns it lower-cased **only if it ends in
+`@utahciviccompact.org`** (a personal address typed into a team card is never
+exposed to the list); blank name, no card, no email or an outside domain →
+`null` → no header, replies land in hello@ as before. Used by the send
+Lambda (`handler.mjs runOne`, logged `reply-to=<addr>` / `(none: hello@)`;
+`send.js buildMessage` adds `ReplyToAddresses`) and by the composer's test
+sends (`lib/newsletters.js sendTest`). Reply-To is not authenticated, so it
+has no SPF/DKIM/DMARC effect. An editor sets the address on the Team page
+(`team_members.email`). Replies arrive in the person's Zoho mailbox; an
+inbox inside the admin is a plan, not built (docs/plans/ses-inbox.md).

@@ -6,13 +6,11 @@ is my recommendation. Items marked **decision** need an org call first.
 
 ## Tier 1 — quick wins (hours each; do in the next session)
 
-1. **Reply-To the author.** From is `"<Name> from Utah Civic Compact"
-   <hello@…>`; a reply today lands in the hello@ box. Set `Reply-To` to the
-   author's `@utahciviccompact.org` address (team_members.email) when the
-   From name is a team member. Touches `aws/newsletter/send.js`
-   (`ReplyToAddresses`), nothing else. Zero deliverability risk (Reply-To
-   is not authenticated). *Decision:* confirm replies should go to the
-   person, not the shared inbox.
+1. ~~**Reply-To the author.**~~ **Done 2026-10-10** (docs/systems/newsletters.md
+   "Reply-To"): the author's `@utahciviccompact.org` address from
+   `team_members.email` goes in `Reply-To`; replies land in the person's
+   Zoho mailbox. Decision taken: the person, not the shared inbox. A reply
+   inbox inside the admin is a separate plan — docs/plans/ses-inbox.md.
 2. **Duplicate a newsletter.** "Copy as new draft" on a sent/declined email
    (blocks + theme + audience, new subject). Most newsletters start from
    the last one. `lib/newsletters.js` + a button on `/mail`.

@@ -17,7 +17,7 @@ import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { withConnection } from '@uccsite/db';
 import { audienceQuery, normalizeFilters } from '@uccsite/db/audience';
-import { claimForSending, dueNewsletters, deliveryCounts, finishNewsletter } from '@uccsite/db/newsletters';
+import { claimForSending, dueNewsletters, deliveryCounts, finishNewsletter, authorReplyTo } from '@uccsite/db/newsletters';
 import { fromHeader } from '@uccsite/newsletter/render';
 import { sendNewsletter } from './send.js';
 
@@ -55,9 +55,11 @@ async function runOne({ id, resume = false, recipientsOverride }, context) {
       return [...new Set((await client.query(sql, params)).rows.map((r) => r.email).filter(Boolean))];
     });
     console.log(`[newsletter] ${id} recipients=${recipients.length}${recipientsOverride ? ' (override)' : ''}`);
+    const replyTo = await withConnection(db, (client) => authorReplyTo(client, newsletter.fromName));
+    console.log(`[newsletter] ${id} reply-to=${replyTo || '(none: hello@)'}`);
     result = await withConnection(db, (client) => sendNewsletter({
       client, newsletter, recipients, secret, origin: PUBLIC_ORIGIN,
-      from: fromHeader(newsletter.fromName), configurationSet: SES_CONFIGURATION_SET || undefined,
+      from: fromHeader(newsletter.fromName), replyTo, configurationSet: SES_CONFIGURATION_SET || undefined,
       send: (input) => ses.send(new SendEmailCommand(input)),
       timeLeftMs: () => context.getRemainingTimeInMillis(), log: console.log,
     }));

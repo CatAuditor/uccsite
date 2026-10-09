@@ -378,9 +378,24 @@ async function deleteNewsletter(client, id) {
   return res.rowCount === 1;
 }
 
+// authorReplyTo(client, fromName) → the author's org mailbox for the
+// Reply-To header, or null (replies then land in hello@). The From ADDRESS
+// stays hello@ (IAM-pinned); only Reply-To carries the person, and only an
+// @utahciviccompact.org address from team_members qualifies — a personal
+// address typed into a team card is never exposed to the list.
+// docs/systems/newsletters.md "Reply-To".
+const REPLY_TO_DOMAIN = '@utahciviccompact.org';
+async function authorReplyTo(client, fromName) {
+  const name = String(fromName || '').trim();
+  if (!name) return null;
+  const r = (await client.query(`SELECT email FROM team_members WHERE name = $1 AND email <> '' LIMIT 1`, [name])).rows[0];
+  const email = String(r?.email || '').trim().toLowerCase();
+  return email.endsWith(REPLY_TO_DOMAIN) && /^[^\s@]+@[^\s@]+$/.test(email) ? email : null;
+}
+
 module.exports = {
   DDL, STATUSES, KINDS, TRIGGERS, triggerOf, petitionTrigger, PETITION_TRIGGER, STALE_DELIVERY_MINUTES, rowToNewsletter,
   attachTransactional, detachTransactional, listAttachments, listNewsletters, getNewsletter, pendingNewsletters, createNewsletter, duplicateNewsletter, saveNewsletter,
   requestSend, reschedule, reviewSend, cancelScheduled, retryFailed, getDefaults, setDefaults, claimForSending, dueNewsletters, beginDelivery, finishDelivery,
-  deliveryCounts, deliveriesFor, finishNewsletter, listArchive, openCounts, deleteNewsletter,
+  deliveryCounts, deliveriesFor, finishNewsletter, listArchive, openCounts, deleteNewsletter, authorReplyTo,
 };

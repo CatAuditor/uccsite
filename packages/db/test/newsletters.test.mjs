@@ -112,3 +112,13 @@ test('attached emails: kind in the row, triggers carry their placeholders, attac
   assert.equal(e.calls.length, 3); // an in-flight row keeps its attachment (none exists for newsletters anyway)
   assert.equal(CONTENT_ACTION_RE.test('newsletter.attach'), false);
 });
+
+test('authorReplyTo: the org mailbox of the named team member; nothing for a blank name, a missing card or an outside address', async () => {
+  const { authorReplyTo } = require('../newsletters.js');
+  assert.equal(await authorReplyTo(fakeClient(), ''), null);
+  const c = fakeClient([{ rows: [{ email: 'Jarom@UtahCivicCompact.org' }] }]);
+  assert.equal(await authorReplyTo(c, 'Jarom Gillins'), 'jarom@utahciviccompact.org');
+  assert.deepEqual(c.calls[0].params, ['Jarom Gillins']);
+  assert.equal(await authorReplyTo(fakeClient([{ rows: [] }]), 'Nobody'), null);
+  assert.equal(await authorReplyTo(fakeClient([{ rows: [{ email: 'someone@gmail.com' }] }]), 'Jarom Gillins'), null);
+});

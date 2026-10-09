@@ -86,6 +86,15 @@ test('unsubscribeUrl encodes the token', async () => {
   assert.match(url, /^https:\/\/o\/api\/unsubscribe\?token=[A-Za-z0-9_.%-]+$/);
 });
 
+test('Reply-To carries the author mailbox when given, no header otherwise', async () => {
+  const m = buildMessage({ subject: 's', html: '<p>', text: '' }, { to: 'a@b.c', unsub: 'u', from: 'f', replyTo: 'jarom@utahciviccompact.org' });
+  assert.deepEqual(m.ReplyToAddresses, ['jarom@utahciviccompact.org']);
+  assert.equal('ReplyToAddresses' in buildMessage({ subject: 's', html: '<p>', text: '' }, { to: 'a@b.c', unsub: 'u', from: 'f' }), false);
+  const seen = [];
+  await sendNewsletter(base(fakeDb(), async (input) => { seen.push(input); return { MessageId: 'ok' }; }, { recipients: ['a@x.y'], replyTo: 'jarom@utahciviccompact.org', log: () => {} }));
+  assert.deepEqual(seen[0].ReplyToAddresses, ['jarom@utahciviccompact.org']);
+});
+
 test('bulk headers: List-Id and Precedence', () => {
   const m = buildMessage({ subject: 's', html: '<p>', text: '' }, { to: 'a@b.c', unsub: 'u', from: 'f' });
   const names = m.Content.Simple.Headers.map((h) => h.Name);

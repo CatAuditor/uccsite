@@ -328,11 +328,13 @@ export async function sendTest(id, { all = false } = {}) {
   const to = all ? [...new Set([s.email, ...PUBLISH_REVIEWERS])] : [s.email];
   const { html, text } = renderFrozen(n, n.slug || archiveSlug(n.subject));
   const link = `${config.appOrigin}/mail/${nid}`;
+  const replyTo = await withDb((client) => db.authorReplyTo(client, n.fromName)); // same header the real send carries
   const client = new SESv2Client({ region: config.region, requestHandler: { requestTimeout: 8000 } });
   try {
     const res = await client.send(new SendEmailCommand({
       FromEmailAddress: fromHeader(n.fromName),
       Destination: { ToAddresses: to },
+      ...(replyTo ? { ReplyToAddresses: [replyTo] } : {}),
       ...(config.envName === 'prod' ? { ConfigurationSetName: 'ucc-prod' } : {}),
       Content: { Simple: {
         Subject: { Data: `TEST: ${n.subject}`, Charset: 'UTF-8' },

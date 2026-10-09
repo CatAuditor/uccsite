@@ -36,15 +36,18 @@ async function unsubscribeUrl(secret, email, origin) {
   return `${origin}/api/unsubscribe?token=${encodeURIComponent(token)}`;
 }
 
-// buildMessage(newsletter, { to, unsub }) → the SESv2 SendEmail input.
+// buildMessage(newsletter, { to, unsub, from, replyTo }) → the SESv2 SendEmail input.
 // List-Id + Precedence: bulk mark it as list mail (bulk-sender
 // classification; keeps auto-replies and out-of-office off hello@).
-function buildMessage(newsletter, { to, unsub, from, configurationSet }) {
+// replyTo (the author's org mailbox, db authorReplyTo) sets Reply-To so a
+// reader's reply reaches the person, not the shared inbox; absent → no header.
+function buildMessage(newsletter, { to, unsub, from, replyTo, configurationSet }) {
   const body = { Html: { Data: newsletter.html.replaceAll(UNSUBSCRIBE_TOKEN, unsub), Charset: 'UTF-8' } };
   if (newsletter.text) body.Text = { Data: newsletter.text.replaceAll(UNSUBSCRIBE_TOKEN, unsub), Charset: 'UTF-8' };
   return {
     FromEmailAddress: from,
     Destination: { ToAddresses: [to] },
+    ...(replyTo ? { ReplyToAddresses: [replyTo] } : {}),
     ...(configurationSet ? { ConfigurationSetName: configurationSet } : {}),
     Content: {
       Simple: {
@@ -75,7 +78,7 @@ async function sendWithRetry(send, input, { sleep = (ms) => new Promise((r) => s
   }
 }
 
-async function sendNewsletter({ client, send, newsletter, recipients, secret, origin, from, configurationSet, timeLeftMs, log = () => {}, gapMs = GAP_MS, sleep }) {
+async function sendNewsletter({ client, send, newsletter, recipients, secret, origin, from, replyTo, configurationSet, timeLeftMs, log = () => {}, gapMs = GAP_MS, sleep }) {
   let sent = 0; let failed = 0; let skipped = 0;
   for (let i = 0; i < recipients.length; i++) {
     if (timeLeftMs() < RESERVE_MS) {
@@ -86,7 +89,7 @@ async function sendNewsletter({ client, send, newsletter, recipients, secret, or
     if (!(await beginDelivery(client, newsletter.id, to))) { skipped++; continue; }
     try {
       const unsub = await unsubscribeUrl(secret, to, origin);
-      const res = await sendWithRetry(send, buildMessage(newsletter, { to, unsub, from, configurationSet }), { sleep, log, label: `${newsletter.id} send #${i}` });
+      const res = await sendWithRetry(send, buildMessage(newsletter, { to, unsub, from, replyTo, configurationSet }), { sleep, log, label: `${newsletter.id} send #${i}` });
       await finishDelivery(client, newsletter.id, to, { status: 'sent', messageId: res?.MessageId });
       sent++;
     } catch (err) {
