@@ -576,6 +576,16 @@ v=DMARC1; p=reject; sp=reject; adkim=r; aspf=r; fo=1; rua=mailto:<cloudflare add
 ```
 Rollback at any step: set `p=none` again (TTL 1 hour).
 
+**BIMI (logo in the inbox).** Logo is live at
+`https://utahciviccompact.org/bimi-logo.svg` (file `static/bimi-logo.svg`).
+TXT record, name `default._bimi`:
+```
+v=BIMI1; l=https://utahciviccompact.org/bimi-logo.svg; a=;
+```
+Checkers fail BIMI until step 2 (`p=quarantine`). Gmail and Apple Mail
+show the logo only with a mark certificate (VMC needs a registered
+trademark; CMC needs a year of public logo use) — its URL goes after `a=`.
+
 **Postal address (CAN-SPAM).** Every newsletter must show a valid street
 address, PO box, or registered mailbox. The default footer says only
 "Salt Lake City, UT" — not compliant. When the org has one, an editor puts
