@@ -4,6 +4,12 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.25.3 — 2026-10-09 (branch `refactor`) — Prod press filed under projects
+
+- On the owner's instruction, the four September Flock stories (3 articles, 1 video) → `alpr`, the Commissioner
+  Stratos video → `stratos` (direct UPDATE + `press.save` audit row), prod published (3 changed). Live: ALPR hub 7 + 2
+  videos, its strip 7; Stratos 5 + 3. No unfiled press rows remain on prod.
+
 ## v0.25.2 — 2026-10-09 (branch `refactor`) — Changelog correction (live counts after the re-run)
 
 ## v0.25.1 — 2026-10-09 (branch `refactor`) — Press live on prod; video-wins merge; migration re-runs from its snapshot
