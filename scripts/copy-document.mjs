@@ -53,7 +53,7 @@ await withConnection({ endpoint: dst.outputs.DsqlEndpoint, region: dst.region },
   const members = (await client.query('SELECT name, slug FROM team_members')).rows;
   const authorHref = (() => { const m = members.find(x => x.name && x.name.trim() === String(doc.author || '').trim()); return m ? `/team/${memberSlug(m)}` : ''; })();
 
-  const res = parse(doc.bodyHtmlRaw);
+  const res = parse(doc.bodyHtmlRaw, { keepFrame: !STANDARD });
   if (res.title && res.title !== doc.title) res.body.header.headline = res.title;
   const author = doc.author || res.author;
   if (STANDARD) {

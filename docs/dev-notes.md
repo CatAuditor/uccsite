@@ -66,7 +66,13 @@ site style replaces it.
 The authoring kit (the file handed to Claude before writing) now explains
 the three ways to hand back a piece and the small markers a writing tool
 can put in a Markdown file so a quotation, a scope box, key figures or a
-table arrive as the right block, already styled.
+table arrive as the right block, already styled. Its page-fields block asks
+for the eyebrow, author title and date; pictures may be in the draft; the
+hand-over checklist matches the builder. Download it again to get the
+current version. An uploaded HTML fragment written on the kit's older
+section-container-prose frame now takes the site's standard document frame
+on upload (only converted pages keep their own). The editing guide's
+Documents section describes the builder.
 
 Layout, from Jarom's notes: the Document and SEO boxes sit centred at a
 reading width; the builder's editor and preview each take half of the

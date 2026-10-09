@@ -4,6 +4,16 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.23.3 — 2026-10-09 (branch `refactor`) — Kit brought up to date; uploads take the standard frame
+
+- `parse(html, { keepFrame })`: a page's own wrapper chain is kept only for conversions (script, Convert
+  to blocks, copy-document, round-trip test); an upload (kit frame included) gets doc-body > doc-inner.
+  Test added. Editor form uses the full content width (`form.editor` 680 px cap lifted; commit 527aed3).
+- Authoring kit: Claude instructions prefer Markdown + markers; page fields add Eyebrow / Author title /
+  Date; images allowed in the draft (Image blocks awaiting upload); skeleton note; hand-over checklist
+  (Markdown route, New document > Start from a file). Editing guide's Documents section rewritten for the
+  builder. Staging published (stylesheet underline fix live).
+
 ## v0.23.2 — 2026-10-09 (branch `refactor`) — License-plate rebuilt on staging; editor layout
 
 - `scripts/copy-document.mjs` (commit 75fc1a0): copy a document between environments as a builder

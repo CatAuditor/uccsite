@@ -352,8 +352,10 @@ function readMeta(meta, header, out) {
   }
 }
 
-// parse(html, { classAliases }) — classAliases renames classes before
-// reading (a legacy page's "finding-box" that is the site's "violation-box").
+// parse(html, { classAliases, keepFrame }) — classAliases renames classes
+// before reading (a legacy page's "finding-box" that is the site's
+// "violation-box"); keepFrame keeps the page's own wrapper chain as
+// header.frame (conversion), otherwise the standard frame applies (upload).
 function parse(html, opts = {}) {
   const tree = parseFragmentTree(aliasClasses(String(html || ''), opts.classAliases || {}));
   // Builder ids from an earlier serialization are not content.
@@ -363,10 +365,12 @@ function parse(html, opts = {}) {
   const sections = out.body.sections;
   const state = { frame: [], depth: 0, bands: 0 };
   const nodes = unwrap(tree.children, state);
-  // A legacy frame is kept verbatim (its page CSS targets it); the standard
-  // doc-body > doc-inner (or no wrappers at all) means the default.
+  // A legacy frame is kept verbatim only when asked (opts.keepFrame: the
+  // conversion of a page whose page CSS targets it). An upload drops its
+  // frame (the kit's section > container > prose included) and takes the
+  // standard doc-body > doc-inner frame.
   const legacyFrame = state.frame.filter(c => !/^doc-(body|inner)$/.test(c));
-  if (legacyFrame.length && state.frame.join('|') !== 'doc-body|doc-inner') header.frame = state.frame;
+  if (opts.keepFrame && legacyFrame.length && state.frame.join('|') !== 'doc-body|doc-inner') header.frame = state.frame;
   for (const w of findAll(tree, c => getClasses(c).some(isWrapperClass))) for (const c of getClasses(w)) if (isWrapperClass(c) && !out.report.wrappers.includes(c)) out.report.wrappers.push(c);
 
   let section = null;            // current section

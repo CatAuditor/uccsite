@@ -126,7 +126,7 @@ export async function convertToBlocks(prevState, formData) {
       if (!current) throw new Error('Document not found');
       if (current.bodyBlocks) throw new Error('Already a builder document');
       const before = await snapshotOf(client, id);
-      const res = parseBlocks(current.bodyHtmlRaw);
+      const res = parseBlocks(current.bodyHtmlRaw, { keepFrame: true }); // its page CSS targets its own frame
       if (res.title && res.title !== current.title) res.body.header.headline = res.title;
       const author = current.author || res.author;
       const { body, html } = await blocksToRaw(client, res.body, { title: current.title, author });

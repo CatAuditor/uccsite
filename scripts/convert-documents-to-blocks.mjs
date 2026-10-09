@@ -147,7 +147,7 @@ await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) 
     if (doc.bodyBlocks && !APPLY) console.log(`\n== ${doc.slug}: already a builder document (comparing anyway)`);
     else console.log(`\n== ${doc.slug}`);
     const aliases = CLASS_ALIASES[doc.slug] || {};
-    const res = parse(doc.bodyHtmlRaw, { classAliases: aliases });
+    const res = parse(doc.bodyHtmlRaw, { classAliases: aliases, keepFrame: true });
     if (res.title && res.title !== doc.title) res.body.header.headline = res.title;
     if (STANDARD_FRAME.has(doc.slug)) {
       res.body.header.frame = [];

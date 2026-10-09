@@ -65,9 +65,13 @@ test('serialize: a legacy frame and legacy box class are written back verbatim',
   assert.match(html, /<div class="report-body">\n<div class="container">/);
   assert.ok(!html.includes('doc-body'));
   assert.match(html, /<div class="report-callout" data-block="[^"]+">\n<div class="callout-label">Working definition<\/div>/);
-  // parse reads it back the same way
-  const r = parse(html);
+  // parse reads it back the same way when converting; an upload drops the frame
+  const r = parse(html, { keepFrame: true });
   assert.deepEqual(r.body.header.frame, ['report-body', 'container']);
+  assert.deepEqual(parse(html).body.header.frame, []);
+  const kit = parse('<div class="subpage-hero"><div class="section-label">E</div><h1>T</h1><p>Lead.</p></div><section class="section bg-cream"><div class="container"><div class="prose"><h2>One</h2><p>a</p><div class="callout"><strong class="callout-label">L</strong><p>b</p></div></div></div></section>');
+  assert.deepEqual(kit.body.header.frame, []);
+  assert.deepEqual(kit.body.sections[0].blocks.map(b => b.type), ['prose', 'callout']);
   const c = r.body.sections[0].blocks[0];
   assert.equal(c.type, 'callout');
   assert.equal(c.legacyClass, 'report-callout');
@@ -189,7 +193,7 @@ function flatText(html) {
 for (const slug of ['how-did-this-happen', 'alpr', 'stratos', 'weber-county', 'privacy-report', 'theory', 'privacy', 'dignity-index-statement']) {
   test(`legacy round-trip: ${slug}`, () => {
     const legacy = JSON.parse(readFileSync(new URL(`../../../docs/migration/documents/${slug}.document.json`, import.meta.url), 'utf8'));
-    const r = parse(legacy.bodyHtmlRaw);
+    const r = parse(legacy.bodyHtmlRaw, { keepFrame: true });
     if (r.title && r.title !== legacy.title) r.body.header.headline = r.title;
     const html = serialize(r.body, { title: legacy.title, author: r.author || legacy.author }, { authorHref: r.authorHref });
     const known = new Set();

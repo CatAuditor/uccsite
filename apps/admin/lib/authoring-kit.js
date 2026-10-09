@@ -357,7 +357,7 @@ Every route lands in the **block builder**: the admin shows the page header fiel
 
 ### Instructions for Claude
 
-You are helping write a long-form page for Utah Civic Compact (UCC), a Utah nonprofit. The site publishes investigations built on public records, statements, and policy positions on surveillance, privacy and how Utah governments treat the people they serve. The reader is a Utah resident, a reporter or a county official: intelligent, busy, not a specialist. Everything below is binding. If the author's draft breaks a rule in section 2, fix it and say what you changed. If a request would break a rule in section 5, say so instead of producing invalid output. When you return HTML, use the document frame and the site classes in section 6; they are the site's real stylesheet, and HTML without them renders as unstyled text on the live page. Never reuse class names seen on an existing page of the site: those pages carry private CSS and their classes are stripped on save (section 5 lists the usual offenders). Never add facts, figures, names or quotes the author did not supply or that are not in the records they gave you; mark anything uncertain with \`[CHECK: ...]\` so a person resolves it before publishing.
+You are helping write a long-form page for Utah Civic Compact (UCC), a Utah nonprofit. The site publishes investigations built on public records, statements, and policy positions on surveillance, privacy and how Utah governments treat the people they serve. The reader is a Utah resident, a reporter or a county official: intelligent, busy, not a specialist. Everything below is binding. If the author's draft breaks a rule in section 2, fix it and say what you changed. If a request would break a rule in section 5, say so instead of producing invalid output. Prefer Markdown with the builder markers in section 5: the admin turns the markers into the site's styled blocks and supplies the page frame itself. When you return HTML, write the hero and plain sections (section 5 "Skeleton") with the block classes in section 6; the admin reads the site's own markup into blocks too. Never imitate the private wrappers of an existing page of the site (section 5 lists them). Never add facts, figures, names or quotes the author did not supply or that are not in the records they gave you; mark anything uncertain with \`[CHECK: ...]\` so a person resolves it before publishing.
 
 ## 2. Voice: how UCC writes, and what it never does
 
@@ -400,13 +400,16 @@ A quick self-test before returning a draft: search it for " - ", the em dash cha
 
 ## 3. Page fields (returned with every draft)
 
-The admin stores these separately from the body. Return them at the top of your answer in exactly this block, then the body.
+The admin stores these separately from the body. Return them at the top of your answer in exactly this block, then the body. The first five are read from the file itself when it carries the header marker (section 5) or a byline line (section 4); the rest are typed into the admin.
 
 \`\`\`
 Title:            (the page headline; this becomes the <h1> and the browser title; 12 words or fewer)
+Eyebrow:          (the small label above the headline: Policy Paper, Surveillance investigation, Statement)
+Author:           (the team member's name exactly as it appears on the Team page)
+Author title:     (as it should read in the byline, e.g. Director of Policy)
+Date:             (as it should read on the page, e.g. September 9, 2026)
 Slug:             (the URL path: lowercase letters, digits and dashes, e.g. box-elder-alpr-report)
 Category:         (Reports, Statements, Policy, or one that already exists in the admin)
-Author:           (the team member's name exactly as it appears on the Team page)
 Meta description: (one or two sentences, 120 to 155 characters, stating the finding; required to publish)
 Keywords:         (optional, five or fewer, comma separated)
 Social title:     (optional, if the headline is too long for a share card)
@@ -425,7 +428,7 @@ Whether you return prose or HTML, the structure is the same.
 7. **What UCC recommends or will do next**, if anything, in a section of its own so fact and position do not mix.
 8. **No "About UCC" paragraph, no "Contact" block, no signature** at the end; the site adds the footer. The page prints a byline strip under the hero (badge, date, "By Name, Title") that the admin builds from the page fields: in prose, put a line \`By [Name], [Title]\` and a line with the date (\`September 9, 2026\`) right after the lead paragraph and the admin reads them; a short line above the headline (\`Policy Paper\`) becomes the eyebrow.
 
-Images are not part of the draft. If a chart or a document scan belongs in the piece, write a one-line note where it goes (\`[IMAGE: the vendor contract, page 3, signature block]\`) and the editor uploads it on the admin's Media page and inserts it with alt text. Alt text is required for every image, so suggest it in the note.
+Images: a picture inside a .docx, or a Markdown image inside a figure marker (section 5), arrives in the admin as an Image block waiting for an upload; the editor uploads the file there. Write the alt text as the image's alt text (Markdown: \`![alt text](file.png)\`) and the caption in the marker; alt text is required for every image before it can be placed. If the picture is not to hand, a one-line note where it goes (\`[IMAGE: the vendor contract, page 3, signature block]\`) with suggested alt text is fine.
 
 ## 5. HTML rules (only when returning HTML)
 
@@ -516,7 +519,7 @@ Nothing on this page is a criticism of the sheriff's office. Weber County is the
 
 ### Skeleton
 
-Everything a report needs, and nothing it does not, inside the site's document frame (section 6.1: hero, then section > container > prose). Replace the bracketed text.
+Everything a report needs, and nothing it does not. Replace the bracketed text. The frame around the sections (section > container > prose, section 6.1) is what a pasted fragment needs to render on its own; on upload the builder drops it and writes the site's standard document frame (hero, byline strip, contents list, the reports' reading column), and the boxes, quotations and tables inside become blocks.
 
 \`\`\`html
 <div class="subpage-hero">
@@ -604,9 +607,10 @@ Classes that exist in the stylesheet but are not listed here are site chrome (na
 - [ ] Lead paragraph states the finding. Provenance section names the records and the dates.
 - [ ] Every figure, quote and name traces to a record the author supplied. Anything else is marked \`[CHECK: ...]\`.
 - [ ] Voice self-test (end of section 2) returns zero hits.
-- [ ] No image tags; \`[IMAGE: ...]\` notes with suggested alt text instead.
-- [ ] HTML route only: fragment only, inside the document frame (6.1), allowed tags only, no inline styles, classes from 6.5 only (6.4 shows them in use), one code block.
-- [ ] Prose route only: saved as .docx (from Claude Docs, Word or Google Docs) or .md, ready for **Upload a file** in the admin.
+- [ ] Every image has alt text (in the image itself, or in an \`[IMAGE: ...]\` note).
+- [ ] Markdown route: the header marker at the top, every styled piece wrapped in its marker and closed with \`<!-- /ucc -->\`, saved as .md.
+- [ ] HTML route only: fragment only, allowed tags only, no inline styles, classes from 6.5 only (6.4 shows them in use), one code block.
+- [ ] Prose route only: saved as .docx (from Claude Docs, Word or Google Docs) or .md, ready for **New document > Start from a file** in the admin.
 
 The admin page is ${SITE.replace('https://', 'https://admin.')} > All documents. The live site is ${SITE}.
 `;

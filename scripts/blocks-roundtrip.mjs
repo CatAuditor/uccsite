@@ -41,7 +41,7 @@ function firstDiff(a, b) {
 let failures = 0;
 for (const f of files) {
   const doc = JSON.parse(readFileSync(join(dir, f), 'utf8'));
-  const res = parse(doc.bodyHtmlRaw);
+  const res = parse(doc.bodyHtmlRaw, { keepFrame: true });
   if (res.title && res.title !== doc.title) res.body.header.headline = res.title; // the page h1 differs from the SEO title
   const html = serialize(res.body, { title: doc.title, author: res.author || doc.author }, { authorHref: res.authorHref });
   const known = new Set();
