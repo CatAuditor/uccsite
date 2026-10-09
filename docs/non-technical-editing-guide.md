@@ -285,7 +285,11 @@ the whole mailing list after a second admin approves them.
   goes out from then on; swap to another one or back to *Built-in email* any
   time, no publish needed. Edits to the email do not go live until you pick
   it again (the page says "edited since" when that is the case).
-- Type `{first_name}` where the person's first name should appear. Petition
+- Type `{first_name}` where the person's first name should appear (a draft
+  pasted from Word that says `[First name]` or `[$amount]` works too — the
+  brackets are read the same way; only `{receipt}` must be typed with curly
+  braces). For a donation the name comes from the donor's record, so a
+  returning donor who skipped the name box is still greeted by name. Petition
   emails can also use `{headline}` and `{project_name}`. Donation emails can
   use `{amount}`, `{type}` and `{date}`, and **must** contain `{receipt}` —
   that is where the amount/date table and the "not tax-deductible" line go

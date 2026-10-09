@@ -81,7 +81,7 @@ const JOBS = {
   'welcome-email': (event, secrets) => welcomeEmailJob({ secrets, email: event.email, firstName: event.firstName, origin: event.origin }),
   // Transactional thank-yous (docs/systems/email.md): petition signature, donation.
   'petition-thanks': (event, secrets) => petitionThanksJob({ db, secrets, email: event.email, firstName: event.firstName, petition: event.petition, origin: event.origin }),
-  'donation-thanks': (event) => donationThanksJob({ db, email: event.email, firstName: event.firstName, amountCents: event.amountCents, recurring: event.recurring, origin: event.origin }),
+  'donation-thanks': (event) => donationThanksJob({ db, email: event.email, customerId: event.customerId, firstName: event.firstName, amountCents: event.amountCents, recurring: event.recurring, origin: event.origin }),
 };
 
 export async function handler(event) {

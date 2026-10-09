@@ -672,7 +672,7 @@ test('checkout.session.completed dispatches the donation thank-you (amount, recu
     secrets: { STRIPE_WEBHOOK_SECRET: WH_SECRET }, rawBody: payload, origin: 'https://x.test', selfInvoke: async (p) => jobs.push(p),
   });
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(jobs, [{ job: 'donation-thanks', email: 'd@e.f', firstName: 'Dee', amountCents: 1000, recurring: true, origin: 'https://x.test' }]);
+  assert.deepEqual(jobs, [{ job: 'donation-thanks', email: 'd@e.f', customerId: 'cus_2', firstName: 'Dee', amountCents: 1000, recurring: true, origin: 'https://x.test' }]);
 
   const payload2 = JSON.stringify({ id: 'evt_thx2', type: 'checkout.session.completed', data: { object: { ...session, id: 'cs_3', mode: 'payment', payment_intent: 'pi_3' } } });
   res = await handleWebhook({
@@ -712,6 +712,50 @@ test('donation-thanks job: receipt (amount, type, date), the not-tax-deductible 
 // ── Attached emails (transactional_emails; docs/systems/email.md "Attached emails") ──
 
 const attachedRow = (subject, html, text = '') => ({ rows: [{ subject, html, text }], rowCount: 1 });
+
+test('donation-thanks job: the greeting comes from the members row (by Stripe customer), the checkout name is only a fallback; a failed read logs', async () => {
+  let sent = fakeSes();
+  let db = fakeDb({ 'SELECT first_name FROM members WHERE stripe_customer_id': { rows: [{ first_name: 'Dolores' }], rowCount: 1 } });
+  try {
+    await routes.donationThanksJob({ db, email: 'd@e.f', customerId: 'cus_9', firstName: '', amountCents: 2500, recurring: false, origin: 'https://x.test' });
+  } finally { routes._setSesClient(null); }
+  assert.match(sent[0].Content.Simple.Body.Html.Data, /Hi Dolores,/);
+  assert.deepEqual(db.calls.find(c => c.text.includes('FROM members')).params, ['cus_9']);
+
+  sent = fakeSes();
+  db = fakeDb({ 'SELECT first_name FROM members WHERE lower(email)': { rows: [], rowCount: 0 } });
+  try {
+    await routes.donationThanksJob({ db, email: 'd@e.f', firstName: 'Dee', amountCents: 2500, recurring: false, origin: 'https://x.test' });
+  } finally { routes._setSesClient(null); }
+  assert.match(sent[0].Content.Simple.Body.Html.Data, /Hi Dee,/); // no customer id → by email; no row → the checkout name
+  assert.deepEqual(db.calls.find(c => c.text.includes('FROM members')).params, ['d@e.f']);
+
+  sent = fakeSes();
+  db = fakeDb({ 'SELECT first_name FROM members': () => { const e = new Error('nope'); e.name = 'error'; throw e; } });
+  try {
+    const { lines } = await spyConsole(() => routes.donationThanksJob({ db, email: 'd@e.f', customerId: 'cus_9', firstName: '', amountCents: 2500, recurring: false, origin: 'https://x.test' }));
+    assert.ok(lines.some(l => l.includes('donor lookup failed (donation-thanks): error')));
+  } finally { routes._setSesClient(null); }
+  assert.equal(sent.length, 1);
+  assert.match(sent[0].Content.Simple.Body.Html.Data, /Hi there,/);
+});
+
+test('donation-thanks job: a pasted draft with [First name] and [$amount] fills like {first_name} and {amount}; other brackets stay', async () => {
+  routes._resetCampaignCache();
+  const sent = fakeSes();
+  const db = fakeDb({
+    'SELECT first_name FROM members': { rows: [{ first_name: 'Dolores' }], rowCount: 1 },
+    'SELECT subject, html, text FROM transactional_emails': attachedRow('Thank you, [First name]', '<p>Hi [First name],</p><p>Your [$amount] goes to [CHECK: one thing]. [website link]</p>[Receipt]', 'Hi [First name], [$amount]'),
+  });
+  try {
+    await routes.donationThanksJob({ db, email: 'd@e.f', customerId: 'cus_9', firstName: '', amountCents: 2500, recurring: false, origin: 'https://x.test' });
+  } finally { routes._setSesClient(null); routes._resetCampaignCache(); }
+  assert.equal(sent[0].Content.Simple.Subject.Data, 'Thank you, Dolores');
+  const html = sent[0].Content.Simple.Body.Html.Data;
+  assert.match(html, /<p>Hi Dolores,<\/p><p>Your \$25\.00 goes to \[CHECK: one thing\]\. \[website link\]<\/p>\s*<table/);
+  assert.match(html, /One-time donation/);
+  assert.equal(sent[0].Content.Simple.Body.Text.Data, 'Hi Dolores, $25.00');
+});
 
 test('petition-thanks job: an attached email replaces the built-in body — placeholders filled and escaped, unsubscribe token swapped, text part sent', async () => {
   routes._resetCampaignCache();

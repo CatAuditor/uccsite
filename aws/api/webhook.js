@@ -121,7 +121,7 @@ async function handleCheckoutComplete(session, db, { origin, selfInvoke } = {}) 
   if (email && selfInvoke && session.amount_total > 0) {
     try {
       await selfInvoke({
-        job: 'donation-thanks', email, firstName: firstName || '', amountCents: session.amount_total,
+        job: 'donation-thanks', email, customerId, firstName: firstName || '', amountCents: session.amount_total,
         recurring: session.mode === 'subscription', origin,
       });
     } catch (err) {

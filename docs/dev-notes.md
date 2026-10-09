@@ -6,6 +6,38 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-10 — Newsletter replies go to the writer; donor thank-yous use the donor's record
+
+**What changed**
+
+- When a newsletter goes out "from Jarom Gillins", a reader who hits Reply
+  now reaches Jarom's own utahciviccompact.org mailbox instead of the shared
+  hello@ inbox. This works for any team member whose Team card carries their
+  utahciviccompact.org address; a card with no address, or an outside
+  address, keeps replies in hello@. The "Send me a test" email behaves the
+  same way, so you can check it on yourself.
+- The donation thank-you now takes the donor's first name from their record
+  in the database (the same name the Financial → Donations page shows),
+  not just from what they typed at checkout. A returning donor who leaves
+  the name box empty is still greeted by name.
+- An automatic email pasted from a Word draft can say `[First name]` and
+  `[$amount]` and it fills in just like `{first_name}` and `{amount}`. Notes
+  to yourself in brackets (`[CHECK: …]`) are left alone — delete them before
+  attaching. `{receipt}` must still be typed with curly braces.
+
+**What editors do differently**
+
+- Make sure each writer's Team card has their utahciviccompact.org email.
+- Nothing else; the thank-you email is still chosen on the Appeals page.
+
+**Unfinished**
+
+- Replies live in Zoho. An inbox inside the admin, tied to the signed-in
+  person, is written up as a plan (docs/plans/ses-inbox.md) and needs an
+  org go-ahead plus one DNS record from Conner before it can be built.
+
+---
+
 ## 2026-10-10 — The site has a real Donate page
 
 **What changed**

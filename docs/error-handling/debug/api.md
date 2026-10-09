@@ -24,6 +24,7 @@ Log group: `/aws/lambda/UccStaging-ApiFunction*` (or UccProd). Prefix: `[api]`.
 | `attached email lookup failed (<trigger>): <ErrorName>` | routes.js transactionalTemplate | the `transactional_emails` read failed; the built-in body goes out. 42501 = `GRANT SELECT ON transactional_emails` missing (re-run migrate-schema); 42P01 = table missing (same fix) |
 | `donation thanks dispatch failed: <message>` | webhook.js handleCheckoutComplete | the self-invoke failed; the donation IS recorded, no receipt email, webhook still 200 (Stripe does not retry) |
 | `donation thanks email failed: <message>` | routes.js donationThanksJob | the job threw outside the SES call |
+| `donor lookup failed (donation-thanks): <ErrorName>` | routes.js donorFirstName | the `members` read for the greeting failed; the email still goes out with the checkout's name (or "there"). 42501 = SELECT grant on `members` missing for the API role |
 | `SES sent <MessageId> subject="Thank you for signing…"` / `subject="Thank you for your $…"` | routes.js sesSend | normal — the thank-yous (docs/systems/email.md) |
 | `secret <NAME> is unset (placeholder)` | secrets.js | operator hasn't filled `ucc/<env>/<NAME>` yet |
 | `failed to load secret <NAME>: <err>` | secrets.js | transient — retried next invocation (never cached) |

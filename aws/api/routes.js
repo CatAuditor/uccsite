@@ -592,10 +592,29 @@ async function petitionThanksJob({ db, secrets, email, firstName, petition, orig
   }
 }
 
+// donorFirstName(db, { customerId, email, fallback }) → the first name on the
+// donor's members row (written by the webhook just before this job, and kept
+// across checkouts by upsertMember's COALESCE), else the checkout's own value.
+// So a returning donor who left the name blank is still greeted by name, and
+// the email always says what the Donations page says. A failed read only logs.
+async function donorFirstName(db, { customerId, email, fallback }) {
+  try {
+    const r = customerId
+      ? await db.query('SELECT first_name FROM members WHERE stripe_customer_id = $1 LIMIT 1', [customerId])
+      : await db.query('SELECT first_name FROM members WHERE lower(email) = lower($1) ORDER BY created_at DESC LIMIT 1', [email || '']);
+    const name = String(r?.rows?.[0]?.first_name || '').trim();
+    if (name) return name;
+  } catch (err) {
+    console.error(`[api] donor lookup failed (donation-thanks): ${err?.name || 'Error'}`);
+  }
+  return fallback || '';
+}
+
 // Runs from the self-invocation (index.mjs JOBS 'donation-thanks'), dispatched
 // by the Stripe webhook on checkout.session.completed (webhook.js).
-async function donationThanksJob({ db, email, firstName, amountCents, recurring, origin }) {
+async function donationThanksJob({ db, email, customerId, firstName: checkoutName, amountCents, recurring, origin }) {
   try {
+    const firstName = await donorFirstName(db, { customerId, email, fallback: checkoutName });
     const attached = await transactionalTemplate(db, 'donation-thanks');
     let built;
     if (attached) {

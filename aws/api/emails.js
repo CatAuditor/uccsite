@@ -20,8 +20,19 @@ function paragraphs(text, vars) {
     .join('\n        ');
 }
 
+// Editors paste drafts written as "[First name]" / "[$amount]" (Word-style
+// brackets); those become {first_name} / {amount} when the key is known, so
+// the pasted draft works without retyping. Anything else in brackets
+// ("[CHECK: …]", "[website link]") is left exactly as typed.
+function aliasTokens(text, known) {
+  return String(text).replace(/\[\$?([A-Za-z][A-Za-z ]{0,30})\]/g, (m, k) => {
+    const key = k.trim().toLowerCase().replace(/\s+/g, '_');
+    return key in known ? `{${key}}` : m;
+  });
+}
+
 function fill(text, vars) {
-  return String(text).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
+  return aliasTokens(text, vars).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
 }
 
 // Placeholders in an ATTACHED email (an admin-composed newsletter frozen as
@@ -29,7 +40,7 @@ function fill(text, vars) {
 // HTML-escaped, raw values (the receipt table) are inserted as markup, an
 // unknown {token} stays as typed. fillText is the plain-text / subject twin.
 function fillHtml(html, { text = {}, raw = {} } = {}) {
-  return String(html || '').replace(/\{(\w+)\}/g, (m, k) => (k in raw ? String(raw[k]) : k in text ? escapeHtml(String(text[k])) : m));
+  return aliasTokens(html || '', { ...text, ...raw }).replace(/\{(\w+)\}/g, (m, k) => (k in raw ? String(raw[k]) : k in text ? escapeHtml(String(text[k])) : m));
 }
 function fillText(str, vars = {}) { return fill(str, vars); }
 
