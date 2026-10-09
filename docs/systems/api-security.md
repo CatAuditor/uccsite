@@ -35,6 +35,29 @@ subscribe + tip (fail-open, skipped until keys exist); stats returns `recent`
 only. Everything below (rate limits, tokens, webhook semantics) applies to
 both stacks until Cloudflare retires.
 
+## CORS (AWS only, `/api/subscribe` only)
+
+The officials lookup (`https://lookup.utahciviccompact.org`, separate app,
+repo CatAuditor/UCC-lookup) posts its "Send me the newsletter" opt-in from the
+visitor's browser to `/api/subscribe` with the join form's payload. Added 2026-10-08.
+
+- `OPTIONS /api/subscribe` → 204, `Access-Control-Allow-Methods: POST`,
+  `Access-Control-Allow-Headers: Content-Type`, `Access-Control-Max-Age: 86400`
+  (`routes.js subscribePreflight`). No rate limit, no secrets.
+- Both subscribe routes carry `cors: true` in the `index.mjs` route table;
+  `lib.js withLookupCors` always adds `Vary: Origin` and adds
+  `Access-Control-Allow-Origin` only when `Origin` is exactly that origin.
+  Other origins and other routes get no CORS headers.
+- CloudFront `/api/*` already allows OPTIONS, forwards `Origin`
+  (`ALL_VIEWER_EXCEPT_HOST_HEADER`) and stamps `x-origin-verify` on every
+  origin request, so preflights pass the origin lock.
+- Same abuse controls as the join form: 5 / IP / hour (the visitor's IP — the
+  browser makes the call), double opt-in email, and Turnstile once
+  `TURNSTILE_SECRET_KEY` is set. Then the lookup form must render the widget
+  (its hostname added to the widget in Cloudflare) and send `turnstileToken`,
+  or its opt-ins 403.
+- Why one origin, browser-side: `docs/decisions/subscribe-cors-lookup-origin.md`.
+
 ## Rate Limiting
 D1-based, implemented once in `_lib.js` (`checkRateLimit`, wrapped by `rateLimitOr429`). Table: `rate_limits (id, ip, endpoint, timestamp)`.
 
