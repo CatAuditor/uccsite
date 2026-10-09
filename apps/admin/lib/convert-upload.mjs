@@ -19,10 +19,12 @@ const IMAGE_PLACEHOLDER = (n) => `<p><strong>[Image ${n} omitted: upload it on t
 // finishHtml(html) → { html, imagesOmitted }. Embedded images arrive as data:
 // URLs, which the ingest rejects, so each becomes a visible placeholder the
 // editor replaces. Block closers get a newline so the textarea is readable.
-export function finishHtml(html) {
+// keepImages: leave <img> tags in place (the block parser turns each into an
+// Image block awaiting an upload) instead of writing placeholder text.
+export function finishHtml(html, { keepImages = false } = {}) {
   let imagesOmitted = 0;
   const out = String(html || '')
-    .replace(/<img\b[^>]*>/gi, () => IMAGE_PLACEHOLDER(++imagesOmitted))
+    .replace(/<img\b[^>]*>/gi, (m) => (keepImages ? m : IMAGE_PLACEHOLDER(++imagesOmitted)))
     .replace(/<\/(p|h[1-6]|li|ul|ol|table|thead|tbody|tr|blockquote|figure|pre)>(?!\n)/g, '</$1>\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -31,15 +33,25 @@ export function finishHtml(html) {
 
 // markdownToHtml(text) → { html, imagesOmitted }. GFM (tables, strikethrough).
 // Raw HTML in the markdown passes through; the ingest sanitizes it on save.
-export function markdownToHtml(text) {
-  return finishHtml(marked.parse(String(text || ''), { gfm: true, breaks: false, async: false }));
+export function markdownToHtml(text, opts) {
+  return finishHtml(marked.parse(String(text || ''), { gfm: true, breaks: false, async: false }), opts);
 }
 
-// docxToHtml(buffer) → { html, imagesOmitted, warnings[] }.
-export async function docxToHtml(buffer) {
+// docxToHtml(buffer, opts) → { html, imagesOmitted, warnings[] }.
+export async function docxToHtml(buffer, opts) {
   const res = await mammoth.convertToHtml({ buffer }, { styleMap: STYLE_MAP });
   const warnings = [...new Set(res.messages.filter(m => m.type === 'warning').map(m => m.message))];
-  return { ...finishHtml(res.value), warnings };
+  return { ...finishHtml(res.value, opts), warnings };
+}
+
+// uploadToHtml(file) → { kind, html, imagesOmitted, warnings } for the block
+// parser: images kept (they become Image blocks awaiting an upload).
+export async function uploadToHtml(file) {
+  const kind = uploadKind(file.name);
+  if (kind === 'docx') return { kind, ...(await docxToHtml(Buffer.from(await file.arrayBuffer()), { keepImages: true })) };
+  if (kind === 'markdown') return { kind, ...markdownToHtml(await file.text(), { keepImages: true }), warnings: [] };
+  if (kind === 'html' || file.type === 'text/html') return { kind: 'html', html: await file.text(), imagesOmitted: 0, warnings: [] };
+  throw new Error('Upload a .docx, .md or .html file');
 }
 
 export const UPLOAD_KINDS = {

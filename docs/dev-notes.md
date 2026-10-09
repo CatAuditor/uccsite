@@ -31,9 +31,32 @@ document could not use any of them and the license-plate statement
 published as plain text. The existing pages are not affected: they keep
 their own copies until they are moved over.
 
-Nothing changes for editors yet. The Documents pages work as before. The new
-screen, the upload-first flow and the move of the existing pages come in
-the following steps, one at a time.
+The third step is the screen itself, on the test site first:
+
+- **New document** now starts from a file. Pick a .docx, .md or .html, leave
+  the title and slug blank if you like, and the draft opens in the builder
+  with the eyebrow, title, summary, byline and sections already filled in.
+  Pictures inside a Word file come in as Image blocks waiting for an upload.
+- **The builder** replaces the HTML box: a Page header (hero, byline,
+  contents list), then sections, each with its blocks. Every block has its
+  own fields, a style choice (for instance which kind of box a callout is)
+  and a small "Style" button for extra site classes. Thin "+ Add a block"
+  bars sit between blocks; "+ Add a section here" between sections.
+- **Add a block** opens a gallery: every block type drawn exactly as it will
+  look on the site. Hover a type to see it, click to add it.
+- **Live preview** on the right redraws a moment after each change, before
+  anything is saved. Click a piece in the preview to jump to it; problems
+  that would stop publishing (a missing picture description, for instance)
+  show under the preview as you work.
+- **Existing documents** keep their HTML box and gain a "Convert to blocks"
+  button. Converting keeps every word and saves a revision first, so it can
+  be undone from Revisions. The eight long-form pages will be converted and
+  checked against their current look in the next step; do not convert them
+  by hand yet.
+
+Needs a person: nothing yet. The new column reached the test database
+today; it reaches production with the next schema migration before any
+builder document is published there.
 ## 2026-10-08 — Officials lookup joins the mailing list
 
 The officials lookup (lookup.utahciviccompact.org) has a "Send me the Utah

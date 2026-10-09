@@ -258,6 +258,10 @@ const STATEMENTS = [
   // Author (team member's full name) → JSON-LD Person with the author page's
   // @id + listing on /team/<slug> (docs/systems/author-pages.md). Existing clusters: ADD COLUMN.
   `ALTER TABLE documents ADD COLUMN IF NOT EXISTS author TEXT`,
+  // Builder blocks (docs/systems/document-builder.md): the editing model as
+  // JSON; body_html_raw is generated from it on save. NULL = a legacy
+  // raw-HTML document edited in the HTML box. Existing clusters: ADD COLUMN.
+  `ALTER TABLE documents ADD COLUMN IF NOT EXISTS body_blocks TEXT`,
   // The project a document sits under (projects.slug — a soft link like
   // project_files.project_slug: projects are re-inserted with new ids on every
   // save, so no FK). NULL = none, unless a project's CTA points at the page

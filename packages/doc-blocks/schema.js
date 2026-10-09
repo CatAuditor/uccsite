@@ -11,7 +11,9 @@
 //   bool    checkbox
 //   select  one of `options`
 //   list    repeated group of fields (`of`), with add/remove/move
-'use strict';
+//
+// ES module (the package is "type": "module"): the admin's client components
+// import this file into the browser bundle, which a CommonJS file cannot be.
 
 const VERSION = 1;
 
@@ -285,7 +287,7 @@ function validateBody(input) {
   return { ok: errors.length === 0, errors, body };
 }
 
-module.exports = {
+export {
   VERSION, BLOCK_TYPES, SECTION_FIELDS, HEADER_FIELDS, CALLOUT_VARIANTS, TABLE_VARIANTS, STATS_VARIANTS, SOURCES_VARIANTS, CTA_VARIANTS, CTA_ICONS,
   emptyBody, emptyHeader, newBlock, newSection, newId, slugify, validateBody, fullWidth,
 };

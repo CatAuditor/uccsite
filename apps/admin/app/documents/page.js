@@ -91,10 +91,13 @@ export default async function DocumentsPage({ searchParams }) {
         <>
           <h2>New document</h2>
           <ActionForm className="editor" action={createDocument}>
+            <label htmlFor="new-file">Start from a file (optional): .docx from Word, Google Docs or Claude Docs, .md Markdown, or .html</label>
+            <input type="file" id="new-file" name="file" accept=".html,.htm,.docx,.md,.markdown,.txt,text/html,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+            <div className="hint">The title, author, summary, byline and sections are read from the file and become editable blocks. Leave the title and slug blank to take them from the file.</div>
             <label htmlFor="new-title">Title</label>
-            <input type="text" id="new-title" name="title" required />
+            <input type="text" id="new-title" name="title" placeholder="blank = the file's heading" />
             <label htmlFor="new-slug">Slug (URL path)</label>
-            <input type="text" id="new-slug" name="slug" placeholder="e.g. box-elder-report" pattern="[a-z0-9][a-z0-9-]*" required />
+            <input type="text" id="new-slug" name="slug" placeholder="blank = made from the title" pattern="[a-z0-9][a-z0-9-]*" />
             <div className="hint">Lowercase letters, digits, dashes. The page publishes at /slug.</div>
             <label htmlFor="new-category">Category</label>
             <input type="text" id="new-category" name="category" list="doc-categories" defaultValue="Reports" />
@@ -105,7 +108,7 @@ export default async function DocumentsPage({ searchParams }) {
               {projects.map(p => <option key={p.slug} value={p.slug}>{p.name}</option>)}
             </select>
             <div className="hint">Optional. Lists the page under that project on /projects; change it any time in the editor.</div>
-            <button type="submit">Create draft</button>
+            <button type="submit">Create draft and open the builder</button>
           </ActionForm>
         </>
       )}

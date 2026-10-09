@@ -7,7 +7,8 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { ingest, stripNids } from '@uccsite/html-ingest';
 import { applyStyles, explainStyles, validateSelector, matchCountTree, rootedTree, orphanedOverrides } from '@uccsite/style-apply';
 import { parseStyleKit, classNames } from '@uccsite/style-kit';
-import { documents as compose, SITE_URL } from '@uccsite/render';
+import { documents as compose, SITE_URL, memberSlug } from '@uccsite/render';
+import { serialize as serializeBlocks, sampleHtml, BLOCK_TYPES, fullWidth, validateBody } from '@uccsite/doc-blocks';
 import {
   listDocuments, getDocument, listStyleRules, listOverrides, loadForeignClassMap,
 } from '@uccsite/db/documents';
@@ -112,43 +113,112 @@ export async function editorData(client, id) {
     alpr_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['alpr']),
     stratos_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['stratos']),
   };
-  // Preview: the real composed page with nids KEPT (the tree ↔ preview link
-  // needs them), stylesheets inlined (the bucket is private on staging), and
-  // a <base> so the site's absolute /assets and /css paths resolve.
-  let preview = '';
-  if (normalized) {
-    const styled = applyStyles(normalized, docRules, overrides);
-    const withTokens = compose.replaceTokens(styled, { partials: sources.partials, coverage, fail: () => {} });
-    const composed = compose.composeDocument({
-      doc, shell: sources.shells[doc.templateKey] || sources.shells.report, partials: sources.partials,
-      settings, siteUrl: SITE_URL, siteCss: sources.siteCss, rules: docRules, overrides, coverage,
-    });
-    // Replacer FUNCTIONS: author-controlled CSS/HTML must not be interpreted
-    // as $-patterns by String.prototype.replace.
-    const cssTag = (css) => `<style>${String(css || '').replace(/<\/style/gi, '<\\/style')}</style>`;
-    preview = composed.html
-      .replace(/<main id="main">[\s\S]*<\/main>/, () => `<main id="main">\n${withTokens}\n</main>`)
-      .replace('<link rel="stylesheet" href="/css/fonts.css" />', () => `<link rel="stylesheet" href="${config.publicOrigin}/css/fonts.css" />`)
-      .replace('<link rel="stylesheet" href="/css/styles.css" />', () => cssTag(sources.siteCss))
-      .replace(/<link rel="stylesheet" href="\/css\/pages\/[^"]+" \/>/, () => cssTag(doc.pageCss))
-      .replace('<head>', () => `<head><base href="${config.publicOrigin}/" />`)
-      .replace('</body>', () => `${PREVIEW_SCRIPT}</body>`);
-  }
+  const preview = normalized ? previewSrcdoc({ doc, normalized, sources, settings, docRules, overrides, coverage }) : '';
   return {
     doc, rules: docRules, allRules: rules, overrides, orphans, kit, rows, preview, projects,
     unstyledCount: rows.filter(r => r.unstyled).length,
     foreignClassMap,
     siteCssDrift: siteCssDrift(sources),
+    // Builder (docs/systems/document-builder.md): the picker gallery and the
+    // choices the block editors offer.
+    gallery: blockGallery(sources),
+    coverageKeys: (await client.query('SELECT DISTINCT report_key FROM coverage_entries ORDER BY report_key')).rows.map(r => r.report_key),
+    publishedFiles: (await client.query(`SELECT original_filename, public_key, project_slug FROM project_files WHERE public_key IS NOT NULL ORDER BY original_filename`)).rows
+      .map(r => ({ label: `${r.original_filename}${r.project_slug ? ` (${r.project_slug})` : ''}`, href: `/${r.public_key}` })),
+    authorHref: await authorHrefFor(client, doc.author),
   };
 }
 
-// Injected into the preview srcdoc: click → select row; hover message → outline.
+// previewSrcdoc(...) → the real composed page with nids KEPT (the tree ↔
+// preview link needs them), stylesheets inlined (the bucket is private on
+// staging), and a <base> so the site's absolute /assets and /css paths resolve.
+export function previewSrcdoc({ doc, normalized, sources, settings, docRules, overrides, coverage }) {
+  const styled = applyStyles(normalized, docRules, overrides);
+  const withTokens = compose.replaceTokens(styled, { partials: sources.partials, coverage, fail: () => {} });
+  const composed = compose.composeDocument({
+    doc, shell: sources.shells[doc.templateKey] || sources.shells.report, partials: sources.partials,
+    settings, siteUrl: SITE_URL, siteCss: sources.siteCss, rules: docRules, overrides, coverage,
+  });
+  // Replacer FUNCTIONS: author-controlled CSS/HTML must not be interpreted
+  // as $-patterns by String.prototype.replace.
+  return composed.html
+    .replace(/<main id="main">[\s\S]*<\/main>/, () => `<main id="main">\n${withTokens}\n</main>`)
+    .replace('<link rel="stylesheet" href="/css/fonts.css" />', () => `<link rel="stylesheet" href="${config.publicOrigin}/css/fonts.css" />`)
+    .replace('<link rel="stylesheet" href="/css/styles.css" />', () => cssTag(sources.siteCss))
+    .replace(/<link rel="stylesheet" href="\/css\/pages\/[^"]+" \/>/, () => cssTag(doc.pageCss))
+    .replace('<head>', () => `<head><base href="${config.publicOrigin}/" />`)
+    .replace('</body>', () => `${PREVIEW_SCRIPT}</body>`);
+}
+const cssTag = (css) => `<style>${String(css || '').replace(/<\/style/gi, '<\\/style')}</style>`;
+
+// authorHrefFor(client, name) → '/team/<slug>' when the author is a team
+// member (the byline links to the author page), else ''.
+export async function authorHrefFor(client, name) {
+  const n = String(name || '').trim();
+  if (!n) return '';
+  const r = (await client.query('SELECT name, slug FROM team_members WHERE name = $1 LIMIT 1', [n])).rows[0];
+  return r ? `/team/${memberSlug(r)}` : '';
+}
+
+// blocksToRaw(client, body, { title, author }) → { body, html } — validates
+// the builder JSON and serializes it to body_html_raw (the save path).
+export async function blocksToRaw(client, input, { title, author }) {
+  const { ok, errors, body } = validateBody(input);
+  if (!ok) throw new Error(`Blocks: ${errors.join('; ')}`);
+  const authorHref = await authorHrefFor(client, author);
+  return { body, html: serializeBlocks(body, { title, author }, { authorHref }) };
+}
+
+// previewBlocksFor(client, { id, body, title, author }) → { html, report }:
+// the live preview while editing (nothing stored): serialize → ingest →
+// rules/overrides → compose, exactly what a save would publish.
+export async function previewBlocksFor(client, { id, body: input, title, author }) {
+  const doc = await getDocument(client, { id });
+  if (!doc) throw new Error('Document not found');
+  const { html } = await blocksToRaw(client, input, { title, author });
+  const rules = await listStyleRules(client);
+  const overrides = await listOverrides(client, id);
+  const foreignClassMap = await loadForeignClassMap(client, doc.templateKey);
+  const settings = await loadSettings(client);
+  const sources = await loadSiteSources();
+  const next = { ...doc, title: title || doc.title, author, bodyHtmlRaw: html };
+  const result = runIngest(next, { siteCss: sources.siteCss, foreignClassMap });
+  const coverage = {
+    alpr_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['alpr']),
+    stratos_coverage: await list(client, 'coverage_entries', 'WHERE report_key = $1', ['stratos']),
+  };
+  const srcdoc = previewSrcdoc({ doc: next, normalized: result.bodyHtmlNormalized, sources, settings, docRules: compose.rulesFor(next, rules), overrides, coverage });
+  return { html: srcdoc, report: result.report };
+}
+
+// blockGallery(sources) → srcdoc for the block picker: every block type that
+// has a sample, rendered with the live site CSS inside the document frame,
+// labelled, clickable (posts { ucc: 'pick', type }); the picker scrolls it
+// to a type with { ucc: 'show', type }.
+export function blockGallery(sources) {
+  const items = Object.entries(BLOCK_TYPES).filter(([, d]) => d.sample).map(([type, d]) => {
+    const html = sampleHtml(type);
+    const inner = fullWidth({ type, ...d.sample }) ? html : `<div class="doc-body"><div class="doc-inner">${html}</div></div>`;
+    return `<section class="g-item" data-type="${type}"><h4 class="g-label">${escapeAttr(d.label)}<span>${escapeAttr(d.description)}</span></h4>${inner}</section>`;
+  }).join('\n');
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><base href="${config.publicOrigin}/" />
+<link rel="stylesheet" href="${config.publicOrigin}/css/fonts.css" />${cssTag(sources.siteCss)}
+<style>body{background:#eef0f3;margin:0;padding:12px 16px 40px}.g-item{margin:0 0 20px;border-radius:10px;overflow:hidden;cursor:pointer;outline:2px solid transparent;transition:outline-color .15s}.g-item:hover,.g-item.on{outline-color:#C0392B}.g-label{font:600 13px/1.4 Inter,system-ui,sans-serif;color:#1B2F4E;margin:0;padding:8px 12px;background:#fff;border-bottom:1px solid #E5E7EB}.g-label span{display:block;font-weight:400;color:#4B5563;font-size:12px}.g-item .doc-body{padding:28px 24px}.g-item .parts-nav{margin:0}a{pointer-events:none}</style></head>
+<body>${items}
+<script>(function(){document.addEventListener('click',function(e){var s=e.target.closest('.g-item');if(!s)return;e.preventDefault();parent.postMessage({ucc:'pick',type:s.getAttribute('data-type')},'*');});window.addEventListener('message',function(e){if(!e.data||e.data.ucc!=='show')return;document.querySelectorAll('.g-item.on').forEach(function(x){x.classList.remove('on')});var s=document.querySelector('.g-item[data-type="'+e.data.type+'"]');if(s){s.classList.add('on');s.scrollIntoView({block:'start',behavior:'smooth'});}});})();</script>
+</body></html>`;
+}
+const escapeAttr = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+// Injected into the preview srcdoc: click → select row (Styling tab) and
+// select block (builder); hover messages → outline by nid or by block id.
 const PREVIEW_SCRIPT = `<script>
 (function(){
   var last=null;
-  function outline(nid){ if(last){last.style.outline='';} last=null; if(!nid) return; var el=document.querySelector('[data-nid="'+nid+'"]'); if(el){ el.style.outline='2px solid #c8a84b'; el.scrollIntoView({block:'nearest'}); last=el; } }
-  document.addEventListener('click', function(e){ var a=e.target.closest('a'); if(a) e.preventDefault(); var el=e.target.closest('[data-nid]'); if(!el) return; e.preventDefault(); parent.postMessage({ucc:'select', nid: el.getAttribute('data-nid')}, '*'); });
-  window.addEventListener('message', function(e){ if(e.data && e.data.ucc==='hover') outline(e.data.nid); });
+  function outline(sel){ if(last){last.style.outline='';last.style.outlineOffset='';} last=null; if(!sel) return; var el=document.querySelector(sel); if(el){ el.style.outline='2px solid #c8a84b'; el.style.outlineOffset='4px'; el.scrollIntoView({block:'nearest'}); last=el; } }
+  document.addEventListener('click', function(e){ var a=e.target.closest('a'); if(a) e.preventDefault(); var b=e.target.closest('[data-block],[data-section]'); if(b) parent.postMessage({ucc:'block', id: b.getAttribute('data-block')||b.getAttribute('data-section')}, '*'); var el=e.target.closest('[data-nid]'); if(!el) return; e.preventDefault(); parent.postMessage({ucc:'select', nid: el.getAttribute('data-nid')}, '*'); });
+  window.addEventListener('message', function(e){ if(!e.data) return; if(e.data.ucc==='hover') outline(e.data.nid ? '[data-nid="'+e.data.nid+'"]' : null); if(e.data.ucc==='hoverBlock') outline(e.data.id ? '[data-block="'+e.data.id+'"],[data-section="'+e.data.id+'"]' : null); if(e.data.ucc==='scrollTo') window.scrollTo(0, e.data.y||0); });
+  var t=null; window.addEventListener('scroll', function(){ clearTimeout(t); t=setTimeout(function(){ parent.postMessage({ucc:'scroll', y: window.scrollY}, '*'); }, 80); });
 })();
 </script>`;
 

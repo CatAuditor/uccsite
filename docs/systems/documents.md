@@ -26,11 +26,17 @@ to that document, and a `--source db` publish ships every other saved
 change too, so look at the dashboard's pending list and `publish_requests`
 before running it against prod.
 
+**Block builder (2026-10-08):** a document whose row has `body_blocks` is
+edited as header fields + sections of typed blocks, and `body_html_raw` is
+GENERATED from them on save; everything below still applies to that HTML.
+docs/systems/document-builder.md has the model, the editor and the upload
+flow; a legacy row (no `body_blocks`) keeps the HTML box described here.
+
 ## Code Map
 
 ```
-packages/db/content-schema.js     documents, style_rules, style_overrides,
-                                  foreign_class_map DDL
+packages/db/content-schema.js     documents (+ body_blocks, the builder JSON), style_rules,
+                                  style_overrides, foreign_class_map DDL
 packages/db/documents.js          DOCUMENT_FIELDS, STATUSES (draft/published/archived),
                                   row⇄object, list/get/upsert/delete, rules/overrides/
                                   foreign-map CRUD, loadPublishBundle, archivedSlugs,

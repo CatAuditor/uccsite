@@ -1,7 +1,6 @@
 // @uccsite/doc-blocks — the document builder's model (docs/systems/document-builder.md).
-'use strict';
-const schema = require('./schema');
-const { serialize, renderBlock, renderSection, sampleHtml, sectionAnchor } = require('./serialize');
-const { parse } = require('./parse');
-
-module.exports = { ...schema, serialize, renderBlock, renderSection, sampleHtml, sectionAnchor, parse };
+// ES module: the admin's client components import schema.js into the browser.
+export * from './schema.js';
+export { serialize, renderBlock, renderSection, sampleHtml, sectionAnchor } from './serialize.js';
+export { parse } from './parse.js';
+export { rewritePageCss, aliasClasses } from './convert.js';

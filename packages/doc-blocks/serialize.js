@@ -4,9 +4,10 @@
 // fields (inline/html) pass through and are sanitised by the ingest. Every
 // block root carries data-block="<id>" so the live preview can map a click
 // back to the block being edited (the ingest keeps data-* attributes).
-'use strict';
-const { escapeHtml } = require('@uccsite/render/engine');
-const { BLOCK_TYPES, CALLOUT_VARIANTS, CTA_VARIANTS, CTA_ICONS, slugify, fullWidth } = require('./schema');
+import engine from '@uccsite/render/engine.js';
+import { BLOCK_TYPES, CALLOUT_VARIANTS, CTA_VARIANTS, CTA_ICONS, slugify, fullWidth } from './schema.js';
+
+const { escapeHtml } = engine;
 
 const esc = (s) => escapeHtml(String(s ?? ''));
 const nl = '\n';
@@ -262,4 +263,4 @@ function sampleHtml(type) {
   return renderBlock({ id: `sample-${type}`, type, ...def.sample });
 }
 
-module.exports = { serialize, renderBlock, renderSection, renderHeader, renderMeta, renderToc, sectionAnchor, sampleHtml, inline, paragraphs };
+export { serialize, renderBlock, renderSection, renderHeader, renderMeta, renderToc, sectionAnchor, sampleHtml, inline, paragraphs };

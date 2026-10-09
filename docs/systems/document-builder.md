@@ -9,26 +9,122 @@ serializer writes the body HTML the ingest already expects into
 (docs/systems/documents.md) are unchanged. Decision record:
 docs/decisions/document-builder-blocks.md.
 
-Status: **model + serializer + parser shipped with tests; site CSS group,
-database column, admin UI, upload action, legacy conversion and authoring-kit
-markers follow** (see "Status" at the bottom).
+Status: **model, site CSS, database column, admin builder, upload-first and
+convert-to-blocks shipped; legacy conversion with pixel comparison and the
+authoring-kit markers follow** (see "Status" at the bottom).
 
 ## Code Map
 
 ```
-packages/doc-blocks/schema.js     BLOCK_TYPES registry (label, description, fields,
+packages/doc-blocks/              ES module (the admin's client bundle imports schema.js)
+  schema.js                       BLOCK_TYPES registry (label, description, fields,
                                   variants, empty(), sample), HEADER_FIELDS,
                                   SECTION_FIELDS, emptyBody/newBlock/newSection,
                                   slugify (anchors), validateBody, fullWidth
-packages/doc-blocks/serialize.js  serialize(body, {title, author}, {authorHref})
+  serialize.js                    serialize(body, {title, author}, {authorHref})
                                   → body_html_raw; renderBlock, sampleHtml (picker previews)
-packages/doc-blocks/parse.js      parse(html) → { title, author, authorHref, body, report }
-                                  markers → site markup → heuristics; unknown → raw block
-packages/doc-blocks/test/         serializer, parser, and a round-trip of every tracked
+  parse.js                        parse(html, {classAliases}) → { title, author, authorHref,
+                                  body, report }: markers → site markup → heuristics;
+                                  unknown → raw block
+  convert.js                      rewritePageCss (legacy wrapper selectors → .doc-body/
+                                  .doc-inner), aliasClasses
+  test/                           serializer, parser, and a round-trip of every tracked
                                   legacy document (docs/migration/documents/*.document.json)
 scripts/blocks-roundtrip.mjs      the same round-trip as a report: raw-block counts,
                                   first text/tag difference, --html <dir> dumps blocks + HTML
+packages/db/content-schema.js     ALTER documents ADD body_blocks TEXT (JSON; NULL = legacy)
+packages/db/documents.js          body_blocks in DOCUMENT_FIELDS / JSON_COLS (so revisions,
+                                  exports and restores carry it)
+css/styles.css                    "Document blocks" group (+ "Document block parts")
+apps/admin/lib/documents.js       blocksToRaw (validate + serialize, the save path),
+                                  authorHrefFor (/team/<slug> for the byline link),
+                                  previewBlocksFor (live preview: serialize → ingest →
+                                  rules/overrides → compose), previewSrcdoc (shared with the
+                                  Styling tab), blockGallery (picker srcdoc), editorData adds
+                                  gallery / coverageKeys / publishedFiles
+apps/admin/lib/convert-upload.mjs uploadToHtml(file) (images kept), finishHtml({keepImages})
+apps/admin/app/documents/actions.js
+                                  saveDocument reads `bodyBlocks` JSON → body_html_raw;
+                                  createDocument accepts a file (upload-first); parseUpload
+                                  (builder "Start from a file"); previewBlocks; convertToBlocks
+apps/admin/app/documents/[id]/builder.js      the builder (client): header groups, sections,
+                                  block cards, add bars, picker, live preview, report
+apps/admin/app/documents/[id]/field-editors.js Field/Fields by kind (text, inline, html, code,
+                                  bool, select, coverage, file, image, cells, rows, list)
+apps/admin/app/documents/[id]/rich-text.js    contenteditable editor + cleanHtml
+apps/admin/app/documents/[id]/block-picker.js the "Add a block" dialog (types + gallery iframe)
+apps/admin/app/documents/[id]/page.js         Builder when doc.bodyBlocks, else HtmlEditor +
+                                  "Convert to blocks"
+apps/admin/app/documents/page.js  New document form: optional file, title/slug from the file
+apps/admin/next.config.js         transpilePackages: ['@uccsite/doc-blocks']
+apps/admin/app/globals.css        .builder*, .bsection, .bcard, .bf*, .rt*, .picker-*
 ```
+
+## Editor (admin, `[id]/builder.js`)
+
+Mounted inside the document form instead of the HTML box when the row has
+`body_blocks`. State is the body JSON; a hidden `bodyBlocks` input carries it
+to `saveDocument`, which validates (`validateBody`), serializes with the
+form's title/author (byline link via `authorHrefFor`) and stores both
+`body_blocks` and the generated `body_html_raw`; the rest of the save (ingest,
+a11y gate, tokens, revision, audit) is unchanged.
+
+- **Page header**: three groups (Hero: top-of-page layout, eyebrow, headline,
+  summary, hero buttons with icon, hero note; Byline: badge, status, date,
+  author title, byline link, note; Contents). The form's Title/Author inputs
+  are the h1 and the byline name; the builder listens to them for the preview.
+- **Sections**: heading input, "Section options" (anchor, contents label,
+  eyebrow, standfirst, new band, extra band classes), move/remove, and an
+  **add bar** before the first block and after every block (thin dashed
+  line with one small button) plus "Add a section here" between sections.
+- **Block card**: type label, variant select (the curated look), Style
+  (chips of Utilities + Document blocks classes → `block.classes`), move,
+  remove, then the type's fields. Field kinds: text/url inputs; `inline` and
+  `html` use the rich-text editor; `image` has the Media library inline
+  upload (alt first); `file` offers the published Files; `coverage` the
+  known keys; `list` repeats a field group; `cells`/`rows` edit a table.
+- **Picker** (`block-picker.js`): dialog, types left, gallery iframe right
+  (`blockGallery`: every sampled type rendered with the live site CSS in the
+  document frame, `sandbox="allow-scripts"`, opaque origin). Hover a type →
+  the gallery scrolls to it; click either → block inserted at the add bar.
+- **Live preview**: `previewBlocks` 600 ms after the last change (nothing
+  stored): the same composed page the Styling tab shows, with
+  `data-block`/`data-section` kept. Click a piece → its card is selected and
+  scrolled to; hover a card → outline in the preview; scroll position
+  survives re-renders (the frame posts `scroll`, the builder posts
+  `scrollTo` on load). The ingest report of the preview (a11y, foreign
+  classes, warnings) shows under the frame as it would block publishing.
+- **Start from a file**: `parseUpload` → confirm → body replaced, title/author
+  filled if blank; the note lists sections/blocks/raw/images pending.
+- **Advanced: page CSS** stays available (collapsed).
+- Viewer role: everything disabled, no add bars.
+
+Rich text (`rich-text.js`): contenteditable with Bold/Italic/Link (Ctrl+K)
+and, for `html` fields, paragraph/H3/H4/lists. `cleanHtml` keeps
+strong/em/a/br/code/sub/sup and p/h3/h4/ul/ol/li/blockquote/hr, renames
+b/i/div/h1/h2, unwraps spans, drops style/class, forces `rel="noopener"` on
+external links. Paste is plain text. The ingest sanitises again on save.
+
+## Upload-first and conversion
+
+- **New document** (`/documents`): the form takes an optional file; title
+  and slug may be left blank (taken from the file's h1 / slugified title).
+  `createDocument` → `parseUploadFile` → `blocksToRaw` → row with
+  `body_blocks` + generated HTML → redirect to the builder. Every new
+  document is a builder document (empty blocks when no file).
+- `parseUploadFile`: `uploadToHtml` (docx via mammoth with images kept, md via
+  marked, html as-is; 8 MB cap) → `parse()`; a figure whose `src` is a
+  `data:` URL becomes an Image block with empty src, `pending: true` and a
+  numbered caption, so the editor uploads it through the Media library.
+- **Convert to blocks** (legacy document, editor+): `parse(bodyHtmlRaw)`,
+  `headline` set when the h1 differs from the title, page CSS through
+  `rewritePageCss`, body regenerated from the blocks, ingest re-run, one
+  transaction with the pre-conversion snapshot (`document.convert_blocks`
+  audit) so Revisions can undo it. The migration script (next step) does the
+  same per slug with class aliases and a pixel comparison.
+
+Logs: `[documents] upload-first "<file>" …`, `[documents] parse upload …`,
+`[documents] convert to blocks <id>: …` (counts only, never content).
 
 ## Model (`body_blocks`, JSON)
 
@@ -131,8 +227,8 @@ Chrome) comes with the conversion script. The same check runs as a test in
 
 - [x] model, serializer, parser, tests, round-trip report
 - [x] `css/styles.css` "Document blocks" group: the one canonical copy of every class the serializer writes (54 annotated entries; the inner pieces are group "Document block parts", hidden from the authoring kit like chrome). Where the legacy pages disagreed, how-did-this-happen wins: `finding-box` is the navy box; the grey red-bar box is `violation-box` (stratos's name), and alpr/weber-county's `finding-box` must be converted as `violation-box`. `details`/`summary` are scoped under `.doc-accordion`, `blockquote` under `.doc-inner`, so the group styles nothing outside a builder document. `.doc-inner h2` has `scroll-margin-top` so contents-list jumps clear the fixed nav.
-- [ ] `documents.body_blocks` column; save path serializes; revisions carry it
-- [ ] admin builder UI: header fields, sections, block editors (contenteditable text), block picker with rendered previews, live preview without saving, add bars
-- [ ] `parseUpload` server action; New document = upload first
+- [x] `documents.body_blocks` column (applied to staging 2026-10-08; prod with the next migrate-schema); save path serializes; revisions carry it
+- [x] admin builder UI: header fields, sections, block editors (contenteditable text), block picker with rendered previews, live preview without saving, add bars
+- [x] `parseUpload` server action; New document = upload first; Convert to blocks on legacy documents
 - [ ] convert the legacy documents (page CSS selectors rewritten to the new frame), pixel-compare old vs new
 - [ ] authoring kit: the marker vocabulary

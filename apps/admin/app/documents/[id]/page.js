@@ -12,9 +12,10 @@ import { projectOf } from '@uccsite/render';
 import ActionForm from '../../action-form';
 import RequestPublish from '../../request-publish';
 import HtmlEditor from './html-editor';
+import Builder from './builder';
 import StyleEditor from './style-editor';
 import ImageUrlField from '../../media/image-url-field';
-import { saveDocument, deleteDocument, archiveDocument, unarchiveDocument } from '../actions';
+import { saveDocument, deleteDocument, archiveDocument, unarchiveDocument, convertToBlocks } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,8 @@ export default async function DocumentEditorPage({ params }) {
   const { id } = await params;
   const data = await withDb((client) => editorData(client, id));
   if (!data) notFound();
-  const { doc, rows, kit, preview, overrides, orphans, unstyledCount, rules, foreignClassMap, siteCssDrift, projects } = data;
+  const { doc, rows, kit, preview, overrides, orphans, unstyledCount, rules, foreignClassMap, siteCssDrift, projects, gallery, coverageKeys, publishedFiles } = data;
+  const isBuilder = Boolean(doc.bodyBlocks); // docs/systems/document-builder.md; null = legacy HTML box
   // Nesting (docs/systems/projects.md): explicit project, or the project whose button opens this page.
   const impliedProject = !doc.projectSlug ? projectOf(doc, projects) : null;
   const orphanProject = doc.projectSlug && !projects.some(p => p.slug === doc.projectSlug) ? doc.projectSlug : '';
@@ -126,7 +128,10 @@ export default async function DocumentEditorPage({ params }) {
             {rows.length > 0 && <> Pre-publish check: <strong>{unstyledCount}</strong> unstyled block{unstyledCount === 1 ? '' : 's'} (see Styling below).</>}</div>
         </fieldset>
 
-        <HtmlEditor bodyHtmlRaw={doc.bodyHtmlRaw} pageCss={doc.pageCss} readOnly={readOnly} report={report} orphans={orphans} />
+        {isBuilder
+          ? <Builder documentId={doc.id} initialBody={doc.bodyBlocks} initialPreview={preview} gallery={gallery} kit={kit.entries}
+              coverageKeys={coverageKeys} publishedFiles={publishedFiles} pageCss={doc.pageCss} readOnly={readOnly} />
+          : <HtmlEditor bodyHtmlRaw={doc.bodyHtmlRaw} pageCss={doc.pageCss} readOnly={readOnly} report={report} orphans={orphans} />}
 
         <fieldset className="item">
           <legend>SEO</legend>
@@ -163,6 +168,22 @@ export default async function DocumentEditorPage({ params }) {
 
         {!readOnly && <><button type="submit">Save document</button><RequestPublish /></>}
       </ActionForm>
+
+      {!isBuilder && !readOnly && (
+        <fieldset className="item">
+          <legend>Block builder</legend>
+          <p className="hint">
+            This document is edited as raw HTML. Converting reads it into blocks (header fields, sections, text, quotations, boxes,
+            tables, figures) so it can be edited piece by piece with a live preview. The words stay the same; anything the builder
+            has no block for is kept as custom HTML. Its page CSS is rewritten to the shared document frame. A revision is saved first,
+            so Revisions can undo it.
+          </p>
+          <ActionForm className="inline" action={convertToBlocks} successMessage="Converted.">
+            <input type="hidden" name="id" value={doc.id} />
+            <button type="submit">Convert to blocks</button>
+          </ActionForm>
+        </fieldset>
+      )}
 
       <StyleEditor
         documentId={doc.id}

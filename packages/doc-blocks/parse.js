@@ -15,11 +15,14 @@
 //
 // Anything not recognised becomes a Custom HTML block, never dropped. The
 // report says how many, so a conversion can be judged.
-'use strict';
-const serialize = require('dom-serializer').default;
-const { textContent } = require('domutils');
-const { parseFragmentTree, getClasses } = require('@uccsite/html-ingest');
-const { BLOCK_TYPES, CALLOUT_VARIANTS, emptyBody, newSection, newId, slugify } = require('./schema');
+import domSerializer from 'dom-serializer';
+import { textContent } from 'domutils';
+import htmlIngest from '@uccsite/html-ingest';
+import { BLOCK_TYPES, CALLOUT_VARIANTS, emptyBody, newSection, newId, slugify } from './schema.js';
+import { aliasClasses } from './convert.js';
+
+const serialize = domSerializer.default || domSerializer;
+const { parseFragmentTree, getClasses } = htmlIngest;
 
 const SER = { encodeEntities: 'utf8' };
 const isEl = (n) => n && n.type === 'tag';
@@ -300,8 +303,10 @@ function readMeta(meta, header, out) {
   }
 }
 
+// parse(html, { classAliases }) — classAliases renames classes before
+// reading (a legacy page's "finding-box" that is the site's "violation-box").
 function parse(html, opts = {}) {
-  const tree = parseFragmentTree(String(html || ''));
+  const tree = parseFragmentTree(aliasClasses(String(html || ''), opts.classAliases || {}));
   const out = { title: '', author: '', authorHref: '', body: emptyBody(), extras: [], report: { raw: 0, notes: [], wrappers: [] } };
   const header = out.body.header;
   const sections = out.body.sections;
@@ -425,4 +430,4 @@ function parse(html, opts = {}) {
   return out;
 }
 
-module.exports = { parse, parseMarker, blockFor };
+export { parse, parseMarker, blockFor };

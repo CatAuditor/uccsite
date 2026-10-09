@@ -10,6 +10,7 @@ const DOCUMENT_FIELDS = {
   slug: 'slug', title: 'title', category: 'category', author: 'author', project_slug: 'projectSlug', template_key: 'templateKey',
   status: 'status', sort_order: 'sortOrder',
   body_html_raw: 'bodyHtmlRaw', body_html_normalized: 'bodyHtmlNormalized', ingest_report: 'ingestReport',
+  body_blocks: 'bodyBlocks', // builder model (docs/systems/document-builder.md); null = legacy raw HTML
   page_css: 'pageCss',
   meta_title: 'metaTitle', meta_description: 'metaDescription', meta_keywords: 'metaKeywords',
   canonical_url: 'canonicalUrl', og_type: 'ogType', og_title: 'ogTitle', og_description: 'ogDescription',
@@ -17,7 +18,7 @@ const DOCUMENT_FIELDS = {
   jsonld_type: 'jsonldType', jsonld_overrides: 'jsonldOverrides', allow_scripts: 'allowScripts',
   sitemap_priority: 'sitemapPriority',
 };
-const JSON_COLS = new Set(['ingest_report', 'jsonld_overrides']);
+const JSON_COLS = new Set(['ingest_report', 'jsonld_overrides', 'body_blocks']);
 const INT_COLS = new Set(['noindex', 'nofollow', 'allow_scripts', 'sort_order']);
 // 'archived': taken down for good unless restored — not rendered, not in the
 // sitemap or author pages, its slug still blocks the fixed template, and the

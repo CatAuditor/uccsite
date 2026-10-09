@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { serialize, parse, validateBody, emptyBody, newSection, newBlock, BLOCK_TYPES, sampleHtml, slugify } from '../index.js';
 const require = createRequire(import.meta.url);
-const { serialize, parse, validateBody, emptyBody, newSection, newBlock, BLOCK_TYPES, sampleHtml, slugify } = require('../index.js');
 const { ingest, parseFragmentTree } = require('@uccsite/html-ingest');
 
 const doc = { title: 'A Report', author: 'Jarom Gillins' };

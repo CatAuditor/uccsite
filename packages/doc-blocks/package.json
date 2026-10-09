@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "description": "Document builder model: a document body as header fields + sections of typed blocks (docs/systems/document-builder.md). serialize() turns blocks into the body HTML the ingest expects; parse() turns uploaded or legacy HTML into blocks. Pure: strings and objects in, strings and objects out.",
-  "type": "commonjs",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "node --test \"test/**/*.test.mjs\""

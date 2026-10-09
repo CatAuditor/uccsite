@@ -8,15 +8,15 @@
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
+import { parse, serialize } from '../packages/doc-blocks/index.js';
 const require = createRequire(import.meta.url);
-const { parse, serialize } = require('../packages/doc-blocks');
 const { ingest, parseFragmentTree } = require('../packages/html-ingest');
 const { textContent } = require('domutils');
 
 const args = process.argv.slice(2);
 const outIdx = args.indexOf('--html');
 const outDir = outIdx >= 0 ? args[outIdx + 1] : null;
-const only = args.filter((a, i) => !a.startsWith('--') && i !== outIdx + 1);
+const only = args.filter((a, i) => !a.startsWith('--') && !(outIdx >= 0 && i === outIdx + 1));
 const dir = join(process.cwd(), 'docs/migration/documents');
 const files = readdirSync(dir).filter(f => f.endsWith('.document.json')).filter(f => !only.length || only.includes(f.replace('.document.json', '')));
 
