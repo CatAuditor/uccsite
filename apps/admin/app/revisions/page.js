@@ -14,6 +14,7 @@ import { COLLECTIONS } from '../../lib/collections';
 import { loadCollectionItems, mediaAssetIds } from '../../lib/collection-save';
 import { assertAltText } from '../../lib/media';
 import { getDocument, upsertDocument, listOverrides, replaceOverrides, loadForeignClassMap } from '@uccsite/db/documents';
+import { getPetition, savePetition } from '@uccsite/db/petitions';
 import { runIngest, loadSiteSources } from '../../lib/documents';
 import { runAction } from '../../lib/actions';
 import ActionForm from '../action-form';
@@ -21,7 +22,7 @@ import ActionForm from '../action-form';
 export const dynamic = 'force-dynamic';
 
 function hasRestorePath(entityType) {
-  return entityType === 'settings' || entityType === 'homepage' || entityType === 'document' || Boolean(COLLECTIONS[entityType]);
+  return entityType === 'settings' || entityType === 'homepage' || entityType === 'document' || entityType === 'petition' || Boolean(COLLECTIONS[entityType]);
 }
 
 // Document snapshots carry the editable fields + overrides (app/documents/actions.js snapshotOf).
@@ -36,6 +37,7 @@ async function loadCurrent(client, entityType, entityId) {
   if (entityType === 'settings') return loadSettings(client);
   if (entityType === 'homepage') return loadHomepage(client);
   if (entityType === 'document') return documentSnapshot(client, entityId);
+  if (entityType === 'petition') { const p = await getPetition(client, { id: entityId }); if (p) delete p.id; return p; }
   return loadCollectionItems(client, entityType);
 }
 
@@ -43,6 +45,9 @@ async function loadCurrent(client, entityType, entityId) {
 async function applySnapshot(client, entityType, snapshot, entityId, session) {
   if (entityType === 'settings') return saveSettings(client, snapshot);
   if (entityType === 'homepage') return saveHomepage(client, snapshot, { tx: false });
+  // A petition row (docs/systems/petition.md): the snapshot is the row's fields; the
+  // save re-runs every rule (slug, project, status, address clash, signatures).
+  if (entityType === 'petition') return savePetition(client, { ...snapshot, id: entityId });
   if (entityType === 'document') {
     // Re-ingest the restored raw body (normalized + report are derived state).
     const current = await getDocument(client, { id: entityId });

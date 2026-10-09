@@ -9,7 +9,8 @@
 import { loadSettings, loadHomepage, list, loadProjects } from '@uccsite/db/content';
 import { getDocument, listOverrides } from '@uccsite/db/documents';
 import { DEFAULT_NAVIGATION } from '@uccsite/render/navigation';
-import { COLLECTIONS, HOMEPAGE_GROUPS, SETTINGS_FIELDS, APPEAL_SETTINGS_FIELDS } from './collections';
+import { getPetition } from '@uccsite/db/petitions';
+import { COLLECTIONS, HOMEPAGE_GROUPS, SETTINGS_FIELDS, APPEAL_SETTINGS_FIELDS, PETITION_FIELDS } from './collections';
 import { diffFields, diffList, diffNavigation, diffDocument } from './change-detail-core.mjs';
 
 const ADMIN_PAGE = {
@@ -17,12 +18,13 @@ const ADMIN_PAGE = {
   projects: '/projects', 'coverage-alpr': '/coverage', 'coverage-stratos': '/coverage',
 };
 const SECTION_PAGE = {
-  Homepage: '/homepage', Petition: '/petition', 'Donation appeals': '/appeals',
+  Homepage: '/homepage', Petitions: '/petitions', 'Donation appeals': '/appeals',
   'Site Settings': '/settings', Menus: '/navigation',
 };
 // Which section a save belongs to, by its audit action.
 const ACTION_SECTION = {
-  'petition.save': 'Petition', 'appeals.save': 'Donation appeals', 'settings.navigation': 'Menus',
+  'petition.save': 'Petitions', 'petition.create': 'Petitions', 'petition.delete': 'Petitions',
+  'appeals.save': 'Donation appeals', 'settings.navigation': 'Menus',
   'settings.save': 'Site Settings', 'homepage.save': 'Homepage',
 };
 const ACTION_WORDS = {
@@ -72,7 +74,7 @@ async function describe(client, entityType, entityId, before, saves) {
     for (const g of HOMEPAGE_GROUPS) {
       const fields = diffFields(before[g.key] || {}, after[g.key] || {}, labelMap(g.fields));
       if (!fields.length) continue;
-      const name = g.page === 'petition' ? 'Petition' : g.page === 'appeals' ? 'Donation appeals' : 'Homepage';
+      const name = g.page === 'appeals' ? 'Donation appeals' : 'Homepage';
       out.push({ name, lines: [{ kind: 'changed', text: g.title, fields }] });
     }
     // The homepage press strip moved to the press collection (docs/systems/press.md); its diffs show as press.save.
@@ -89,6 +91,20 @@ async function describe(client, entityType, entityId, before, saves) {
     const menus = diffNavigation(before.navigation, after.navigation, DEFAULT_NAVIGATION);
     if (menus.length) out.push({ name: 'Menus', lines: menus });
     return out;
+  }
+  if (entityType === 'petition') {
+    // One row per petition (docs/systems/petition.md); the snapshot is the row before the first unpublished save.
+    const created = saves.some((s) => s.action === 'petition.create');
+    const after = await getPetition(client, { id: entityId });
+    const prior = created ? null : before;
+    if (prior === undefined) return null;
+    const labels = { slug: 'Slug', project_slug: 'Project', status: 'Status', featured: 'Show in the homepage hero', ...labelMap(PETITION_FIELDS) };
+    const name = (after || prior)?.slug || 'petition';
+    const { id: _a, ...afterFields } = after || {};
+    const { id: _b, ...priorFields } = prior || {};
+    if (!after) return [{ name: 'Petitions', lines: [{ kind: 'removed', text: `Petition ${name}` }] }];
+    const fields = diffFields(priorFields, afterFields, labels);
+    return [{ name: 'Petitions', href: `/petitions/${entityId}`, lines: created ? [{ kind: 'added', text: `Petition ${name}`, fields }] : (fields.length ? [{ kind: 'changed', text: `Petition ${name}`, fields }] : []) }];
   }
   if (entityType === 'document') {
     const created = saves.some((s) => s.action === 'document.create');

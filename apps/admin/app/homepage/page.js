@@ -6,6 +6,7 @@
 // lost-update check on the singleton's updated_at.
 import { revalidatePath } from 'next/cache';
 import { loadHomepage, saveHomepage } from '@uccsite/db/content';
+import { listPetitions } from '@uccsite/db/petitions';
 import { requireSession, requireRole } from '../../lib/auth';
 import { withDb, withWriteTx, recordChange, singletonStamp } from '../../lib/data';
 import { HOMEPAGE_GROUPS } from '../../lib/collections';
@@ -20,9 +21,10 @@ export const dynamic = 'force-dynamic';
 export default async function HomepagePage() {
   const session = await requireSession();
   const readOnly = session.role === 'viewer';
-  const [{ homepage, baseline }, live] = await Promise.all([
+  const [{ homepage, petitions, baseline }, live] = await Promise.all([
     withDb(async (client) => ({
       homepage: await loadHomepage(client),
+      petitions: await listPetitions(client),
       baseline: await singletonStamp(client, 'homepage'),
     })),
     liveHero(),
@@ -34,7 +36,7 @@ export default async function HomepagePage() {
       const s = await requireRole('editor');
       const next = {};
       for (const group of HOMEPAGE_GROUPS) {
-        if (group.page) continue; // owned by /appeals or /petition; merged from `before` below
+        if (group.page) continue; // owned by /appeals; merged from `before` below
         next[group.key] = {};
         for (const [field] of group.fields) {
           const v = String(formData.get(`${group.key}.${field}`) ?? '').trim();
@@ -60,10 +62,10 @@ export default async function HomepagePage() {
   return (
     <div>
       <h1>Homepage</h1>
-      <p className="notice">The featured statement card comes from the newest entry in Statements — edit it there. The &quot;Recent Coverage&quot; cards are the stories ticked <strong>Homepage card</strong> on Press &amp; coverage (the first three). The donate section and the timed donation modal are under Donation appeals; the petition hero is under Petition.</p>
+      <p className="notice">The featured statement card comes from the newest entry in Statements — edit it there. The &quot;Recent Coverage&quot; cards are the stories ticked <strong>Homepage card</strong> on Press &amp; coverage (the first three). The donate section and the timed donation modal are under Donation appeals; the petition hero is the open petition ticked <strong>Show in the homepage hero</strong> under Petitions.</p>
       {readOnly && <p className="notice">Viewer role — read-only.</p>}
-      <HeroStatus draft={draftHero(homepage)} live={live} />
-      <p className="notice">The <strong>Hero</strong> fields below are the standing hero — the default whenever no petition headline is set on the Petition page.</p>
+      <HeroStatus draft={draftHero(homepage, petitions)} live={live} />
+      <p className="notice">The <strong>Hero</strong> fields below are the standing hero — the default whenever no open petition is featured on the Petitions page.</p>
       <ActionForm className="editor" action={save} successMessage="Homepage saved. Publish to make it live.">
         <input type="hidden" name="baseline" value={baseline} />
         {HOMEPAGE_GROUPS.filter(g => !g.page).map((group) => (

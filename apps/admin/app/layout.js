@@ -28,7 +28,7 @@ const NAV = [
     ['/navigation', 'Menus (header & footer)'],
     ['/homepage', 'Homepage'],
     ['/appeals', 'Donation appeals'],
-    ['/petition', 'Petition'],
+    ['/petitions', 'Petitions'],
     ['/team', 'Team & Bios'],
     ['/statements', 'Statements'],
     ['/issues', 'Policy Positions'],

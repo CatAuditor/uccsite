@@ -31,7 +31,7 @@ export default async function ProjectWorkspacePage({ params, searchParams }) {
     return { ...ws, baseline: await collectionStamp(client, 'projects'), log: tab === 'activity' ? await activity(client, ws) : [] };
   });
   if (!data) notFound();
-  const { project, projects, parent, children, documents, files, notes, folders, press, petitions, activePetition, counts, baseline, log } = data;
+  const { project, projects, parent, children, documents, files, notes, folders, press, petitions, counts, baseline, log } = data;
   const readOnly = session.role === 'viewer';
   const href = (t) => `/projects/${slug}${t === 'overview' ? '' : `?tab=${t}`}`;
   const docsByCategory = [...new Set(documents.map(d => d.category || 'Uncategorized'))].map(c => [c, documents.filter(d => (d.category || 'Uncategorized') === c)]);
@@ -62,13 +62,10 @@ export default async function ProjectWorkspacePage({ params, searchParams }) {
           {!readOnly && <><button type="submit">Save project</button><RequestPublish /></>}
           <p className="hint">Press coverage for this project is filed on <Link href="/press">Press &amp; coverage</Link> (Project field).</p>
           <p className="hint">
-            Petition: {activePetition
-              ? <>the live campaign <strong>{activePetition.slug}</strong> is filed here — the project page shows it with a sign button. </>
-              : <>no live campaign is filed here. </>}
-            {petitions.length
-              ? <>Signatures under this project: {petitions.map((p, i) => <span key={p.petition}>{i ? ' · ' : ''}<strong>{p.petition}</strong> {p.n} ({p.utah} Utah)</span>)}. </>
-              : <>No signatures filed under this project yet. </>}
-            Campaign copy and the signature list live on <Link href="/petition">Petition</Link> (Project field).
+            Petitions filed here: {petitions.length
+              ? petitions.map((p, i) => <span key={p.slug}>{i ? ' · ' : ''}{p.id ? <Link href={`/petitions/${p.id}`}><strong>{p.slug}</strong></Link> : <strong>{p.slug}</strong>} ({p.status}{p.featured ? ', homepage hero' : ''}) {p.n} signatures, {p.utah} Utah</span>)
+              : <>none yet</>}.
+            {' '}An open petition shows on the project page with a sign button. <Link href={`/petitions?project=${encodeURIComponent(project.slug)}`}>Start a petition for this project</Link>.
           </p>
         </ActionForm>
       )}

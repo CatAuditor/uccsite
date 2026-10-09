@@ -1,8 +1,8 @@
 // Which hero is the homepage showing? Two answers, side by side, so an
 // editor can SEE a change took effect instead of guessing:
 //   draft — what this database would render on the next publish
-//           (petition takeover while homepage.petition.headline is set,
-//            the standing hero otherwise — templates/index.html)
+//           (petition takeover while an OPEN petition is ticked "featured"
+//            on Petitions, the standing hero otherwise — templates/index.html)
 //   live  — what the public homepage serves RIGHT NOW, read from the page
 //           itself (the hero <section> carries `hero-petition` in takeover
 //           mode). Fetched fresh on every admin page view, never cached.
@@ -11,10 +11,12 @@ import { config } from './config';
 
 const FETCH_TIMEOUT_MS = 5000;
 
-export function draftHero(homepage) {
-  const headline = String(homepage?.petition?.headline ?? '').trim();
-  return headline
-    ? { mode: 'petition', label: 'Petition takeover', detail: headline.replace(/<[^>]+>/g, '') }
+// draftHero(homepage, petitions) — petitions: the rows from listPetitions.
+export function draftHero(homepage, petitions = []) {
+  const featured = (petitions || []).find(p => String(p.status || '') === 'open' && String(p.featured || '') === '1');
+  const headline = String(featured?.headline ?? '').trim();
+  return featured
+    ? { mode: 'petition', label: `Petition takeover (${featured.slug})`, detail: headline.replace(/<[^>]+>/g, '') }
     : { mode: 'standing', label: 'Standing hero (the default)', detail: String(homepage?.hero?.headline ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() };
 }
 
@@ -67,7 +69,7 @@ export function HeroStatus({ draft, live }) {
           : same
             ? 'In sync — the live site shows what is saved here.'
             : 'Not published yet — the live site will switch to the saved hero after the next approved publish.'}
-        {' '}Rule: the petition hero shows while the Petition page has a headline; blank it and the standing hero returns by itself.
+        {' '}Rule: the petition hero shows while an open petition is ticked <strong>Show in the homepage hero</strong> on Petitions; untick it (or close the petition) and the standing hero returns by itself.
       </p>
     </section>
   );
