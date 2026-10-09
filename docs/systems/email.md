@@ -189,6 +189,7 @@ links) has no unsubscribe — transactional, not marketing.
 | Apex SPF | `v=spf1 include:spf.efwd.registrar-servers.com include:zohomail.com include:mailgun.org ~all` — Namecheap forwarding and Mailgun are dead weight |
 | DMARC | `p=none`, reports to Mailgun (retired) + OnDMARC |
 | Suppression | account + `ucc-prod` config set: BOUNCE, COMPLAINT |
+| BIMI | logo `static/bimi-logo.svg` → `https://utahciviccompact.org/bimi-logo.svg` (SVG Tiny PS, square, padded for the circular crop, 17 KB; made from favicon.svg with svgo, no arcs). Record `default._bimi` added by Conner 2026-10-09. Passes only once DMARC is `quarantine`/`reject`; Gmail/Apple also need a VMC or CMC (`a=`) |
 
 DMARC passes for SES mail on both legs. Enforcement (`p=reject`) is a DNS
 change only Conner can make (wrangler's token has no DNS scope); the staged

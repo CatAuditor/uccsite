@@ -4,6 +4,14 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.27.1 — 2026-10-09 (branch `claude-wip`) — Petitions: prod migrated
+
+- Prod admin pages failed ("Server Components render" digests) because v0.27.0 reached the prod admin before the prod
+  database had the `petitions` table. Ran for-conner.md §11 against prod: migrate-schema, migrate-petitions --apply
+  (row 725394c9…, 7 signatures, `petition-thanks` email re-keyed), `cdk deploy UccProd`, publish. `/petition` and
+  `/petition-thanks` 301 to `/projects/alpr/udot-alpr-permits` (+ `/thanks`). Docs: for-conner.md §11 + Done,
+  docs/error-handling/client-side-error/2026-10-09-admin-petitions-table-missing-prod.md. No code change.
+
 ## v0.27.0 — 2026-10-10 (branch `refactor`) — Petitions collection: one record per petition, under a project
 
 Push = f338885 (eight commits rebased onto 089b0e7, the other session's "Automatic email tick box"; the rebase also carried

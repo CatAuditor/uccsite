@@ -495,7 +495,7 @@ deletion (30-day recovery window) — nothing reads it any more.
   - `_dmarc` TXT — remove `mailto:b5510ee5@dmarc.mailgun.org,` from both
     `rua=` and `ruf=` (OnDMARC stays and keeps reporting).
 
-## 11. Petitions: one record per petition (prod migration pending, 2026-10-10)
+## 11. Petitions: one record per petition (prod migrated 2026-10-09)
 
 Built 2026-10-05 as one campaign; rebuilt 2026-10-10 as a collection
 (`docs/systems/petition.md`): every petition is its own record under a
@@ -527,6 +527,9 @@ order, from a clean worktree at the commit that carries them:**
 
 ## Done
 
+- [x] 2026-10-09 — §11 petitions prod migration: migrate-schema, migrate-petitions --apply
+  (row 725394c9…, 7 signatures), `cdk deploy UccProd`, publish. Fixed the prod admin's
+  Server Components errors (docs/error-handling/client-side-error/2026-10-09-admin-petitions-table-missing-prod.md).
 - [x] 2026-09-13 — staging fully built (Phases 0–9), reviewed, published;
   Jarom owner user in the staging pool; this runbook.
 - [x] 2026-09-30 — **cutover**: DNS flipped to CloudFront 15:26 MDT, donor
@@ -545,7 +548,14 @@ mail that claims to be @utahciviccompact.org but is not from SES or Zoho.
 That is a DNS change in Cloudflare (DNS → Records), done in three steps so a
 forgotten sender shows up in the reports before mail is refused.
 
-**Step 1 — now.**
+**Step 1 — done 2026-10-09** (verified on Cloudflare's nameservers): DMARC
+Management on, `_dmarc` = `v=DMARC1; p=none; fo=1; rua=mailto:61b8bacc…@dmarc-reports.cloudflare.net`,
+apex SPF `v=spf1 include:zohomail.com ~all`, `default._bimi` added; Resend
+(`send.` MX/TXT, `resend._domainkey`) and Mailgun (`email.` CNAME,
+`k1._domainkey`) records deleted. Still to do from step 1: the Zoho DKIM
+check (4) and the two Show-original checks (5).
+
+**Step 1 — original instructions.**
 1. Cloudflare → utahciviccompact.org → **Email → DMARC Management → Enable**.
    Free; it collects the aggregate reports (Mailgun's address is dead, and
    nobody is known to read OnDMARC). Accept the record change it offers.
@@ -583,6 +593,16 @@ v=DMARC1; p=quarantine; sp=quarantine; adkim=r; aspf=r; fo=1; rua=mailto:<cloudf
 v=DMARC1; p=reject; sp=reject; adkim=r; aspf=r; fo=1; rua=mailto:<cloudflare address>
 ```
 Rollback at any step: set `p=none` again (TTL 1 hour).
+
+**BIMI (logo in the inbox).** Logo is live at
+`https://utahciviccompact.org/bimi-logo.svg` (file `static/bimi-logo.svg`).
+TXT record, name `default._bimi`:
+```
+v=BIMI1; l=https://utahciviccompact.org/bimi-logo.svg; a=;
+```
+Checkers fail BIMI until step 2 (`p=quarantine`). Gmail and Apple Mail
+show the logo only with a mark certificate (VMC needs a registered
+trademark; CMC needs a year of public logo use) — its URL goes after `a=`.
 
 **Postal address (CAN-SPAM).** Every newsletter must show a valid street
 address, PO box, or registered mailbox. The default footer says only
