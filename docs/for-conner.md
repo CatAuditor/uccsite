@@ -495,7 +495,7 @@ deletion (30-day recovery window) — nothing reads it any more.
   - `_dmarc` TXT — remove `mailto:b5510ee5@dmarc.mailgun.org,` from both
     `rua=` and `ruf=` (OnDMARC stays and keeps reporting).
 
-## 11. Petitions: one record per petition (prod migration pending, 2026-10-10)
+## 11. Petitions: one record per petition (prod migrated 2026-10-09)
 
 Built 2026-10-05 as one campaign; rebuilt 2026-10-10 as a collection
 (`docs/systems/petition.md`): every petition is its own record under a
@@ -527,6 +527,9 @@ order, from a clean worktree at the commit that carries them:**
 
 ## Done
 
+- [x] 2026-10-09 — §11 petitions prod migration: migrate-schema, migrate-petitions --apply
+  (row 725394c9…, 7 signatures), `cdk deploy UccProd`, publish. Fixed the prod admin's
+  Server Components errors (docs/error-handling/client-side-error/2026-10-09-admin-petitions-table-missing-prod.md).
 - [x] 2026-09-13 — staging fully built (Phases 0–9), reviewed, published;
   Jarom owner user in the staging pool; this runbook.
 - [x] 2026-09-30 — **cutover**: DNS flipped to CloudFront 15:26 MDT, donor
