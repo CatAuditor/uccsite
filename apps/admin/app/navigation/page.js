@@ -20,11 +20,11 @@ export const dynamic = 'force-dynamic';
 
 const PAGE_NAMES = {
   index: 'Homepage', team: 'Team & Bios', blog: 'News & Media', statements: 'Statements', issues: 'Policy Positions',
-  projects: 'Projects', tip: 'Submit a Tip', success: 'Donation thank-you', petition: 'Petition', '404': 'Not found',
+  projects: 'Projects', tip: 'Submit a Tip', donate: 'Donate', success: 'Donation thank-you', petition: 'Petition', '404': 'Not found',
 };
 const ANCHORS = [
   ['/#mission', 'Homepage → Mission'], ['/#issues', 'Homepage → Issues'],
-  ['/#join', 'Homepage → Join / Get Involved'], ['/#donate', 'Homepage → Donate'],
+  ['/#join', 'Homepage → Join / Get Involved'], ['/#donate', 'Homepage → Donate section'],
   ['/newsletters', 'Newsletter archive'], ['mailto:{email}', 'Email us (the address in Site Settings)'],
 ];
 

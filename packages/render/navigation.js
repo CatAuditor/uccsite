@@ -40,7 +40,7 @@ const DEFAULT_NAVIGATION = {
     // render path has no projects (newsletter archive).
     { label: 'Projects', href: '/projects.html', auto: 'projects' },
     { label: 'Submit a Tip', href: '/tip.html' },
-    { label: 'Donate', href: '/#donate', style: 'donate' },
+    { label: 'Donate', href: '/donate', style: 'donate' },
     { label: 'Get Involved', style: 'cta', children: [
       { label: 'Join the Compact', href: '/#join' },
       { label: 'Find Your Officials', href: 'https://lookup.utahciviccompact.org' },
@@ -61,7 +61,7 @@ const DEFAULT_NAVIGATION = {
         { label: 'Find Your Officials', href: 'https://lookup.utahciviccompact.org' },
         { label: 'News & Blog', href: '/blog.html' },
         { label: 'Newsletters', href: '/newsletters' },
-        { label: 'Donate', href: '/#donate' },
+        { label: 'Donate', href: '/donate' },
       ] },
       { heading: 'Contact', links: [
         { label: '{email}', href: 'mailto:{email}' },

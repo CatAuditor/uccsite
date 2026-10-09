@@ -32,7 +32,7 @@ packages/render/test/navigation.test.mjs  6 tests (normalize, aria-current, esca
   "header": [
     { "label": "Mission", "href": "/#mission" },
     { "label": "About Us", "children": [{ "label": "Team & Bios", "href": "/team.html" }] },
-    { "label": "Donate", "href": "/#donate", "style": "donate" }
+    { "label": "Donate", "href": "/donate", "style": "donate" }
   ],
   "footer": {
     "columns": [{ "heading": "Contact", "links": [{ "label": "{email}", "href": "mailto:{email}" }] }],
@@ -82,6 +82,11 @@ that pushed Donate / Get Involved off-screen between 861 px (hamburger
 breakpoint) and ~1100 px in a headless-Chrome check; the dropdown adds only a
 chevron and still fits at 900 px. Prod `site_settings.navigation` was NULL (checked 2026-10-09), so the
 defaults are what the site renders.
+
+2026-10-10: the default **Donate** links (header button, footer Get Involved column) point at the
+new `/donate` page instead of the homepage anchor `/#donate`. The anchor still works (the homepage
+section stays) and remains in the admin link picker as "Homepage → Donate section". Re-check
+`site_settings.navigation` is still NULL on prod before relying on the default.
 
 `aria-current="page"` goes on a link whose href resolves to the page being
 rendered (`pageKey`: `/team.html` → `team`), never on `#` anchors, styled

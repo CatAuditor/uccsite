@@ -204,8 +204,19 @@ export const HOMEPAGE_GROUPS = [
     ['title', 'Title'], ['body', 'Body', 'textarea'],
     ['item1', 'Item 1'], ['item2', 'Item 2'], ['item3', 'Item 3'], ['item4', 'Item 4'],
   ]},
-  { key: 'donate', title: 'Homepage donate section', page: 'appeals', fields: [
-    ['label', 'Label'], ['title', 'Title'], ['body', 'Body', 'textarea'],
+  { key: 'donate', title: 'Donate section (homepage) and the /donate page', page: 'appeals', fields: [
+    ['label', 'Label', 'text', 'Small red eyebrow above the heading — homepage section and /donate'],
+    ['title', 'Title', 'text', 'Homepage section heading; also the /donate headline when the one below is blank'],
+    ['body', 'Body', 'textarea', 'Homepage section paragraph; also the /donate intro when the one below is blank'],
+    ['page_headline', '/donate: headline', 'textarea', 'HTML allowed: <em>word</em> turns red. Blank = Title'],
+    ['page_intro', '/donate: intro paragraph', 'textarea', 'Blank = Body'],
+    ['points_heading', '/donate: list heading', 'text', 'Above the three points. Blank = Where your money goes'],
+    ['point1_title', '/donate: point 1 title', 'text', 'Blank = no list'],
+    ['point1_body', '/donate: point 1 text', 'textarea'],
+    ['point2_title', '/donate: point 2 title'],
+    ['point2_body', '/donate: point 2 text', 'textarea'],
+    ['point3_title', '/donate: point 3 title'],
+    ['point3_body', '/donate: point 3 text', 'textarea'],
   ]},
   { key: 'modal', title: 'Homepage timed modal (7.5 s after arrival)', page: 'appeals', fields: [
     ['badge', 'Badge'], ['title', 'Title'], ['body', 'Body', 'textarea'], ['cta', 'CTA label'],

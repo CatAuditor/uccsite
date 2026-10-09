@@ -702,7 +702,7 @@ async function createCheckoutSession({ event, db, secrets, body, origin }) {
       mode: isSub ? 'subscription' : 'payment',
       line_items: [{ price_data: priceData, quantity: 1 }],
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/#donate`,
+      cancel_url: `${origin}/donate`,
       metadata,
     };
 
@@ -783,7 +783,7 @@ async function createPortalSessionGet({ event, db, secrets, origin }) {
     // Through the shared stripePost — one place owns the pinned API version.
     const session = await stripePost(secrets.STRIPE_SECRET_KEY, 'billing_portal/sessions', {
       customer: member.stripe_customer_id,
-      return_url: `${origin}/#donate`,
+      return_url: `${origin}/donate`,
     });
     return redirect(session.url, 302);
   } catch (err) {

@@ -94,6 +94,7 @@ Hard rules:
 | `dignity-index-statement.html` | settings | 9/11 anniversary statement calling for Dignity Index adoption; bespoke design distinct from `statements.html` |
 | `theory.html` | settings | |
 | `tip.html` | settings | noindex, excluded from sitemap |
+| `donate.html` | settings, homepage | `/donate` — the dedicated donation page (2026-10-10): hero copy + "where your money goes" from the homepage `donate` group (admin Appeals), the same Stripe form `js/main.js` drives on the homepage, recent-donor list, FAQ (donation-tracker.md "Donate page") |
 | `petitions.html` | settings, petitions | `/petitions` — every open petition, closed ones listed (petition.md) |
 | `petition.html` | petitions, settings | rendered once per open/closed petition to `projects/<project path>/<slug>.html` (`each: 'pages'`); the signature form or the closed panel |
 | `petition-thanks.html` | petitions, settings | once per open petition to `projects/<path>/<slug>/thanks.html`; thank-you + payment modal; noindex, excluded from sitemap |
@@ -111,7 +112,7 @@ Official statements live in `content/statements.json` (`statements` array: `slug
 
 `templates/partials/header.html` and `footer.html`, included with `{{> header}}` / `{{> footer}}` on every page except `success.html`. (`how-did-this-happen.html` and `dignity-index-statement.html` migrated from hardcoded copies to the partials 2026-09-12.) The header partial opens `<main id="main">` (after a skip link); the footer partial closes it. `aria-current="page"` is set from `current.<page>`; subpages get the `scrolled` header class via `{{^is_home}}`.
 
-Nav links: Mission, **About Us** (dropdown: Team & Bios, Theory of Change, Policies, Privacy Report), News & Media, Projects, Submit a Tip, **Donate** (red → `/#donate`), **Get Involved** (red → `/#join`). Footer contact/tagline/copyright come from `content/settings.json`.
+Nav links: Mission, **About Us** (dropdown: Team & Bios, Theory of Change, Policies, Privacy Report), News & Media, Projects, Submit a Tip, **Donate** (red → `/donate`; was the homepage anchor `/#donate` until 2026-10-10), **Get Involved** (red → `/#join`). Footer contact/tagline/copyright come from `content/settings.json`.
 
 The dropdown (`.nav-dropdown*`, `js/main.js`) hover-opens on desktop and click/keyboard-toggles otherwise; JS keeps `aria-expanded` truthful on hover and supports Arrow keys/Escape. See [nav-about-us-dropdown.md](../decisions/nav-about-us-dropdown.md).
 

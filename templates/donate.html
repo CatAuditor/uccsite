@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- /donate — the dedicated donation page (docs/systems/donation-tracker.md "Donate page").
+       Copy comes from the homepage `donate` group, edited on the admin's Donation appeals page;
+       the form is the same markup js/main.js initDonate() drives on the homepage. -->
+  <title>Donate | Utah Civic Compact</title>
+  <meta name="description" content="Support Utah Civic Compact. Your monthly or one-time gift funds public records requests, investigation, legal work and organizing for community voice across Utah." />
+  <link rel="canonical" href="https://utahciviccompact.org/donate" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://utahciviccompact.org/donate" />
+  <meta property="og:title" content="Donate | Utah Civic Compact" />
+  <meta property="og:description" content="Support Utah Civic Compact. Your monthly or one-time gift funds public records requests, investigation, legal work and organizing for community voice across Utah." />
+  <meta property="og:site_name" content="Utah Civic Compact" />
+  <meta property="og:image" content="https://utahciviccompact.org/assets/share-default.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://utahciviccompact.org/assets/share-default.png" />
+  <meta name="twitter:title" content="Donate | Utah Civic Compact" />
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon-512.png" />
+  <link rel="stylesheet" href="/css/fonts.css" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/colors.css" />
+  <link rel="stylesheet" href="/css/pages/donate.css" />
+</head>
+<body>
+
+{{> header}}
+
+  <!-- ── Hero + form ──────────────────────────────────────────────────────── -->
+  <section class="donate-hero" id="donate">
+    <div class="container">
+
+      <div class="donate-hero-left">
+        <p class="donate-hero-label">{{donate.label}}</p>
+        <h1>{{#donate.page_headline}}{{{donate.page_headline}}}{{/donate.page_headline}}{{^donate.page_headline}}{{donate.title}}{{/donate.page_headline}}</h1>
+        <p class="donate-hero-body">{{#donate.page_intro}}{{donate.page_intro}}{{/donate.page_intro}}{{^donate.page_intro}}{{donate.body}}{{/donate.page_intro}}</p>
+
+        {{#donate.point1_title}}
+        <p class="donate-points-heading">{{#donate.points_heading}}{{donate.points_heading}}{{/donate.points_heading}}{{^donate.points_heading}}Where your money goes{{/donate.points_heading}}</p>
+        <ul class="donate-points">
+          <li class="donate-point">
+            <span class="donate-point-mark" aria-hidden="true"></span>
+            <div><strong>{{donate.point1_title}}</strong><p>{{donate.point1_body}}</p></div>
+          </li>
+          {{#donate.point2_title}}
+          <li class="donate-point">
+            <span class="donate-point-mark" aria-hidden="true"></span>
+            <div><strong>{{donate.point2_title}}</strong><p>{{donate.point2_body}}</p></div>
+          </li>
+          {{/donate.point2_title}}
+          {{#donate.point3_title}}
+          <li class="donate-point">
+            <span class="donate-point-mark" aria-hidden="true"></span>
+            <div><strong>{{donate.point3_title}}</strong><p>{{donate.point3_body}}</p></div>
+          </li>
+          {{/donate.point3_title}}
+        </ul>
+        {{/donate.point1_title}}
+
+        <p class="donate-hero-legal">Utah Civic Compact is a 501(c)(4) social welfare organization. Contributions are <strong>not</strong> tax-deductible as charitable donations.</p>
+      </div>
+
+      <div class="donate-form-wrap">
+        <h2 class="donate-form-title">Choose your gift</h2>
+        <div class="donate-type-toggle">
+          <button class="toggle-btn active" data-type="subscription">Monthly</button>
+          <button class="toggle-btn" data-type="onetime">One-Time</button>
+        </div>
+
+        <div class="donate-tiers" id="donate-tiers">
+          <button class="tier-btn" data-amount="500">$5<span>/mo</span></button>
+          <button class="tier-btn" data-amount="1000">$10<span>/mo</span></button>
+          <button class="tier-btn active" data-amount="2500">$25<span>/mo</span></button>
+          <button class="tier-btn" data-amount="5000">$50<span>/mo</span></button>
+          <button class="tier-btn tier-custom" data-amount="custom">Other</button>
+        </div>
+
+        <div class="donate-custom-wrap is-hidden" id="donate-custom-wrap">
+          <label for="donate-custom-amount">Enter amount ($)</label>
+          <input type="number" id="donate-custom-amount" min="1" max="100000" placeholder="Enter amount" />
+        </div>
+
+        <div class="donate-fields">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="donate-first">First Name</label>
+              <input type="text" id="donate-first" placeholder="First name" autocomplete="given-name" />
+            </div>
+            <div class="form-group">
+              <label for="donate-last">Last Name</label>
+              <input type="text" id="donate-last" placeholder="Last name" autocomplete="family-name" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="donate-email">Email</label>
+            <input type="email" id="donate-email" placeholder="you@example.com" autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label for="donate-zip">ZIP Code</label>
+            <input type="text" id="donate-zip" placeholder="Utah ZIP" maxlength="5" autocomplete="postal-code" />
+          </div>
+        </div>
+
+        <div class="form-group form-group-check">
+          <label class="check-label">
+            <input type="checkbox" id="donate-newsletter" checked />
+            <span>I'd like to receive updates from Utah Civic Compact</span>
+          </label>
+        </div>
+        <div class="form-group form-group-check">
+          <label class="check-label">
+            <input type="checkbox" id="donate-public" checked />
+            <span>Show my first name and amount on the public donor list</span>
+          </label>
+        </div>
+        <button class="btn btn-donate btn-full" id="donate-submit" data-source="donate-page">Support Utah Civic Compact</button>
+        <p class="donate-error is-hidden" id="donate-error"></p>
+        <p class="donate-secure">You'll finish on Stripe's secure checkout page. We never see your card number.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Questions + recent donors ────────────────────────────────────────── -->
+  <section class="donate-page-more">
+    <div class="container">
+      <div class="donate-page-col">
+        <div class="section-label">Questions</div>
+        <h2 class="section-title">Before you give</h2>
+        <div class="donate-faq">
+          <details>
+            <summary>Is my gift tax-deductible?</summary>
+            <p>No. Utah Civic Compact is a 501(c)(4) social welfare organization, which lets us lobby and take positions on legislation. Contributions are not tax-deductible as charitable donations.</p>
+          </details>
+          <details>
+            <summary>Can I change or cancel a monthly gift?</summary>
+            <p>Yes, any time. Stripe emails a receipt for every charge. To change the amount or stop, email <a href="mailto:{{email}}">{{email}}</a> and we'll take care of it.</p>
+          </details>
+          <details>
+            <summary>Who sees my donation?</summary>
+            <p>Our staff see the details they need to send a receipt. The public donor list on this page shows only a first name and an amount, and only if you leave that box ticked at checkout.</p>
+          </details>
+          <details>
+            <summary>Is the checkout secure?</summary>
+            <p>Payments are processed by Stripe. Your card number goes to Stripe, not to us, and we never store it.</p>
+          </details>
+        </div>
+      </div>
+      <div class="donate-page-col">
+        <div class="donation-tracker" id="donation-tracker" aria-hidden="true">
+          <ul class="tracker-recent" id="tracker-recent"></ul>
+        </div>
+        <div class="donate-other-ways">
+          <div class="section-label">Other ways to help</div>
+          <ul>
+            <li><a href="/#join">Join the Compact</a> for updates and action alerts.</li>
+            <li><a href="/petitions">Sign an open petition</a> and send it to one person who should.</li>
+            <li><a href="/tip">Submit a confidential tip</a> if you know something the public deserves to know.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+{{> footer}}
+
+  <script src="/js/main.js"></script>
+</body>
+</html>

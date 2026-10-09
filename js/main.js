@@ -194,6 +194,8 @@ function showFormError(form, msg) {
     try {
       const publicDonor = document.getElementById('donate-public')?.checked !== false;
       const body = { type: currentType, amountCents, email, firstName, lastName, zip, newsletterOptIn, publicDonor };
+      // Where the ask came from (Stripe metadata, shown in admin → Donations): /donate sets data-source.
+      if (submitBtn.dataset.source) body.source = submitBtn.dataset.source;
 
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',

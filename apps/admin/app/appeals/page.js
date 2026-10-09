@@ -1,5 +1,5 @@
 // Donation appeals — every place the site asks for money, edited in ONE
-// spot: the homepage donate section + timed modal (homepage table groups)
+// spot: the donate section (homepage + /donate page) + timed modal (homepage table groups)
 // and the download modal shown after any file download (site_settings
 // columns, rendered by the footer partial on every page). One transaction:
 // both singletons, their revision snapshots and audit rows commit together,
@@ -75,8 +75,8 @@ export default async function AppealsPage() {
     <div>
       <h1>Donation appeals</h1>
       <p className="notice">
-        Every donation ask on the site, in one place. The homepage donate section and the timed modal
-        render on the homepage; the download modal appears on every page after a visitor downloads a
+        Every donation ask on the site, in one place. The donate section renders on the homepage and, with
+        its extra fields, as the /donate page; the timed modal renders on the homepage; the download modal appears on every page after a visitor downloads a
         published project file. Blank download-modal title = no modal.
       </p>
       {readOnly && <p className="notice">Viewer role — read-only.</p>}

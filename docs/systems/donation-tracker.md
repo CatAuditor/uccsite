@@ -1,12 +1,38 @@
 # Donation Tracker
 
-Recent-donor list displayed in the donate section of `index.html`.
+Recent-donor list displayed in the donate section of `index.html` and on the
+`/donate` page.
 
 **Org policy (2026-09-12):** the public site shows **no running total, goal, or
 progress bar** — how much is coming in is not public unless the org posts a
 specific fundraising-goal campaign. Only the opt-in recent-donor list renders.
 (Full per-donation detail — amount, donor, contact info — becomes visible to
 staff in the Phase 7 admin; see `docs/build-spec-aws.md` planning addendum 2.)
+
+## Donate page (`/donate`, 2026-10-10)
+
+`templates/donate.html` + `css/pages/donate.css`; `PAGES` entry
+`{ template: 'donate.html', content: ['settings', 'homepage'], priority: '0.8' }`.
+The nav's red Donate button, the footer Donate link, the homepage timed modal,
+the download modal, the petition thank-you email's "Chip in" fallback and the
+Stripe `cancel_url` / portal `return_url` all point here (they pointed at the
+homepage anchor `/#donate` before; the homepage section itself stays).
+
+- **Copy**: the homepage `donate` group (admin → Donation appeals). `label`;
+  `page_headline` (HTML, `<em>` = red; blank → `title`); `page_intro` (blank →
+  `body`); `points_heading` (blank → "Where your money goes"); `point1..3_title`
+  / `_body` — no `point1_title` = no list. The FAQ, the form, the amounts and
+  the 501(c)(4) line are in the template.
+- **Form**: the same ids as the homepage (`#donate-submit`, `.tier-btn`, …), so
+  `js/main.js initDonate()` runs unchanged; the submit button carries
+  `data-source="donate-page"`, which `initDonate` sends as `source` → Stripe
+  metadata (`aws/api/routes.js createCheckoutSession`) → visible in admin →
+  Financial → Donations. The homepage form sends no source.
+- **Recent donors**: `#donation-tracker` below the fold (same markup, same fetch).
+- No timed modal on this page (`#donate-modal` is homepage-only).
+- Deploy: template + CSS changes need `cdk deploy UccProd` (PublishFn bundles
+  `site-src`) before a publish; the `routes.js` URL change ships with the API in
+  the same deploy.
 
 ## Data flow
 

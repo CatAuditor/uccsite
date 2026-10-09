@@ -105,6 +105,12 @@ puts that version back as a draft; request a publish to take it live.
   new one. **New petition** on the list page starts a draft.
 - **Appeals** also holds the **Thank-you email after a donation** dropdown
   (same idea; a donation email must contain `{receipt}`).
+- **Appeals → Donate section** also feeds the **Donate page**
+  (utahciviccompact.org/donate, where the nav's red Donate button goes): the
+  fields marked `/donate:` are its headline, intro and the three "where your
+  money goes" points. Leave them blank and the page reuses the homepage
+  title and body. The amounts, the form and the questions on that page are
+  code.
 - **Homepage** — hero headline/subtitle, mission quote, about paragraphs,
   join section, donate section, donation pop-up text, the press strip.
   (The featured statement card is automatic: it is always the newest

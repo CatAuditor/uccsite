@@ -1,6 +1,7 @@
 # Nav Flatten + Donate Button
 
 **Status (2026-09-13):** still in force (unchanged by the AWS rebuild).
+**2026-10-10:** the Donate button now links to the dedicated `/donate` page, not the homepage anchor — see [donate-page.md](donate-page.md).
 
 Removed all dropdown menus from navigation. Replaced "About" dropdown (Team & Bios, Theory of Change) and "Our Work" dropdown (Issues, News & Blog) with flat top-level links.
 

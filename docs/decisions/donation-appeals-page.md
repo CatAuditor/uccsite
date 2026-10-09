@@ -9,7 +9,9 @@ page (`apps/admin/app/appeals`): the homepage donate section, the homepage
 timed modal, and the download modal that appears after any published
 project-file download. The data stays where the renderer already reads it:
 
-- homepage `donate` + `modal` JSON groups → `homepage` table (index.html)
+- homepage `donate` + `modal` JSON groups → `homepage` table (index.html; since
+  2026-10-10 the `donate` group's `page_*` / `point*` fields also render the
+  `/donate` page — [donate-page.md](donate-page.md))
 - download modal title/body/cta/dismiss → four `site_settings` columns
   (`downloadModal*`), because the footer partial renders it on every page
   and `settings` is the one content file every page receives.

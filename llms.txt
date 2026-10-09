@@ -20,6 +20,7 @@ Utah Civic Compact was founded in 2024. We operate statewide across all 29 Utah 
 - Team & Bios: https://utahciviccompact.org/team (each member has an author page listing their work, e.g. https://utahciviccompact.org/team/jarom-gillins)
 - News & Press Coverage: https://utahciviccompact.org/blog
 - Submit a confidential tip: https://utahciviccompact.org/tip
+- Donate (monthly or one-time, via Stripe): https://utahciviccompact.org/donate
 
 ## Active Investigations
 

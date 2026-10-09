@@ -29,10 +29,11 @@ silently stops donations being recorded. Suggest the page be called
 | Surface | Behaviour | Code |
 |---|---|---|
 | Homepage donate section | **Embedded** — monthly/one-time toggle, tiers $5/10/25/50 + Other, name/email/ZIP, newsletter + public-donor checkboxes | `templates/index.html` `#donate`; `js/main.js` donate flow |
-| Homepage timed pop-up | Button **links** to `/#donate` | `templates/index.html` `#donate-modal`; `js/main.js` |
+| `/donate` page (2026-10-10) | **Embedded** — the homepage form again, plus admin-edited "where your money goes" points and an FAQ | `templates/donate.html`; `js/main.js` donate flow (`source: donate-page`) |
+| Homepage timed pop-up | Button **links** to `/donate` | `templates/index.html` `#donate-modal`; `js/main.js` |
 | Petition thank-you "I can help" | Button opens a **pop-up** payment window | `templates/petition-thanks.html` `#petition-modal`; `js/petition.js` |
-| Download pop-up (after a file download) | Button **links** to `/#donate` | `templates/partials/footer.html` `#download-modal` |
-| Header "Donate" | **Link** to `/#donate` | `packages/render/navigation.js` (Menus) |
+| Download pop-up (after a file download) | Button **links** to `/donate` | `templates/partials/footer.html` `#download-modal` |
+| Header "Donate" | **Link** to `/donate` | `packages/render/navigation.js` (Menus) |
 
 All of them end at one API route: `POST /api/create-checkout-session`
 (`aws/api/routes.js`) with `{ type: 'onetime'|'subscription', amountCents,

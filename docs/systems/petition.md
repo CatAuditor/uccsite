@@ -46,7 +46,7 @@ aws/api/routes.js               petitionSign() — POST /api/petition (files the
                                 row + project + url/thanks_url (per-container cache, 5 min);
                                 petitionThanksJob(); petitionCount() — GET /api/petition/count
 aws/api/emails.js               buildPetitionThanksEmail — Share → the petition's page, Chip in →
-                                its thank-you page (fallbacks /petitions, /#donate)
+                                its thank-you page (fallbacks /petitions, /donate)
 aws/publish/render-db.js        petitionRedirects: /petition and /petition-thanks → the featured
                                 petition (else /petitions), written with the document redirects;
                                 refuses a render where a document and a site page share an address
@@ -232,7 +232,7 @@ email attached to **this petition** (`transactional_emails.trigger =
 'petition-thanks:<slug>'`, `packages/db/newsletters.js petitionTrigger`; no
 shared fallback) or the built-in body (headline, project link, **Share → the
 petition's page**, **Chip in → its thank-you page**; `/petitions` and
-`/#donate` when the project is missing). Mail → Outgoing emails lists one
+`/donate` when the project is missing). Mail → Outgoing emails lists one
 slot per petition.
 
 ## Migration (`scripts/migrate-petitions.mjs`)

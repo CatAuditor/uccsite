@@ -38,6 +38,7 @@ const PAGES = [
   { template: 'dignity-index-statement.html', content: ['settings'] },
   { template: 'theory.html',       content: ['settings'] },
   { template: 'tip.html',          content: ['settings'], sitemap: false },
+  { template: 'donate.html',       content: ['settings', 'homepage'], priority: '0.8' }, // copy = homepage.donate (admin Appeals)
   // Petitions (docs/systems/petition.md): ONE row per petition, filed under a
   // project. petition.html renders once per open/closed petition to
   // projects/<project path>/<slug>.html, the thank-you page under it

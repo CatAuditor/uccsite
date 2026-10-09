@@ -6,6 +6,34 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-10 — The site has a real Donate page
+
+**What changed**
+
+Donating used to mean scrolling to the bottom of the homepage. There is now a dedicated page at
+utahciviccompact.org/donate: a headline and a short "where your money goes" list on the left, the same
+monthly / one-time form on the right, and below it the recent-donor list, four short questions (tax status,
+cancelling a monthly gift, who sees what, security) and other ways to help. The red Donate button in the
+menu, the Donate link in the footer, the timed pop-up on the homepage, the pop-up after a file download and
+the "Chip in" button in petition thank-you emails all go to this page now. If someone backs out of Stripe
+checkout they land here too. The homepage still has its donate section.
+
+Gifts made from the new page are tagged "donate-page" in Stripe, so the Financial → Donations list can
+tell them apart from homepage and petition gifts.
+
+**What editors do differently**
+
+On **Donation appeals**, the donate section now has extra fields marked `/donate:` — the page's headline
+(a word inside `<em>` turns red), the intro, and three points with a title and a line each. Leave them blank
+and the page falls back to the homepage title and body. The menu's link picker lists "Donate" as a page;
+the old homepage anchor is still offered as "Homepage → Donate section".
+
+**Still needs a person**
+
+Nothing. (The amounts, the questions and the legal line on the page are code — ask a developer to change them.)
+
+---
+
 ## 2026-10-09 — Conner's prod work folded into the main branch; email logo file now live
 
 **What changed**

@@ -26,5 +26,6 @@
   "projects/stratos.html": "New page (2026-10-09): project hub rendered from templates/project.html, one per project (docs/decisions/project-tree-nested-urls.md)",
   "petitions.html": "New page: the petitions index — every open petition, closed ones listed (docs/systems/petition.md)",
   "projects/alpr/udot-alpr-permits.html": "New page: one signature page per petition under its project (docs/systems/petition.md)",
-  "projects/alpr/udot-alpr-permits/thanks.html": "New page: the thank-you + payment modal under each open petition; noindex (docs/systems/petition.md)"
+  "projects/alpr/udot-alpr-permits/thanks.html": "New page: the thank-you + payment modal under each open petition; noindex (docs/systems/petition.md)",
+  "donate.html": "New page 2026-10-10: dedicated donation page (templates/donate.html, css/pages/donate.css) — copy from the homepage donate group, same form js/main.js drives on the homepage (docs/systems/donation-tracker.md \"Donate page\")"
 }

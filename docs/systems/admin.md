@@ -80,7 +80,7 @@ apps/admin/
                            → a different admin approves (async PublishFn invoke)
                            or declines with notes; request history + publish_runs
                            history (Publishing…/Live hh:mm/failed)
-  app/appeals              Donation appeals: homepage donate section + timed modal +
+  app/appeals              Donation appeals: donate section (homepage + /donate page) + timed modal +
                            download modal, one save (docs/decisions/donation-appeals-page.md)
   app/settings, /homepage, /team, /statements, /issues, /press,
   /projects                collection editors (generic ListEditor client component;
@@ -126,7 +126,7 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Long-form pages, their styling, SEO, JSON-LD | Documents + Styles |
 | Images | Media Library |
 | Files (PDFs, spreadsheets, records…) shared between staff, optionally published at `/files/…` and listed on /projects | Files |
-| Every donation ask (homepage section, timed modal, download modal) | Donation appeals |
+| Every donation ask (homepage section + the /donate page's copy, timed modal, download modal) | Donation appeals |
 | Petitions, each under a project with its own page (`/projects/<path>/<slug>`): status draft/open/closed, the homepage hero (featured), copy, thank-you ask, public Utah-only counter; signatures split Utah / outside + CSV | Petitions |
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
 | Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |

@@ -26,7 +26,16 @@
   "donate": {
     "label": "Support the Work",
     "title": "Fund the Compact",
-    "body": "Utah Civic Compact runs on community support. Every dollar received means more resources dedicated to public records requests, investigation, and organizing."
+    "body": "Utah Civic Compact runs on community support. Every dollar received means more resources dedicated to public records requests, investigation, and organizing.",
+    "page_headline": "Fund the fight for <em>community consent</em>.",
+    "page_intro": "Utah Civic Compact is funded by Utahns, not by the institutions we investigate. Your gift pays for public records requests, legal filings, and the organizing that turns findings into change.",
+    "points_heading": "Where your money goes",
+    "point1_title": "Public records",
+    "point1_body": "GRAMA requests, appeals, and the fees agencies charge to hand over what the public already owns.",
+    "point2_title": "Investigation and legal work",
+    "point2_body": "Analyst time, expert review, and filings like the Weber County election-law complaint.",
+    "point3_title": "Organizing",
+    "point3_body": "Petitions, public comment campaigns, and getting Utahns in the room when decisions are made."
   },
   "modal": {
     "badge": "Urgent",

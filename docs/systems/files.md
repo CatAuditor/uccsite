@@ -108,7 +108,7 @@ prepends an origin path to the whole URI, it does not strip the pattern).
    click. Files in "General" (no project) get a URL but no listing.
 6. **Download modal**: `templates/partials/footer.html` renders it on every
    page from `settings.downloadModal{Title,Body,Cta,Dismiss}` (blank title =
-   no modal). CTA → `/#donate`. Copy is edited on `/appeals`.
+   no modal). CTA → `/donate` (the donation page; was `/#donate` until 2026-10-10). Copy is edited on `/appeals`.
 7. **Unpublish**: row first (`public_key` NULL), then `DeleteObjects` on
    the public key (delete marker on the versioned bucket). Cached edge copies
    can serve for up to 5 minutes (no invalidation from the admin). The

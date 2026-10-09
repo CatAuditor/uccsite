@@ -1,0 +1,159 @@
+/* Page styles for templates/donate.html — the dedicated donation page.
+   The form card reuses the Donations classes in css/styles.css (.donate-form-wrap,
+   .donate-tiers, .tier-btn, .toggle-btn, .donate-fields, .donate-error, .donation-tracker). */
+
+/* ── Hero: copy left, form card right ────────────────────────────────── */
+.donate-hero {
+  background: var(--navy-dark);
+  padding: 140px 0 88px;
+  position: relative;
+  overflow: hidden;
+}
+.donate-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 60% 40%, rgba(192,57,43,0.14) 0%, transparent 70%);
+  pointer-events: none;
+}
+.donate-hero .container {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: start;
+}
+
+.donate-hero-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red-light);
+  margin-bottom: 18px;
+}
+.donate-hero h1 {
+  font-family: var(--font-sans);
+  font-size: clamp(32px, 4.5vw, 52px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  color: var(--white);
+  margin-bottom: 24px;
+}
+.donate-hero h1 em { font-style: normal; color: var(--red-light); }
+.donate-hero-body {
+  font-size: 17px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.72);
+  max-width: 480px;
+  margin-bottom: 40px;
+}
+
+.donate-points-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 16px;
+}
+.donate-points { display: flex; flex-direction: column; gap: 18px; }
+.donate-point { display: flex; align-items: flex-start; gap: 14px; }
+.donate-point-mark {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--red-light);
+  margin-top: 8px;
+  flex-shrink: 0;
+}
+.donate-point strong { display: block; color: var(--white); font-weight: 700; margin-bottom: 2px; }
+.donate-point p { color: rgba(255,255,255,0.65); font-size: 0.95rem; line-height: 1.6; margin: 0; }
+
+.donate-hero-legal {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.45);
+  margin-top: 36px;
+  max-width: 480px;
+}
+.donate-hero-legal strong { color: rgba(255,255,255,0.7); }
+
+.donate-form-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--navy);
+  margin-bottom: 20px;
+}
+.donate-secure {
+  font-size: 0.78rem;
+  color: var(--gray-400);
+  text-align: center;
+  margin-top: 14px;
+}
+
+/* ── Below the fold: questions + recent donors ───────────────────────── */
+.donate-page-more { background: var(--cream); padding: 80px 0 96px; }
+.donate-page-more .container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: start;
+}
+.donate-faq details {
+  border-bottom: 1px solid var(--gray-200);
+  padding: 4px 0;
+}
+.donate-faq summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--navy);
+  padding: 14px 32px 14px 0;
+  list-style: none;
+  position: relative;
+}
+.donate-faq summary::-webkit-details-marker { display: none; }
+.donate-faq summary::after {
+  content: '+';
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 500;
+  color: var(--gray-400);
+}
+.donate-faq details[open] summary::after { content: '\2212'; }
+.donate-faq details p { color: var(--gray-600); line-height: 1.7; padding: 0 0 18px; }
+.donate-faq details p a { color: var(--red); text-decoration: underline; }
+
+.donate-page-more .donation-tracker { margin: 0 0 40px; }
+/* styles.css paints the heading white-on-dark for the homepage; here it sits on cream — match .section-label */
+.donate-page-more .tracker-recent-heading {
+  padding: 0;
+  margin: 0 0 12px;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--red);
+}
+
+.donate-other-ways ul { display: flex; flex-direction: column; gap: 12px; }
+.donate-other-ways li { color: var(--gray-600); line-height: 1.6; padding-left: 18px; position: relative; }
+.donate-other-ways li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 11px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+}
+.donate-other-ways a { color: var(--navy); font-weight: 600; text-decoration: underline; }
+
+@media (max-width: 900px) {
+  .donate-hero { padding: 120px 0 64px; }
+  .donate-hero .container,
+  .donate-page-more .container { grid-template-columns: 1fr; gap: 48px; }
+  .donate-hero-body, .donate-hero-legal { max-width: none; }
+}
