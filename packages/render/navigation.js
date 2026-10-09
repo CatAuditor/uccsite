@@ -13,7 +13,9 @@ const { escapeHtml, safeUrl } = require('./engine');
 const CHEVRON = '<svg class="chevron" aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
 
 // The menus as they were hand-written in templates/partials until 2026-10-06,
-// plus the Writing dropdown and footer link (2026-10-07, docs/systems/writing.md).
+// plus the Writing dropdown and footer link (2026-10-07, docs/systems/writing.md)
+// and a footer Find Your Officials link (2026-10-08, the separate lookup app;
+// footer only — a 10th header item pushes Donate/Get Involved off at 861–1100px).
 // Used whenever settings.navigation is absent or unreadable, so a missing or
 // broken value can never strip the site of its menus.
 const DEFAULT_NAVIGATION = {
@@ -49,6 +51,7 @@ const DEFAULT_NAVIGATION = {
       ] },
       { heading: 'Get Involved', links: [
         { label: 'Join the Compact', href: '/#join' },
+        { label: 'Find Your Officials', href: 'https://lookup.utahciviccompact.org' },
         { label: 'News & Blog', href: '/blog.html' },
         { label: 'Newsletters', href: '/newsletters' },
         { label: 'Donate', href: '/#donate' },

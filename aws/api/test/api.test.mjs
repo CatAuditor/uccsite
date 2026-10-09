@@ -513,3 +513,24 @@ test('open pixel: one anonymous row per hit, gif either way, bad ids ignored', a
   assert.equal(res.statusCode, 200);
   assert.equal(db.calls.filter(c => c.text.includes('INSERT INTO newsletter_opens')).length, 1);
 });
+
+test('subscribe CORS: preflight 204 + allow-origin only for the officials lookup origin', async () => {
+  const LOOKUP = 'https://lookup.utahciviccompact.org';
+  const pre = lib.withLookupCors(httpEvent({ method: 'OPTIONS', headers: { origin: LOOKUP } }), routes.subscribePreflight());
+  assert.equal(pre.statusCode, 204);
+  assert.equal(pre.headers['Access-Control-Allow-Origin'], LOOKUP);
+  assert.equal(pre.headers['Access-Control-Allow-Methods'], 'POST');
+  assert.equal(pre.headers['Access-Control-Allow-Headers'], 'Content-Type');
+  assert.equal(pre.headers['Access-Control-Max-Age'], '86400');
+  assert.equal(pre.headers.Vary, 'Origin');
+
+  const ok = lib.withLookupCors(httpEvent({ headers: { origin: LOOKUP } }), lib.json({ ok: true }));
+  assert.equal(ok.headers['Access-Control-Allow-Origin'], LOOKUP);
+  assert.equal(ok.headers['Content-Type'], 'application/json');
+
+  for (const origin of [undefined, 'https://evil.example', 'https://utahciviccompact.org']) {
+    const res = lib.withLookupCors(httpEvent({ headers: { origin } }), lib.json({ ok: true }));
+    assert.equal(res.headers['Access-Control-Allow-Origin'], undefined);
+    assert.equal(res.headers.Vary, 'Origin');
+  }
+});

@@ -6,6 +6,14 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-08 — "Find Your Officials" link in the footer
+
+The footer's **Get Involved** column now links to the officials lookup
+(lookup.utahciviccompact.org), which opens in a new tab. It is not in the top
+menu: one more item there pushes the Donate and Get Involved buttons off the
+screen on laptop-width windows. Editors can move or rename it on **Menus
+(header & footer)** like any other link. Shows after the next publish.
+
 ## 2026-10-07 — Sitemap fixed for Google Search Console
 
 Search Console said the sitemap had an "Incorrect namespace". One letter was

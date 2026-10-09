@@ -64,6 +64,13 @@ the live site.
 2026-10-07: the defaults gained a **Writing** dropdown and a footer link
 (docs/systems/writing.md).
 
+2026-10-08: the footer's Get Involved column gained **Find Your Officials** →
+`https://lookup.utahciviccompact.org` (separate app, repo CatAuditor/UCC-lookup;
+off-site, so it opens in a new tab). Footer only: a 10th top-level header item
+pushed Donate / Get Involved off-screen between 861 px (hamburger breakpoint)
+and ~1100 px in a headless-Chrome check. The live menus matched the defaults,
+so this ships on the next publish unless a menu was saved in the admin since.
+
 `aria-current="page"` goes on a link whose href resolves to the page being
 rendered (`pageKey`: `/team.html` → `team`), never on `#` anchors, styled
 buttons or footer columns — the same rules the hand-written partials followed.

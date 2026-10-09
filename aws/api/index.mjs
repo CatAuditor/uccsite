@@ -14,8 +14,9 @@ import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { makeCachedClient } from '@uccsite/db';
 import { loadSecrets } from './secrets.js';
 import { handleWebhook } from './webhook.js';
+import { withLookupCors } from './lib.js';
 import {
-  subscribe, unsubscribe, confirmSubscription, newsletterOpen, tip, petitionSign, petitionCount, createCheckoutSession,
+  subscribe, subscribePreflight, unsubscribe, confirmSubscription, newsletterOpen, tip, petitionSign, petitionCount, createCheckoutSession,
   createPortalSessionPost, createPortalSessionGet, portalLinkJob, welcomeEmailJob, donationStats,
 } from './routes.js';
 
@@ -55,9 +56,11 @@ function stampHeaders(res) {
 //   rawBody: handler consumes the exact received bytes (HMAC) — never JSON-parse
 //   secrets: route reads third-party secrets (skipped for health/stats so a
 //            Secrets Manager fetch never blocks them)
+//   cors:    allow the officials lookup origin (lib.js withLookupCors)
 const ROUTES = {
   'POST /api/webhook': { fn: handleWebhook, rawBody: true, secrets: true },
-  'POST /api/subscribe': { fn: subscribe, secrets: true },
+  'POST /api/subscribe': { fn: subscribe, secrets: true, cors: true },
+  'OPTIONS /api/subscribe': { fn: subscribePreflight, cors: true },
   'GET /api/unsubscribe': { fn: unsubscribe, secrets: true },
   'POST /api/unsubscribe': { fn: unsubscribe, secrets: true },
   'GET /api/confirm': { fn: confirmSubscription, secrets: true },
@@ -119,8 +122,8 @@ export async function handler(event) {
     if (body !== undefined && (typeof body !== 'object' || body === null)) body = undefined;
   }
 
-  const res = await route.fn({ event, db, secrets, body, origin, rawBody, selfInvoke });
-  return stampHeaders(res);
+  const res = stampHeaders(await route.fn({ event, db, secrets, body, origin, rawBody, selfInvoke }));
+  return route.cors ? withLookupCors(event, res) : res;
 }
 
 async function health() {

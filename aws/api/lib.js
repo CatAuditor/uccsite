@@ -131,7 +131,20 @@ async function turnstileOr403(secretKey, event, token) {
   }
 }
 
+// ── CORS for the officials lookup ──────────────────────────────────────────
+// lookup.utahciviccompact.org (a separate app, repo CatAuditor/UCC-lookup)
+// posts newsletter opt-ins from the visitor's browser to /api/subscribe.
+// Exactly this one origin, on that one route (index.mjs `cors` flag); every
+// other route stays same-origin only.
+const LOOKUP_ORIGIN = 'https://lookup.utahciviccompact.org';
+function withLookupCors(event, res) {
+  const headers = { ...res.headers, Vary: 'Origin' };
+  if (event.headers?.origin === LOOKUP_ORIGIN) headers['Access-Control-Allow-Origin'] = LOOKUP_ORIGIN;
+  return { ...res, headers };
+}
+
 module.exports = {
   STRIPE_API_VERSION, json, html, redirect, escapeHtml, isValidEmail, str,
   clientIp, checkRateLimit, rateLimitOr429, signToken, verifyToken, turnstileOr403,
+  withLookupCors,
 };

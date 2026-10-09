@@ -79,6 +79,20 @@ async function subscribe(ctx) {
   return json({ ok: true });
 }
 
+// ── OPTIONS /api/subscribe ── CORS preflight from the officials lookup;
+// index.mjs adds Allow-Origin + Vary (lib.js withLookupCors).
+function subscribePreflight() {
+  return {
+    statusCode: 204,
+    headers: {
+      'Access-Control-Allow-Methods': 'POST',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    },
+    body: '',
+  };
+}
+
 // Runs from the self-invocation (unreachable over HTTP — see index.mjs).
 async function welcomeEmailJob({ secrets, email, firstName, origin }) {
   try {
@@ -666,7 +680,7 @@ async function donationStats({ db }) {
 }
 
 module.exports = {
-  subscribe, unsubscribe, confirmSubscription, newsletterOpen, tip, petitionSign, petitionCount, createCheckoutSession,
+  subscribe, subscribePreflight, unsubscribe, confirmSubscription, newsletterOpen, tip, petitionSign, petitionCount, createCheckoutSession,
   createPortalSessionPost, createPortalSessionGet, portalLinkJob, welcomeEmailJob, donationStats,
   _setSesClient,
 };
