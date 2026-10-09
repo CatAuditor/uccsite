@@ -2,11 +2,14 @@
 // "Attached emails"). A newsletter row with kind = 'transactional' is never
 // sent to the audience; an editor ATTACHES it to a trigger (petition signed,
 // donation received) and the API Lambda sends the frozen copy to each person
-// who acts, filling {first_name}-style placeholders. One email per trigger;
+// who acts, filling {first_name}-style placeholders. One email per trigger —
+// and the petition trigger is one PER PETITION (`petition-thanks:<slug>`,
+// db.petitionTrigger; no shared fallback — docs/systems/petition.md);
 // attaching another replaces it; detaching returns to the built-in email in
 // aws/api/emails.js. No two-person review (docs/pending-questions.md): the
 // attach is audited `newsletter.attach` and reversible in one click.
 import * as db from '@uccsite/db/newsletters';
+import { listPetitions } from '@uccsite/db/petitions';
 import { renderEmail } from '@uccsite/newsletter/render';
 import { requireRole } from './auth';
 import { withDb, withWriteTx, recordChange } from './data';
@@ -40,11 +43,25 @@ function slotsByTrigger(attachments) {
   return out;
 }
 
-// listSlots() → every trigger with what is attached (or null) — the list page.
+// listSlots() → every slot with what is attached (or null) — the list page.
+// The petition trigger expands to one slot per petition (in admin order);
+// an attachment whose petition no longer exists is listed too, so it can be found.
 export async function listSlots() {
   await requireRole('viewer');
-  const slots = slotsByTrigger(await withDb((client) => db.listAttachments(client)));
-  return TRIGGERS.map((t) => ({ ...t, attachment: slots[t.key] || null }));
+  const { attachments, petitions } = await withDb(async (client) => ({ attachments: await db.listAttachments(client), petitions: await listPetitions(client, { ids: true }) }));
+  const slots = slotsByTrigger(attachments);
+  const out = [];
+  for (const t of TRIGGERS) {
+    if (!t.perPetition) { out.push({ ...t, attachment: slots[t.key] || null }); continue; }
+    for (const p of petitions) {
+      const key = db.petitionTrigger(p.slug);
+      out.push({ ...db.triggerOf(key), petitionId: p.id, petitionStatus: p.status || 'draft', attachment: slots[key] || null });
+    }
+    for (const [key, a] of Object.entries(slots)) {
+      if (key.startsWith(`${t.key}:`) && !out.some((s) => s.key === key)) out.push({ ...db.triggerOf(key), petitionId: null, petitionStatus: 'no petition', attachment: a });
+    }
+  }
+  return out;
 }
 
 // transactionalState(id) → { attached: this email's attachment | null, slots }
@@ -67,8 +84,8 @@ export async function automaticEmails() {
 export async function transactionalSlot(trigger) {
   const t = db.triggerOf(trigger);
   if (!t) throw new Error('Unknown trigger');
-  const slots = await listSlots();
-  return slots.find((s) => s.key === t.key);
+  const slots = slotsByTrigger(await withDb((client) => db.listAttachments(client)));
+  return { ...t, attachment: slots[t.key] || null };
 }
 
 // chooseEmail(trigger, id|'') → { label, builtIn }: the dropdown's action.

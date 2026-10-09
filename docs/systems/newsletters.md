@@ -38,7 +38,7 @@ apps/admin/lib/notify.js           notifyNewsletterRequested (reviewer email, sa
 apps/admin/app/mail/page.js        Outgoing emails: Automatic emails (trigger slots + transactional drafts, "new
                                    automatic email") then Newsletters (list + "new newsletter")
 apps/admin/lib/transactional.js    kind 'transactional' rows: create / list / chooseEmail (attach to a trigger, or detach)
-apps/admin/app/automatic-email-picker.js  the dropdown on each petition's page and the Appeals page (docs/systems/email.md "Attached emails")
+apps/admin/app/automatic-email-picker.js  the dropdown on each petition's page (its own trigger `petition-thanks:<slug>`) and the Appeals page (docs/systems/email.md "Attached emails")
 apps/admin/app/mail/[id]/page.js   editor page: review panel, Composer in an ActionForm, test/request/delete
 apps/admin/app/mail/[id]/composer.js  client: block editor (image block has inline upload; file import) + look (reset to site look)
                                    + audience ("Apply filters" live count) | phone/desktop, light/dark preview

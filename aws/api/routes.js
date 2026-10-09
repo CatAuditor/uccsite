@@ -571,7 +571,8 @@ async function petitionThanksJob({ db, secrets, email, firstName, petition, orig
       const token = await signToken(secrets.TOKEN_SECRET, 'unsubscribe', email, UNSUBSCRIBE_TTL);
       unsubscribeUrl = `${origin}/api/unsubscribe?token=${encodeURIComponent(token)}`;
     }
-    const attached = await transactionalTemplate(db, 'petition-thanks');
+    // Per petition (docs/systems/petition.md): `petition-thanks:<slug>`; nothing attached → the built-in body.
+    const attached = await transactionalTemplate(db, `petition-thanks:${String(petition || '').toLowerCase()}`);
     const built = attached
       ? fillAttached(attached, {
         first_name: firstName || 'there',

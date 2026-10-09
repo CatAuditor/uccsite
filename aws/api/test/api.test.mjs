@@ -732,7 +732,9 @@ test('petition-thanks job: an attached email replaces the built-in body — plac
   assert.match(m.Content.Simple.Body.Text.Data, /^Hi <Ada>\nUnsubscribe: https:\/\/x\.test\/api\/unsubscribe\?token=/);
   const headers = Object.fromEntries(m.Content.Simple.Headers.map(h => [h.Name, h.Value]));
   assert.equal(headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
-  assert.equal(db.calls.filter(c => c.text.includes('FROM transactional_emails')).length, 1);
+  const reads = db.calls.filter(c => c.text.includes('FROM transactional_emails'));
+  assert.equal(reads.length, 1);
+  assert.deepEqual(reads[0].params, ['petition-thanks:udot-alpr-permits']); // per petition, no shared key
 });
 
 test('donation-thanks job: attached email gets {amount} {type} {date} and the raw {receipt} table with the legal line; read failure falls back to the built-in', async () => {

@@ -32,8 +32,11 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 edit its copy or download its signatures, or **New petition** (pick the
 project, give it a slug and a headline) to start a draft. The slug cannot be
 changed once anyone has signed; close that petition and start a new one
-instead. The thank-you email dropdown is on each petition's page but is one
-choice for all of them.
+instead. The thank-you email dropdown is on each petition's page and is
+**that petition's own choice** (changed the same day after review: every
+petition is different; nothing chosen = the built-in email with that
+petition's headline). Outgoing emails lists one "Petition signed" line per
+petition.
 
 **Unfinished / needs a person**: this is on **staging only** so far. Prod
 needs the owner's keys: the two migration scripts, a stack deploy and a

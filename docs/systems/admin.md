@@ -127,7 +127,7 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |
 | Donors; the mailing list with audience controls (residency, donors, petition signers) + CSV; remove / restore / erase people on the list | Donations, Mailing list |
 | Newsletters: write (blocks or a .docx/.md/.html import), site letterhead look, live audience count, preview (phone, light/dark), test, request → approve → send (now or scheduled) | Mail → Outgoing emails (docs/systems/newsletters.md) |
-| Automatic emails: compose the petition thank-you or the donation receipt as a newsletter under Outgoing emails, then CHOOSE it from the dropdown on any petition's page (after signing — one email for every petition) or the Appeals page (after a donation); "Built-in email" returns to the fixed body | Mail → Outgoing emails + Petitions / Appeals (docs/systems/email.md "Attached emails") |
+| Automatic emails: compose the petition thank-you or the donation receipt as a newsletter under Outgoing emails, then CHOOSE it from the dropdown on a petition's page (after signing — each petition has its own choice) or the Appeals page (after a donation); "Built-in email" returns to the fixed body | Mail → Outgoing emails + Petitions / Appeals (docs/systems/email.md "Attached emails") |
 | Confidential tips: read, triage status, delete | Tips (editor+; delete is owner) |
 | Accounts, roles, MFA, security keys | Users (owners), My profile (everyone) |
 

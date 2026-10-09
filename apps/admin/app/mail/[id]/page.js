@@ -258,10 +258,10 @@ export default async function NewsletterPage({ params }) {
           {tx.attached ? (
             <p>
               This is the live email for <strong>{tx.attached.label}</strong> (chosen {when(tx.attached.attachedAt)} by {tx.attached.attachedBy || 'an admin'}; it goes out {tx.attached.when}).
-              The copy that goes out was frozen when it was chosen — after editing, save here, then pick it again on the {tx.attached.trigger === 'petition-thanks' ? <Link href="/petition">Petition</Link> : <Link href="/appeals">Appeals</Link>} page to send the new version.
+              The copy that goes out was frozen when it was chosen — after editing, save here, then pick it again on the {tx.attached.trigger.startsWith('petition-thanks:') ? <Link href="/petitions">petition&apos;s page under Petitions</Link> : <Link href="/appeals">Appeals</Link>} page to send the new version.
             </p>
           ) : (
-            <p>Not in use yet. Choose it on the <Link href="/petition">Petition</Link> page (thank-you after signing) or the <Link href="/appeals">Appeals</Link> page (thank-you after a donation). The <em>Audience</em> fieldset above is ignored for automatic emails — each one goes to the person who just acted.</p>
+            <p>Not in use yet. Choose it on a petition&apos;s page under <Link href="/petitions">Petitions</Link> (thank-you after signing that petition) or the <Link href="/appeals">Appeals</Link> page (thank-you after a donation). The <em>Audience</em> fieldset above is ignored for automatic emails — each one goes to the person who just acted.</p>
           )}
           <p className="hint">
             Placeholders, filled in for each recipient:{' '}

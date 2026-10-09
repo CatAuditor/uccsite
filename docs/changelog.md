@@ -35,6 +35,12 @@ Staging migrated and published; prod pending (for-conner.md §11).
   `hero-status.js` draftHero(homepage, petitions); `change-detail.js` `petition` entity → section Petitions;
   revisions restore a `petition`; project workspace lists its petitions + "Start a petition"; documents refuse a
   petition's slug; `publish-requests.js` CONTENT_ACTION_RE counts the three petition actions.
+- **Per-petition thank-you email** (same day, after review — "every petition is different"): trigger key
+  `petition-thanks:<slug>` (`packages/db/newsletters.js petitionTrigger`, `triggerOf` resolves it; the bare key is no
+  slot), one `transactional_emails` row per petition, no shared fallback; `lib/transactional.js listSlots` expands to
+  one slot per petition (+ orphaned keys); the picker on `/petitions/[id]` uses the petition's key; Outgoing emails
+  links each slot to its petition; `petitionThanksJob` reads `petition-thanks:<slug>`; `migrate-petitions.mjs` re-keys
+  a legacy `petition-thanks` attachment on any run (staging had none).
 - **Scripts**: `migrate-petitions.mjs` (dry run / --apply / --force). **Staging**: migrate-schema + migrate-petitions
   applied (row b0ae614f…, 2 signatures), staging published from the DB — after one mistaken git-source publish that
   removed the document pages for a few minutes (docs/error-handling/build-failures/2026-10-10-staging-publish-git-source.md).

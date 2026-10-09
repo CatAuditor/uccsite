@@ -1,5 +1,6 @@
-// Which automatic email goes out for a trigger — the dropdown on the Petition
-// page (petition-thanks) and the Appeals page (donation-thanks). Options are
+// Which automatic email goes out for a trigger — the dropdown on each
+// petition's page (petition-thanks:<slug>) and the Appeals page
+// (donation-thanks). Options are
 // the automatic emails composed under Mail → Outgoing emails; "Built-in email"
 // = the fixed body in aws/api/emails.js. Choosing freezes that draft for the
 // trigger (lib/transactional.js chooseEmail) — swap any time, no publish.

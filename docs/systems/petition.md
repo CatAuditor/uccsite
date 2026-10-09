@@ -186,8 +186,9 @@ if the petition later moves.
 - **One petition** (`/petitions/<id>`): status line (open / closed / draft,
   the address, the project); signatures for this slug with the residency
   filter and CSV (audit `petition.export`); **Thank-you email** picker
-  (trigger `petition-thanks` — one email for every petition; `{headline}`
-  and `{project_name}` fill per petition); the record (slug — read-only
+  (trigger `petition-thanks:<slug>` — **its own** attachment; nothing
+  attached = the built-in body; `{headline}` / `{project_name}` fill from
+  this petition); the record (slug — read-only
   once signed —, Project dropdown, Status, **Show in the homepage hero**);
   the copy in five groups (The petition, Sign-up form, Thank-you page,
   Payment window, Sharing); **Save petition** (lost-update stamp = the
@@ -226,10 +227,13 @@ copy fields; an **Other** amount is always offered; monthly sends
 
 ## Thank-you email
 
-docs/systems/email.md. First signature only, self-invoke job; the attached
-automatic email or the built-in body (headline, project link, **Share → the
+docs/systems/email.md. First signature only, self-invoke job; the automatic
+email attached to **this petition** (`transactional_emails.trigger =
+'petition-thanks:<slug>'`, `packages/db/newsletters.js petitionTrigger`; no
+shared fallback) or the built-in body (headline, project link, **Share → the
 petition's page**, **Chip in → its thank-you page**; `/petitions` and
-`/#donate` when the project is missing).
+`/#donate` when the project is missing). Mail → Outgoing emails lists one
+slot per petition.
 
 ## Migration (`scripts/migrate-petitions.mjs`)
 
@@ -238,7 +242,9 @@ Dry run by default; `--apply` turns `homepage.petition` into one row
 (status `open` when it had a headline, `featured` ticked, the old
 `/alpr.html` secondary link → `/projects/alpr/report`), audited as
 `petition.create` by `scripts/migrate-petitions`; `--force` replaces existing
-rows. The homepage column is left as the backup. Then redeploy the stack (the
+rows; a legacy shared attachment `petition-thanks` is re-keyed to the migrated
+petition (`petition-thanks:<slug>`) on any run. The homepage column is left
+as the backup. Then redeploy the stack (the
 publish Lambda bundles the templates; the API Lambda reads the new table) and
 publish from the database. **Staging: applied 2026-10-10** (row
 `b0ae614f…`, 2 signatures carried over, staging published from the DB with
@@ -263,6 +269,7 @@ failed: <message>` for refused saves (slug clash, locked slug, missing project).
 ## Not built (deliberate)
 
 - No IP / user-agent with a signature. No nav link (hero / hubs / /petitions
-  are the entry points). No per-petition thank-you email (one trigger; the
-  placeholders carry the petition). No list-order editor (sort_order =
-  creation order; the index and hubs follow it).
+  are the entry points). No shared "any petition" thank-you email (org
+  decision 2026-10-10: every petition is different — its own attachment or
+  the built-in body). No list-order editor (sort_order = creation order; the
+  index and hubs follow it).

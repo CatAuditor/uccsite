@@ -99,7 +99,8 @@ puts that version back as a draft; request a publish to take it live.
   thank-you page's donation window (**amounts** as dollars, e.g. `5, 10, 25`;
   **one-time, monthly or both**; an Other amount is always offered), the
   **share** message and preview picture, its signatures with a CSV, and the
-  **Thank-you email** dropdown (one choice for every petition). The slug
+  **Thank-you email** dropdown (each petition has its own; nothing chosen =
+  the built-in email with that petition's headline). The slug
   cannot change once anyone has signed — close that petition and start a
   new one. **New petition** on the list page starts a draft.
 - **Appeals** also holds the **Thank-you email after a donation** dropdown
@@ -262,9 +263,9 @@ the whole mailing list after a second admin approves them.
   attached, a built-in email goes out (its wording is fixed; the petition's
   headline and project fill it).
 - To use your own design: **New automatic email**, write it exactly like a
-  newsletter (blocks, look, preview, *Save & send me a test*). Then go to any
-  petition under **Petitions** (Thank-you email — the choice applies to every
-  petition) or the **Appeals** page (Thank-you email after a donation) and
+  newsletter (blocks, look, preview, *Save & send me a test*). Then go to the
+  petition under **Petitions** (Thank-you email — each petition has its own
+  choice) or the **Appeals** page (Thank-you email after a donation) and
   pick it from the dropdown — **Use this email**. It
   goes out from then on; swap to another one or back to *Built-in email* any
   time, no publish needed. Edits to the email do not go live until you pick

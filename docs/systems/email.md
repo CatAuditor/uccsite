@@ -20,12 +20,13 @@ aws/api/emails.js            the thank-you bodies (pure): buildPetitionThanksEma
                              default subjects/bodies. Welcome body stays in routes.js.
                              transactionalTemplate() / fillAttached() — an ATTACHED email (below) replaces the built-in body
 aws/api/webhook.js           checkout.session.completed → self-invoke 'donation-thanks'
-packages/db/newsletters.js   TRIGGERS (petition-thanks, donation-thanks: label, when, placeholders, required),
+packages/db/newsletters.js   TRIGGERS (petition-thanks — PER PETITION, key `petition-thanks:<slug>` via petitionTrigger();
+                             donation-thanks: label, when, placeholders, required), triggerOf() resolves both,
                              newsletters.kind, transactional_emails table, attach/detach/listAttachments
 apps/admin/lib/transactional.js  createTransactional, automaticEmails, transactionalSlot, chooseEmail (the dropdown's action),
                              attachEmail (renders + freezes), detachEmail, listSlots, transactionalState
 apps/admin/app/automatic-email-picker.js  THE dropdown: "Built-in email" + every automatic email → chooseEmail; on the
-                             each petition's page (petition-thanks — one choice for every petition) and the Appeals page (donation-thanks)
+                             each petition's page (petition-thanks:<slug> — one choice PER petition) and the Appeals page (donation-thanks)
 apps/admin/app/mail/          Outgoing emails: Automatic emails (slots + drafts) and Newsletters; [id] editor shows where
                              an automatic email is in use (the choice itself is made on a petition's page / Appeals)
 aws/api/index.mjs            JOBS: welcome-email, portal-link, petition-thanks, donation-thanks
@@ -91,15 +92,16 @@ can also be switched with the editor's **"Automatic email"** tick box (sets
 `kind` on Save; unticking is refused while a trigger uses the email, and a
 send request is refused for an automatic email). The choice
 of WHICH automatic email goes out is made where the trigger lives — the
-**Petitions › a petition** page ("Thank-you email" — one choice shared by every
-petition) and the **Appeals** page ("Thank-you email after a donation") — with
-one dropdown each (`AutomaticEmailPicker` →
+**Petitions › a petition** page ("Thank-you email" — one choice **per
+petition**, trigger `petition-thanks:<slug>`; no shared fallback) and the
+**Appeals** page ("Thank-you email after a donation") — with one dropdown
+each (`AutomaticEmailPicker` →
 `chooseEmail`): "Built-in email" or any automatic email, swap any time, no
 publish. The editor page only reports where an email is in use:
 
 | trigger | fires | placeholders (filled per recipient) | required |
 |---|---|---|---|
-| `petition-thanks` | first signature of an address on any petition | `{first_name}` `{headline}` `{project_name}` (the petition signed) | — |
+| `petition-thanks:<slug>` | first signature of an address on THAT petition (one slot per petition; Outgoing emails lists them all) | `{first_name}` `{headline}` `{project_name}` | — |
 | `donation-thanks` | every completed checkout (one-time, first monthly charge) | `{first_name}` `{amount}` `{type}` `{date}` `{receipt}` | `{receipt}` — the amount/type/date table AND the 501(c)(4) not-tax-deductible line (`emails.js receiptHtml`) |
 
 `chooseEmail(trigger, id)` → `attachEmail` (or `detachEmail` for "Built-in

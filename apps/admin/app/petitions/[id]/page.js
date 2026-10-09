@@ -6,6 +6,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPetition, PETITION_STATUSES } from '@uccsite/db/petitions';
+import { petitionTrigger } from '@uccsite/db/newsletters';
 import { utahZipSql } from '@uccsite/db/audience';
 import { petitionUrl } from '@uccsite/render/petitions';
 import { listProjects } from '../../../lib/files';
@@ -98,8 +99,8 @@ export default async function PetitionPage({ params, searchParams }) {
       {shown > rows.length && <p className="hint">Showing the newest {rows.length} of {shown}; the CSV has all of them.</p>}
 
       <h2>Thank-you email</h2>
-      <p className="hint">One automatic email is sent on a first signature of <em>any</em> petition; the petition&apos;s headline and project fill its placeholders.</p>
-      <AutomaticEmailPicker trigger="petition-thanks" readOnly={false} revalidate={[`/petitions/${id}`]} />
+      <p className="hint">Sent once to each person on their first signature of <strong>this</strong> petition. Every petition has its own choice; nothing chosen = the built-in email with this petition&apos;s headline and project.</p>
+      <AutomaticEmailPicker trigger={petitionTrigger(petition.slug)} readOnly={false} revalidate={[`/petitions/${id}`]} />
 
       <h2>The petition</h2>
       <ActionForm className="editor" action={savePetition} successMessage="Petition saved. Publish to make it live.">
