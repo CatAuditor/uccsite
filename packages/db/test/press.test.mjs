@@ -45,6 +45,11 @@ test('a homepage card linking to a YouTube watch URL merges with the video of th
   assert.equal(items[0].type, 'video');
   assert.equal(items[0].featured, '1');
   assert.equal(items[0].url, 'https://www.youtube.com/watch?v=ID9&t=4s'); // the card keeps a link
+  // the other way round too: a coverage card (article) with the YouTube link, then the video → one video
+  const { items: rev } = unifyPress({ coverage: { alpr_coverage: [{ outlet: 'KSL', date: 'August 20, 2026', headline: 'Cox', url: 'https://www.youtube.com/watch?v=ID7' }] }, blog: { videos: [{ outlet: 'KSL', date: 'August 20, 2026', headline: 'Cox', youtube_id: 'ID7' }] } });
+  assert.equal(rev.length, 1);
+  assert.equal(rev[0].type, 'video');
+  assert.equal(rev[0].project_slug, 'alpr');
 });
 
 test('a story under two projects keeps the first and is reported; rows without a url are skipped', () => {

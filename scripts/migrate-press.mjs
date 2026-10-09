@@ -56,20 +56,32 @@ await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) 
   for (const r of coverageRows) (coverage[`${r.report_key}_coverage`] ??= []).push(rowToObject('coverage_entries', r));
   const blog = { articles: await list(client, 'blog_articles'), videos: await list(client, 'blog_videos') };
   const homepagePress = await list(client, 'homepage_press');
-  const legacyCount = projects.reduce((n, p) => n + p.articles.length + p.videos.length, 0) + coverageRows.length + blog.articles.length + blog.videos.length + homepagePress.length;
+  let legacyCount = projects.reduce((n, p) => n + p.articles.length + p.videos.length, 0) + coverageRows.length + blog.articles.length + blog.videos.length + homepagePress.length;
+  let sourcesIn = { projects, blog, coverage, homepagePress };
+  if (!legacyCount) {
+    // Already applied once (the legacy tables are empty): re-run from the
+    // snapshot the first run kept, so a merge-rule fix can be re-applied.
+    const rev = (await client.query(`SELECT snapshot FROM revisions WHERE entity_type = 'press-legacy' AND entity_id = 'collection' ORDER BY created_at DESC LIMIT 1`)).rows[0];
+    if (rev) {
+      sourcesIn = JSON.parse(rev.snapshot);
+      legacyCount = (sourcesIn.projects || []).reduce((n, p) => n + (p.articles || []).length + (p.videos || []).length, 0)
+        + Object.values(sourcesIn.coverage || {}).reduce((n, l) => n + l.length, 0) + (sourcesIn.blog?.articles || []).length + (sourcesIn.blog?.videos || []).length + (sourcesIn.homepagePress || []).length;
+      console.log(`[press] legacy tables are empty — using the press-legacy snapshot kept by the first run (${legacyCount} rows)`);
+    }
+  }
 
-  const { items, sources, report } = unifyPress({ projects, blog, coverage, homepagePress });
+  const { items, sources, report } = unifyPress(sourcesIn);
   console.log(`[press] ${legacyCount} legacy row(s) → ${items.length} press row(s)`);
   for (const line of report) console.log(`  ! ${line}`);
   items.forEach((it, i) => console.log(`  ${String(i + 1).padStart(2)}. ${(it.type || 'article').padEnd(7)} ${(it.project_slug || '-').padEnd(10)} ${it.featured ? 'HOME ' : '     '}${(it.date || '').padEnd(18)} ${String(it.headline || '').slice(0, 64)}  <= ${sources[i].join(', ')}`));
   if (!APPLY) { console.log('[press] dry run — re-run with --apply to write'); return; }
-  if (!legacyCount && !FORCE) { console.log('[press] legacy tables are empty — nothing to migrate'); return; }
+  if (!legacyCount) { console.log('[press] nothing to migrate: legacy tables empty and no snapshot'); return; }
 
   await client.query('BEGIN');
   try {
     await client.query('DELETE FROM press');
     for (let i = 0; i < items.length; i++) await insertRow(client, 'press', items[i], { sort_order: i });
-    const snapshot = { projects, coverage, blog, homepagePress };
+    const snapshot = sourcesIn;
     for (const table of LEGACY) await client.query(`DELETE FROM ${table}`);
     await client.query(`INSERT INTO audit_log (id, actor, action, entity_type, entity_id, diff) VALUES (gen_random_uuid(), $1, 'press.save', 'press', 'collection', $2)`,
       [ACTOR, JSON.stringify({ migration: 'press-unification', legacyRows: legacyCount, rows: items.length, report })]);

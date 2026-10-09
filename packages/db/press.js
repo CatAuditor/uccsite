@@ -64,7 +64,9 @@ function unifyPress({ projects = [], blog = {}, coverage = {}, homepagePress = [
       return;
     }
     for (const [k, v] of Object.entries(incoming)) {
-      if (k === 'type' || v === undefined || v === null || v === '') continue;
+      if (v === undefined || v === null || v === '') continue;
+      // A story that is a video in any source is a video (it has an embed); an article card pointing at the same YouTube page folds into it.
+      if (k === 'type') { if (v === 'video') existing.type = 'video'; continue; }
       if (k === 'excerpt' ? String(v).length > String(existing.excerpt || '').length : !existing[k]) existing[k] = v;
     }
     if (project && !existing.project_slug) existing.project_slug = project;
