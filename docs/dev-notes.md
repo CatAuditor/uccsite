@@ -6,6 +6,25 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-08 — Documents: a block builder is replacing the paste-HTML editor (step 1 of several)
+
+Uploading a document was meant to be easy and was not: the file became one
+big box of HTML, images had to be re-inserted by hand, and the styling only
+showed up after saving. The editor is being rebuilt so a document is a set
+of **blocks** (text, a quotation, a callout box, key figures, an image, a
+table, file downloads, and so on) under a fixed header (eyebrow, title,
+summary, date and author, contents list), each block with its own styling
+choices and a live preview that updates while you type.
+
+This first step is the engine underneath, not yet the screen: the model of
+what a document is made of, the code that writes the page from it, and the
+code that reads an uploaded or existing page into blocks. Every one of the
+eight existing long-form pages reads into blocks and comes back out with
+exactly the same words, so the new system will be able to host them.
+
+Nothing changes for editors yet. The Documents pages work as before. The new
+screen, the upload-first flow and the move of the existing pages come in
+the following steps, one at a time.
 ## 2026-10-08 — Officials lookup joins the mailing list
 
 The officials lookup (lookup.utahciviccompact.org) has a "Send me the Utah
