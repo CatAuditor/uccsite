@@ -4,6 +4,15 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.28.2 — 2026-10-10 — Donate page deployed (docs-only push)
+
+- Staging and prod: `cdk deploy` UccStaging + UccProd from a clean worktree at 2a93228 (diff = ApiFunction +
+  PublishFn only); `patch-homepage-group.mjs --group donate` seeded the nine new page fields in both databases
+  (audit row `homepage.patch`, actor jaromforcongress@gmail.com); `publish.mjs --source db` on both (staging 48
+  changed, prod 44). Verified live: `/donate` 200 with the three points, `/donate.html` 308 → `/donate`,
+  `css/pages/donate.css` 200, nav + homepage modal → `/donate`, sitemap lists `/donate`, `/api/donations/stats` 200.
+  `site_settings.navigation` was NULL on both envs, so the default menus (Donate → `/donate`) are what renders.
+- Open: Resend disconnect, DMARC step 1 leftovers.
 ## v0.28.1 — 2026-10-10 — Dedicated /donate page
 
 Push = cbdfcc9.
@@ -23,8 +32,7 @@ Push = cbdfcc9.
 - **Tests**: `expected-diffs.json` names `donate.html`; all workspaces green.
 - **Docs**: site-structure, navigation, donation-tracker ("Donate page"), files, petition, admin, editing guide,
   payment-options proposal table, `decisions/donate-page.md`, dev notes.
-- Deploy to do after this push: `cdk deploy` (UccStaging, UccProd) for templates/css/js + API URLs, seed the new
-  `donate` fields with `patch-homepage-group.mjs`, then publish. Open: Resend disconnect, DMARC step 1 leftovers.
+- Deployed the same day (see v0.28.2). Open: Resend disconnect, DMARC step 1 leftovers.
 ## v0.28.0 — 2026-10-10 (branch `refactor`) — Admin Financial section: Donations with filters + monthly status, Costs page
 
 Push = aba3580 (80fb26b, ac88b0a, aba3580 on top of v0.27.2, which already carried c9d8941). Org ask: a financial section
