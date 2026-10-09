@@ -393,7 +393,7 @@ test('petition: valid signature upserts the signature AND the subscriber (lowerc
   const res = await routes.petitionSign(baseCtx(db, { body: { ...signer, address: '1 Main St', phone: '' } }));
   assert.equal(res.statusCode, 200);
   const sig = db.calls.find(c => c.text.includes('INSERT INTO petition_signatures'));
-  assert.deepEqual(sig.params, ['udot-alpr-permits', 'Ada', 'Lovelace', 'ada@example.org', '84101', '1 Main St', null]);
+  assert.deepEqual(sig.params, ['udot-alpr-permits', 'Ada', 'Lovelace', 'ada@example.org', '84101', '1 Main St', null, null]); // last = project_slug (no live campaign in this db)
   assert.match(sig.text, /ON CONFLICT \(petition, email\) DO UPDATE/);
   const sub = db.calls.find(c => c.text.includes('INSERT INTO subscribers'));
   assert.equal(sub.params[0], 'ada@example.org');
@@ -515,7 +515,7 @@ test('petition signers are confirmed at insert; join-form signups are not', asyn
   const db2 = fakeDb();
   await routes.subscribe(baseCtx(db2, { body: { email: 'a@b.co' } }));
   const join = db2.calls.find(c => c.text.includes('INSERT INTO subscribers'));
-  assert.ok(!join.text.includes('confirmed_at'));
+  assert.ok(!join.text.includes('confirmed_at) VALUES')); // the join form never sets it on insert
 });
 
 test('open pixel: one anonymous row per hit, gif either way, bad ids ignored', async () => {
@@ -552,4 +552,141 @@ test('subscribe CORS: preflight 204 + allow-origin only for the officials lookup
     assert.equal(res.headers['Access-Control-Allow-Origin'], undefined);
     assert.equal(res.headers.Vary, 'Origin');
   }
+});
+
+// ── Transactional thank-yous (aws/api/emails.js; docs/systems/email.md) ─────
+
+const homepageRow = (petition, donate) => ({
+  rows: [{ id: 'singleton', petition: petition ? JSON.stringify(petition) : null, donate: donate ? JSON.stringify(donate) : null }], rowCount: 1,
+});
+const campaign = { slug: 'udot-alpr-permits', project_slug: 'alpr', headline: 'Tell <em>UDOT</em>: no cameras', share_title: 'Pass it on' };
+const projectRows = { rows: [{ slug: 'alpr', name: 'License plates', parent_slug: '' }], rowCount: 1 };
+const campaignDb = (extra = {}) => fakeDb({ 'SELECT * FROM homepage': homepageRow(campaign), 'SELECT slug, name, parent_slug FROM projects': projectRows, ...extra });
+
+test('petition: first signature files the project and dispatches the thank-you; a re-sign does neither', async () => {
+  routes._resetCampaignCache();
+  const db = campaignDb();
+  const jobs = [];
+  let res = await routes.petitionSign({ ...baseCtx(db, { body: signer }), selfInvoke: async (p) => jobs.push(p) });
+  assert.equal(res.statusCode, 200);
+  const ins = db.calls.find(c => c.text.includes('INSERT INTO petition_signatures'));
+  assert.equal(ins.params[7], 'alpr');
+  assert.match(ins.text, /project_slug = COALESCE\(excluded\.project_slug, petition_signatures\.project_slug\)/);
+  assert.deepEqual(jobs, [{ job: 'petition-thanks', email: 'ada@example.org', firstName: 'Ada', petition: 'udot-alpr-permits', origin: 'https://staging.example' }]);
+
+  routes._resetCampaignCache();
+  const db2 = campaignDb({ 'SELECT 1 FROM petition_signatures': { rows: [{ '?column?': 1 }], rowCount: 1 } });
+  const jobs2 = [];
+  res = await routes.petitionSign({ ...baseCtx(db2, { body: signer }), selfInvoke: async (p) => jobs2.push(p) });
+  assert.equal(res.statusCode, 200);
+  assert.ok(db2.calls.some(c => c.text.includes('INSERT INTO petition_signatures'))); // the re-sign still refreshes the row
+  assert.equal(jobs2.length, 0);
+  routes._resetCampaignCache();
+});
+
+test('petition: not the live campaign (or the content read fails) → no project, thank-you still sent; dispatch failure is harmless', async () => {
+  routes._resetCampaignCache();
+  const db = fakeDb(); // homepage read throws (no singleton) → campaign null
+  const jobs = [];
+  const { result: res, lines } = await spyConsole(() => routes.petitionSign({ ...baseCtx(db, { body: { ...signer, petition: 'other-campaign' } }), selfInvoke: async (p) => jobs.push(p) }));
+  assert.equal(res.statusCode, 200);
+  assert.equal(db.calls.find(c => c.text.includes('INSERT INTO petition_signatures')).params[7], null);
+  assert.equal(jobs[0].job, 'petition-thanks');
+  assert.ok(lines.some(l => l.includes('petition campaign lookup failed')));
+  routes._resetCampaignCache();
+  const res2 = await routes.petitionSign({ ...baseCtx(fakeDb(), { body: signer }), selfInvoke: async () => { throw new Error('throttled'); } });
+  assert.equal(res2.statusCode, 200);
+  routes._resetCampaignCache();
+});
+
+test('petition-thanks job: campaign copy, project link, share + chip-in buttons, one-click unsubscribe', async () => {
+  routes._resetCampaignCache();
+  const sent = fakeSes();
+  try {
+    await routes.petitionThanksJob({ db: campaignDb(), secrets: { TOKEN_SECRET: SECRET }, email: 'a@b.co', firstName: 'Ada', petition: 'udot-alpr-permits', origin: 'https://x.test' });
+  } finally { routes._setSesClient(null); routes._resetCampaignCache(); }
+  assert.equal(sent.length, 1);
+  const m = sent[0];
+  assert.deepEqual(m.Destination.ToAddresses, ['a@b.co']);
+  assert.equal(m.Content.Simple.Subject.Data, 'Thank you for signing: Tell UDOT: no cameras');
+  const body = m.Content.Simple.Body.Html.Data;
+  assert.match(body, /Hi Ada,/);
+  assert.match(body, /Tell <em style="[^"]+">UDOT<\/em>: no cameras/); // headline keeps only <em>
+  assert.match(body, /https:\/\/x\.test\/projects\/alpr/);
+  assert.match(body, /License plates/);
+  assert.match(body, /https:\/\/x\.test\/petition-thanks/);
+  assert.match(body, /Pass it on/);
+  const headers = Object.fromEntries(m.Content.Simple.Headers.map(h => [h.Name, h.Value]));
+  assert.match(headers['List-Unsubscribe'], /^<https:\/\/x\.test\/api\/unsubscribe\?token=/);
+  assert.equal(headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
+});
+
+test('petition-thanks job: unknown campaign → generic copy, no project; admin copy + placeholders filled and escaped', async () => {
+  routes._resetCampaignCache();
+  let sent = fakeSes();
+  try {
+    await routes.petitionThanksJob({ db: fakeDb(), secrets: {}, email: 'a@b.co', firstName: '<b>X</b>', petition: 'other', origin: 'https://x.test' });
+  } finally { routes._setSesClient(null); }
+  assert.equal(sent[0].Content.Simple.Subject.Data, 'Thank you for signing the petition');
+  assert.ok(!sent[0].Content.Simple.Body.Html.Data.includes('/projects/'));
+  assert.match(sent[0].Content.Simple.Body.Html.Data, /Hi &lt;b&gt;X&lt;\/b&gt;,/);
+  assert.match(sent[0].Content.Simple.Body.Html.Data, /href="https:\/\/x\.test\/#join"/); // no TOKEN_SECRET → join-page fallback
+
+  routes._resetCampaignCache();
+  sent = fakeSes();
+  const db = fakeDb({ 'SELECT * FROM homepage': homepageRow({ ...campaign, project_slug: '', email_subject: 'You did it, {first_name}', email_body: 'Line one\n\nSecond <para> about {headline}' }) });
+  try {
+    await routes.petitionThanksJob({ db, secrets: {}, email: 'a@b.co', firstName: 'Ada', petition: 'udot-alpr-permits', origin: 'https://x.test' });
+  } finally { routes._setSesClient(null); routes._resetCampaignCache(); }
+  assert.equal(sent[0].Content.Simple.Subject.Data, 'You did it, Ada');
+  assert.match(sent[0].Content.Simple.Body.Html.Data, /<p style="[^"]+">Line one<\/p>/);
+  assert.match(sent[0].Content.Simple.Body.Html.Data, /Second &lt;para&gt; about Tell UDOT: no cameras/);
+  assert.ok(!db.calls.some(c => c.text.includes('FROM projects'))); // no project_slug → no projects read
+});
+
+test('checkout.session.completed dispatches the donation thank-you (amount, recurring); a failed dispatch is not a 500', async () => {
+  const session = { id: 'cs_2', mode: 'subscription', customer: 'cus_2', amount_total: 1000, customer_details: { email: 'd@e.f' }, metadata: { firstName: 'Dee' } };
+  const payload = JSON.stringify({ id: 'evt_thx', type: 'checkout.session.completed', data: { object: session } });
+  const jobs = [];
+  let res = await handleWebhook({
+    event: { headers: { 'stripe-signature': stripeSig(payload) } },
+    db: fakeDb({ 'INSERT INTO processed_events': { rows: [{ id: 'evt_thx' }], rowCount: 1 } }),
+    secrets: { STRIPE_WEBHOOK_SECRET: WH_SECRET }, rawBody: payload, origin: 'https://x.test', selfInvoke: async (p) => jobs.push(p),
+  });
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(jobs, [{ job: 'donation-thanks', email: 'd@e.f', firstName: 'Dee', amountCents: 1000, recurring: true, origin: 'https://x.test' }]);
+
+  const payload2 = JSON.stringify({ id: 'evt_thx2', type: 'checkout.session.completed', data: { object: { ...session, id: 'cs_3', mode: 'payment', payment_intent: 'pi_3' } } });
+  res = await handleWebhook({
+    event: { headers: { 'stripe-signature': stripeSig(payload2) } },
+    db: fakeDb({ 'INSERT INTO processed_events': { rows: [{ id: 'evt_thx2' }], rowCount: 1 }, 'SELECT id FROM members': { rows: [{ id: 'm1' }], rowCount: 1 } }),
+    secrets: { STRIPE_WEBHOOK_SECRET: WH_SECRET }, rawBody: payload2, origin: 'https://x.test', selfInvoke: async () => { throw new Error('throttled'); },
+  });
+  assert.equal(res.statusCode, 200);
+});
+
+test('donation-thanks job: receipt (amount, type, date), the not-tax-deductible line, no unsubscribe headers; monthly wording; admin copy', async () => {
+  let sent = fakeSes();
+  try {
+    await routes.donationThanksJob({ db: fakeDb(), email: 'd@e.f', firstName: 'Dee', amountCents: 2500, recurring: false, origin: 'https://x.test' });
+  } finally { routes._setSesClient(null); }
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].Content.Simple.Subject.Data, 'Thank you for your $25.00 donation');
+  let body = sent[0].Content.Simple.Body.Html.Data;
+  assert.match(body, /\$25\.00/);
+  assert.match(body, /One-time donation/);
+  assert.match(body, /<strong>not<\/strong> tax-deductible/);
+  assert.equal(sent[0].Content.Simple.Headers, undefined);
+
+  sent = fakeSes();
+  const db = fakeDb({ 'SELECT * FROM homepage': homepageRow(null, { thanks_email_subject: 'Welcome aboard, {first_name} ({amount})', thanks_email_body: 'Thanks <3 {first_name}' }) });
+  try {
+    await routes.donationThanksJob({ db, email: 'd@e.f', firstName: 'Dee', amountCents: 1000, recurring: true, origin: 'https://x.test' });
+  } finally { routes._setSesClient(null); }
+  assert.equal(sent[0].Content.Simple.Subject.Data, 'Welcome aboard, Dee ($10.00)');
+  body = sent[0].Content.Simple.Body.Html.Data;
+  assert.match(body, /Thanks &lt;3 Dee/);
+  assert.match(body, /Monthly membership/);
+  assert.match(body, /\$10\.00 \/ month/);
+  assert.match(body, /info@utahciviccompact\.org/);
 });
