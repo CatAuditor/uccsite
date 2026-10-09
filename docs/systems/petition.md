@@ -1,301 +1,268 @@
-# Petition — campaign hero, signature form, follow-up ask
+# Petitions — one record per petition, filed under a project
 
-Built 2026-10-05 for the UDOT ALPR special-use-permit petition; designed so the
-NEXT campaign is a copy change, not a code change. One campaign is live at a
-time (the one whose copy is in `homepage.petition`); signatures from past
-campaigns stay in the table under their own slug. Since 2026-10-09 a campaign
-is **filed under a project** (`project_slug`) and every first signature gets
-a **thank-you email** (docs/systems/email.md).
+Built 2026-10-05 as a single campaign (one JSON group on the homepage);
+rebuilt 2026-10-10 as a **collection**: every petition is its own row, always
+belongs to a **project**, has its own page under that project, and several
+can be open at once. The one open petition ticked **featured** takes over the
+homepage hero. Decision record: docs/decisions/petitions-collection.md
+(supersedes docs/decisions/petition-copy-in-homepage-group.md).
 
 ## Code Map
 
 ```
-templates/index.html            hero: petition takeover while petition.headline is set,
-                                the standing hero otherwise ({{#petition.headline}} / {{^…}})
-templates/petition.html         /petition — the signature form (settings + homepage content);
-                                "no petition is open" fallback when the headline is blank
-templates/petition-thanks.html  /petition-thanks — thank-you + "I can help" payment modal
-                                ($10 / $25 ✓ / $50 / $100, one-time); noindex, not in sitemap
-css/pages/petition.css          both petition pages + the modal's 4-up tiers
-css/pages/index.css             .hero-petition / .hero-eyebrow (hero takeover)
-js/petition.js                  form controller (POST /api/petition → /petition-thanks), the
-                                thanks modal (POST /api/create-checkout-session, onetime,
-                                source 'petition:<slug>'), and the signature counter
-                                ([data-petition-count] ← GET /api/petition/count); signer
-                                details ride in sessionStorage ('petition-signer') only to
-                                prefill the checkout. Loaded by index, petition, petition-thanks
-content/homepage.json           `petition` group — the git/local copy of the campaign text
-packages/db/content.js          HOMEPAGE_GROUP_COLS gains ['petition','petition']
-packages/db/content-schema.js   ALTER TABLE homepage ADD COLUMN petition TEXT (JSON group)
-packages/db/schema.js           petition_signatures DDL + api grants (SELECT, INSERT, UPDATE)
+packages/db/petitions.js        PETITION_FIELDS, PETITION_STATUSES, listPetitions({ids}), getPetition,
+                                validatePetition (pure), savePetition (insert/update + every rule),
+                                deletePetition (refused while signed)
+packages/db/content-schema.js   petitions DDL (+ unique slug index, idx_petitions_project)
+packages/db/content.js          FIELD_MAPS.petitions; COLLECTION_TABLES homepage/projects/petitions
+                                (lastmod); loadContent → content.petitions.items; saveContent
+                                restores petitions.json; PROJECT_SLUG_REFS (rename cascade, delete
+                                guard); HOMEPAGE_GROUP_COLS no longer carries `petition`
+packages/db/export.js           SCHEMA_VERSION 4; COLLECTIONS + 'petitions' → content/petitions.json
+packages/db/schema.js           petition_signatures DDL + API grants; GRANT SELECT ON petitions
+packages/render/petitions.js    petitionUrl, petitionShare, petitionDonate, derivePetitions (THE
+                                derive step: pages, thanks pages, the hero, the hub cards, /petitions)
+packages/render/site.js         PAGES: petitions.html (index), petition.html × each open/closed
+                                petition (dir projects, pathKey path), petition-thanks.html × each
+                                open one (sitemap: false); derive chain … deriveProjectTree →
+                                derivePetitions → deriveTeam
+templates/petitions.html        /petitions — every open petition as a card, closed ones listed
+templates/petition.html         /projects/<project path>/<slug> — the signature form (open) or the
+                                closed panel (closed); canonical + OG per petition
+templates/petition-thanks.html  /projects/<project path>/<slug>/thanks — thank-you + payment modal; noindex
+templates/partials/petition-share.html   share buttons (open petitions only)
+templates/index.html            hero: petition takeover while `petition` (the featured one) is set;
+                                the CTA links to the petition's own page
+templates/project.html          {{#petitions}} card per open petition filed here; "Closed petitions" list
+css/pages/petition.css          petition + thank-you pages; css/pages/petitions.css the index;
+                                css/pages/projects.css .hub-petition*
+js/petition.js                  form → POST /api/petition → data-thanks-url; the thanks modal
+                                (POST /api/create-checkout-session, source 'petition:<slug>'); the
+                                counter ([data-petition-count] ← GET /api/petition/count); share
+                                sheet + Copy link. Loaded by index, petitions, petition pages, hubs
 aws/api/routes.js               petitionSign() — POST /api/petition (files the signature under the
-                                campaign's project, dispatches the thank-you on a first signature);
-                                petitionCampaign() — the live campaign + its project (cached 5 min);
-                                petitionThanksJob() — the thank-you email; petitionCount() — GET
-                                /api/petition/count (Utah only, cached COUNT_TTL_MS);
-                                createCheckoutSession accepts optional `source` → Stripe metadata
-aws/api/emails.js               buildPetitionThanksEmail — the email body (docs/systems/email.md)
-packages/render/site.js         derivePetitionProject — petition.project for /petition, `petition`
-                                on the filed project's hub (after deriveProjectTree)
-templates/project.html          {{#petition}} card: label, headline, body, counter, sign button
-css/pages/projects.css          .hub-petition*;  css/pages/petition.css .petition-hero-project
-packages/db/audience.js         THE residency rule (utahZipSql / isUtahZip: every 84xxx ZIP is
-                                Utah) + the mailing-list audience query shared by the admin
-                                Mailing list page, its CSV and scripts/send-periodical.js
-aws/api/index.mjs               route entry 'POST /api/petition' (secrets: Turnstile)
-apps/admin/app/petition/        Petition page: campaign copy editor + signatures + CSV
-apps/admin/app/petition/export/route.js   POST → CSV (audited `petition.export`)
-apps/admin/lib/hero-status.js   draftHero/liveHero/HeroStatus — "which hero is showing" block on
-                                the Homepage and Petition editors
-apps/admin/app/subscribers/       Mailing list: status / search / residency / donors / petition filters → list + CSV; remove / restore / erase
-apps/admin/lib/collections.js   HOMEPAGE_GROUPS entry `petition` (page: 'petition')
-aws/export-operational/         nightly export includes petition_signatures
-scripts/restore-operational.mjs restore includes petition_signatures
-scripts/seed-homepage-group.mjs copy a content/homepage.json group into an env's DB
-scripts/patch-homepage-group.mjs set single fields inside a saved group (--set project_slug=alpr)
-                                without replacing the editor's copy; revision + audit row
+                                petition's project; 409 when the petition is closed; dispatches the
+                                thank-you on a first signature); petitionCampaign() — the petition
+                                row + project + url/thanks_url (per-container cache, 5 min);
+                                petitionThanksJob(); petitionCount() — GET /api/petition/count
+aws/api/emails.js               buildPetitionThanksEmail — Share → the petition's page, Chip in →
+                                its thank-you page (fallbacks /petitions, /#donate)
+aws/publish/render-db.js        petitionRedirects: /petition and /petition-thanks → the featured
+                                petition (else /petitions), written with the document redirects;
+                                refuses a render where a document and a site page share an address
+apps/admin/app/petitions/page.js        the list (status, hero, address, Utah/outside counts),
+                                orphaned signature slugs, CSV of everything, "New petition"
+apps/admin/app/petitions/[id]/page.js   one petition: record, copy (grouped), thank-you email
+                                picker, signatures + CSV, delete (while unsigned)
+apps/admin/app/petitions/actions.js     createPetition / savePetition / deletePetition (editor+,
+                                one transaction, lost-update stamp, revision, audit)
+apps/admin/app/petitions/export/route.js   POST → CSV (audited `petition.export`)
+apps/admin/app/petition/page.js         redirects to /petitions (old bookmarks)
+apps/admin/lib/collections.js   PETITION_FIELDS / PETITION_FIELD_GROUPS / PETITION_RECORD_FIELDS +
+                                boot drift guard against FIELD_MAPS.petitions
+apps/admin/lib/hero-status.js   draftHero(homepage, petitions) — the featured open petition
+apps/admin/lib/change-detail.js "What will change": entity `petition` (row diff), section Petitions
+apps/admin/app/revisions/page.js  restore a `petition` revision (re-runs every save rule)
+apps/admin/lib/projects.js      workspace() → petitions filed under the project (+ counts)
+apps/admin/app/documents/actions.js   validateAddress refuses a document slug a petition holds
+packages/db/publish-requests.js CONTENT_ACTION_RE counts petition.create / save / delete
+scripts/migrate-petitions.mjs   one-time: homepage.petition → the first petitions row
+content/petitions.json          the git/export copy ({ items: [...] })
+packages/db/test/petitions.test.mjs, packages/render/test/petitions.test.mjs, aws/api/test/api.test.mjs
 ```
 
-## Content: `homepage.petition`
+## Model: table `petitions`
 
-| Field | Used by | Notes |
-|---|---|---|
-| `slug` | form (`data-petition`), API, admin filter, CSV | `^[a-z0-9][a-z0-9-]{0,63}$`; **changing it starts a new petition** |
-| `project_slug` | project hub (the petition card), /petition ("Part of our … project"), API (copied onto every new signature), thank-you email (project link), admin | a `projects.slug`; dropdown on the admin page; blank = no project. See "Project" |
-| `label` | hero eyebrow, /petition | e.g. "Unofficial Petition" |
-| `headline` | hero, /petition | HTML allowed (`<em>` = red). **Blank = petition off** |
-| `body` | hero sub, /petition, meta description | the provision + the ask |
-| `cta` | hero button, form submit button | |
-| `cta_secondary`, `cta_secondary_url` | hero + /petition secondary link | blank label = no link; url passes `safeUrl` |
-| `count_label` | hero + /petition counter | `{count}` → number of **Utah** signatures; blank = no counter; hidden while 0 |
-| `form_title`, `form_intro` | /petition panel; `form_title` is also the page `<title>` / `og:title` (the link-preview headline) | blank = "Sign the petition" |
-| `consent` | under the sign button | the "future communications" line |
-| `thanks_title`, `thanks_body`, `thanks_cta`, `thanks_dismiss` | /petition-thanks | `thanks_dismiss` also labels the modal's dismiss |
+Strings only, blanks dropped on save (every collection's convention).
 
-Edited on the admin's **Petition** page only (the Homepage editor skips and
-preserves the group — `page: 'petition'` in `HOMEPAGE_GROUPS`). Copy goes
-live through the normal two-person publish. Prod's column is NULL until an
-editor saves the page once; the git copy in `content/homepage.json` seeds
-staging via `node scripts/seed-homepage-group.mjs --env staging --group petition`.
+| Field | Meaning |
+|---|---|
+| `slug` | `^[a-z0-9][a-z0-9-]{0,63}$`, **unique across every project** (signatures key on it alone; `thanks` reserved). **Locked once anyone has signed** — close the petition and start a new one instead |
+| `project_slug` | **required**; a `projects.slug`. Renaming a project cascades; a project cannot be deleted while a petition points at it |
+| `status` | `draft` (not on the site; the public route treats the slug as unknown) · `open` (page + form, on the hub and /petitions, in the sitemap) · `closed` (page stays with the count and a "closed" panel, noindex; the API answers 409) |
+| `featured` | `'1'` = the homepage hero. Only one at a time (ticking it un-ticks the rest); only an open petition may carry it |
+| `label`, `headline` (HTML, `<em>` = red), `body`, `cta`, `cta_secondary`, `cta_secondary_url`, `count_label` (`{count}` = Utah signatures) | the petition page, the hub card, the hero |
+| `form_title` (also `<title>` / og:title), `form_intro`, `consent` | the sign-up panel |
+| `closed_body` | the closed panel's text (default: "Thank you to everyone who signed…") |
+| `thanks_title`, `thanks_body`, `thanks_cta`, `thanks_dismiss` | the thank-you page |
+| `donate_*` | the payment window — "Donation ask" below |
+| `share_title`, `share_text`, `share_image` | "Sharing" below |
+
+Index `(project_slug, sort_order)`, unique `(slug)`. The homepage's old
+`petition` column stays in the table as the pre-migration backup; nothing
+reads it.
+
+## Addresses
+
+| thing | address |
+|---|---|
+| index | `/petitions` (open petitions as cards, closed ones listed) |
+| petition | `/projects/<project path>/<slug>` — `petitionUrl` (a sub-project's petition: `/projects/<parent>/<sub>/<slug>`) |
+| thank-you | `/projects/<project path>/<slug>/thanks` (open petitions only; noindex, not in the sitemap) |
+| before 2026-10-10 | `/petition` → 301 to the featured petition (else `/petitions`); `/petition-thanks` → its thank-you page (`petitionRedirects`, KeyValueStore, DB render only) |
+
+A petition slug may not equal a document slug or a sub-project slug under the
+same project, and a document may not take a petition's address
+(`savePetition` and `validateAddress` refuse both directions; the DB render
+refuses a page two things claim).
+
+## Render (`derivePetitions`)
+
+After `deriveProjectTree` (needs each project's path/url). Drafts and rows
+whose project is unknown are dropped. Each remaining petition gets `url`,
+`abs_url`, `thanks_url`, `path`, `thanks_path`, `project {name, url}`,
+`is_open` / `is_closed` / `is_featured`, `page_title`, `headline_text`,
+`share`, `donate`. Then:
+
+- `petitions.pages` (every open/closed one) and `petitions.thanks_pages`
+  (open only) — `expandPages` renders `petition.html` / `petition-thanks.html`
+  once per item to `projects/<path>.html`; each item is `{ slug, path, petition }`
+  so the templates read `petition.*`. Nav state = Projects.
+- `petitions.open` / `petitions.closed` (+ `has_*`) — `/petitions`.
+- `homepage.petition` = the featured open petition (the hero); absent otherwise
+  (a stale `homepage.petition` group from before the migration is dropped).
+- every project: `petitions` (open, filed here → the dark card with the Utah
+  counter and sign button), `closed_petitions` (links), `has_*`.
 
 ## Data flow
 
-1. Visitor clicks the hero CTA → `/petition`. The form posts JSON to
-   `POST /api/petition` with the slug from `data-petition`.
-2. The API validates, rate-limits (20 / IP / hour — one phone at a tabling
-   event signs many people), checks Turnstile when keyed, then in order:
-   - reads the live campaign (`petitionCampaign`: `homepage.petition` + the
-     project row; per-container cache, 5 min) — null when the posted slug is
-     not the live one or the read fails;
-   - checks whether this address already signed this petition (one indexed
-     SELECT) — decides the email below;
-   - upserts `petition_signatures` on `(petition, email)` — a re-sign refreshes
-     name/zip, fills address/phone only if newly given, keeps `created_at`;
-     `project_slug` is the campaign's project (kept on re-sign if the campaign
-     no longer names one);
-   - upserts `subscribers` (signing = consent to communications) **without
-     overwriting** details already on file (`COALESCE(subscribers.x, excluded.x)`).
-   No welcome email is sent. On a **first** signature the thank-you email is
-   dispatched as the self-invoke job `petition-thanks` (off the response path;
-   a failed dispatch is logged, the signer still gets `{ok:true}`). A re-sign
-   sends nothing.
-3. On `{ok:true}` the page stores `{petition, firstName, lastName, email, zip}`
-   in sessionStorage and navigates to `/petition-thanks`.
-4. "I can help" opens the modal; "Continue to checkout" posts
-   `{type:'onetime', amountCents, email, firstName, lastName, zip,
-   newsletterOptIn:true, publicDonor, source:'petition:<slug>'}` to
-   `/api/create-checkout-session` and follows the Stripe URL. The webhook
-   records the donation exactly as for the homepage form (members +
-   donations); `source` is visible on the Stripe session/customer metadata.
-5. "Not this time" → `/`.
+1. Visitor opens a petition page (from the hero, the hub, /petitions or a
+   shared link). The form posts JSON to `POST /api/petition` with the slug
+   from `data-petition`; on `{ok:true}` the page stores `{petition, firstName,
+   lastName, email, zip}` in sessionStorage and goes to `data-thanks-url`.
+2. The API validates, rate-limits (20 / IP / hour), checks Turnstile when
+   keyed, then: reads the petition (`petitionCampaign`: `SELECT * FROM
+   petitions` + `projects`, cached 5 min; open and closed rows only) —
+   **closed → 409**, unknown/draft → recorded without a project (as before
+   the collection); checks for a prior signature (decides the email); upserts
+   `petition_signatures` on `(petition, email)` with the petition's
+   `project_slug`; upserts `subscribers` without overwriting details. First
+   signature → self-invoke job `petition-thanks`. A Utah ZIP clears the count cache.
+3. The thank-you page's "I can help" posts to `/api/create-checkout-session`
+   with `source: 'petition:<slug>'` (Stripe metadata); "Not this time" → `/`.
 
 ## Residency and audiences
 
-Residency is **derived from the ZIP, never stored**: every `84xxx` ZIP (and
-ZIP+4) is Utah and nothing else is — `packages/db/audience.js`
-`utahZipSql(expr)` / `isUtahZip(zip)` is the one rule everything uses.
+Unchanged: residency is derived from the ZIP (`packages/db/audience.js`,
+84xxx = Utah), the public counter is Utah-only and event-driven
+(`invalidateCount` on a Utah signature; `COUNT_TTL_MS` bounds other warm
+containers), the admin splits Utah / outside, the Mailing list and
+`scripts/send-periodical.js --petition <slug>` share one audience query.
 
-- **Public counter** (`GET /api/petition/count?petition=<slug>` →
-  `{petition, count}`): Utah signatures only, **event-driven, never timed**
-  (org decision 2026-10-05). The page fetches once per load; the Lambda
-  answers from a per-container cache that a new Utah signature clears
-  (`petitionSign` → `invalidateCount`), so the next load recounts. No
-  browser caching (`no-store`); `COUNT_TTL_MS` (10 min) only bounds how
-  stale another warm container can be. Rendered by `js/petition.js` into
-  `[data-petition-count]` from the `count_label` template; hidden until at
-  least one Utahn has signed.
-- **Admin → Petition**: counts per slug split Utah / outside; residency
-  filter on the list; CSV carries `utah_resident` (yes/no) and can be
-  exported Utah-only, outside-only or both.
-- **Admin → Mailing list** (`/subscribers`): everyone an email can reach =
-  confirmed, still-subscribed, non-bounced `subscribers` ∪ opted-in
-  `members` (the page also lists the rest with a status — see
-  docs/systems/newsletters.md "Mailing list management"), each labelled `residency`
-  (utah / outside / unknown from the best ZIP we hold: subscriber ZIP, else
-  newest petition ZIP, else member ZIP), `donor`, `petitions`, `via`. Filters
-  residency × donors-only × signed-petition drive the list, the "This email
-  is going to N people" line and the CSV.
-- **Sender**: `scripts/send-periodical.js --audience utah|outside|unknown|all
-  --donors-only --petition <slug>` resolves recipients with the SAME query,
-  so the dashboard count is exactly who receives.
+## API
 
-## API: GET /api/petition/count
-
-`?petition=<slug>` → `200 {petition, count}` (Utah only), `400` bad slug,
-`500` DB error (`[api] petition count error: <ErrorName>`). No rate limit
-(read-only, cached until the next Utah signature, one small indexed COUNT).
-
-## API: POST /api/petition
-
-Body: `{ petition, firstName, lastName, email, zip, address?, phone?, turnstileToken? }`
+**`POST /api/petition`** — body `{ petition, firstName, lastName, email, zip, address?, phone?, turnstileToken? }`
 
 | Status | When |
 |---|---|
 | 200 `{ok:true}` | recorded (new or re-sign) |
-| 400 | malformed body; bad slug; missing first/last name; ZIP not `NNNNN` or `NNNNN-NNNN`; invalid email |
-| 403 | Turnstile failed (only when `TURNSTILE_SECRET_KEY` is set) |
+| 400 | malformed body; bad slug; missing names; bad ZIP; invalid email |
+| 403 | Turnstile failed (when `TURNSTILE_SECRET_KEY` is set) |
+| 409 | the slug is a **closed** petition ("This petition has closed…") |
 | 429 | over 20 / IP / hour |
-| 500 | insert failed — logs `[api] petition insert failed: <ErrorName>` (name only; pg messages can echo signer PII) |
+| 500 | insert failed — logs `[api] petition insert failed: <ErrorName>` |
 
-Lengths: names 100, email 254, zip 10, address 200, phone 30. Email is
-lowercased. Side effects: subscribers row (see above); thank-you email on a
-first signature (docs/systems/email.md); `project_slug` from the live campaign.
+**`GET /api/petition/count?petition=<slug>`** → `{petition, count}` (Utah
+only), 400 bad slug, 500 DB error. Unchanged.
+
+API role grants: `petition_signatures` SELECT/INSERT/UPDATE; `petitions`,
+`projects`, `homepage` SELECT (docs/systems/api-security.md).
 
 ## Table: `petition_signatures`
 
-`id UUID PK, petition TEXT, first_name, last_name, email, zip (NOT NULL),
-address, phone, project_slug (2026-10-09), created_at, updated_at,
-UNIQUE (petition, email)`; index `(petition, created_at)`. API role: SELECT,
-INSERT, UPDATE (upsert needs all three; never DELETE). Admin reads with the
-admin role. `project_slug` is the project the campaign named WHEN the row was
-written (NULL before the column / no project); the schema backfills
-`udot-alpr-permits` → `alpr`.
+Unchanged: `id, petition, first_name, last_name, email, zip, address, phone,
+project_slug, created_at, updated_at, UNIQUE (petition, email)`. `project_slug`
+is copied from the petition row at sign time, so a signature keeps its project
+if the petition later moves.
 
 ## Admin
 
-- **Petition** (Site Main): status line (on/off + active slug + the project
-  it is filed under, linking to that project's workspace), signature
-  counts per slug, newest 500 of the chosen slug (with a Project column),
-  **Download CSV** (POST, per slug or all; audit row `petition.export` with
-  `{petition, rows}`), then the copy editor (lost-update stamp on the
-  homepage singleton; audit `petition.save`; refuses a bad slug while the
-  headline is set; refuses a `project_slug` that is not a project). The
-  **Project** field is a dropdown of the projects tree (`listProjects`,
-  widget `'project'`). Editor+. Above the copy editor, **Thank-you email**
-  (`app/automatic-email-picker.js`, trigger `petition-thanks`): dropdown of
-  the automatic emails written under Mail → Outgoing emails, or the built-in
-  email — docs/systems/email.md "Attached emails".
-- **Project workspace** (`/projects/<slug>` → Overview): one line saying
-  whether the live campaign is filed here and the signature counts per
-  campaign slug carrying this project (`workspace()` → `petitions`,
-  `activePetition`).
-- **Subscribers**: `donor` (email belongs to a member with ≥1 donation or a
-  non-canceled subscription) and `petitions` (slugs signed) columns in the
-  list and the CSV — the mailing-list labels.
+- **Petitions** (Site Main, `/petitions`, editor+): the hero status block
+  (live vs saved — the saved side is the featured open petition), one row per
+  petition (slug + headline, project, status, homepage hero, address, Utah /
+  outside counts), signature slugs that have no record (older campaigns —
+  still in the CSV), **Download CSV** (everything), **New petition** (project,
+  slug, headline → a draft, then its editor). Audit `petition.create`.
+- **One petition** (`/petitions/<id>`): status line (open / closed / draft,
+  the address, the project); signatures for this slug with the residency
+  filter and CSV (audit `petition.export`); **Thank-you email** picker
+  (trigger `petition-thanks` — one email for every petition; `{headline}`
+  and `{project_name}` fill per petition); the record (slug — read-only
+  once signed —, Project dropdown, Status, **Show in the homepage hero**);
+  the copy in five groups (The petition, Sign-up form, Thank-you page,
+  Payment window, Sharing); **Save petition** (lost-update stamp = the
+  `petitions` table stamp; audit `petition.save`, revision = the row
+  before); **Delete** while nobody has signed (audit `petition.delete`).
+- **Project workspace** → Overview: the petitions filed here (status, hero,
+  counts, link to each) and "Start a petition for this project"
+  (`/petitions?project=<slug>` preselects it).
+- **Homepage**: the hero fields are the standing hero; the notice points at
+  Petitions for the takeover.
+- **Publish & Status → What will change**: a `petition` entity row per
+  saved petition (field diffs; created / removed), section **Petitions**.
+- **Revisions**: a `petition` revision restores the row (every save rule
+  re-runs, so a restore cannot reopen a slug clash or un-pin a signed slug).
+- **Mailing list / Subscribers**: unchanged (`petitions` column = slugs signed).
 
-CSV columns: `petition, project, first_name, last_name, email, zip, utah_resident,
-address, phone, signed_at_utc` (ISO 8601, UTC). Cells are quoted and formula-injection
-guarded like the subscribers export.
+CSV columns unchanged: `petition, project, first_name, last_name, email, zip,
+utah_resident, address, phone, signed_at_utc`.
+
+## Sharing
+
+`templates/partials/petition-share.html` on open petition pages (hero) and
+thank-you pages. Links built by `petitionShare` (pure): message = `share_text`
+else the headline with tags stripped; `url` = the petition's own page;
+preview image `share_image` if a `/media|/assets` png/jpg/webp, else
+`/assets/share-default.png`; `summary_large_image`; page title =
+`form_title` + " | Utah Civic Compact". Closed petitions have no share block.
+
+## Donation ask
+
+`petitionDonate(p)` — unchanged rules: `donate_amounts` (dollars, $1–$100,000,
+de-duplicated, max six, fallback 10/25/50/100), `donate_default`,
+`donate_frequency` (`both` / `one-time` / `monthly`), `donate_default_frequency`,
+copy fields; an **Other** amount is always offered; monthly sends
+`type: 'subscription'`.
+
+## Thank-you email
+
+docs/systems/email.md. First signature only, self-invoke job; the attached
+automatic email or the built-in body (headline, project link, **Share → the
+petition's page**, **Chip in → its thank-you page**; `/petitions` and
+`/#donate` when the project is missing).
+
+## Migration (`scripts/migrate-petitions.mjs`)
+
+Prerequisite `migrate-schema` (creates `petitions`, grants the API role).
+Dry run by default; `--apply` turns `homepage.petition` into one row
+(status `open` when it had a headline, `featured` ticked, the old
+`/alpr.html` secondary link → `/projects/alpr/report`), audited as
+`petition.create` by `scripts/migrate-petitions`; `--force` replaces existing
+rows. The homepage column is left as the backup. Then redeploy the stack (the
+publish Lambda bundles the templates; the API Lambda reads the new table) and
+publish from the database. **Staging: applied 2026-10-10** (row
+`b0ae614f…`, 2 signatures carried over, staging published from the DB with
+the new pages and the two 301s). **Prod: pending** (docs/for-conner.md §11).
+
+## Turning one off / starting the next
+
+- Close: Status → closed, save, publish. The page stays (noindex) with the
+  final count; the form is gone; the hero returns to the standing hero if it
+  was featured. Signatures stay.
+- Next: New petition under its project → fill the copy → Status open (+ hero
+  tick if wanted) → save → publish.
 
 ## Debug
 
-Browser: `[petition] sign failed: <status>`, `[petition] sign network error`,
-`[petition] checkout failed`. API: see docs/error-handling/debug/api.md
-(`petition insert failed`, `rate limit check failed (petition)`,
-`petition campaign lookup failed`, `petition thanks dispatch failed`,
-`petition thanks email failed`, `SES sent … subject="Thank you for signing…"`).
-
-## Verifying the hero
-
-Both the Homepage and the Petition editor open with a **Which hero is
-showing?** block (`apps/admin/lib/hero-status.js`): the *live* row fetches
-the public homepage on every page view (`PUBLIC_ORIGIN`, `cache: 'no-store'`,
-5 s timeout) and reads the hero `<section>` class — `hero-petition` = takeover;
-the *saved* row derives from `homepage.petition.headline` in the database.
-Green border = in sync, gold = saved but not published, red = the live check
-failed (`[admin] live hero check failed: <ErrorName>`; the saved row is still
-right). The standing hero (Homepage → Hero fields) is always the default:
-blank the petition headline and it returns on the next publish.
-
-## Turning it off / starting the next one
-
-- Off: blank the headline, save, publish. Signatures stay.
-- Next campaign: set a new slug + copy, save, publish. The hero, /petition
-  and the thank-you page follow; the admin filter defaults to the new slug.
-
-## Sharing (2026-10-06)
-
-`templates/partials/petition-share.html`, included on /petition (hero, under the
-buttons) and /petition-thanks (under the donation ask). Facebook, X, Bluesky,
-Text and Email are plain links built at render time by
-`derivePetitionShare` (`packages/render/site.js`) — they work with JavaScript
-off. `js/petition.js` adds the phone share sheet (`navigator.share`) and
-**Copy link** (`navigator.clipboard`), each hidden until supported.
-
-- **Message**: `share_text`, else the headline with tags stripped. Link
-  appended automatically; Facebook ignores pre-filled text and uses the
-  page's Open Graph preview.
-- **Preview** (`og:image`, `twitter:card`/`twitter:image` on /petition):
-  `share_image` if it is a `/media/…` or `/assets/…` png/jpg/webp; anything
-  else falls back to `/assets/share-default.png` (the white logo lockup on
-  navy `#1B2F4E`, 1200×630 — `UCC.png` is transparent, so apps painted
-  their own background behind it). Always `summary_large_image`. The same
-  file is the `og:image` of every other template and the Documents default
-  (`packages/render/documents.js` DEFAULT_OG_IMAGE). Regenerate with sharp:
-  `logo-lockup-transparent.png` resized to 560 wide, centred on a 1200×630
-  navy canvas (fits inside the centre square, so `summary` crops keep it).
-- **Preview headline** (`<title>`, `og:title`, `twitter:title`):
-  `share.page_title` = `form_title` (tags stripped, default "Sign the
-  petition") + " | Utah Civic Compact". Off → "Sign the Petition | …".
-- **Heading**: `share_title`, default "Share the petition".
-- Absent entirely when the petition is off (headline blank).
-
-## Donation ask on the thank-you page (2026-10-06)
-
-The payment window's copy, amounts and frequency come from the petition
-group, via `petitionDonate` (`packages/render/site.js`):
-
-| Field | Meaning | Blank = |
-|---|---|---|
-| `donate_amounts` | dollars, comma-separated; $1–$100,000, de-duplicated, max six | 10, 25, 50, 100 |
-| `donate_default` | pre-selected amount | 25, else the first |
-| `donate_frequency` | `both` / `one-time` / `monthly` | both (One-time / Monthly switch) |
-| `donate_default_frequency` | which side the switch starts on | one-time |
-| `donate_title`, `donate_body`, `donate_button`, `donate_custom_label`, `donate_public_label` | copy | previous hard-coded text |
-
-An **Other** button with a free amount ($1–$100,000) is always present.
-Monthly sends `type: 'subscription'` to `POST /api/create-checkout-session`
-(already supported — no API or Stripe change). Tests:
-`packages/render/test/petition-share.test.mjs`.
-
-## Project (2026-10-09)
-
-A campaign belongs to a project (`homepage.petition.project_slug`, the admin's
-**Project** dropdown). What that does:
-
-| Where | Effect |
-|---|---|
-| Project hub (`/projects/<path>`) | `derivePetitionProject` puts the campaign on the filed project as `petition`; `templates/project.html` renders a dark card (label, headline, body, Utah counter, sign button → /petition) between the intro and "Parts of this project". `js/petition.js` is loaded on hubs for the counter. |
-| `/petition` | "Part of our *Project* project" link under the headline (`petition.project`). |
-| Signature row | `project_slug` copied from the live campaign at sign time — a past campaign keeps its project after the slug moves on; admin list + CSV show it. |
-| Thank-you email | "This petition is part of our *Project* project" with the hub link. |
-| Admin | Petition page: "Filed under …" line + the dropdown; project workspace Overview: live-campaign flag + signature counts per slug for this project. |
-
-One live campaign at a time is unchanged (`docs/decisions/petition-copy-in-homepage-group.md`).
-If several petitions must run at once, the next step is a `petitions`
-collection (slug, project_slug, copy) with `homepage.petition` pointing at
-the featured one — noted in docs/pending-questions.md.
-
-## Thank-you email (2026-10-09)
-
-See docs/systems/email.md "What is sent" / "Attached emails". Summary: first
-signature only, self-invoke job; the email chosen on the Petition page (an
-automatic email composed under Outgoing emails) or the built-in body with the
-campaign headline (generic when the slug is not the live campaign), project
-link, Share + Chip in buttons, one-click unsubscribe headers. Tests:
-`aws/api/test/api.test.mjs` "petition-thanks job".
+Browser: `[petition] sign failed: <status>` (409 = closed), `[petition] sign
+network error`, `[petition] checkout failed`, `[petition] count unavailable`.
+API: docs/error-handling/debug/api.md (`petition campaign lookup failed`
+now means the `petitions` / `projects` read failed). Admin: `[admin] action
+failed: <message>` for refused saves (slug clash, locked slug, missing project).
 
 ## Not built (deliberate)
 
-- No IP / user-agent stored with a signature — a privacy org's petition.
-- No nav link; the hero is the entry point (add to header.html if wanted).
+- No IP / user-agent with a signature. No nav link (hero / hubs / /petitions
+  are the entry points). No per-petition thank-you email (one trigger; the
+  placeholders carry the petition). No list-order editor (sort_order =
+  creation order; the index and hubs follow it).

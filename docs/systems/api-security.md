@@ -139,7 +139,7 @@ which also creates the role and maps it to the Lambda's IAM role via
 | `processed_events` | SELECT, INSERT, DELETE | webhook idempotency |
 | `tips` | **INSERT only** | `/api/tip` (write-only from the internet, docs/systems/tipline.md) |
 | `petition_signatures` | SELECT, INSERT, UPDATE | `/api/petition` upsert (docs/systems/petition.md); never DELETE |
-| `homepage`, `projects` | **SELECT only** (2026-10-09) | `/api/petition` reads the live campaign (`homepage.petition`: project to file the signature under, thank-you copy) and the project's name/parent for its URL; the donation thank-you reads `homepage.donate`. Public-site content, read-only — the one content exception |
+| `petitions`, `projects`, `homepage` | **SELECT only** (2026-10-09; `petitions` 2026-10-10) | `/api/petition` reads the petition row (status — closed → 409 —, project to file the signature under, thank-you copy) and the project's name/parent for its URL; `homepage` is no longer read by the route but keeps its grant; the donation thank-you reads `homepage.donate`. Public-site content, read-only — the one content exception |
 | `transactional_emails` | **SELECT only** (2026-10-09) | the thank-you jobs read the admin-attached email for a trigger (frozen subject/html/text; docs/systems/email.md "Attached emails") |
 | other content tables, `audit_log`, `revisions`, … | nothing | — |
 

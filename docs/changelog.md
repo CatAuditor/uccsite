@@ -4,6 +4,48 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.27.0 — 2026-10-10 (branch `refactor`, NOT YET PUSHED) — Petitions collection: one record per petition, under a project
+
+Commits 26f0832 → (this entry). Org decisions: petitions organized like press/documents; "petitions always belong
+to a project"; nested URL; featured tick for the hero; per-petition thank-you page; list + per-petition admin page.
+Staging migrated and published; prod pending (for-conner.md §11).
+
+- **DB** (`packages/db/petitions.js`, `content-schema.js`, `content.js`, `export.js`, `schema.js`): `petitions` table
+  (slug unique, project_slug required, status draft/open/closed, featured, all copy fields, closed_body);
+  listPetitions / getPetition / validatePetition / savePetition (slug locked once signed, one featured, document and
+  sub-project address clashes refused) / deletePetition (refused while signed); FIELD_MAPS + COLLECTION_TABLES
+  (homepage and projects lastmod follow petitions) + PROJECT_SLUG_REFS; export schema 4 with `content/petitions.json`;
+  restore tolerates a schema ≤ 3 export; `GRANT SELECT ON petitions TO api`. `homepage.petition` no longer read/written
+  (column kept as backup; `content/homepage.json` drops the group).
+- **Render** (`packages/render/petitions.js`, `site.js`, templates, `css/pages/petitions.css`, `js/petition.js`):
+  `derivePetitions` replaces derivePetitionShare/derivePetitionProject — pages `projects/<path>/<slug>.html` per
+  open/closed petition, `…/<slug>/thanks.html` per open one (noindex), `/petitions` index, the featured open petition
+  as `homepage.petition` (hero CTA → its page), hubs get `petitions` cards + `closed_petitions`; drafts/orphans never
+  render. `petition.html` has a closed panel; the form carries `data-thanks-url`. `render-db.js`: `petitionRedirects`
+  (`/petition`, `/petition-thanks` → the featured petition, else `/petitions`) ride with the document redirects; a
+  document/site-page address clash now fails the render. Parity test counts expanded pages from the derived content;
+  expected-diffs lists the three new outputs.
+- **API** (`aws/api/routes.js`, `emails.js`): `petitionCampaign` reads `petitions` (+ projects; cached 5 min; open and
+  closed only) and returns `url` / `thanks_url`; `POST /api/petition` → **409** on a closed petition; unknown/draft
+  slug still recorded without a project. Thank-you email: Share → the petition's page, Chip in → its thank-you page.
+- **Admin**: `/petitions` (list, hero status, orphan slugs, CSV, New petition → draft), `/petitions/[id]` (record +
+  grouped copy, thank-you email picker, signatures + residency filter + CSV, delete while unsigned), `actions.js`
+  (`petition.create|save|delete`, lost-update stamp on `petitions`, revision = the row before), `export/route.js`;
+  `/petition` → redirect. `collections.js`: homepage `petition` group removed, `PETITION_FIELDS` + drift guard;
+  `hero-status.js` draftHero(homepage, petitions); `change-detail.js` `petition` entity → section Petitions;
+  revisions restore a `petition`; project workspace lists its petitions + "Start a petition"; documents refuse a
+  petition's slug; `publish-requests.js` CONTENT_ACTION_RE counts the three petition actions.
+- **Scripts**: `migrate-petitions.mjs` (dry run / --apply / --force). **Staging**: migrate-schema + migrate-petitions
+  applied (row b0ae614f…, 2 signatures), staging published from the DB — after one mistaken git-source publish that
+  removed the document pages for a few minutes (docs/error-handling/build-failures/2026-10-10-staging-publish-git-source.md).
+- Tests: db 28, render 38, api 47, publish 15, admin 39 — all pass; `next build` clean. Docs: systems/petition.md
+  (rewritten), decisions/petitions-collection.md (+ old ADR superseded), projects.md, site-structure.md, admin.md,
+  email.md, api-security.md, newsletters.md, debug/api.md, non-technical-editing-guide.md, for-conner.md §11,
+  pending-questions.md, dev-notes.md.
+
+Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed, Jarom not signed into prod admin.
+Open: prod migration + deploy for petitions (for-conner.md §11); admin `script-src` CSP.
+
 ## v0.26.5 — 2026-10-09 (branch `refactor`) — Security headers on the admin and HSTS on /api/*
 
 Push = 3be5d75 (+ this changelog commit). Audit answer to "do we have our security headers proper": public site yes

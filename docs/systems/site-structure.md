@@ -22,7 +22,7 @@ css/colors.css           GENERATED at render (packages/render/site.js withColorC
 js/main.js               nav, animations, join form, donate form, donation tracker,
                          createModal() (timed donation modal + download modal)
 js/tip.js                tipline form controller
-js/petition.js           petition form, thank-you payment modal, signature counter (index too; petition.md)
+js/petition.js           petition form, thank-you payment modal, signature counter (index, hubs, /petitions too; petition.md)
 static/                  copied verbatim into dist/: admin/, _headers, _redirects
 assets/, UCC.png, favicon.svg, robots.txt, llms.txt   copied verbatim (COPY_FROM_ROOT in build.js);
                                                       assets/share-default.png = every page's default og:image (logo on navy)
@@ -78,7 +78,7 @@ Hard rules:
 
 | Output | Content files | Notes |
 |---|---|---|
-| `index.html` | settings, homepage, projects, team | featured statement derived from `statements.json`; hero is the petition takeover while `homepage.petition.headline` is set (petition.md) |
+| `index.html` | settings, homepage, projects, team | featured statement derived from `statements.json`; hero is the petition takeover while an open petition is featured (`derivePetitions` → `homepage.petition`; petition.md) |
 | `team.html` | settings, team | bio names link to the author pages |
 | `team/<slug>.html` (× members) | team, settings, statements, projects, issues | **expanded** from `team-member.html` by `expandPages` — one author page per team member (author-pages.md) |
 | `blog.html` | settings, blog | |
@@ -94,8 +94,9 @@ Hard rules:
 | `dignity-index-statement.html` | settings | 9/11 anniversary statement calling for Dignity Index adoption; bespoke design distinct from `statements.html` |
 | `theory.html` | settings | |
 | `tip.html` | settings | noindex, excluded from sitemap |
-| `petition.html` | settings, homepage | petition signature form; copy from `homepage.petition` (petition.md) |
-| `petition-thanks.html` | settings, homepage | post-signature thank-you + payment modal; noindex, excluded from sitemap |
+| `petitions.html` | settings, petitions | `/petitions` — every open petition, closed ones listed (petition.md) |
+| `petition.html` | petitions, settings | rendered once per open/closed petition to `projects/<project path>/<slug>.html` (`each: 'pages'`); the signature form or the closed panel |
+| `petition-thanks.html` | petitions, settings | once per open petition to `projects/<path>/<slug>/thanks.html`; thank-you + payment modal; noindex, excluded from sitemap |
 | `privacy.html` | settings | |
 | `success.html` | settings | Stripe return page; noindex, no nav/footer |
 | `404.html` | settings | real not-found page (replaces Pages SPA fallback); noindex, excluded from sitemap |
