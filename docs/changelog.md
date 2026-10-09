@@ -4,6 +4,32 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.26.4 — 2026-10-09 (branch `refactor`) — Automatic emails chosen on the Petition / Appeals pages
+
+Push = 410a6f0 (+ this changelog commit). Owner feedback on v0.26.3: the email should be WRITTEN under Outgoing emails
+and SELECTED where it fires, so it can be rotated.
+
+- `apps/admin/app/automatic-email-picker.js` (new, shared server component): dropdown "Built-in email" + every
+  `kind = 'transactional'` draft → `lib/transactional.js chooseEmail(trigger, id)` (`attachEmail`, or `detachEmail` for
+  built-in); shows what is live, when/by whom it was chosen, and "edited since" when the draft's `updated_at` is newer
+  than `attached_at`. Mounted on `/petition` ("Thank-you email", trigger `petition-thanks`, above the copy editor) and
+  `/appeals` ("Thank-you email after a donation", trigger `donation-thanks`). New lib helpers `automaticEmails`,
+  `transactionalSlot`.
+- `/mail/[id]`: the attach/detach panel is gone; an automatic email shows "Where it is used" + links to the page where the
+  choice is made. `/mail` slot table says "choose on Petition / Appeals".
+- Removed the interim text fields `homepage.petition.email_subject/email_body` and `homepage.donate.thanks_email_*`
+  (collections.js) and their API reads (`emails.js` builders use the fixed defaults; `routes.js donateCopy()` deleted —
+  the donation job reads no content; debug row removed). Any value saved in those keys today is dropped on the next save
+  of the group (group-level drift guard only).
+- Tests: API 46 pass (two tests re-pointed from admin copy to the defaults; one asserts the donation job reads no
+  `homepage`).
+- Deployed `UccStaging` + `UccProd` from a clean worktree at 410a6f0 (ApiFunction only). Amplify builds the admin from
+  this push.
+- Docs: systems/email.md ("Attached emails" choice flow, "Built-in bodies"), petition.md, newsletters.md, admin.md,
+  error-handling/debug/api.md, non-technical-editing-guide.md, dev-notes.md (today's entry updated).
+
+Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed, Jarom not signed into prod admin.
+
 ## v0.26.3 — 2026-10-09 (branch `refactor`) — Outgoing emails: attach a composed newsletter as an automatic email
 
 Push = 5c68bd3 (+ this changelog commit). Previous top entry: v0.26.2.
