@@ -554,7 +554,9 @@ when set, `lib/aws-account.js` calls STS once per process and refuses every
 DB use — and logs at boot via `instrumentation.js` — if the resolved
 credentials belong to another account (the "forgot AWS_PROFILE" failure,
 docs/error-handling/client-side-error/2026-09-13-admin-dev-wrong-aws-profile.md).
-Leave it unset on Amplify. AWS credentials: local = `AWS_PROFILE=uccsite`;
+Leave it unset on Amplify. AWS credentials: local = `AWS_PROFILE=uccsite`
+(put it in `apps/admin/.env.local`, gitignored, so `npm run dev` never falls
+back to the default profile; 2026-10-09);
 Amplify Hosting = the app's SSR compute role (wire-up pending; it needs
 `dsql:DbConnectAdmin`, `lambda:InvokeFunction` on PublishFn,
 `s3:PutObject/GetObject/DeleteObject` on the media bucket, and `ses:SendEmail`

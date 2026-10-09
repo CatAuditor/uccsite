@@ -43,6 +43,24 @@ needs the owner's keys: the two migration scripts, a stack deploy and a
 publish — the exact steps are in docs/for-conner.md §11. Not pushed yet.
 Technical detail: docs/systems/petition.md, docs/decisions/petitions-collection.md.
 
+## 2026-10-09 — Admin on a laptop always uses the right AWS account
+
+**What changed**
+
+- When someone runs the admin on their own computer, it used to need the AWS
+  account chosen by hand in the terminal first. Forgetting that produced a red
+  error page ("AWS credentials resolve to account ... Restart with
+  AWS_PROFILE=uccsite"). The local settings file now picks the right account
+  itself, so that error should not come back.
+
+**What editors do differently**
+
+- Nothing. This only affects developers running the admin locally.
+
+**Unfinished**
+
+- Nothing. The running dev server needs one restart to pick it up.
+
 ## 2026-10-09 — Admin pages now carry the same browser security headers as the site
 
 **What changed**
