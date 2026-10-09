@@ -51,6 +51,12 @@ const CLASS_ALIASES = {
   alpr: { 'finding-box': 'violation-box' },
   'weber-county': { 'finding-box': 'violation-box' },
 };
+// Documents that should LOSE their own frame and take the site's standard
+// document frame (doc-body > doc-inner, byline strip, contents list): the
+// license-plate statement was written on the generic kit frame and never
+// styled like the reports, so it is expected to change (the pixel check
+// reports it as CHECK, not a failure of the conversion).
+const STANDARD_FRAME = new Set(['license-plate-has-a-price']);
 
 const readDir = (dir) => Object.fromEntries(readdirSync(dir).filter(f => f.endsWith('.html')).map(f => [f.replace(/\.html$/, ''), readFileSync(join(dir, f), 'utf8')]));
 const partials = readDir(join(ROOT, 'templates', 'partials'));
@@ -143,6 +149,12 @@ await withConnection({ endpoint: outputs.DsqlEndpoint, region }, async (client) 
     const aliases = CLASS_ALIASES[doc.slug] || {};
     const res = parse(doc.bodyHtmlRaw, { classAliases: aliases });
     if (res.title && res.title !== doc.title) res.body.header.headline = res.title;
+    if (STANDARD_FRAME.has(doc.slug)) {
+      res.body.header.frame = [];
+      res.body.header.toc = res.body.sections.filter(s => s.heading).length >= 2 ? 'auto' : 'none';
+      if (!res.body.header.badge) res.body.header.badge = 'Utah Civic Compact';
+      console.log('   standard frame: doc-body > doc-inner, byline strip, contents list (look changes by design)');
+    }
     const author = doc.author || res.author;
     const authorHref = authors[String(author || '').trim()]?.url || '';
     const newHtml = serialize(res.body, { title: doc.title, author }, { authorHref });

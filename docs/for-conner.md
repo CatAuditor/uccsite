@@ -570,7 +570,9 @@ Staging has the column and the eight long-form pages converted (pixel-identical,
 docs/migration/blocks-conversion.md). Production needs the same three steps,
 in this order, and nothing changes on the live site until step 3.
 
-- [ ] `[agent]` Add the column (idempotent; applies every pending DDL):
+- [x] `[agent]` Add the column (idempotent; applies every pending DDL). Done 2026-10-09
+  right after the push, because Amplify deploys the admin from `refactor` and the
+  Documents pages select the column:
   ```
   $env:AWS_PROFILE='uccsite'; node scripts/migrate-schema.mjs --env prod
   ```
@@ -578,9 +580,10 @@ in this order, and nothing changes on the live site until step 3.
   ```
   node scripts/convert-documents-to-blocks.mjs --env prod
   ```
-  Every row must say `PASS` with `0.000%` differing pixels and `text identical`. The
-  statement "Your license plate has a price" was never styled cleanly and may show
-  a difference; that one is expected and can be fixed in the builder afterwards.
+  Every row must say `PASS` with `0.000%` differing pixels and `text identical`, except
+  `license-plate-has-a-price`: the script moves that one onto the site's standard document
+  frame (byline strip, contents list, the reports' column) by design, so it reports `CHECK`
+  with a visible difference. Open its `new.html` under `.tmp/blocks-conversion/` to see it.
 - [ ] `[agent]` Apply (writes blocks + regenerated HTML, with a revision per document):
   ```
   node scripts/convert-documents-to-blocks.mjs --env prod --apply --no-shots
