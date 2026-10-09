@@ -50,3 +50,18 @@ token type from the user name.
   usage is implicit, so `API_GRANTS` lists tables only.
 - `sys.iam_pg_role_mappings` shows the mapping; `AWS IAM REVOKE api FROM
   '<arn>'` removes it.
+
+## Amendment 2026-10-09: read-only `homepage` + `projects`
+
+The thank-you emails (docs/systems/email.md) and project filing of petition
+signatures (docs/systems/petition.md "Project") need the API to know the live
+campaign's copy and project. Options: (a) have the browser post the copy
+(untrusted — anyone could send any subject line to any address), (b) have the
+publish Lambda write a manifest the API reads (another artefact to keep in
+step), (c) `GRANT SELECT` on the two content tables. (c) chosen: both tables
+hold only what the public site already renders, the grant is SELECT only, and
+the route caches the read per container. Nothing else changes — the API still
+cannot read `documents`, `audit_log`, `revisions`, or any table with staff
+notes. Reversing it breaks project filing and the thank-you copy silently
+(the route logs `petition campaign lookup failed: error` and falls back to
+generic copy with no project).

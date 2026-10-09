@@ -13,6 +13,7 @@ staff in the Phase 7 admin; see `docs/build-spec-aws.md` planning addendum 2.)
 1. Donor checks out — `publicDonor` boolean sent from the form to `/api/create-checkout-session`, stored in Stripe metadata
 2. Stripe fires `checkout.session.completed` → `functions/api/webhook.js` reads `publicDonor` from metadata and inserts into `donations` with `public = 1|0`. Checkout sets `customer_creation: 'always'` for one-time payments so a `members` row always exists to attach the donation to (without it `session.customer` is null and the donation was silently skipped — fixed 2026-08-23).
 2b. Recurring: `publicDonor` is also copied to `subscription_data.metadata` at checkout; `invoice.paid` reads it from `invoice.subscription_details.metadata` so renewals honor the opt-out.
+2c. (AWS, 2026-10-09) After the rows are written, `checkout.session.completed` dispatches the **donation thank-you / receipt** email as the self-invoke job `donation-thanks` (`aws/api/webhook.js` → `routes.js donationThanksJob` → `emails.js`); one-time and the first monthly charge only, never renewals. Copy: admin Appeals → Homepage donate section → Thank-you email fields. Details: docs/systems/email.md.
 3. Frontend fetches `GET /api/donations/stats` on page load → renders the recent-donor list (hidden entirely when the list is empty)
 
 ## API: GET /api/donations/stats

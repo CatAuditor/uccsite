@@ -1,4 +1,4 @@
-# Newsletters — compose, review, send (admin "Mail" section)
+# Newsletters — compose, review, send (admin "Mail → Outgoing emails")
 
 Built 2026-10-05. A Mailchimp-lite inside the admin: write an email from
 blocks, see it as a phone shows it (light and dark), send yourself a test,
@@ -35,16 +35,35 @@ infra/cdk/lib/ucc-stack.js         "newsletter send Lambda" block (both stacks):
                                    EventBridge rate(1 minute) tick, outputs NewsletterFunctionName/Arn
 apps/admin/lib/newsletters.js      every rule: create/save/request/approve/decline/withdraw/cancel/retry/test/delete
 apps/admin/lib/notify.js           notifyNewsletterRequested (reviewer email, same recipients as publish)
-apps/admin/app/mail/page.js        list + "new newsletter"
+apps/admin/app/mail/page.js        Outgoing emails: Automatic emails (trigger slots + transactional drafts, "new
+                                   automatic email") then Newsletters (list + "new newsletter")
+apps/admin/lib/transactional.js    kind 'transactional' rows: create / list / chooseEmail (attach to a trigger, or detach)
+apps/admin/app/automatic-email-picker.js  the dropdown on the Petition and Appeals pages (docs/systems/email.md "Attached emails")
 apps/admin/app/mail/[id]/page.js   editor page: review panel, Composer in an ActionForm, test/request/delete
-apps/admin/app/mail/[id]/composer.js  client: block editor (image block has inline upload) + theme + audience | phone/desktop, light/dark preview
+apps/admin/app/mail/[id]/composer.js  client: block editor (image block has inline upload; file import) + look (reset to site look)
+                                   + audience ("Apply filters" live count) | phone/desktop, light/dark preview
+apps/admin/app/mail/[id]/actions.js   importUpload(formData): .docx/.md/.html → blocks (convert-upload.mjs → newsletter-import.mjs)
+apps/admin/lib/newsletter-import.mjs  htmlToBlocks(html, {headline}) → {blocks, headline, notes}; sanitizeRich(html) (tested)
+apps/admin/app/mail/audience-count/route.js  GET ?residency&donors&petition → {count, description} (signed-in; no write)
 apps/admin/app/mail/status.js      status labels
 apps/admin/app/page.js             dashboard "Newsletters needing attention" (pending/approved/sending)
 scripts/newsletter-smoke.mjs       E2E of the Lambda with recipientsOverride (mailbox simulator)
 ```
 
-Nav: group **Mail** → Newsletters (`/mail`), Mailing list (`/subscribers`,
-moved from Operations).
+Nav: group **Mail** → **Outgoing emails** (`/mail`; renamed from
+"Newsletters" 2026-10-09 when automatic emails joined it), Mailing list
+(`/subscribers`, moved from Operations).
+
+## Kinds (2026-10-09)
+
+`newsletters.kind`: `'newsletter'` (NULL = newsletter) or `'transactional'`.
+A transactional row is an **automatic email**: composed with the same blocks,
+preview and test send, but never requested or sent to the audience — it is
+**attached** to a trigger (petition signed, donation received) and the API
+Lambda sends it to the one person who acted. The list page shows the
+triggers first (what is attached, or "built-in email"), then the automatic
+drafts, then the newsletters. `duplicateNewsletter` keeps the kind. Full
+detail: docs/systems/email.md "Attached emails".
 
 ## Data
 
@@ -54,11 +73,17 @@ moved from Operations).
 |---|---|
 | `status` | `draft` → `pending` → `approved` → `sending` → `sent` \| `failed`; decline / withdraw / cancel-before-start return to `draft` |
 | `subject, preheader, headline, from_name` | what the composer edits; `from_name` is the author shown in the From display name |
-| `blocks, theme, audience` | JSON: the block list (`heading, text, button, image, quote, divider`), the look (`accent, highlight, font, eyebrow, footer`), the audience filters (`residency, donors, petition` — packages/db/audience.js, same as the Mailing list page) |
+| `blocks, theme, audience` | JSON: the block list (`heading, text, rich, button, image, quote, divider`; `rich` = sanitized document HTML, see Rendering), the look (`accent, highlight, font, eyebrow` (optional label; '' by default), `footer`; the letterhead itself is fixed), the audience filters (`residency, donors, petition` — packages/db/audience.js, same as the Mailing list page) |
 | `html, text` | **frozen at request time** — what the reviewer approves is what is sent, even though the send happens later |
 | `requested_by/_user, request_note, requested_at, scheduled_for, recipients` | the request; `recipients` = the audience count the writer saw |
 | `reviewed_by, review_note, reviewed_at` | the latest review (kept on a declined draft so the writer sees the note) |
 | `send_started_at, sent_at, sent_count, failed_count, error` | the run |
+| `kind` | `'newsletter'` (NULL) or `'transactional'` — see "Kinds" |
+
+`transactional_emails` (`trigger` PK → `newsletter_id`, frozen `subject`,
+`html`, `text`, `attached_by`, `attached_at`): the live automatic email per
+trigger, read by the API (`GRANT SELECT … TO api`). Deleting the newsletter
+removes its attachment.
 
 `newsletter_deliveries` (`newsletter_id, email` PK; `status sending|sent|failed`,
 `message_id`, `error`, `at`): the ledger. The primary key is the idempotency
@@ -77,6 +102,28 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    from the same renderer; toggles: Light / Dark (dark = the email's own
    `prefers-color-scheme` rules applied unconditionally), Phone (375 px) /
    Desktop.
+   - **Audience**: the legend shows the count for the SAVED filters;
+     **Apply filters** fetches the count for the chosen ones
+     (`GET /mail/audience-count`, same `audienceCount`) without saving — the
+     legend then says "match these filters" until a filter changes again.
+     Saving stores the filters (and the page reloads the saved count).
+   - **Import a file** (Content fieldset): a .docx (Word / Google Docs /
+     Claude Docs), .md, .txt or .html file goes to `importUpload` (server
+     action, editor+, 8 MB): `convert-upload.mjs uploadToHtml` (mammoth with
+     `faithful` = blank paragraphs + underline kept; marked GFM, `breaks` for
+     .txt) → `newsletter-import.mjs htmlToBlocks`. The document's HTML is
+     kept as **rich** blocks (nested/numbered lists, tables, code, quotes,
+     underline/strike/sub/sup, footnote marks, blank paragraphs, task-list
+     boxes as ☐/☑ glyphs), `sanitizeRich`'d (allowlist `RICH_TAGS` minus
+     img; attributes href/colspan/rowspan/start; http(s)/mailto). Two
+     exceptions: images lift out as Image blocks in place (a sole-image
+     paragraph/figure, caption kept) or right after their paragraph
+     (data:/relative addresses arrive empty — upload in the block); the
+     first `h1` fills an EMPTY headline. Page wrappers (html/body/div) are
+     unwrapped. Blocks append after the current ones; nothing is stored
+     until save.
+   - **Look**: defaults copy the live site; **Reset to the site look** puts
+     `DEFAULT_THEME` back on a draft that carries an older look.
 2. **Save & send me a test** (editor+): saves what is on screen, then sends
    it to the signed-in admin's address only, subject prefixed `[TEST]`, through the admin's SSR role
    (`ses:SendEmail`, From pinned to hello@). The unsubscribe link points
@@ -120,6 +167,9 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    ledger skips everyone already sent to. Audit `newsletter.retry`.
 7. **Delete** (owner; not pending/approved/sending): deliveries + row.
    Audit `newsletter.delete`.
+
+`newsletter.attach` / `newsletter.detach` (editor+, `lib/transactional.js`)
+record which draft is live for a trigger; they need no second admin.
 
 `newsletter.*` audit actions are NOT matched by `CONTENT_ACTION_RE`, so
 newsletter work never shows up as "unpublished saves" or blocks a site
@@ -278,6 +328,35 @@ postal address (CAN-SPAM). Editors are trusted; the admin preview iframe is
 
 ## Rendering
 
+- **Letterhead copies the live site** (2026-10-09; css/styles.css tokens):
+  header band = `theme.accent` (default `--navy #1b2f4e`) with the site's
+  logo mark (`LOGO_URL` = `https://utahciviccompact.org/assets/logo-icon-dark.png`,
+  the mark the site shows on navy; 38×44, served by the live site) beside
+  "Utah Civic Compact" in white, both linking to `SITE_URL`; optional
+  eyebrow (`theme.highlight`, default `--red-light #e74c3c`, uppercase
+  12 px) and the headline (white, 800). Body: white card on cream
+  `#f5f1ea`, gray-900 text, navy headings/links/buttons, cream quote with a
+  highlight rule. Footer band = accent again: theme footer lines + the
+  Unsubscribe link in white. Default font `sans` = the site's Inter stack
+  (not embedded; clients fall back to their system sans); `serif` =
+  Playfair/Georgia. Dark mode: navy-dark page `#0f1e33`, card `#16263f`,
+  bands `#0f1e33` (`.em-band`), highlight for headings/links.
+  `DEFAULT_THEME.eyebrow` is '' — an eyebrow equal to the org name (older
+  drafts) is not drawn, the letterhead already says it. Existing drafts keep
+  their stored look; "Reset to the site look" in the composer applies the
+  new defaults. `newsletter_defaults` on prod was `{}` at the change, so
+  new drafts get the site look without any action.
+- **Rich blocks** (`{type:'rich', html}`, ≤200k chars; "Document (HTML)" in
+  the composer, what an import produces): `styleRich` walks the opening
+  tags and writes the house look INLINE per tag (p/li = text styles,
+  h1–h2 = heading, h3–h6 = sub-heading, blockquote/pre = quote box,
+  tables with rule-coloured cell borders, nested ul/ol tighter, empty `<p>`
+  → `&nbsp;` so a blank line keeps its height) plus the dark-mode classes.
+  Sanitized by `lib/newsletter-import.mjs sanitizeRich` on import AND on
+  every save (`lib/newsletters.js saveNewsletter`), never by the renderer
+  (which the browser preview also runs). Web copy: `<div class="nl-rich">`
+  with the sanitized HTML as is (no inline styles → CSP-safe), styled by
+  css/newsletters.css. Text twin: `htmlToText` (also used by raw mode).
 - Table-based 600 px card, inline styles (Gmail strips `<style>` partially),
   `<meta name="color-scheme" content="light dark">` + a
   `@media (prefers-color-scheme: dark)` block and `[data-ogsc]` twins

@@ -184,3 +184,34 @@
 }
 .project-parts a { color: var(--navy-dark); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .project-cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 0; }
+
+/* Petition filed under this project (docs/systems/petition.md "Project"):
+   the campaign's ask on its hub, dark card so it reads as the hero does. */
+.hub-petition {
+  margin: 8px 0 40px;
+  padding: 28px 32px;
+  background: var(--navy-dark);
+  border-radius: 6px;
+  color: var(--white);
+  max-width: 680px;
+}
+.hub-petition-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red-light);
+  margin-bottom: 12px;
+}
+.hub-petition-headline {
+  font-family: var(--font-sans);
+  font-size: clamp(22px, 2.6vw, 30px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--white);
+  margin-bottom: 14px;
+}
+.hub-petition-headline em { color: var(--red-light); font-style: normal; }
+.hub-petition-body { font-size: 16px; line-height: 1.65; color: rgba(255,255,255,0.85); margin-bottom: 18px; }
+.hub-petition-count { font-size: 14px; color: rgba(255,255,255,0.75); margin-bottom: 18px; }

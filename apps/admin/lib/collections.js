@@ -215,6 +215,8 @@ export const HOMEPAGE_GROUPS = [
   // /petition and /petition-thanks all read this one group.
   { key: 'petition', title: 'Petition campaign', page: 'petition', fields: [
     ['slug', 'Campaign slug', 'text', 'lowercase-with-dashes, e.g. udot-alpr-permits. Every signature is filed under it and the CSV is per slug. Change it to start a NEW petition; old signatures stay under the old slug.'],
+    // widget 'project' = a dropdown of the projects (app/petition renders it).
+    ['project_slug', 'Project', 'project', 'The project this petition belongs to. Its page on the site shows the petition with a sign button, /petition links back to it, every signature is filed under it, and the thank-you email points to it. Blank = no project.'],
     ['label', 'Eyebrow label', 'text', 'e.g. Unofficial Petition'],
     ['headline', 'Headline', 'textarea', 'HTML allowed: <em>word</em> turns red. BLANK switches the petition OFF — the homepage shows the standing hero and /petition says no petition is open.'],
     ['body', 'Body', 'textarea', 'The UDOT provision and the ask. Shown in the hero and on /petition.'],

@@ -125,6 +125,13 @@ const STATEMENTS = [
     UNIQUE (petition, email)
   )`,
   `CREATE INDEX ASYNC IF NOT EXISTS idx_petition_signatures_petition_created ON petition_signatures(petition, created_at)`,
+  // Filed under a project (2026-10-09, docs/systems/petition.md "Project"):
+  // the project the campaign belonged to WHEN it was signed, copied from
+  // homepage.petition.project_slug by the API, so a past campaign keeps its
+  // project after the slug moves on. NULL = signed before this column or the
+  // campaign had no project. The UDOT ALPR petition belongs to `alpr`.
+  `ALTER TABLE petition_signatures ADD COLUMN IF NOT EXISTS project_slug TEXT`,
+  `UPDATE petition_signatures SET project_slug = 'alpr' WHERE petition = 'udot-alpr-permits' AND project_slug IS NULL`,
 
   `CREATE TABLE IF NOT EXISTS rate_limits (
     id UUID PRIMARY KEY,
@@ -164,6 +171,15 @@ const API_GRANTS = [
   `GRANT INSERT ON newsletter_opens TO ${API_ROLE}`, // the open pixel; never SELECT
   // Upsert (ON CONFLICT DO UPDATE needs SELECT + UPDATE); never DELETE.
   `GRANT SELECT, INSERT, UPDATE ON petition_signatures TO ${API_ROLE}`,
+  // The ONE content exception (docs/systems/api-security.md): read-only on
+  // the homepage singleton + projects so the petition route can file a
+  // signature under the campaign's project and the thank-you emails can carry
+  // the admin's copy. Both are public-site content; never INSERT/UPDATE.
+  `GRANT SELECT ON homepage TO ${API_ROLE}`,
+  `GRANT SELECT ON projects TO ${API_ROLE}`,
+  // Attached automatic emails (packages/db/newsletters.js transactional_emails,
+  // docs/systems/email.md "Attached emails"): the frozen subject/html per trigger.
+  `GRANT SELECT ON transactional_emails TO ${API_ROLE}`,
 ];
 
 module.exports = { STATEMENTS, API_ROLE, API_GRANTS };

@@ -21,8 +21,18 @@ per-recipient outcome.
 | lib/newsletters.js | `[admin] newsletter <id> test sent <MessageId>` / `test SES error: <Name> <message>` | one per test | `AccessDeniedException` = `ses:SendEmail` missing from the SSR role |
 | lib/newsletters.js | `[admin] <who> (owner) self-approving newsletter <id>` / `tried to approve their own newsletter` | owner self-approvals | an editor hitting the guard = crafted action call |
 | lib/notify.js | `newsletter notify sent/skipped/SES error …` | as for publish requests (docs/error-handling/debug/admin.md) | |
+| app/mail/audience-count/route.js | `[newsletter] audience-count <filters> -> N` / `audience-count failed: <message>` | one per "Apply filters" click | `failed` → DSQL/IAM from the SSR role (the page's own count would fail too); a 401 in the browser = session cookie gone (reload) |
+| app/mail/[id]/actions.js | `[newsletter] import <kind> "<file>" <bytes>B -> N blocks[, headline set][; notes: …]` | one per file import; notes list images/tables/mammoth warnings | `[admin] action failed: Upload a .docx, .md or .html file` = unknown extension; `larger than 8 MB`; `makes N blocks; an email holds at most 60` |
 | lib/data.js | `<actor> newsletter.<verb> newsletter/<id>` | one per action | |
 
 E2E without touching the real audience:
 `$env:AWS_PROFILE='uccsite'; node scripts/newsletter-smoke.mjs --env staging`
 (mailbox simulator; prints the delivery ledger; cleans up).
+
+## Automatic (attached) emails — `[admin]` (docs/systems/email.md "Attached emails")
+
+| Where | Log | Normal | Broken |
+|---|---|---|---|
+| lib/transactional.js `attachEmail` | `email <id> attached to <trigger> by <admin> (replaced <id>)` | one per attach | a user reports the old email still going out → the API's 5-minute container cache; wait, or check the row in `transactional_emails` |
+| lib/transactional.js `detachEmail` | `email <id> detached from <trigger> by <admin>` | one per detach | — |
+| API (docs/error-handling/debug/api.md) | `attached email lookup failed (<trigger>): <ErrorName>` | never | grant/table missing → built-in body used |

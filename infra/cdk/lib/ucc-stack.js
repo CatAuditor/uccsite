@@ -263,6 +263,15 @@ class UccStack extends Stack {
         ],
       },
     });
+    // /api/*: the Lambda stamps nosniff / Referrer-Policy / X-Robots-Tag /
+    // Cache-Control itself (aws/api/index.mjs stampHeaders); CloudFront adds
+    // only HSTS, which the function cannot usefully own (the header belongs
+    // to the host, not the route).
+    const apiHeaders = new cloudfront.ResponseHeadersPolicy(this, 'ApiHeaders', {
+      securityHeadersBehavior: {
+        strictTransportSecurity: SECURITY_HEADERS.strictTransportSecurity,
+      },
+    });
     // ── Distribution ────────────────────────────────────────────────────────
     const siteOrigin = origins.S3BucketOrigin.withOriginAccessControl(siteBucket);
     // Media OAC: CDK's automatic grant would cover the whole bucket, including
@@ -328,6 +337,7 @@ class UccStack extends Stack {
           // requires its own Host). Client IP: CloudFront appends the real
           // connecting IP as the LAST entry of X-Forwarded-For.
           originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+          responseHeadersPolicy: apiHeaders,
         },
       },
       // OAC without ListBucket: a missing key is S3 403. Map both to the real 404 page.

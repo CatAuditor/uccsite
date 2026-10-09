@@ -55,3 +55,34 @@ change the page text if the org decides otherwise.
    js/tip.js never sends files. Options: (a) remove the field; (b) build
    upload to the media bucket under a private tips/ prefix. **Not chosen**
    — left as found; the policy does not mention attachments.
+
+## 2026-10-09 — Transactional emails + petition filed under a project (docs/systems/email.md, petition.md)
+
+1. **"Petitions filed under their respective project" — one live campaign
+   linked to a project, or several petitions open at once?** Options: (a) keep
+   the one-campaign model and add a Project field (hub shows the petition,
+   signatures carry the project, email links it); (b) a `petitions`
+   collection (slug, project, copy, open/closed) with its own pages under
+   `/projects/<path>/petition` and several open at once. **Chose (a)** — it
+   fulfils the filing without re-plumbing the hero/form/thank-you pages;
+   signatures already key on the slug, so (b) can be built on top later
+   without touching the data.
+2. **Email on every signature or the first only?** Options: (a) first only;
+   (b) every re-sign. **Chose (a)** — a re-sign is the same person; sending on
+   each would let anyone trigger repeat mail to an address they do not own.
+3. **Receipt on monthly renewals (`invoice.paid`)?** Options: (a) no — only the
+   checkout; (b) yes, monthly. **Chose (a)**; Stripe's own receipts can cover
+   renewals if switched on in the Stripe dashboard. Reversible: dispatch the
+   job from `handleInvoicePaid`.
+4. **Where monthly donors manage their membership.** The receipt says to email
+   info@utahciviccompact.org (no public portal page exists; the portal API
+   needs an emailed magic link). Option: build a /manage page that posts to
+   `POST /api/create-portal-session`.
+5. **Does attaching an automatic email need a second admin, like a newsletter
+   send?** Options: (a) no — editor+ attaches, audited, detach is one click;
+   (b) reuse request/approve. **Chose (a)** (the admin's newsletter library
+   was being edited by another session; (b) means changing its state machine).
+   Reversible: route `attachEmail` through `requestSend`-style review.
+6. **Should the welcome email be attachable too?** Not offered: it must carry
+   the double opt-in confirm button (a signed URL), which the block builder
+   cannot place. Option: a `{confirm_button}` raw placeholder.

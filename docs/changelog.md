@@ -4,6 +4,202 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.26.5 — 2026-10-09 (branch `refactor`) — Security headers on the admin and HSTS on /api/*
+
+Push = 3be5d75 (+ this changelog commit). Audit answer to "do we have our security headers proper": public site yes
+(CloudFront `SiteHeaders` policy, verified live), API all but HSTS, admin none at all.
+
+- **Admin** (`apps/admin/next.config.js`): `headers()` on `/:path*` — HSTS (1 y, includeSubDomains, preload),
+  `Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'`, `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`
+  (camera/mic/geo/payment/usb off), `X-Robots-Tag: noindex, nofollow`; `poweredByHeader: false`. No `script-src`
+  yet (Next inline scripts need a nonce; builder/composer/dev-notes use `dangerouslySetInnerHTML`) — separate change,
+  report-only first. Verified in headless Chromium that the srcdoc preview iframes still run under an inherited
+  `frame-ancestors 'none'`. Amplify builds the admin from this push.
+- **API** (`infra/cdk/lib/ucc-stack.js`): new `ApiHeaders` ResponseHeadersPolicy (HSTS only) on the `/api/*`
+  behavior; the Lambda keeps stamping nosniff / Referrer-Policy / X-Robots-Tag / Cache-Control. `cdk diff` also
+  showed the viewer-request function differing from the deployed copy in comments only (em dashes had deployed as
+  `?`); redeployed as-is. `UccProd` deployed from the working tree at 3be5d75 (clean, 95 s). Verified live after
+  deploy + Amplify job 93: admin `/login` and `/` (307) carry all seven headers, no `x-powered-by`; `/api/health` carries
+  HSTS plus the Lambda's four.
+- Admin tests 39 pass. Docs: systems/admin.md (Code Map + new "Security headers"), systems/api-security.md (stale
+  Decap `/admin/*` CSP line replaced; `/api/*` header split), dev-notes.md.
+
+Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed, Jarom not signed into prod admin.
+Open: admin `script-src` CSP (nonce work).
+
+## v0.26.4 — 2026-10-09 (branch `refactor`) — Automatic emails chosen on the Petition / Appeals pages
+
+Push = 410a6f0 (+ this changelog commit). Owner feedback on v0.26.3: the email should be WRITTEN under Outgoing emails
+and SELECTED where it fires, so it can be rotated.
+
+- `apps/admin/app/automatic-email-picker.js` (new, shared server component): dropdown "Built-in email" + every
+  `kind = 'transactional'` draft → `lib/transactional.js chooseEmail(trigger, id)` (`attachEmail`, or `detachEmail` for
+  built-in); shows what is live, when/by whom it was chosen, and "edited since" when the draft's `updated_at` is newer
+  than `attached_at`. Mounted on `/petition` ("Thank-you email", trigger `petition-thanks`, above the copy editor) and
+  `/appeals` ("Thank-you email after a donation", trigger `donation-thanks`). New lib helpers `automaticEmails`,
+  `transactionalSlot`.
+- `/mail/[id]`: the attach/detach panel is gone; an automatic email shows "Where it is used" + links to the page where the
+  choice is made. `/mail` slot table says "choose on Petition / Appeals".
+- Removed the interim text fields `homepage.petition.email_subject/email_body` and `homepage.donate.thanks_email_*`
+  (collections.js) and their API reads (`emails.js` builders use the fixed defaults; `routes.js donateCopy()` deleted —
+  the donation job reads no content; debug row removed). Any value saved in those keys today is dropped on the next save
+  of the group (group-level drift guard only).
+- Tests: API 46 pass (two tests re-pointed from admin copy to the defaults; one asserts the donation job reads no
+  `homepage`).
+- Deployed `UccStaging` + `UccProd` from a clean worktree at 410a6f0 (ApiFunction only). Amplify builds the admin from
+  this push.
+- Docs: systems/email.md ("Attached emails" choice flow, "Built-in bodies"), petition.md, newsletters.md, admin.md,
+  error-handling/debug/api.md, non-technical-editing-guide.md, dev-notes.md (today's entry updated).
+
+Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed, Jarom not signed into prod admin.
+
+## v0.26.3 — 2026-10-09 (branch `refactor`) — Outgoing emails: attach a composed newsletter as an automatic email
+
+Push = 5c68bd3 (+ this changelog commit). Previous top entry: v0.26.2.
+
+**Model** (`packages/db/newsletters.js`) — `newsletters.kind` (`'newsletter'` | `'transactional'`, NULL = newsletter; in COLS /
+`rowToNewsletter`, kept by `duplicateNewsletter`); `TRIGGERS` (`petition-thanks`, `donation-thanks`: label, when, placeholders,
+required); table `transactional_emails` (`trigger` PK, `newsletter_id`, frozen `subject/html/text`, `attached_by/_at`);
+`attachTransactional` (upsert per trigger) / `detachTransactional` / `listAttachments`; `deleteNewsletter` drops the
+attachment after the row. `API_GRANTS` + `GRANT SELECT ON transactional_emails TO api`. `migrate-schema` run on staging + prod.
+
+**API** (`aws/api/routes.js`, `emails.js`) — `transactionalTemplate(db, trigger)` (5-min container cache, cleared with the
+campaign cache) + `fillAttached`: `fillHtml` (text tokens HTML-escaped, raw `{receipt}` markup, unknown tokens kept),
+`fillText` for subject/text, `{{unsubscribe_url}}` → signed link; `sesSend` sends a Text part when present. Petition job
+tokens `first_name` `headline` `project_name`; donation job `first_name` `amount` `type` `date` + raw `receipt`
+(`receiptHtml` extracted from the built-in email — table + 501(c)(4) line). Built-in bodies unchanged when nothing is
+attached or the read fails (`attached email lookup failed (<trigger>): <ErrorName>`).
+
+**Admin** — nav Mail → **Outgoing emails** (`layout.js`); `/mail` lists the trigger slots (attached email or "built-in"),
+automatic drafts and newsletters, with "New automatic email"; `/mail/[id]` for `kind = 'transactional'`: chip
+Attached/Not attached, no send-request block, **Send automatically** panel (trigger select with the current occupant,
+Attach / Attach again / Detach), placeholder help, audience-ignored hint. `lib/transactional.js` (new): `createTransactional`,
+`listSlots`, `transactionalState`, `attachEmail` (renders with `renderEmail`, UTM campaign = trigger, refuses without
+subject/block/required token; audit `newsletter.attach` with `replaced`), `detachEmail` (audit `newsletter.detach`). The
+other session's uncommitted `composer.js` / `lib/newsletters.js` were deliberately not touched (the Audience fieldset
+still renders on automatic emails — hint says it is ignored).
+
+**Tests** — API 46 pass (attached petition email: tokens filled + escaped, unsubscribe swapped, Text part; attached
+donation email: receipt + legal line inserted, read failure → built-in); db 25 pass (kind, triggers, attach SQL, delete order).
+
+**Deployed / verified** — `cdk deploy UccStaging` + `UccProd` from a clean worktree at 5c68bd3 (ApiFunction, PublishFn,
+NewsletterSendFn — the latter two carry 6898fe4). Staging E2E: a `transactional_emails` row inserted directly, fresh
+simulator signature → `SES sent … subject="E2E attached: thanks Attached for Tell UDOT: the public does not support these
+cameras."`; row removed afterwards. Amplify builds the admin from this push.
+
+**Docs** — systems/email.md "Attached emails", newsletters.md "Kinds" + data, api-security.md, admin.md,
+error-handling/debug/api.md + newsletters.md, legal/data-handling.md (`transactional_emails` row), non-technical-editing-guide
+("Outgoing emails" section), dev-notes.md, pending-questions.md (#5 attach has no second-admin review; #6 welcome email not
+attachable — needs a confirm-button placeholder).
+
+Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed, Jarom not signed into prod admin.
+
+## v0.26.2 — 2026-10-09 (branch `refactor`) — Transactional thank-you emails; petition filed under a project
+
+Push = 0ff2602 (patch-homepage-group script), 4f14b2b (tests restored after the v0.26.0 rebase), ee3e187 (hub card
+template fix), plus this changelog commit. Detail for f0dbfed (pushed inside v0.26.0 by the concurrent session):
+
+**Email (docs/systems/email.md)** — `aws/api/emails.js` (new): `buildPetitionThanksEmail`, `buildDonationThanksEmail`,
+one layout, `{first_name}` / `{headline}` / `{amount}` fill, admin text escaped.
+- `POST /api/petition` dispatches self-invoke job `petition-thanks` on a FIRST signature only (pre-insert SELECT; a
+  re-sign refreshes the row and sends nothing — the route cannot be used to flood an address). Subject/body from
+  `homepage.petition.email_subject` / `email_body` (Petition page); heading = headline with only `<em>` kept; project
+  link; Share (/petition) + Chip in (/petition-thanks) buttons; `List-Unsubscribe` + One-Click headers.
+- Stripe `checkout.session.completed` dispatches `donation-thanks` (one-time and first monthly charge; `invoice.paid`
+  renewals send nothing; `processed_events` keeps it to one per checkout). Receipt table (amount, type, Mountain-time
+  date) + fixed 501(c)(4) not-tax-deductible line; monthly adds "email info@ to change or cancel". Copy from
+  `homepage.donate.thanks_email_subject` / `thanks_email_body` (Appeals page). No unsubscribe headers (a receipt).
+- `petitionCampaign()` reads `homepage.petition` + `projects` (5-min container cache); copy used only while the
+  saved slug equals the slug signed; generic copy otherwise or on any read error (`petition campaign lookup failed`).
+
+**DB / grants** — `petition_signatures.project_slug` (+ backfill `udot-alpr-permits` → `alpr`); `GRANT SELECT ON
+homepage, projects TO api` (ADR amendment: docs/decisions/api-dsql-least-privilege.md). `migrate-schema` run on
+staging and prod (prod: 6 signatures backfilled).
+
+**Site (docs/systems/petition.md "Project")** — `homepage.petition.project_slug`; `derivePetitionProject` (site.js,
+after `deriveProjectTree`) → `petition.project` on /petition ("Part of our … project") and `petition` on the filed
+project's hub → `templates/project.html` card (label, headline, body, Utah counter, sign button; `js/petition.js`
+loaded on hubs). ee3e187: the engine keeps the parent context inside an object section, so the card uses
+`{{petition.*}}` paths (first staging publish rendered an empty card with the project's slug as the counter key).
+CSS: `.hub-petition*`, `.petition-hero-project`. `content/homepage.json` petition gets `project_slug: alpr`.
+
+**Admin** — Petition page: Project dropdown (widget `'project'`, validated against `listProjects`), "Filed under …"
+line, Project column, two Thank-you email fields; CSV gains `project`; Appeals donate group gains two Thank-you
+email fields; project workspace Overview shows the live-campaign flag + signature counts per slug
+(`workspace()` → `petitions`, `activePetition`). `scripts/patch-homepage-group.mjs` (new): set fields inside a
+saved homepage group with a revision + `homepage.patch` audit row — used to file the live campaign on staging and
+prod (`--set project_slug=alpr`) without replacing the editors' copy.
+
+**Tests** — api.test.mjs 44 pass (6 new: first-sign dispatch / re-sign silent, campaign-less fallback, petition
+job copy + headers, generic + escaping, webhook dispatch + failure tolerance, donation receipt); render 37 pass
+(derivePetitionProject). Two stale assertions fixed (soft unsubscribe, 8th insert param). The v0.26.0 rebase had
+resolved the api.test.mjs conflict by dropping this block — restored in 4f14b2b.
+
+**Deployed** — `cdk deploy UccStaging` and `UccProd` from a clean worktree at ee3e187 (prod diff: ApiFunction,
+PublishFn, NewsletterSendFn, ExportContentFn, ViewerRequestFn — the last three carry v0.25.6/v0.26.0 code that had
+not reached prod). Published staging (6 then 2 changed) and prod `publish.mjs --source db` (6 changed, 0 removed:
+petition.html, projects/alpr.html, projects/stratos.html, css/pages/petition.css, css/pages/projects.css,
+css/newsletters.css). Verified: staging first signature → exactly one `SES sent … "Thank you for signing: Tell UDOT…"`,
+re-sign → none; row carries `project_slug = alpr`; prod `/api/health` ok, counter 6; live ALPR hub shows the card,
+/petition shows "Part of our License Plate Reader Investigation project".
+
+**Docs** — systems/email.md, petition.md, api-security.md, projects.md, admin.md, donation-tracker.md;
+legal/data-handling.md (SES + petition_signatures rows); error-handling/debug/api.md (8 rows); dev-notes.md;
+non-technical-editing-guide.md; pending-questions.md (multi-petition model, re-sign policy, renewals, portal page).
+
+Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed (the donation receipt depends on the
+webhook reaching the AWS API), Jarom not signed into prod admin. Not exercised end-to-end: a real Stripe checkout on
+the AWS webhook (unit-tested; verify the first live donation's `SES sent … "Thank you for your $…"` log line).
+
+## v0.27.0 — 2026-10-09 (branch `refactor`) — Newsletter import is faithful: rich blocks
+
+- `packages/newsletter/render.mjs`: new block type `rich` (`{html}`, ≤200k, in `BLOCK_TYPES` as "Document (HTML)");
+  `styleRich` applies the house look inline per tag (nested/numbered lists, tables, pre/code, blockquote, h1–h6, hr,
+  empty `<p>` → `&nbsp;`) + dark classes; `htmlToText` shared with raw mode (lists as "- ", cells " | ");
+  `RICH_TAGS` exported for the sanitizer. `web.mjs`: `<div class="nl-rich">` with the sanitized HTML; `css/newsletters.css`
+  `.nl-rich` rules (needs a `cdk deploy` to reach the live archive, not done).
+- `apps/admin/lib/newsletter-import.mjs` rewritten: the converted HTML is kept as rich blocks (sanitizeRich: sanitize-html
+  allowlist, href/colspan/rowspan/start, http(s)/mailto; task-list checkboxes → ☐/☑); images lift out as Image blocks in
+  place or after their paragraph; first h1 → empty headline; page wrappers unwrapped. `sanitize-html` declared in
+  apps/admin/package.json (lock synced). `lib/newsletters.js saveNewsletter` re-sanitizes rich blocks on every save.
+- `lib/convert-upload.mjs`: `docxToHtml({faithful})` keeps blank paragraphs + underline (newsletter path only; Documents
+  unchanged); `markdownToHtml({breaks})` on for .txt.
+- Composer: "Document (HTML)" block (code textarea). Tests: 6 import/sanitize/render/web tests (admin 39), newsletter 21.
+- Docs: systems/newsletters.md (Data, Flow, Rendering, Code Map), dev-notes, editing guide.
+
+## v0.26.1 — 2026-10-09 (branch `refactor`) — Changelog correction (v0.26.0 follow-up hash)
+
+## v0.26.0 — 2026-10-09 (branch `refactor`) — Newsletters: site letterhead, Apply filters, file import
+
+**Newsletters (admin + renderer)** — 26fb326, 63bb468, 6498cd5, 717e94a (import control hidden in raw-HTML mode)
+
+- `packages/newsletter/render.mjs`: letterhead (site logo mark `LOGO_URL` + org name on the accent band, linking
+  `SITE_URL`), site tokens throughout (`DEFAULT_THEME` accent `#1b2f4e`, highlight `#e74c3c`, font `sans` = Inter stack,
+  cream page `#f5f1ea`, gray-900 text), accent footer band with white links, navy-dark dark mode (`.em-band`, `.em-btn`
+  → highlight in dark). `DEFAULT_THEME.eyebrow` = '' (an eyebrow equal to the org name is not drawn); default footer
+  adds the 501(c)(4) line. Serif option = Playfair/Georgia. Tests: letterhead + dark palette.
+- `css/newsletters.css`: archive quote rule/background → `var(--red)` / `var(--cream)` (needs a `cdk deploy` before the
+  next publish to reach the live archive pages — cosmetic, not done in this push).
+- Composer: "Reset to the site look" (DEFAULT_THEME), relabelled colour/font controls, optional eyebrow placeholder.
+- `GET /mail/audience-count` (`app/mail/audience-count/route.js`, signed-in, no write) + composer "Apply filters":
+  the audience controls are controlled state; the legend says "match these filters" after an apply, "the saved
+  filters" otherwise. Log `[newsletter] audience-count …`.
+- `importUpload` (`app/mail/[id]/actions.js`, editor+, 8 MB) → `lib/convert-upload.mjs uploadToHtml` →
+  `lib/newsletter-import.mjs htmlToBlocks` (new, 4 tests): h1 → headline when empty, h2 heading, h3+ `## ` lines,
+  p/lists text (nested lists flattened), link-only p → button, img → image (data:/relative → empty url), blockquote →
+  quote (+ "— cite"), hr divider, table → "- a | b" lines. Blocks append; nothing stored until save. Log
+  `[newsletter] import …`.
+- Prod `newsletter_defaults` was `{}` at the change (checked), so new drafts get the site look with no action; one
+  existing draft carries the old green/gold theme (reset button).
+- Docs: systems/newsletters.md (Code Map, Flow, Rendering), error-handling/debug/newsletters.md (2 rows),
+  non-technical-editing-guide.md, systems/admin.md, dev-notes.md.
+
+**Pushed alongside (concurrent session; rebased onto v0.25.6)** — f0dbfed "Transactional thank-you emails (petition, donation) + petition
+filed under a project": `aws/api/emails.js`, `routes.js`, `webhook.js`; its own changelog detail belongs to that
+session's next entry.
+
+Open P1 (unchanged): RESEND_API_KEY placeholder, Stripe webhook URL unconfirmed, Jarom not signed into prod admin.
 ## v0.25.6 — 2026-10-08 (branch `claude-wip`) — Newsletter: tests and requests save first; raw HTML mode
 
 - Bug: "Send me a test" / "Test send (all admins)" / "Request send" were separate forms that read the SAVED draft,

@@ -15,6 +15,7 @@ import {
   newsletterPage, saveNewsletter, requestSend, approveSend, declineSend, withdrawSend, cancelSend, retrySend, sendTest, deleteNewsletter,
   duplicateNewsletter, saveDefaults, rescheduleSend,
 } from '../../../lib/newsletters';
+import { transactionalState, TRIGGERS } from '../../../lib/transactional';
 import { runAction } from '../../../lib/actions';
 import { config } from '../../../lib/config';
 import ActionForm from '../../action-form';
@@ -32,6 +33,10 @@ export default async function NewsletterPage({ params }) {
   const page = await newsletterPage(id);
   if (!page) notFound();
   const { newsletter: n, names, count, petitions, deliveries, defaults, diff, opens } = page;
+  // Automatic email (docs/systems/email.md "Attached emails"): no audience, no
+  // send request — it is ATTACHED to a trigger and the API sends it.
+  const isTx = n.kind === 'transactional';
+  const tx = isTx ? await transactionalState(id) : null;
   const canAct = session.role !== 'viewer';
   const isDraft = n.status === 'draft';
   const isRequester = n.requestedByUser === session.username || n.requestedBy === session.email;
@@ -127,11 +132,15 @@ export default async function NewsletterPage({ params }) {
 
   return (
     <div className="mail-page">
-      <p className="hint"><Link href="/mail">← Newsletters</Link></p>
-      <h1>{n.subject || '(no subject)'} <span className={`chip ${statusClass(n.status)}`}>{STATUS_LABEL[n.status]}</span></h1>
+      <p className="hint"><Link href="/mail">← Outgoing emails</Link>{isTx ? ' · automatic email' : ' · newsletter'}</p>
+      <h1>{n.subject || '(no subject)'}{' '}
+        {isTx
+          ? <span className={`chip ${tx.attached ? 'status-succeeded' : 'status-draft'}`}>{tx.attached ? `Attached — ${tx.attached.label}` : 'Not attached'}</span>
+          : <span className={`chip ${statusClass(n.status)}`}>{STATUS_LABEL[n.status]}</span>}
+      </h1>
       <Refresher active={n.status === 'sending'} />
 
-      {n.status !== 'draft' && (
+      {!isTx && n.status !== 'draft' && (
         <section className={`request ${n.status === 'pending' ? 'pending' : ''}`}>
           {n.status === 'pending' && <h2>Send request waiting for review</h2>}
           {n.status === 'approved' && <h2>Approved — scheduled for {formatZoned(n.scheduledFor)}</h2>}
@@ -224,7 +233,7 @@ export default async function NewsletterPage({ params }) {
             <button type="submit" name="then" value="test" className="secondary" title="Saves, then emails it to you only">Save &amp; send me a test ({session.email})</button>
           </div>
         )}
-        {canAct && isDraft && (
+        {canAct && isDraft && !isTx && (
           <div className="request-send">
             <h2>Request the send</h2>
             <p className="hint">
@@ -239,6 +248,25 @@ export default async function NewsletterPage({ params }) {
           </div>
         )}
       </ActionForm>
+
+      {isTx && (
+        <section className="request-send">
+          <h2>Where it is used</h2>
+          {tx.attached ? (
+            <p>
+              This is the live email for <strong>{tx.attached.label}</strong> (chosen {when(tx.attached.attachedAt)} by {tx.attached.attachedBy || 'an admin'}; it goes out {tx.attached.when}).
+              The copy that goes out was frozen when it was chosen — after editing, save here, then pick it again on the {tx.attached.trigger === 'petition-thanks' ? <Link href="/petition">Petition</Link> : <Link href="/appeals">Appeals</Link>} page to send the new version.
+            </p>
+          ) : (
+            <p>Not in use yet. Choose it on the <Link href="/petition">Petition</Link> page (thank-you after signing) or the <Link href="/appeals">Appeals</Link> page (thank-you after a donation). The <em>Audience</em> fieldset above is ignored for automatic emails — each one goes to the person who just acted.</p>
+          )}
+          <p className="hint">
+            Placeholders, filled in for each recipient:{' '}
+            {TRIGGERS.map((t) => <span key={t.key}><strong>{t.label}</strong>: {t.placeholders.map((p) => `{${p}}`).join(' ')}{t.required.length ? ` (${t.required.map((p) => `{${p}}`).join(' ')} is required — it carries the amount, date and the not-tax-deductible line)` : ''}. </span>)}
+            The Unsubscribe link in the footer is filled in automatically.
+          </p>
+        </section>
+      )}
 
       {canAct && (
         <div className="mail-tools">
@@ -258,7 +286,7 @@ export default async function NewsletterPage({ params }) {
           </div>
           {session.role === 'owner' && !['pending', 'approved', 'sending'].includes(n.status) && (
             <ActionForm action={remove} className="inline">
-              <button type="submit" className="danger">Delete this newsletter</button>
+              <button type="submit" className="danger">Delete this email</button>
             </ActionForm>
           )}
         </div>

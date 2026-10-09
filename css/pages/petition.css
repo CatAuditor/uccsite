@@ -218,3 +218,7 @@
 #petition-modal .donate-type-toggle { margin: 4px 0 14px; }
 #petition-modal .donate-tiers { grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); }
 #petition-modal .donate-custom-wrap { margin-top: 12px; }
+
+/* "Part of our <project> project" under the headline (petition.project). */
+.petition-hero-project { font-size: 14px; color: rgba(255,255,255,0.75); margin: -8px 0 20px; }
+.petition-hero-project a { color: var(--white); text-decoration: underline; text-underline-offset: 3px; }

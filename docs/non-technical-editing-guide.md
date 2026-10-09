@@ -89,11 +89,17 @@ puts that version back as a draft; request a publish to take it live.
 - **Writing page** (`/writing`) — builds itself from published documents and
   statements; nothing to edit. A document's **Category** sets its label there
   (Reports, Statements, Whitepapers).
-- **Petition** — the campaign copy, the thank-you page's donation window
+- **Petition** — the campaign copy, the **Project** it belongs to (its
+  project page then shows the petition with a sign button, and every
+  signature is filed under that project), the thank-you page's donation window
   (**amounts** as dollars, e.g. `5, 10, 25`; **one-time, monthly or both**; an
-  Other amount is always offered) and the **share** message and preview
-  picture used when people post the petition link. The **Form title** is
+  Other amount is always offered), the **share** message and preview
+  picture used when people post the petition link, and the **Thank-you
+  email** dropdown: which automatic email (written under Outgoing emails)
+  each signer gets once, or the built-in one. The **Form title** is
   also the headline apps show on that link; blank = Sign the petition.
+- **Appeals** also holds the **Thank-you email after a donation** dropdown
+  (same idea; a donation email must contain `{receipt}`).
 - **Homepage** — hero headline/subtitle, mission quote, about paragraphs,
   join section, donate section, donation pop-up text, the press strip.
   (The featured statement card is automatic: it is always the newest
@@ -239,19 +245,54 @@ visual; a developer changes the code and publishes.
 - Nightly, the content is backed up to the code repository automatically;
   Revisions cover the everyday "undo".
 
-## Newsletters (Mail → Newsletters)
+## Outgoing emails (Mail → Outgoing emails)
+
+The page has two parts. **Automatic emails** are the ones a person gets right
+after doing something — signing the petition, donating. **Newsletters** go to
+the whole mailing list after a second admin approves them.
+
+### Automatic emails
+
+- The table at the top lists each moment an email goes out (*Petition signed*,
+  *Donation received*) and which email is attached to it. With nothing
+  attached, a built-in email goes out; its wording is edited on the Petition
+  page (petition) and the Appeals page (donation).
+- To use your own design: **New automatic email**, write it exactly like a
+  newsletter (blocks, look, preview, *Save & send me a test*). Then go to the
+  **Petition** page (Thank-you email) or the **Appeals** page (Thank-you email
+  after a donation) and pick it from the dropdown — **Use this email**. It
+  goes out from then on; swap to another one or back to *Built-in email* any
+  time, no publish needed. Edits to the email do not go live until you pick
+  it again (the page says "edited since" when that is the case).
+- Type `{first_name}` where the person's first name should appear. Petition
+  emails can also use `{headline}` and `{project_name}`. Donation emails can
+  use `{amount}`, `{type}` and `{date}`, and **must** contain `{receipt}` —
+  that is where the amount/date table and the "not tax-deductible" line go
+  (attaching refuses without it). The Unsubscribe link fills itself in. The
+  *Audience* box is ignored for automatic emails.
+
+### Newsletters
 
 1. **Start writing**: type the subject line and press *Start writing*.
 2. **Compose** on the left: preview text (the line inboxes show after the
-   subject), an optional headline for the green band, **From** (your name —
-   the email arrives as "Your Name from Utah Civic Compact"), the
-   **audience** (same choices as the Mailing list page), then the content
-   as blocks — *Heading*, *Text* (plain writing; `**bold**`, `*italic*`,
+   subject), an optional headline for the navy letterhead band (the logo
+   and "Utah Civic Compact" are always there, copying the site), **From**
+   (your name — the email arrives as "Your Name from Utah Civic Compact"),
+   the **audience** (same choices as the Mailing list page; press **Apply
+   filters** to see how many people the chosen filters reach before you
+   save), then the content as blocks — *Heading*, *Text* (plain writing; `**bold**`, `*italic*`,
    `[link text](https://…)`, "- " for bullets), *Button*, *Image* (paste the
    *Upload an image* right in the block after typing its alt text, or paste
    an address from the Media Library), *Quote*,
-   *Divider*. Use ↑ ↓ ✕ to reorder or remove. *Look* changes colours, font,
-   the small line above the headline and the footer.
+   *Divider*, *Document (HTML)* (a document's own HTML, shown in the
+   email's look). Use ↑ ↓ ✕ to reorder or remove. Or **import a file**
+   (.docx from Word / Google Docs / Claude Docs, Markdown, text or .html):
+   the document comes in as written — blank lines, numbered and nested
+   lists, tables, code, quotes, links, underline, checklists — as a
+   Document block after the blocks you have, in the email's look; images
+   from inside a Word file come out as Image blocks that need an upload. *Look* changes colours, font, the optional
+   small line above the headline and the footer; **Reset to the site look**
+   puts the site's navy-and-red defaults back.
 3. **Preview** on the right is what a phone shows. Switch **Light / Dark**
    and **Phone / Desktop** to check both. Gmail does its own dark-mode
    recolouring, so also use **Send me a test** — it emails the saved version

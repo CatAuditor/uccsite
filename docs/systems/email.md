@@ -10,9 +10,25 @@ idle Cloudflare `functions/` copy still names Resend).
 ## Code Map
 
 ```
-aws/api/routes.js            sesSend() — THE send path (welcome email, portal link)
+aws/api/routes.js            sesSend() — THE send path (welcome email, portal link, thank-yous)
                              FROM_ADDRESS = 'Utah Civic Compact <hello@utahciviccompact.org>'
-                             _setSesClient() — test seam only
+                             petitionThanksJob() / donationThanksJob() — the two thank-you jobs;
+                             petitionCampaign() / donateCopy() — read the admin's copy (homepage)
+                             _setSesClient(), _resetCampaignCache() — test seams only
+aws/api/emails.js            the thank-you bodies (pure): buildPetitionThanksEmail,
+                             buildDonationThanksEmail, shared layout, {placeholder} fill,
+                             default subjects/bodies. Welcome body stays in routes.js.
+                             transactionalTemplate() / fillAttached() — an ATTACHED email (below) replaces the built-in body
+aws/api/webhook.js           checkout.session.completed → self-invoke 'donation-thanks'
+packages/db/newsletters.js   TRIGGERS (petition-thanks, donation-thanks: label, when, placeholders, required),
+                             newsletters.kind, transactional_emails table, attach/detach/listAttachments
+apps/admin/lib/transactional.js  createTransactional, automaticEmails, transactionalSlot, chooseEmail (the dropdown's action),
+                             attachEmail (renders + freezes), detachEmail, listSlots, transactionalState
+apps/admin/app/automatic-email-picker.js  THE dropdown: "Built-in email" + every automatic email → chooseEmail; on the
+                             Petition page (petition-thanks) and the Appeals page (donation-thanks)
+apps/admin/app/mail/          Outgoing emails: Automatic emails (slots + drafts) and Newsletters; [id] editor shows where
+                             an automatic email is in use (the choice itself is made on Petition / Appeals)
+aws/api/index.mjs            JOBS: welcome-email, portal-link, petition-thanks, donation-thanks
 aws/api/secrets.js           TOKEN_SECRET (signs unsubscribe/portal links); RESEND_API_KEY removed
 aws/newsletter/              NewsletterSendFn — the newsletter send path (docs/systems/newsletters.md)
 apps/admin/lib/notify.js     publish-request + newsletter-request review emails from the admin (same From, identity,
@@ -55,6 +71,8 @@ the ops topic and reputation metrics are not tagged.
 |---|---|---|---|
 | Welcome (= confirmation, double opt-in since 2026-10-05) | `POST /api/subscribe` (join form); carries a signed `GET /api/confirm` button (purpose `confirm`, 30 days) | self-invoke job, non-blocking | `List-Unsubscribe` + `List-Unsubscribe-Post: One-Click` (RFC 8058), signed 1-year unsubscribe link |
 | Billing-portal link | `POST /api/create-portal-session` | inline after the 202 | 15-minute signed link |
+| **Petition thank-you** (2026-10-09) | `POST /api/petition` — the FIRST signature of an address on a campaign only (a re-sign refreshes the row and sends nothing, so the route cannot be used to flood an inbox) | self-invoke job `petition-thanks`, non-blocking | `List-Unsubscribe` + One-Click (signing = joining the list), signed 1-year unsubscribe link. Subject/body: admin Petition page → "Thank-you email" fields (`homepage.petition.email_subject` / `email_body`, `{first_name}` `{headline}`), defaults in emails.js. Heading = the headline (only `<em>` kept). Adds the project link when the campaign is filed under a project, a Share button (/petition) and a Chip in button (/petition-thanks). Generic copy when the slug is not the live campaign or the content read fails |
+| **Donation thank-you / receipt** (2026-10-09) | Stripe `checkout.session.completed` (one-time AND the first charge of a monthly membership; renewals send nothing) — `aws/api/webhook.js` after the member/donation rows | self-invoke job `donation-thanks`, non-blocking; `processed_events` dedupes Stripe redeliveries so it is one email per checkout | none (a receipt, not list mail). Subject/body: admin Appeals page → Homepage donate section → "Thank-you email" fields (`homepage.donate.thanks_email_subject` / `thanks_email_body`, `{first_name}` `{amount}`). Always adds a receipt table (amount, one-time vs monthly, date in Mountain time) and the fixed 501(c)(4) **not tax-deductible** line; monthly adds "to change or cancel, email info@" |
 | Publish request needs review | an EDITOR (not an owner) requests a publish in the admin | `apps/admin/lib/notify.js`, after the request commits; one `SendEmail` to the four admins minus the requester (list in `lib/notify-recipients.mjs`); prod only unless `PUBLISH_NOTIFY_TO` is set | none — internal; links to the admin dashboard |
 | Newsletter (admin) | an approved send request in the admin (Mail → Newsletters; docs/systems/newsletters.md) | `NewsletterSendFn` Lambda: one `SendEmail` per recipient, 100 ms apart, per-recipient delivery ledger, self-resume; From `"<Author> from Utah Civic Compact" <hello@…>` (display name only — the address is IAM-pinned) | `List-Unsubscribe` + One-Click, signed 1-year unsubscribe link per recipient |
 | Newsletter test | "Send me a test" in the composer | admin SSR role, to the signed-in admin only, subject `[TEST] …` | none |
@@ -62,6 +80,52 @@ the ops topic and reputation metrics are not tagged.
 
 Volume is tiny (tens per month). No message bodies or recipient lists are
 ever logged (`[api] SES error: <ErrorName>` / `[api] SES sent <MessageId>` only).
+
+### Attached emails (2026-10-09)
+
+Either thank-you can be replaced by an email **composed in the admin's
+newsletter builder**. Admin → Mail → **Outgoing emails** → *Automatic emails*:
+"New automatic email" creates a `newsletters` row with `kind = 'transactional'`
+(same composer, preview, test send; no audience, no send request). The choice
+of WHICH automatic email goes out is made where the trigger lives — the
+**Petition** page ("Thank-you email") and the **Appeals** page ("Thank-you
+email after a donation") — with one dropdown each (`AutomaticEmailPicker` →
+`chooseEmail`): "Built-in email" or any automatic email, swap any time, no
+publish. The editor page only reports where an email is in use:
+
+| trigger | fires | placeholders (filled per recipient) | required |
+|---|---|---|---|
+| `petition-thanks` | first signature of an address on the live petition | `{first_name}` `{headline}` `{project_name}` | — |
+| `donation-thanks` | every completed checkout (one-time, first monthly charge) | `{first_name}` `{amount}` `{type}` `{date}` `{receipt}` | `{receipt}` — the amount/type/date table AND the 501(c)(4) not-tax-deductible line (`emails.js receiptHtml`) |
+
+`chooseEmail(trigger, id)` → `attachEmail` (or `detachEmail` for "Built-in
+email"). `attachEmail` renders the saved draft with the newsletter renderer
+(`renderEmail`, UTM campaign = the trigger key), refuses without a subject, a
+block or a required placeholder, and upserts `transactional_emails`
+(`trigger` PK, `newsletter_id`, frozen `subject/html/text`, `attached_by/_at`)
+— one live email per trigger; attaching another replaces it (audit
+`newsletter.attach`, `diff.replaced` = the previous id). **Frozen**: editing
+the draft changes nothing until it is attached again. Detach (audit
+`newsletter.detach`) or deleting the draft returns the trigger to the built-in
+body. The API (`transactionalTemplate`, SELECT on `transactional_emails`,
+5-minute container cache) fills the tokens with `fillHtml` (text values
+HTML-escaped, `{receipt}` raw, unknown tokens left as typed), swaps the
+renderer's `{{unsubscribe_url}}` for the signed link, and sends html + text.
+The petition email keeps its `List-Unsubscribe` headers either way; the
+donation email has none. A failed read logs `attached email lookup failed
+(<trigger>): <ErrorName>` and falls back to the built-in body. No two-person
+review on attach (docs/pending-questions.md 2026-10-09 #5).
+
+### Built-in bodies
+
+When nothing is chosen, the fixed bodies in `aws/api/emails.js` go out (the
+admin text fields `email_subject` / `email_body` / `thanks_email_*` that
+existed for a few hours on 2026-10-09 were removed — the composed email IS
+the way to change the wording). The petition job still reads
+`homepage.petition` (API role: `SELECT` on `homepage` + `projects`) for the
+headline and the project; it uses them only while `homepage.petition.slug`
+equals the slug signed, so signers of the live campaign never get a draft's
+headline. The lookup is cached per Lambda container for 5 minutes.
 
 ## SES infrastructure (UccProd stack, us-west-2)
 

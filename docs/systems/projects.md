@@ -47,7 +47,8 @@ js/projects.js                  unchanged client filter/sort over the cards
 apps/admin/lib/files.js         listProjects → tree order, { id, slug, name, parentSlug,
                                 path, url, label (indented), isSub, status }
 apps/admin/lib/projects.js      workspace(client, slug) (record, parent, children,
-                                documents + url, files, notes, folders), activity(),
+                                documents + url, files, notes, folders, press, petitions +
+                                activePetition — petition.md "Project"), activity(),
                                 noteUploadToMarkdown (.md verbatim, .docx via mammoth)
 apps/admin/lib/collections.js   COLLECTIONS.projects fields (+ parent_slug, summary)
 apps/admin/lib/collection-save.js  sanitizeItems keepIds for the nested spec; loadCollectionItems
@@ -110,6 +111,10 @@ of the page's own aliases is ignored (the address wins).
   (title, date, summary; DB render only — the git build has no index),
   **Files** (published project files by folder), **In the Press** / **On
   Television** (the press list's rows filed under the project, press.md), a foot nav (parent, all projects).
+  When the live petition is filed under this project (`homepage.petition.project_slug`),
+  a **petition card** (label, headline, body, Utah counter, sign button) sits between
+  the intro and "Parts of this project" — `derivePetitionProject` in site.js,
+  docs/systems/petition.md "Project"; `js/petition.js` is loaded for the counter.
   Head: title, tagline as description, canonical, OG; JSON-LD `@graph` of a
   `CollectionPage` (`isPartOf` the parent, `hasPart` children + documents) and
   a `BreadcrumbList`.

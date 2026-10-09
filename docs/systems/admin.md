@@ -10,6 +10,8 @@ Amplify Hosting at `admin.utahciviccompact.org` at rollout.
 apps/admin/
   middleware.js            cookieless requests → /login (verification is NOT here);
                            manifest + icons pass through for the install flow
+  next.config.js           security headers on every response (see "Security headers"),
+                           poweredByHeader off, Server Actions allowed from APP_ORIGIN
   app/layout.js            root layout: session → nav groups, Inter via next/font (class on
                            <body>), viewport/themeColor; signed-out = bare .login-only main
   app/globals.css          the whole admin stylesheet — design tokens copied from the live
@@ -54,9 +56,11 @@ apps/admin/
                            (resend invite before first sign-in), remove MFA,
                            sign out everywhere, remove access (delete)
   app/redirects            redirects table → CloudFront KeyValueStore on publish
-  app/mail, app/mail/[id]  Newsletters: block composer + phone/desktop light/dark preview,
-                           test send, two-person send request/approve, schedule
-                           (docs/systems/newsletters.md; lib/newsletters.js)
+  app/mail, app/mail/[id]  Outgoing emails: newsletters (block composer + phone/desktop light/dark
+                           preview, test send, two-person send request/approve, schedule —
+                           docs/systems/newsletters.md; lib/newsletters.js) and automatic emails
+                           (kind 'transactional': attached to a trigger, sent by the API —
+                           docs/systems/email.md "Attached emails"; lib/transactional.js)
   app/subscribers          Mailing list (editor+): everyone we hold with a status
                            (subscribed / unconfirmed / unsubscribed / suppressed), residency /
                            donor / petitions labels, per-person newsletter counts, status +
@@ -65,8 +69,9 @@ apps/admin/
                            query = packages/db/audience.js (shared with the sender) —
                            docs/systems/newsletters.md "Mailing list management"
   app/petition             Petition (editor+): campaign copy (homepage.petition group,
-                           page: 'petition'), signatures per slug, audited CSV export
-                           (docs/systems/petition.md)
+                           page: 'petition'; Project dropdown = widget 'project', thank-you
+                           email subject/body), filed-under line, signatures per slug
+                           (+ project), audited CSV export (docs/systems/petition.md)
   app/tips                 tipline inbox (editor+): list w/ status filter, [id] detail,
                            status change (audited tip.status), owner-only delete
                            (audited tip.delete, no snapshot) — docs/systems/tipline.md
@@ -120,7 +125,8 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Moved / retired URLs | Redirects (synced to the edge on publish) |
 | Publish (two-person rule), rollback, history | Publish & Status, Revisions, Audit Log |
 | Donors; the mailing list with audience controls (residency, donors, petition signers) + CSV; remove / restore / erase people on the list | Donations, Mailing list |
-| Newsletters: write, preview (phone, light/dark), test, request → approve → send (now or scheduled) | Mail → Newsletters (docs/systems/newsletters.md) |
+| Newsletters: write (blocks or a .docx/.md/.html import), site letterhead look, live audience count, preview (phone, light/dark), test, request → approve → send (now or scheduled) | Mail → Outgoing emails (docs/systems/newsletters.md) |
+| Automatic emails: compose the petition thank-you or the donation receipt as a newsletter under Outgoing emails, then CHOOSE it from the dropdown on the Petition page (after signing) or the Appeals page (after a donation); "Built-in email" returns to the fixed body | Mail → Outgoing emails + Petition / Appeals (docs/systems/email.md "Attached emails") |
 | Confidential tips: read, triage status, delete | Tips (editor+; delete is owner) |
 | Accounts, roles, MFA, security keys | Users (owners), My profile (everyone) |
 
@@ -182,6 +188,38 @@ operator fallback.
   `UccProdAdminCompute`/`admin-runtime` 2026-10-06; local profile has it).
 - CLI equivalent for the first owner: `node scripts/admin-user.mjs --env
   staging --email … --name "…" --group owner`.
+
+## Security headers (2026-10-09)
+
+Amplify Hosting adds no security headers of its own, so `next.config.js`
+`headers()` stamps every admin response (`/:path*`); `poweredByHeader: false`
+drops `x-powered-by: Next.js`. Values match the public site's CloudFront
+policy (`infra/cdk/lib/ucc-stack.js` SECURITY_HEADERS / PERMISSIONS_POLICY):
+
+| header | value |
+|---|---|
+| Strict-Transport-Security | `max-age=31536000; includeSubDomains; preload` |
+| Content-Security-Policy | `frame-ancestors 'none'; object-src 'none'; base-uri 'self'` |
+| X-Frame-Options | `DENY` |
+| X-Content-Type-Options | `nosniff` |
+| Referrer-Policy | `strict-origin-when-cross-origin` |
+| Permissions-Policy | `camera=(), microphone=(), geolocation=(), payment=(), usb=()` |
+| X-Robots-Tag | `noindex, nofollow` |
+
+The CSP is deliberately only the directives that need no allow-list
+(clickjacking, plugins, `<base>` hijack). **No `script-src` / `style-src`
+yet**: Next injects inline scripts into every page, so a real `script-src`
+needs a per-request nonce set in `middleware.js` and threaded through the
+layout, and the builder / composer / dev-notes pages render HTML with
+`dangerouslySetInnerHTML`. Do that as its own change, report-only first
+(`Content-Security-Policy-Report-Only`). The builder / style / block-gallery /
+email previews are `srcdoc` iframes: they inherit this policy, but
+`frame-ancestors` is checked only on a fetched navigation response, so an
+inherited `'none'` does not block them (verified 2026-10-09 in headless
+Chromium: srcdoc script ran under exactly this header). Only `/css`,
+`/assets`, `/media` are loaded from the site inside them.
+
+Verify after an Amplify deploy: `curl -sI https://admin.utahciviccompact.org/login`.
 
 ## Navigation & phone use — PWA (2026-10-05)
 

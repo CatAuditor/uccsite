@@ -99,6 +99,27 @@ function derivePetitionShare(content, siteUrl = SITE_URL) {
   return { ...content, homepage: { ...content.homepage, petition: { ...p, share, donate: petitionDonate(p) } } };
 }
 
+// Petition <-> project (docs/systems/petition.md "Project"): when the live
+// campaign names a project (petition.project_slug), /petition gets
+// `petition.project` ({ name, url }) for its "Part of ..." line and that
+// project's hub gets `petition` (the campaign group) so it can show the ask.
+// Runs AFTER deriveProjectTree (needs each project's url). Off (blank
+// headline), no project_slug, or an unknown slug -> content unchanged.
+function derivePetitionProject(content) {
+  const p = content.homepage && content.homepage.petition;
+  const projects = content.projects && content.projects.projects;
+  if (!p || !String(p.headline || '').trim() || !Array.isArray(projects)) return content;
+  const slug = String(p.project_slug || '').trim();
+  const project = slug && projects.find((x) => String(x.slug || '').trim() === slug);
+  if (!project) return content;
+  const derived = projects.map((x) => (x === project ? { ...x, petition: { ...p } } : x));
+  return {
+    ...content,
+    homepage: { ...content.homepage, petition: { ...p, project: { name: project.name, url: project.url } } },
+    projects: { ...content.projects, projects: derived, top_projects: derived.filter((x) => !x.is_sub) },
+  };
+}
+
 // Thank-you page payment modal (docs/systems/petition.md "Donation ask"), all
 // from the admin's Petition page. Amounts are typed as dollars ("5, 10, 25");
 // anything outside $1–$100,000 (the API's bounds) is dropped, at most six are
@@ -375,7 +396,7 @@ function buildSite({ templates, partials, content, lastmod, pages = PAGES, siteU
   if (errors.length) return { files: {}, errors };
 
   const colored = withColorClasses(content);
-  const teamed = deriveTeam(deriveProjectTree(deriveProjectFiles(deriveProjectFilters(derivePetitionShare(deriveHomepage(colored.content), siteUrl))), siteUrl), siteUrl);
+  const teamed = deriveTeam(derivePetitionProject(deriveProjectTree(deriveProjectFiles(deriveProjectFilters(derivePetitionShare(deriveHomepage(colored.content), siteUrl))), siteUrl)), siteUrl);
   const authors = authorIndex(teamed.team?.members || [], siteUrl);
   // Wrapped like every content file ({ statements: { statements: [...] } }): a
   // page's data merges each content object's keys, so the template reads writing.items.
@@ -424,5 +445,5 @@ ${pages.filter(p => p.sitemap !== false).map(p => {
 
 module.exports = {
   PAGES, MARKDOWN_FIELDS, SITE_URL, deriveHomepage, deriveProjectFilters, deriveProjectFiles, withColorClasses, buildSite, makeSitemap,
-  slugify, memberSlug, authorIndex, deriveTeam, expandPages, derivePetitionShare, petitionDonate,
+  slugify, memberSlug, authorIndex, deriveTeam, expandPages, derivePetitionShare, derivePetitionProject, petitionDonate,
 };

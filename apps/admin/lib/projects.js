@@ -5,7 +5,8 @@
 import mammoth from 'mammoth';
 import { listDocuments } from '@uccsite/db/documents';
 import { listNotes } from '@uccsite/db/project-notes';
-import { list } from '@uccsite/db/content';
+import { list, loadHomepage } from '@uccsite/db/content';
+import { utahZipSql } from '@uccsite/db/audience';
 import { documentUrl } from '@uccsite/render/projects';
 import { listFiles, listProjects } from './files';
 
@@ -50,6 +51,13 @@ export async function workspace(client, slug) {
   const files = (await listFiles(client)).filter(f => f.projectSlug === slug);
   const notes = await listNotes(client, { projectSlug: slug });
   const press = (await list(client, 'press')).filter(it => String(it.project_slug || '') === slug); // docs/systems/press.md
+  // Petitions filed here (docs/systems/petition.md "Project"): signature counts per
+  // campaign slug carrying this project, plus the live campaign when it is this project's.
+  const petitions = (await client.query(
+    `SELECT petition, count(*)::int AS n, count(*) FILTER (WHERE ${utahZipSql('zip')})::int AS utah, MAX(created_at)::text AS newest
+     FROM petition_signatures WHERE project_slug = $1 GROUP BY petition ORDER BY newest DESC`, [slug])).rows;
+  const campaign = (await loadHomepage(client)).petition || {};
+  const activePetition = campaign.headline && String(campaign.project_slug || '').trim() === slug ? campaign : null;
   const folderMap = new Map([['', { path: '', files: [], notes: [] }]]);
   const folder = (path) => {
     // every ancestor folder exists in the tree, even when empty
@@ -70,8 +78,8 @@ export async function workspace(client, slug) {
     f.name = f.path ? f.path.split('/').pop() : '';
   }
   return {
-    project, projects, parent, children, documents, files, notes, folders, press,
-    counts: { documents: documents.length, files: files.length, notes: notes.length, press: press.length, published: documents.filter(d => d.status === 'published').length },
+    project, projects, parent, children, documents, files, notes, folders, press, petitions, activePetition,
+    counts: { documents: documents.length, files: files.length, notes: notes.length, press: press.length, petitions: petitions.length, published: documents.filter(d => d.status === 'published').length },
   };
 }
 

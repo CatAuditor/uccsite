@@ -6,7 +6,7 @@
 //   INSERT OR IGNORE + changes → ON CONFLICT DO NOTHING RETURNING + rowCount
 //   datetime('now')            → now()
 
-async function handleWebhook({ event, db, secrets, rawBody }) {
+async function handleWebhook({ event, db, secrets, rawBody, origin, selfInvoke }) {
   const sig = event.headers?.['stripe-signature'];
 
   let stripeEvent;
@@ -34,7 +34,7 @@ async function handleWebhook({ event, db, secrets, rawBody }) {
   try {
     switch (stripeEvent.type) {
       case 'checkout.session.completed':
-        await handleCheckoutComplete(stripeEvent.data.object, db);
+        await handleCheckoutComplete(stripeEvent.data.object, db, { origin, selfInvoke });
         break;
       case 'invoice.paid':
         await handleInvoicePaid(stripeEvent.data.object, db);
@@ -89,7 +89,7 @@ async function upsertMember(db, { customerId, email, firstName, lastName, zip, n
   );
 }
 
-async function handleCheckoutComplete(session, db) {
+async function handleCheckoutComplete(session, db, { origin, selfInvoke } = {}) {
   const customerId = session.customer;
   const email = session.customer_email || session.customer_details?.email;
   const { firstName, lastName, zip, newsletterOptIn, publicDonor } = session.metadata || {};
@@ -111,6 +111,22 @@ async function handleCheckoutComplete(session, db) {
       amountCents: session.amount_total,
       publicDonor,
     });
+  }
+
+  // Donation thank-you / receipt (docs/systems/email.md), once per checkout:
+  // processed_events already dedupes Stripe's redeliveries, and the send runs
+  // in an async self-invocation so a slow SES call never holds the webhook.
+  // Renewals (invoice.paid) get nothing — not a donor action. A failed
+  // dispatch is logged, never a 500: Stripe would retry the whole event.
+  if (email && selfInvoke && session.amount_total > 0) {
+    try {
+      await selfInvoke({
+        job: 'donation-thanks', email, firstName: firstName || '', amountCents: session.amount_total,
+        recurring: session.mode === 'subscription', origin,
+      });
+    } catch (err) {
+      console.error('[api] donation thanks dispatch failed:', err?.message);
+    }
   }
 }
 
