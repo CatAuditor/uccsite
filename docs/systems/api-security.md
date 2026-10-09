@@ -105,8 +105,17 @@ Requires `STRIPE_SECRET_KEY`, `TOKEN_SECRET` (Cloudflare stack also `RESEND_API_
   `_headers` file keeps `unsafe-inline` until cutover; a git-source publish to
   AWS would render the old inline styles, which the AWS CSP now blocks — publish
   AWS from the database (`--source db`).
-- `/admin/*`: relaxed CSP (Decap needs `unsafe-inline`/`unsafe-eval`), `X-Robots-Tag: noindex`, `Cache-Control: no-store`.
+- `/admin/*` on the site no longer has its own policy: the Decap shell is gone
+  (2026-09-23) and the path serves the site policy and 404s. The real admin
+  (`admin.utahciviccompact.org`, Amplify) sets its own headers in
+  `apps/admin/next.config.js` — docs/systems/admin.md "Security headers".
 - `X-Frame-Options: DENY` matches `frame-ancestors 'none'`; `object-src 'none'`.
+- **`/api/*` (AWS, 2026-10-09)**: the Lambda stamps `X-Content-Type-Options`,
+  `Referrer-Policy`, `X-Robots-Tag: noindex` and `Cache-Control: no-store`
+  (`aws/api/index.mjs stampHeaders`); CloudFront adds HSTS through the
+  `ApiHeaders` response headers policy on the `/api/*` behavior (the host-level
+  header a route handler should not own). No CSP / X-Frame-Options on API
+  responses — they are JSON, never rendered.
 
 ## Secrets / vars (Cloudflare Pages)
 See the comment block in `wrangler.toml` for the full inventory: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `AIRTABLE_TOKEN`, `RESEND_API_KEY`, `TOKEN_SECRET` (secrets). The AWS stack (`aws/api/secrets.js`) has no `AIRTABLE_TOKEN` — tips go to DSQL. Missing `TOKEN_SECRET` → portal returns 503, unsubscribe links fall back to the homepage. (`DONATION_GOAL_CENTS` removed 2026-09-12 — no total/goal in the stats endpoint.)

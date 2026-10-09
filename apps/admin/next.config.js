@@ -4,8 +4,28 @@
 // value Cognito redirects use) is explicitly allowed.
 const appOrigin = process.env.APP_ORIGIN || 'http://localhost:3000';
 
+// Security headers on every admin response (docs/systems/admin.md "Security
+// headers"). Amplify Hosting adds none of its own, so without this the admin
+// shipped bare (no HSTS, framable). The CSP is deliberately minimal — the
+// clickjacking/injection directives that need no allow-list. A full
+// script-src needs per-request nonces (Next injects inline scripts) and is
+// a separate change.
+const SECURITY_HEADERS = [
+  { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' },
+  { key: 'Content-Security-Policy', value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'" },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()' },
+  { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+];
+
 /** @type {import('next').NextConfig} */
 module.exports = {
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: '/:path*', headers: SECURITY_HEADERS }];
+  },
   // The builder's client components import the block registry
   // (packages/doc-blocks/schema.js, an ES module) into the browser bundle.
   transpilePackages: ['@uccsite/doc-blocks'],

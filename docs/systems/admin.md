@@ -10,6 +10,8 @@ Amplify Hosting at `admin.utahciviccompact.org` at rollout.
 apps/admin/
   middleware.js            cookieless requests → /login (verification is NOT here);
                            manifest + icons pass through for the install flow
+  next.config.js           security headers on every response (see "Security headers"),
+                           poweredByHeader off, Server Actions allowed from APP_ORIGIN
   app/layout.js            root layout: session → nav groups, Inter via next/font (class on
                            <body>), viewport/themeColor; signed-out = bare .login-only main
   app/globals.css          the whole admin stylesheet — design tokens copied from the live
@@ -186,6 +188,38 @@ operator fallback.
   `UccProdAdminCompute`/`admin-runtime` 2026-10-06; local profile has it).
 - CLI equivalent for the first owner: `node scripts/admin-user.mjs --env
   staging --email … --name "…" --group owner`.
+
+## Security headers (2026-10-09)
+
+Amplify Hosting adds no security headers of its own, so `next.config.js`
+`headers()` stamps every admin response (`/:path*`); `poweredByHeader: false`
+drops `x-powered-by: Next.js`. Values match the public site's CloudFront
+policy (`infra/cdk/lib/ucc-stack.js` SECURITY_HEADERS / PERMISSIONS_POLICY):
+
+| header | value |
+|---|---|
+| Strict-Transport-Security | `max-age=31536000; includeSubDomains; preload` |
+| Content-Security-Policy | `frame-ancestors 'none'; object-src 'none'; base-uri 'self'` |
+| X-Frame-Options | `DENY` |
+| X-Content-Type-Options | `nosniff` |
+| Referrer-Policy | `strict-origin-when-cross-origin` |
+| Permissions-Policy | `camera=(), microphone=(), geolocation=(), payment=(), usb=()` |
+| X-Robots-Tag | `noindex, nofollow` |
+
+The CSP is deliberately only the directives that need no allow-list
+(clickjacking, plugins, `<base>` hijack). **No `script-src` / `style-src`
+yet**: Next injects inline scripts into every page, so a real `script-src`
+needs a per-request nonce set in `middleware.js` and threaded through the
+layout, and the builder / composer / dev-notes pages render HTML with
+`dangerouslySetInnerHTML`. Do that as its own change, report-only first
+(`Content-Security-Policy-Report-Only`). The builder / style / block-gallery /
+email previews are `srcdoc` iframes: they inherit this policy, but
+`frame-ancestors` is checked only on a fetched navigation response, so an
+inherited `'none'` does not block them (verified 2026-10-09 in headless
+Chromium: srcdoc script ran under exactly this header). Only `/css`,
+`/assets`, `/media` are loaded from the site inside them.
+
+Verify after an Amplify deploy: `curl -sI https://admin.utahciviccompact.org/login`.
 
 ## Navigation & phone use — PWA (2026-10-05)
 

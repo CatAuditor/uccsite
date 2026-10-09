@@ -6,6 +6,28 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-09 — Admin pages now carry the same browser security headers as the site
+
+**What changed**
+
+- Every admin page (admin.utahciviccompact.org) now sends the standard set of
+  browser security headers: force HTTPS, refuse to be shown inside another
+  site's frame (the clickjacking defence), no plugin content, no sniffing of
+  file types, a tight referrer policy, camera/microphone/location/payment
+  off, and "do not index". The public site already had all of these; the
+  admin had none, and also announced the framework it runs on.
+- The site's `/api/...` responses now also carry the force-HTTPS header.
+- A full script allow-list for the admin (the last piece the public site has
+  and the admin does not) is a later change — it needs per-page one-time
+  tokens because of how the admin's framework works.
+
+**What editors do differently**: nothing. If an admin page ever shows blank
+or a button stops working right after this, say so — that would be the new
+headers, and they can be relaxed in minutes.
+
+**Unfinished**: admin script allow-list (see above). Technical detail:
+docs/systems/admin.md "Security headers", docs/systems/api-security.md.
+
 ## 2026-10-09 — Design the automatic emails yourself; "Outgoing emails" tab
 
 **What changed**
