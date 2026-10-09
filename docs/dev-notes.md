@@ -68,9 +68,16 @@ the three ways to hand back a piece and the small markers a writing tool
 can put in a Markdown file so a quotation, a scope box, key figures or a
 table arrive as the right block, already styled.
 
-Needs a person: production still has to get the new column and the same
-conversion run, then a publish (docs/for-conner.md, section 13). Until
-then, builder documents exist on the test site only.
+The statement "Your license plate has a price" was never styled like the
+reports, so it is the one page meant to change: it was copied from
+production to the test site and rebuilt on the site's standard document
+frame (badge, date and author strip, contents box, the reports' headings)
+with its words untouched. Review it in the test admin's builder; the same
+rebuild runs on production as part of the conversion there.
+
+Needs a person: production still has the column but not the conversion or a
+publish (docs/for-conner.md, section 13). Until then, builder documents
+exist on the test site only.
 ## 2026-10-08 — Officials lookup joins the mailing list
 
 The officials lookup (lookup.utahciviccompact.org) has a "Send me the Utah

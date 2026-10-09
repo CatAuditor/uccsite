@@ -33,6 +33,10 @@ packages/doc-blocks/              ES module (the admin's client bundle imports s
                                   legacy document (docs/migration/documents/*.document.json)
 scripts/blocks-roundtrip.mjs      the same round-trip as a report: raw-block counts,
                                   first text/tag difference, --html <dir> dumps blocks + HTML
+scripts/convert-documents-to-blocks.mjs  DB conversion + pixel proof (see "Legacy conversion")
+scripts/copy-document.mjs         copy one document between environments as a builder document
+                                  (--standard-frame drops its own frame; --overwrite; --status);
+                                  prints the word check (source words missing from the result)
 packages/db/content-schema.js     ALTER documents ADD body_blocks TEXT (JSON; NULL = legacy)
 packages/db/documents.js          body_blocks in DOCUMENT_FIELDS / JSON_COLS (so revisions,
                                   exports and restores carry it)
