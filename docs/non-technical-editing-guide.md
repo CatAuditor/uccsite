@@ -211,12 +211,21 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
   "By project" line filters the list, and the Projects page links to each
   project's documents and files.
 
+### Financial
+- **Donations** — every donation with donor contact info, whether it was a
+  one-time gift or a monthly payment, and whether the donor's monthly plan
+  is still active. Filter by when, amount, Utah or not, type, plan state,
+  ticker, or search a name or email; the figures at the top describe
+  everything that matches. Personal data: don't paste it anywhere public.
+- **Costs** — what running the site costs: the AWS bill by service and
+  month, what Stripe took in, kept and paid out, the active monthly plans,
+  and the services that cost nothing. Read-only; refreshes when opened.
+
 ### Operations
 - **Redirects** — when a page moves or is retired, send the old address to
   the new one. Takes effect with the next approved publish (section 2).
-- **Donations** — every donation with donor contact info. **Subscribers** —
-  newsletter list, with a CSV download for the periodical. Both are
-  personal data: don't paste them anywhere public.
+- **Subscribers** (Mail → Mailing list) — newsletter list, with a CSV
+  download for the periodical. Personal data: don't paste it anywhere public.
 - **Tips** — confidential tipline submissions. Open one to read it and mark
   it *In review* or *Closed*; owners can delete a tip. Nobody can edit what
   the tipster wrote. Never copy tip contents out of the admin.
