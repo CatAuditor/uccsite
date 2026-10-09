@@ -4,6 +4,8 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.25.2 — 2026-10-09 (branch `refactor`) — Changelog correction (live counts after the re-run)
+
 ## v0.25.1 — 2026-10-09 (branch `refactor`) — Press live on prod; video-wins merge; migration re-runs from its snapshot
 
 - `unifyPress`: an article card whose link is a YouTube page keys on the video id (`youtubeIdFromUrl`), and a story that is
@@ -11,8 +13,8 @@ of each push.
 - `migrate-press.mjs`: when the legacy tables are already empty it rebuilds from the `press-legacy/collection`
   revision, so a merge-rule fix can be re-applied (`--apply --force`).
 - Prod: schema, migration (36 → 17 rows), `cdk deploy UccStaging UccProd` (publish Lambdas carry derivePress),
-  published twice (5 then 3 changed). Live: News 12 articles + 5 videos, 3 homepage cards unchanged, hubs and strips
-  intact. Staging re-run (32 → 13) and republished. Amplify admin build from this push: see next entry if any.
+  published twice (5 then 3 changed). Live: News 11 articles + 6 videos, 3 homepage cards unchanged, ALPR hub 4 + 1 video,
+  its strip 4, Stratos 5 + 2. Staging re-run (32 → 13) and republished. Amplify admin build from this push: see next entry if any.
 - Note for editors: the four September stories on prod carry no project yet (they came from News & Media only) —
   set Project on Press & coverage to file them under the license-plate investigation.
 - Open P1: none.
