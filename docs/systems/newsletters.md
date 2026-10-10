@@ -313,7 +313,7 @@ panel):
 | `residency` | `all` · `utah` · `outside` · `unknown` | best ZIP we hold (84xxx = Utah) |
 | `zip` | 1–5 digits | best ZIP starts with (e.g. `841` = Salt Lake area) |
 | `giving` | `any` · `monthly` · `onetime` · `none` | `any` = ≥1 donation or live subscription (same as the old `donors` tick box, still honoured); `monthly` = live subscription; `onetime` = donor without one; `none` = not a donor |
-| `via` | `subscriber` · `member` | join form / petition row, or donation-checkout opt-in with no subscribers row |
+| `via` | `join` · `petition` · `member` (· `subscriber` = join or petition, older saved filters) | how the person first reached us: the join form; a petition signature (a signature within 5 minutes of the subscribers row's `created_at` — both are written by the same request; signing later leaves a join-form row as `join`); donation-checkout opt-in with no subscribers row |
 | `petition` | slug · `any` · `none` | signed that petition / any / none at all |
 | `not_petition` | slug · `any` | **EXCLUDE** signers of that petition (or of anything) |
 | `history` | `never` · `reached` | a `sent` row in `newsletter_deliveries` or not (see below) |

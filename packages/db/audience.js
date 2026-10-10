@@ -52,9 +52,16 @@ const HISTORIES = ['never', 'reached'];
 // giving: any = a donor (≥1 donation or a live subscription — same as `donor`);
 // monthly = a live subscription; onetime = donor without one; none = not a donor.
 const GIVINGS = ['any', 'monthly', 'onetime', 'none'];
-// via: how we hold the person — 'subscriber' (join form / petition) or
-// 'member' (donation checkout opt-in with no subscribers row).
-const VIAS = ['subscriber', 'member'];
+// via: how the person first reached us — 'join' (the join form), 'petition'
+// (a signature created the row: a signature within 5 minutes of the
+// subscribers row's created_at — both are written in the same request;
+// signing later does not change a join-form row's via), or 'member'
+// (donation checkout opt-in with no subscribers row). 'subscriber' = join OR
+// petition, kept so filters saved before 2026-10-10 still apply.
+const VIAS = ['join', 'petition', 'member', 'subscriber'];
+const VIA_SQL = `CASE WHEN EXISTS (SELECT 1 FROM petition_signatures ps3 WHERE ps3.email = s.email
+                   AND ps3.created_at BETWEEN s.created_at - interval '5 minutes' AND s.created_at + interval '5 minutes')
+                 THEN 'petition' ELSE 'join' END`;
 // petition: a slug, or 'any' (signed something) / 'none' (signed nothing).
 const PETITION_SPECIALS = ['any', 'none'];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -100,7 +107,7 @@ function peopleRowsSql(everyone) {
            FROM petition_signatures ps WHERE ps.email = p.email
          ), '') AS petitions${extra}
   FROM (
-    SELECT s.email, s.first_name, s.last_name, s.address, s.zip, s.created_at, 'subscriber' AS via,
+    SELECT s.email, s.first_name, s.last_name, s.address, s.zip, s.created_at, ${VIA_SQL} AS via,
            s.confirmed_at, s.unsubscribed_at, s.unsubscribed_by
     FROM subscribers s${subscriberWhere}
     UNION ALL
@@ -190,7 +197,8 @@ function audienceWhere(f, params) {
   }
   if (f.history === 'never') where.push(`NOT ${REACHED_SQL('a.email')}`);
   if (f.history === 'reached') where.push(REACHED_SQL('a.email'));
-  if (f.via) { params.push(f.via); where.push(`a.via = $${params.length}`); }
+  if (f.via === 'subscriber') where.push(`a.via IN ('join', 'petition')`);
+  else if (f.via) { params.push(f.via); where.push(`a.via = $${params.length}`); }
   if (f.joined_after) { params.push(f.joined_after); where.push(`a.created_at::timestamptz >= $${params.length}::date`); }
   if (f.joined_before) { params.push(f.joined_before); where.push(`a.created_at::timestamptz < $${params.length}::date + 1`); }
   if (f.zip) { params.push(`${f.zip}%`); where.push(`a.best_zip LIKE $${params.length}`); }
@@ -279,6 +287,8 @@ function describeFilters(filters) {
   if (f.not_list) parts.push('not on a saved list');
   if (f.history === 'never') parts.push('never received a newsletter');
   if (f.history === 'reached') parts.push('received a newsletter before');
+  if (f.via === 'join') parts.push('via the join form');
+  if (f.via === 'petition') parts.push('via a petition');
   if (f.via === 'subscriber') parts.push('via join form / petition');
   if (f.via === 'member') parts.push('via donation checkout');
   if (f.joined_after) parts.push(`joined ${f.joined_after} or later`);

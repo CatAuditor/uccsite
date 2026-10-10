@@ -13,7 +13,7 @@ import { RESIDENCIES, HISTORIES, GIVINGS } from '@uccsite/db/audience';
 const RESIDENCY_LABEL = { all: 'everyone', utah: 'Utah residents', outside: 'outside Utah', unknown: 'ZIP unknown' };
 const HISTORY_LABEL = { all: 'anyone', never: 'never received a newsletter', reached: 'received a newsletter before' };
 const GIVING_LABEL = { '': 'anyone', any: 'donors (any gift)', monthly: 'monthly members', onetime: 'one-time donors only', none: 'non-donors' };
-const VIA_LABEL = { '': 'any way', subscriber: 'join form / petition', member: 'donation checkout' };
+const VIA_LABEL = { '': 'any way', join: 'the join form', petition: 'signing a petition', member: 'donation checkout' };
 
 export default function AudienceFilters({ f, petitions = [], lists = [], prefix = 'af', disabled = false, onChange }) {
   const id = (k) => `${prefix}-${k}`;
@@ -32,7 +32,7 @@ export default function AudienceFilters({ f, petitions = [], lists = [], prefix 
           <input id={id('zip')} name="zip" defaultValue={f.zip || ''} onChange={change} disabled={disabled} inputMode="numeric" pattern="[0-9]{1,5}" maxLength={5} placeholder="841" size={6} />
         </label>
         <label htmlFor={id('giving')}>Giving{sel('giving', f.giving || (f.donors ? 'any' : ''), ['', ...GIVINGS].map((g) => [g, GIVING_LABEL[g]]))}</label>
-        <label htmlFor={id('via')}>Joined via{sel('via', f.via || '', Object.entries(VIA_LABEL))}</label>
+        <label htmlFor={id('via')}>Joined via{sel('via', f.via || '', [...Object.entries(VIA_LABEL), ...(f.via === 'subscriber' ? [['subscriber', 'join form or petition (older filter)']] : [])])}</label>
       </div>
       <div className="mail-row">
         <label htmlFor={id('petition')}>Signed{sel('petition', f.petition || '', [['', 'no filter'], ['any', 'any petition'], ['none', 'no petition at all'], ...petitions.map((p) => [p, p])])}</label>

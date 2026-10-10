@@ -47,8 +47,15 @@ test('the 2026-10-10 filters bind their values and read back', () => {
   assert.match(q.sql, /nd2\.at >= \$5::date/);
   assert.match(audienceQuery({ giving: 'none' }).sql, /WHERE NOT a\.donor/);
   assert.match(audienceQuery({ petition: 'none' }).sql, /a\.petitions = ''/);
-  assert.equal(describeFilters({ giving: 'monthly', petition: 'none', via: 'subscriber', joined_after: '2026-01-01', zip: '841', last_sent_before: '2026-09-01' }),
-    'monthly members · signed no petition · via join form / petition · joined 2026-01-01 or later · ZIP starts 841 · not emailed since 2026-09-01');
+  assert.equal(describeFilters({ giving: 'monthly', petition: 'none', via: 'join', joined_after: '2026-01-01', zip: '841', last_sent_before: '2026-09-01' }),
+    'monthly members · signed no petition · via the join form · joined 2026-01-01 or later · ZIP starts 841 · not emailed since 2026-09-01');
+  // via: the row set labels join-form rows apart from petition-created ones; the old 'subscriber' value covers both
+  assert.match(AUDIENCE_ROWS_SQL, /ps3\.created_at BETWEEN s\.created_at - interval '5 minutes'/);
+  assert.match(AUDIENCE_ROWS_SQL, /THEN 'petition' ELSE 'join' END AS via/);
+  assert.deepEqual(audienceQuery({ via: 'petition' }, { columns: 'a.email' }).params, ['petition']);
+  const legacy = audienceQuery({ via: 'subscriber' }, { columns: 'a.email' });
+  assert.deepEqual(legacy.params, []);
+  assert.match(legacy.sql, /a\.via IN \('join', 'petition'\)/);
   assert.equal(describeFilters({ donors: true }), describeFilters({ giving: 'any' }));
   // dynamic list: filters OR the people added by hand; no filters → everyone already
   const id = '2b9d3f6a-0000-4000-8000-000000000001';

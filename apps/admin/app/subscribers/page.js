@@ -121,7 +121,7 @@ export default async function SubscribersPage({ searchParams }) {
                 <td>{r.zip || '—'}<div className="hint">{r.residency}</div></td>
                 <td>{r.donor ? 'donor' : ''}</td>
                 <td>{r.petitions || ''}</td>
-                <td>{r.via === 'member' ? 'donation checkout' : 'join form / petition'}</td>
+                <td>{r.via === 'member' ? 'donation checkout' : r.via === 'petition' ? 'petition' : 'join form'}</td>
                 <td>{day(r.created_at)}</td>
                 <td>
                   {r.sent_count ? <>{r.sent_count} sent<div className="hint">last {day(r.last_sent_at)}</div></> : <span className="hint">none yet</span>}

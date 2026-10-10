@@ -71,8 +71,10 @@ Nothing.
 - **More filters, same controls everywhere** (later the same evening):
   residency, **ZIP starts with**, **giving** (donors / monthly members /
   one-time only / non-donors — replaces the "donors only" tick box, which
-  still works on old drafts), **joined via** (join form & petitions, or
-  donation checkout), **joined on or after / on or before** a date,
+  still works on old drafts), **joined via** (the join form, signing a
+  petition, or donation checkout — three separate choices; "via a petition"
+  means the signature is what put them on the list), **joined on or after /
+  on or before** a date,
   **signed** a petition (a specific one, any, or none), **did NOT sign** a
   petition (filter people OUT), newsletter history, **not emailed since** a
   date, and **not on** another saved list (e.g. everyone except the people

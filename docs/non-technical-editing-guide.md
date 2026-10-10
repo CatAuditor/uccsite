@@ -244,7 +244,8 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
   the mailing list and still subscribed are mailed. Pick a list in the
   composer's **Send to** box.
 - **Filters** (same controls everywhere): residency, ZIP starts with, giving
-  (donors / monthly members / one-time / non-donors), joined via, joined
+  (donors / monthly members / one-time / non-donors), joined via (the join
+  form, signing a petition, or donation checkout), joined
   on-or-after / on-or-before, signed a petition, **did NOT sign** a petition,
   newsletter history, not emailed since a date, and **not on** another saved
   list (e.g. everyone except the people a mailing already went to).
