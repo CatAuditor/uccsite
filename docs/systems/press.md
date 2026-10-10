@@ -97,3 +97,13 @@ render on publish (`unknown coverage key`). To see placements:
 - A story under two projects (one `project_slug`).
 - Dropping the six legacy tables (DDL kept; rows gone).
 - Editing press from inside the project workspace (link to `/press`).
+
+## Publishing
+
+A save on Press & coverage records `press.save` (entityType `press`). That
+action is matched by `CONTENT_ACTION_RE` in `packages/db/publish-requests.js`
+(added 2026-10-10 — before that, "Request publish" after a story save said
+"Nothing to publish" and the dashboard listed nothing unpublished; see
+`docs/error-handling/client-side-error/2026-10-10-press-save-nothing-to-publish.md`).
+The "What will change" list links it to `/press` (`ADMIN_PAGE` in
+`apps/admin/lib/change-detail.js`).

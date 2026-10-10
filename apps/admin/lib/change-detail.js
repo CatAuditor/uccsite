@@ -15,7 +15,7 @@ import { diffFields, diffList, diffNavigation, diffDocument } from './change-det
 
 const ADMIN_PAGE = {
   team: '/team', statements: '/statements', issues: '/issues', 'blog-articles': '/blog', 'blog-videos': '/blog',
-  projects: '/projects', 'coverage-alpr': '/coverage', 'coverage-stratos': '/coverage',
+  projects: '/projects', press: '/press', 'coverage-alpr': '/coverage', 'coverage-stratos': '/coverage',
 };
 const SECTION_PAGE = {
   Homepage: '/homepage', Petitions: '/petitions', 'Donation appeals': '/appeals',

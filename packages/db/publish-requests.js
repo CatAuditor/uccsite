@@ -45,7 +45,7 @@ const rowToRequest = (r) => ({
 // petitions/actions.js `petition.create|save|delete`, appeals/page.js `appeals.save`). A save whose
 // action is missing here is INVISIBLE to publishing: never "unpublished", and
 // "Request publish" says there is nothing to publish (2026-10-05 petition bug).
-const CONTENT_ACTION_RE = /^(settings|homepage|team|statements|issues|blog|blog-[a-z]+|projects|coverage|coverage-[a-z]+|document|media|redirect|style_rule|foreign_class)\.|^petition\.(create|save|delete)$|^appeals\.save$/;
+const CONTENT_ACTION_RE = /^(settings|homepage|team|statements|issues|blog|blog-[a-z]+|projects|press|coverage|coverage-[a-z]+|document|media|redirect|style_rule|foreign_class)\.|^petition\.(create|save|delete)$|^appeals\.save$/;
 
 // changesSince(client, sinceIso|null) → [{ actor, action, entityType, entityId, at }]
 async function changesSince(client, sinceIso) {

@@ -422,7 +422,9 @@ No post or update goes live on one person's say-so. `lib/publish.js` +
    `seenThrough` check above guarantees the list was complete).
 
 "Unpublished" = content audit rows (`CONTENT_ACTION_RE` in
-`packages/db/publish-requests.js` — every `<collection>.save`, document, media,
+`packages/db/publish-requests.js` — every `<collection>.save` (team, statements,
+issues, projects, press — `press` was missing until 2026-10-10, so a story save
+answered "Nothing to publish"), document, media,
 redirect, style actions, `.restore`, plus `petition.create|save|delete` and
 `appeals.save`; a new save action MUST be added there or it never counts,
 test `packages/db/test/publish-requests.test.mjs`) after the `started_at` of the newest

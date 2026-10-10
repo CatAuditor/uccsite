@@ -9,7 +9,7 @@ const { CONTENT_ACTION_RE } = require('../publish-requests.js');
 // after a real save (petition.save, 2026-10-05).
 test('every content save action counts for publishing', () => {
   for (const a of ['settings.save', 'homepage.save', 'team.save', 'statements.save', 'issues.save', 'blog.save',
-    'blog-articles.save', 'projects.save', 'coverage.save', 'coverage-strips.save', 'document.save', 'document.create',
+    'blog-articles.save', 'projects.save', 'press.save', 'coverage.save', 'coverage-strips.save', 'document.save', 'document.create',
     'document.override', 'media.alt', 'media.delete', 'redirect.save', 'redirect.delete', 'style_rule.create',
     'foreign_class.map', 'petition.save', 'appeals.save', 'homepage.restore', 'team.restore']) {
     assert.ok(CONTENT_ACTION_RE.test(a), `${a} should count as content`);

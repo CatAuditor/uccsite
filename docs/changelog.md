@@ -4,6 +4,25 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.28.4 — 2026-10-10 — Press saves count for publishing; saved mailing lists
+
+**Publishing**
+- `CONTENT_ACTION_RE` (`packages/db/publish-requests.js`) now matches `press.*`:
+  a Press & coverage save was recorded (`press.save`) but never counted as
+  unpublished, so "Request publish" refused with "Nothing to publish" and the
+  dashboard showed nothing to approve. Test covers `press.save`.
+- "What will change" links press changes to `/press` (`ADMIN_PAGE`,
+  `apps/admin/lib/change-detail.js`).
+- Prod published by hand (`scripts/publish.mjs --env prod --source db`, 5 changed)
+  so tonight's story is live without waiting for the admin redeploy.
+- Error log: `docs/error-handling/client-side-error/2026-10-10-press-save-nothing-to-publish.md`.
+
+**Newsletters (commit 9b41024, same push)**
+- Saved mailing lists (dynamic / frozen) with a newsletter-history filter;
+  recipient name placeholders. See `docs/systems/newsletters.md` "Saved lists".
+
+Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
+
 ## v0.28.3 — 2026-10-10 — Project rename cascades coverage tokens
 
 - **Projects / publish**: `replaceProjects` (`packages/db/content.js`) now rewrites `{{coverage:<old slug>}}` →

@@ -6,6 +6,31 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-10 — News & Media stories could be saved but not published
+
+**What changed**
+
+Saving a new story on Press & coverage worked (it landed in the database), but
+pressing "Request publish" afterwards answered "Nothing to publish — no saves
+since the site last went live", and Publish & Status listed nothing
+unpublished. The publishing gate keeps a list of which kinds of saves count as
+site content, and the new Press & coverage list (introduced on 2026-10-09) had
+not been added to it. It is now on the list, with a test so it cannot drop off
+again.
+
+The story added tonight (Utah News Dispatch, "Utah group says there's a faster
+way to block Flock") was published by hand straight away, so it is live on
+News & Media, the ALPR project page and the homepage.
+
+**What editors do differently**
+
+Nothing. Save, then Request publish, as before. The fix is live once the admin
+redeploys (a few minutes after the push).
+
+**Left to do**
+
+Nothing.
+
 ## 2026-10-10 — Saved lists for the mailing list, and newsletters that greet each reader by name
 
 **What changed**
