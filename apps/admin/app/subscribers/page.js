@@ -12,7 +12,8 @@
 // always describe the recipients. Editor+ only — contact PII like /donations.
 // Actions (remove / restore / erase) live in ./actions.js — docs/systems/
 // newsletters.md "Mailing list management".
-import { audienceQuery, directoryQuery, normalizeDirectoryFilters, describeFilters, RESIDENCIES, STATUSES } from '@uccsite/db/audience';
+import Link from 'next/link';
+import { audienceQuery, directoryQuery, normalizeDirectoryFilters, describeFilters, RESIDENCIES, STATUSES, HISTORIES } from '@uccsite/db/audience';
 import { requireRole } from '../../lib/auth';
 import { withDb } from '../../lib/data';
 import { latestEvents, suppressionFor } from '@uccsite/db/email-events';
@@ -24,6 +25,7 @@ export const dynamic = 'force-dynamic';
 const LIST_LIMIT = 500;
 const RESIDENCY_LABEL = { utah: 'Utah residents', outside: 'outside Utah', unknown: 'ZIP unknown' };
 const STATUS_LABEL = { subscribed: 'Subscribed', unconfirmed: 'Not confirmed yet', unsubscribed: 'Unsubscribed', suppressed: 'Bounced / complained' };
+const HISTORY_LABEL = { never: 'never received a newsletter', reached: 'received a newsletter before' };
 const day = (ts) => (ts ? ts.slice(0, 10) : '');
 
 export default async function SubscribersPage({ searchParams }) {
@@ -31,7 +33,7 @@ export default async function SubscribersPage({ searchParams }) {
   const sp = await searchParams;
   const pick = (k) => (typeof sp?.[k] === 'string' ? sp[k] : '');
   const filters = normalizeDirectoryFilters({
-    residency: pick('residency') || 'all', donors: sp?.donors, petition: pick('petition'), status: pick('status') || 'subscribed', q: pick('q'),
+    residency: pick('residency') || 'all', donors: sp?.donors, petition: pick('petition'), history: pick('history'), status: pick('status') || 'subscribed', q: pick('q'),
   });
   const { rows, matching, recipients, byStatus, byResidency, petitions, events, suppression } = await withDb(async (client) => {
     const list = directoryQuery(filters, { limit: LIST_LIMIT, deliveries: true });
@@ -88,6 +90,11 @@ export default async function SubscribersPage({ searchParams }) {
           <option value="">any / none</option>
           {petitions.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
+        <label htmlFor="history">Newsletter history</label>
+        <select id="history" name="history" defaultValue={filters.history}>
+          <option value="all">anyone</option>
+          {HISTORIES.map(h => <option key={h} value={h}>{HISTORY_LABEL[h]}</option>)}
+        </select>
         <label htmlFor="donors"><input type="checkbox" id="donors" name="donors" value="1" defaultChecked={filters.donors} /> donors only</label>
         <input type="search" name="q" placeholder="Search email or name" defaultValue={filters.q} aria-label="Search email or name" />
         <button type="submit">Apply</button>
@@ -101,8 +108,14 @@ export default async function SubscribersPage({ searchParams }) {
         <input type="hidden" name="residency" value={filters.residency} />
         <input type="hidden" name="donors" value={filters.donors ? '1' : ''} />
         <input type="hidden" name="petition" value={filters.petition} />
+        <input type="hidden" name="history" value={filters.history} />
         <button type="submit">Download CSV — {describeFilters(filters)} ({recipients} rows)</button>
       </form>
+      <p className="hint">
+        <Link href={`/lists?${new URLSearchParams({ residency: filters.residency, donors: filters.donors ? '1' : '', petition: filters.petition, history: filters.history })}`}>Save these filters as a list</Link>
+        {' '}— a named audience the composer can send to, frozen as of today or kept dynamic. &ldquo;Newsletter history&rdquo; is
+        read from the admin&rsquo;s send ledger (sends since October 5, 2026).
+      </p>
 
       <table>
         <thead><tr><th>Email</th><th>Name</th><th>Status</th><th>ZIP</th><th>Donor</th><th>Petitions</th><th>Via</th><th>Joined</th><th>Newsletters</th><th></th></tr></thead>

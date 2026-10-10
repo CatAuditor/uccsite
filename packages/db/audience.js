@@ -44,6 +44,12 @@ function utahZipSql(expr) {
 
 const RESIDENCIES = ['utah', 'outside', 'unknown'];
 const STATUSES = ['subscribed', 'unconfirmed', 'unsubscribed', 'suppressed'];
+// history: has the admin's sender (newsletter_deliveries, status 'sent')
+// ever reached this address? 'never' = the dormant part of the list. The
+// ledger starts 2026-10-05 — issues sent by other tools before that are not
+// in it (docs/systems/newsletters.md "Saved lists").
+const HISTORIES = ['never', 'reached'];
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const STATUS_SQL = `CASE WHEN p.unsubscribed_at IS NOT NULL THEN 'unsubscribed'
               WHEN ${SUPPRESSED_SQL('p.email')} THEN 'suppressed'
@@ -115,14 +121,22 @@ const DELIVERY_STATS_SQL = `
     FROM newsletter_deliveries nd WHERE nd.email = a.email
   ) dl ON true`;
 
-// normalizeFilters(raw) → { residency: 'all'|'utah'|'outside'|'unknown', donors: bool, petition: ''|slug }
+// normalizeFilters(raw) → { residency: 'all'|'utah'|'outside'|'unknown', donors: bool, petition: ''|slug,
+//                           history: 'all'|'never'|'reached', list: ''|uuid }
+// list = a saved list's id (packages/db/lists.js): when set, the OTHER
+// filters are ignored by the resolver (audienceFor) — the list carries its
+// own. It is kept here so a newsletter's stored audience round-trips.
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 function normalizeFilters(raw = {}) {
   const residency = RESIDENCIES.includes(raw.residency) ? raw.residency : 'all';
   const donors = raw.donors === true || raw.donors === '1' || raw.donors === 'on' || raw.donors === 'true';
   const petition = typeof raw.petition === 'string' && SLUG_RE.test(raw.petition) ? raw.petition : '';
-  return { residency, donors, petition };
+  const history = HISTORIES.includes(raw.history) ? raw.history : 'all';
+  const list = typeof raw.list === 'string' && UUID_RE.test(raw.list) ? raw.list.toLowerCase() : '';
+  return { residency, donors, petition, history, list };
 }
+
+const REACHED_SQL = (email) => `EXISTS (SELECT 1 FROM newsletter_deliveries nd WHERE nd.email = ${email} AND nd.status = 'sent')`;
 
 // Shared WHERE fragments over the alias `a` for the audience filters.
 function audienceWhere(f, params) {
@@ -133,15 +147,25 @@ function audienceWhere(f, params) {
     params.push(f.petition);
     where.push(`EXISTS (SELECT 1 FROM petition_signatures px WHERE px.email = a.email AND px.petition = $${params.length})`);
   }
+  if (f.history === 'never') where.push(`NOT ${REACHED_SQL('a.email')}`);
+  if (f.history === 'reached') where.push(REACHED_SQL('a.email'));
   return where;
 }
 
-// audienceQuery(filters, { columns, orderBy }) → { sql, params }
+// audienceQuery(filters, { columns, orderBy, limit, memberOf }) → { sql, params }
 // columns: the SELECT list over the alias `a` (default: everything).
-function audienceQuery(filters, { columns = 'a.*', orderBy = 'a.created_at DESC', limit } = {}) {
+// memberOf: a FROZEN saved list's id — only addresses in its snapshot
+// (mailing_list_members) are returned; the filters passed are still applied
+// (pass {} for "the snapshot, minus anyone no longer eligible").
+function audienceQuery(filters, { columns = 'a.*', orderBy = 'a.created_at DESC', limit, memberOf } = {}) {
   const f = normalizeFilters(filters);
   const params = [];
   const where = audienceWhere(f, params);
+  if (memberOf) {
+    if (!UUID_RE.test(String(memberOf))) throw new Error('memberOf must be a list id');
+    params.push(String(memberOf).toLowerCase());
+    where.push(`EXISTS (SELECT 1 FROM mailing_list_members lm WHERE lm.list_id = $${params.length}::uuid AND lm.email = a.email)`);
+  }
   const sql = `SELECT ${columns} FROM (${AUDIENCE_ROWS_SQL}) a`
     + (where.length ? ` WHERE ${where.join(' AND ')}` : '')
     + (orderBy ? ` ORDER BY ${orderBy}` : '')
@@ -187,10 +211,12 @@ function describeFilters(filters) {
   if (f.residency === 'unknown') parts.push('ZIP unknown');
   if (f.donors) parts.push('donors only');
   if (f.petition) parts.push(`signed ${f.petition}`);
+  if (f.history === 'never') parts.push('never received a newsletter');
+  if (f.history === 'reached') parts.push('received a newsletter before');
   return parts.length ? parts.join(' · ') : 'everyone';
 }
 
 module.exports = {
-  UTAH_ZIP_PREFIX, RESIDENCIES, STATUSES, isUtahZip, utahZipSql, AUDIENCE_ROWS_SQL, DIRECTORY_ROWS_SQL,
+  UTAH_ZIP_PREFIX, RESIDENCIES, STATUSES, HISTORIES, UUID_RE, isUtahZip, utahZipSql, AUDIENCE_ROWS_SQL, DIRECTORY_ROWS_SQL,
   normalizeFilters, audienceQuery, normalizeDirectoryFilters, directoryQuery, describeFilters,
 };

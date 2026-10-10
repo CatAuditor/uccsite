@@ -232,6 +232,14 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
   the new one. Takes effect with the next approved publish (section 2).
 - **Subscribers** (Mail → Mailing list) — newsletter list, with a CSV
   download for the periodical. Personal data: don't paste it anywhere public.
+  The filters include **Newsletter history** ("never received a newsletter"
+  = people the admin has never emailed). **Save these filters as a list**
+  turns the current filters into a named list.
+- **Saved lists** (Mail → Saved lists) — named audiences for the composer.
+  **Dynamic** = whoever matches when the email goes out; **Frozen** = the
+  people who matched when you last pressed **Update** (nobody joins a frozen
+  list on their own). Either way, anyone who unsubscribes or bounces is
+  skipped. Pick a list in the composer's **Send to** box.
 - **Tips** — confidential tipline submissions. Open one to read it and mark
   it *In review* or *Closed*; owners can delete a tip. Nobody can edit what
   the tipster wrote. Never copy tip contents out of the admin.
@@ -308,10 +316,14 @@ the whole mailing list after a second admin approves them.
    subject), an optional headline for the navy letterhead band (the logo
    and "Utah Civic Compact" are always there, copying the site), **From**
    (your name — the email arrives as "Your Name from Utah Civic Compact"),
-   the **audience** (same choices as the Mailing list page; press **Apply
-   filters** to see how many people the chosen filters reach before you
-   save), then the content as blocks — *Heading*, *Text* (plain writing; `**bold**`, `*italic*`,
-   `[link text](https://…)`, "- " for bullets), *Button*, *Image* (paste the
+   the **audience** — **Send to** either "People matching the filters
+   below" (same choices as the Mailing list page, plus *Newsletter history*;
+   press **Apply filters** to see how many people they reach before you
+   save) or a **saved list** from Mail → Saved lists (press **Count**) —
+   then the content as blocks — *Heading*, *Text* (plain writing; `**bold**`, `*italic*`,
+   `[link text](https://…)`, "- " for bullets; write `{first_name}` to greet
+   each reader by name — "there" when we hold no name — and your own name
+   appears in your test copy), *Button*, *Image* (paste the
    *Upload an image* right in the block after typing its alt text, or paste
    an address from the Media Library), *Quote*,
    *Divider*, *Document (HTML)* (a document's own HTML, shown in the

@@ -42,7 +42,7 @@ const NAV = [
   { group: 'Documents', items: [['/documents', 'All documents'], ['/styles', 'Styles & rules']] },
   // Mail (2026-10-05): newsletters are composed, reviewed and sent here;
   // the mailing list is the audience they reach (docs/systems/newsletters.md).
-  { group: 'Mail', items: [['/mail', 'Outgoing emails'], ['/subscribers', 'Mailing list']] },
+  { group: 'Mail', items: [['/mail', 'Outgoing emails'], ['/subscribers', 'Mailing list'], ['/lists', 'Saved lists']] },
   // Financial (2026-10-10): money in and money out, apart from the day-to-day
   // operations pages (docs/systems/finance.md). Editor+ pages; a viewer sees
   // the group but requireRole refuses the pages.

@@ -139,8 +139,13 @@ reaches a text-only client.
 (`lib/newsletters.js sendTest`, `kind = 'transactional'`) fills every
 placeholder with a stand-in from `sampleVars`: the tester's first name,
 `$25.00`, One-time donation, today's date, the real receipt block, "Sample
-petition headline" / "Sample project". The subject is filled too. A
-newsletter test is unchanged (no placeholders).
+petition headline" / "Sample project". The subject is filled too. The first
+name comes from `recipientNameFor` (2026-10-10): the tester's mailing-list
+row (subscriber, else member — the same lookup the newsletter sender uses),
+else their team-member name — one copy per tester, each filled for that
+person. A newsletter test fills the recipient placeholders
+(`{first_name}` etc., docs/systems/newsletters.md "Recipient placeholders")
+the same way.
 
 **End-to-end (verified in prod logs 2026-10-10)** — Stripe → `POST
 /api/webhook` (signature checked, `processed_events` dedupe) →

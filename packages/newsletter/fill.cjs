@@ -77,6 +77,18 @@ function receiptText({ amount, recurring, date }) {
   ].join('\n');
 }
 
+// recipientVars({ firstName, lastName, email }) → { text } for a NEWSLETTER
+// copy: {first_name} / {last_name} / {email} from the mailing-list row
+// (packages/db/audience.js — subscriber name, else the member's). No first
+// name on file → "there", so "Hi {first_name}," reads "Hi there,". Used by
+// the send loop (aws/newsletter/send.js) and the admin's test send, which
+// looks the tester up the same way.
+const NO_NAME = 'there';
+function recipientVars({ firstName, lastName, email } = {}) {
+  const first = String(firstName ?? '').trim();
+  return { text: { first_name: first || NO_NAME, last_name: String(lastName ?? '').trim(), email: String(email ?? '').trim() } };
+}
+
 // sampleVars({ firstName }) → { text, raw } with a stand-in for EVERY
 // placeholder any trigger uses, for the admin's test send of an automatic
 // email (the real values are only known when someone signs or donates).
@@ -91,4 +103,4 @@ function sampleVars({ firstName = 'Sam', when = new Date() } = {}) {
   };
 }
 
-module.exports = { escapeHtml, aliasTokens, fillText, fillHtml, formatAmount, formatDate, donationType, receiptHtml, receiptText, sampleVars };
+module.exports = { escapeHtml, aliasTokens, fillText, fillHtml, formatAmount, formatDate, donationType, receiptHtml, receiptText, sampleVars, recipientVars, NO_NAME };

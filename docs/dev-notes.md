@@ -6,6 +6,68 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-10 — Saved lists for the mailing list, and newsletters that greet each reader by name
+
+**What changed**
+
+- **Saved lists** (Mail → Saved lists). A saved list is the Mailing list
+  page's filters with a name, so an email can be sent to it from the
+  composer. Each list is either **dynamic** (whoever matches the filters when
+  the email goes out) or **frozen** (the people who matched when the list was
+  last frozen; nobody joins it on their own). **Update** on a frozen list
+  re-takes the snapshot. **Freeze now** / **Make dynamic** switch a list
+  between the two. Each list has its own CSV download. Either way, anyone who
+  has unsubscribed or bounced since is skipped when the email is sent — a
+  frozen list never overrides an unsubscribe.
+- **New filter: Newsletter history** — "never received a newsletter" /
+  "received a newsletter before" — on the Mailing list page, in the composer
+  and in saved lists. It is read from the admin's own send record, which
+  began on October 5, 2026; the June issue (sent with other tools) is not in
+  it, so "never received" means never via the admin.
+- The Mailing list page has a **Save these filters as a list** link that
+  pre-fills the new-list form.
+- The composer's Audience box has a **Send to** choice: "People matching the
+  filters below" or a saved list. The count, the request's recipient number
+  and the actual send all use the same choice. A draft whose saved list was
+  deleted says so and cannot be requested until another audience is chosen.
+  A list that a pending, approved or sending email goes to is locked (no
+  Update, mode change or delete) until that email has sent.
+- **Newsletters now greet each reader by name.** Write `{first_name}` (or
+  `{last_name}`, `{email}`; Word-style `[First name]` also works) anywhere in
+  the subject or body and each copy is filled from that person's mailing-list
+  record — the same name the Mailing list page shows. When we hold no first
+  name, it reads "there" ("Hi there,"), never "Hi ,".
+- **Test sends are filled the same way.** "Send me a test" and "Test send
+  (all admins)" now send one copy per tester, each filled with that admin's
+  own name — from their mailing-list record if they have one, otherwise from
+  their Team card — so the test proves the placeholder works before the real
+  send. Automatic emails (petition / donation thank-yous) take the tester's
+  first name from the same lookup.
+
+**What editors do differently**
+
+- To email the dormant part of the list once: Mailing list → set Newsletter
+  history to "never received a newsletter" → **Save these filters as a list**
+  → name it, keep **Frozen**, save. In the composer choose that list under
+  **Send to**. Before a later mailing to the same group, press **Update** on
+  the list so the people already mailed drop out (the send record now holds
+  them).
+- `{first_name}` in a newsletter is safe to use; check your test copy.
+
+**Technical detail**: docs/systems/newsletters.md "Saved lists" and
+"Recipient placeholders".
+
+**Left to do**
+
+- Deploy: the two tables exist on staging and prod (migration run tonight);
+  the send Lambda needs a CDK deploy of both stacks, and the admin ships with
+  the Amplify build of this push. Nothing needs the account owner.
+- The web copy of a newsletter (`/newsletters/<slug>`) shows `{first_name}`
+  literally — the fill happens per email. Avoid the placeholder in an issue
+  meant for the archive, or accept it.
+
+---
+
 ## 2026-10-10 — Publishing failed after a project was renamed (fixed)
 
 **What changed**

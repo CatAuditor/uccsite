@@ -14,6 +14,7 @@
 const { DDL: REDIRECTS_DDL } = require('./redirects');
 const { DDL: PUBLISH_REQUESTS_DDL } = require('./publish-requests');
 const { DDL: NEWSLETTERS_DDL } = require('./newsletters');
+const { DDL: LISTS_DDL } = require('./lists');
 
 const STATEMENTS = [
   // ── singletons ────────────────────────────────────────────────────────────
@@ -277,6 +278,8 @@ const STATEMENTS = [
 
   // ── newsletters (docs/systems/newsletters.md, packages/db/newsletters.js)
   ...NEWSLETTERS_DDL,
+  // ── saved mailing lists (docs/systems/newsletters.md "Saved lists", packages/db/lists.js)
+  ...LISTS_DDL,
 
   // ── Documents + styling (spec §3.2, §5, §6, §9; packages/db/documents.js) ─
   // body_html_raw is exactly what was pasted and is never mutated; normalized

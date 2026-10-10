@@ -11,6 +11,7 @@ import InlineImageUpload from '../../media/inline-upload';
 import { importUpload } from './actions';
 
 const RESIDENCIES = [['all', 'everyone'], ['utah', 'Utah residents'], ['outside', 'outside Utah'], ['unknown', 'ZIP unknown']];
+const HISTORIES = [['all', 'anyone'], ['never', 'never received a newsletter'], ['reached', 'received a newsletter before']];
 const BLOCK_LABEL = { heading: 'Heading', text: 'Text', rich: 'Document (HTML)', button: 'Button', image: 'Image', quote: 'Quote', divider: 'Divider' };
 const NEW_BLOCK = {
   heading: { type: 'heading', text: '' }, text: { type: 'text', markdown: '' }, rich: { type: 'rich', html: '' }, button: { type: 'button', label: '', url: '', align: 'center' },
@@ -27,7 +28,7 @@ function BlockFields({ block, onChange, readOnly, publicOrigin }) {
       <>
         <textarea value={block.markdown} onChange={set('markdown')} rows={6} disabled={readOnly}
           placeholder={'Paragraphs separated by a blank line.\n**bold**, *italic*, [link text](https://…)\n- bullet\n## small heading'} />
-        <div className="hint">Blank line = new paragraph · **bold** · *italic* · [text](https://…) · &quot;- &quot; bullets · &quot;## &quot; small heading</div>
+        <div className="hint">Blank line = new paragraph · **bold** · *italic* · [text](https://…) · &quot;- &quot; bullets · &quot;## &quot; small heading · {'{first_name}'} = each reader&rsquo;s first name (&ldquo;there&rdquo; when we have none; also {'{last_name}'}, {'{email}'})</div>
       </>
     );
     case 'rich': return (
@@ -70,7 +71,7 @@ function BlockFields({ block, onChange, readOnly, publicOrigin }) {
   }
 }
 
-export default function Composer({ newsletter, names, count, petitions, readOnly, publicOrigin }) {
+export default function Composer({ newsletter, names, count, audience: saved, lists = [], petitions, readOnly, publicOrigin }) {
   const [subject, setSubject] = useState(newsletter.subject);
   const [preheader, setPreheader] = useState(newsletter.preheader);
   const [headline, setHeadline] = useState(newsletter.headline);
@@ -97,17 +98,22 @@ export default function Composer({ newsletter, names, count, petitions, readOnly
   const setT = (field) => (e) => setTheme((t) => ({ ...t, [field]: e.target.value }));
   const fromOptions = names.includes(fromName) || !fromName ? names : [fromName, ...names];
 
-  // Audience: the page's count is for the SAVED filters; "Apply filters"
-  // counts the chosen ones (GET /mail/audience-count) without saving.
+  // Audience: the page's count is for the SAVED audience; "Apply filters"
+  // counts the chosen ones (GET /mail/audience-count) without saving. Either
+  // ad-hoc filters, or a saved list (docs/systems/newsletters.md "Saved
+  // lists") — `list` set means the filters are ignored by every resolver.
   const [audience, setAudience] = useState({
     residency: newsletter.audience.residency || 'all', petition: newsletter.audience.petition || '', donors: Boolean(newsletter.audience.donors),
+    history: newsletter.audience.history || 'all', list: newsletter.audience.list || '',
   });
-  const [live, setLive] = useState({ count, applied: false, busy: false, error: '' });
+  const [live, setLive] = useState({ count: count ?? 0, applied: false, busy: false, error: saved?.missing ? saved.description : '' });
   const setA = (field) => (e) => { setAudience((a) => ({ ...a, [field]: field === 'donors' ? e.target.checked : e.target.value })); setLive((l) => ({ ...l, applied: false })); };
+  const chosenList = lists.find((l) => l.id === audience.list) || null;
+  const listLabel = (l) => `${l.name} — ${l.mode === 'frozen' ? `frozen ${String(l.frozenAt || '').slice(0, 10)}, ${l.frozenCount ?? 0} people` : 'dynamic'}`;
   async function applyFilters() {
     setLive((l) => ({ ...l, busy: true, error: '' }));
     try {
-      const q = new URLSearchParams({ residency: audience.residency, petition: audience.petition, donors: audience.donors ? '1' : '' });
+      const q = new URLSearchParams({ residency: audience.residency, petition: audience.petition, donors: audience.donors ? '1' : '', history: audience.history, list: audience.list });
       const res = await fetch(`/mail/audience-count?${q}`, { cache: 'no-store' });
       const body = await res.json().catch(() => ({}));
       if (!res.ok || typeof body.count !== 'number') throw new Error(body.error || `Count failed (${res.status})`);
@@ -159,24 +165,49 @@ export default function Composer({ newsletter, names, count, petitions, readOnly
         </fieldset>
 
         <fieldset className="item">
-          <legend>Audience — {live.count} {live.count === 1 ? 'person' : 'people'} match {live.applied ? 'these filters' : 'the saved filters'}</legend>
-          <div className="mail-row">
-            <label>Residency
-              <select name="residency" value={audience.residency} onChange={setA('residency')} disabled={readOnly}>
-                {RESIDENCIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
-            </label>
-            <label>Signed petition
-              <select name="petition" value={audience.petition} onChange={setA('petition')} disabled={readOnly}>
-                <option value="">any / none</option>
-                {petitions.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </label>
-            <label className="mail-check"><input type="checkbox" name="donors" value="1" checked={audience.donors} onChange={setA('donors')} disabled={readOnly} /> donors only</label>
-            {!readOnly && <button type="button" className="secondary" onClick={applyFilters} disabled={live.busy}>{live.busy ? 'Counting…' : 'Apply filters'}</button>}
-          </div>
+          <legend>Audience — {live.count} {live.count === 1 ? 'person' : 'people'} match {live.applied ? 'this choice' : 'the saved choice'}</legend>
+          <label>Send to
+            <select name="list" value={audience.list} onChange={setA('list')} disabled={readOnly}>
+              <option value="">People matching the filters below</option>
+              {lists.map((l) => <option key={l.id} value={l.id}>Saved list: {listLabel(l)}</option>)}
+              {audience.list && !chosenList && <option value={audience.list}>Saved list (deleted)</option>}
+            </select>
+          </label>
+          {audience.list ? (
+            <div className="mail-row">
+              <span className="hint">
+                {chosenList
+                  ? (chosenList.mode === 'frozen'
+                    ? `Frozen list: the people captured on ${String(chosenList.frozenAt || '').slice(0, 10)} (minus anyone who has since unsubscribed or bounced). Update it on the Saved lists page to refresh.`
+                    : 'Dynamic list: whoever matches its filters when the email goes out.')
+                  : 'This saved list has been deleted — choose another audience.'}
+              </span>
+              {!readOnly && <button type="button" className="secondary" onClick={applyFilters} disabled={live.busy}>{live.busy ? 'Counting…' : 'Count'}</button>}
+            </div>
+          ) : (
+            <div className="mail-row">
+              <label>Residency
+                <select name="residency" value={audience.residency} onChange={setA('residency')} disabled={readOnly}>
+                  {RESIDENCIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </label>
+              <label>Signed petition
+                <select name="petition" value={audience.petition} onChange={setA('petition')} disabled={readOnly}>
+                  <option value="">any / none</option>
+                  {petitions.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </label>
+              <label>Newsletter history
+                <select name="history" value={audience.history} onChange={setA('history')} disabled={readOnly}>
+                  {HISTORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </label>
+              <label className="mail-check"><input type="checkbox" name="donors" value="1" checked={audience.donors} onChange={setA('donors')} disabled={readOnly} /> donors only</label>
+              {!readOnly && <button type="button" className="secondary" onClick={applyFilters} disabled={live.busy}>{live.busy ? 'Counting…' : 'Apply filters'}</button>}
+            </div>
+          )}
           {live.error && <div className="error" role="alert">{live.error}</div>}
-          <div className="hint">Same rules as the Mailing list page. Apply filters shows how many people the chosen filters reach; saving keeps them.</div>
+          <div className="hint">Same rules as the Mailing list page. Apply filters / Count shows how many people the choice reaches; saving keeps it. Saved lists are managed under Mail → Saved lists.</div>
           <label className="mail-check"><input type="checkbox" name="publishToSite" value="1" defaultChecked={newsletter.publishToSite !== false} disabled={readOnly} /> Also publish a web copy at utahciviccompact.org/newsletters (adds a &ldquo;View in browser&rdquo; link)</label>
         </fieldset>
 

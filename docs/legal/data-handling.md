@@ -29,7 +29,9 @@ user data, or a third-party integration changes (CLAUDE.md rule).
 | `newsletters` | author email (`created_by`, `requested_by`, `reviewed_by` — staff), the email body | admin Mail → Outgoing emails | until an owner deletes the newsletter |
 | `transactional_emails` | **admin** email (`attached_by`), the frozen body of an automatic email (no recipient data — placeholders are filled at send time and never stored) | admin Mail → Outgoing emails → attach | until detached or the draft is deleted |
 | `newsletter_deliveries` | recipient email, SES message id, send status/error per newsletter | NewsletterSendFn at send time (from the audience query) | deleted with the newsletter; never exported or shown in bulk (counts only) |
-| mailing-list CSV export | subscribers ∪ opted-in members, optionally filtered by residency (derived from ZIP, not stored) / donor / petition, downloaded by an editor/owner (audited as `subscribers.export` with the filters) | admin /subscribers | on the downloader's machine — handle as PII |
+| `mailing_lists` | **admin** email (`created_by`), the list's name and filters (no recipient data) | admin Mail → Saved lists | until an editor deletes the list |
+| `mailing_list_members` | recipient email per FROZEN saved list (the snapshot taken when the list was frozen / updated) | admin Mail → Saved lists (freeze / Update, from the audience query) | replaced on every Update; deleted when the list is made dynamic or deleted; only ever mailed through the audience rules (an unsubscribed/bounced snapshot member is skipped) |
+| mailing-list CSV export | subscribers ∪ opted-in members, optionally filtered by residency (derived from ZIP, not stored) / donor / petition / newsletter history, or one saved list, downloaded by an editor/owner (audited as `subscribers.export` with the audience description) | admin /subscribers, /lists | on the downloader's machine — handle as PII |
 | `petition_signatures` CSV export | every signature for one or all campaigns (audited as `petition.export`) | admin /petition | on the downloader's machine; the copy given to UDOT is the org's to govern |
 
 ## Buckets

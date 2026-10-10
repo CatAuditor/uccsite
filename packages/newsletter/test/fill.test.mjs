@@ -2,7 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-const { aliasTokens, fillText, fillHtml, receiptHtml, receiptText, sampleVars, formatAmount } = require('../fill.cjs');
+const { aliasTokens, fillText, fillHtml, receiptHtml, receiptText, sampleVars, formatAmount, recipientVars } = require('../fill.cjs');
+
+test('recipientVars: the mailing-list name, "there" when none, trimmed', () => {
+  assert.deepEqual(recipientVars({ firstName: ' Ada ', lastName: 'L', email: 'a@x.y' }), { text: { first_name: 'Ada', last_name: 'L', email: 'a@x.y' } });
+  assert.deepEqual(recipientVars({ email: 'a@x.y' }).text, { first_name: 'there', last_name: '', email: 'a@x.y' });
+  assert.equal(fillText('Hi {first_name}, [First name]!', recipientVars({}).text), 'Hi there, there!');
+});
 
 test('bracket aliases: known placeholders only, case-insensitive, $ ignored; other brackets untouched', () => {
   const known = { first_name: 1, amount: 1 };

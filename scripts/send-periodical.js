@@ -2,7 +2,7 @@
 //
 // Usage:
 //   $env:AWS_PROFILE='uccsite'; node --env-file=.env scripts/send-periodical.js --subject "Subject line" --html path/to/email.html [--text path/to/email.txt] [--dry-run] [--test you@example.com] [--resume sent.log] [--env staging|prod]
-//     [--audience utah|outside|unknown|all] [--donors-only] [--petition <slug>]
+//     [--audience utah|outside|unknown|all] [--donors-only] [--petition <slug>] [--history never|reached]
 //
 // Audience ("who is this email going to"): the SAME filters as the admin's
 // Mailing list page (packages/db/audience.js), so the count the dashboard
@@ -50,6 +50,7 @@ function parseArgs(argv) {
     else if (arg === '--audience') args.residency = argv[++i];
     else if (arg === '--donors-only') args.donors = true;
     else if (arg === '--petition') args.petition = argv[++i];
+    else if (arg === '--history') args.history = argv[++i];
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return args;
@@ -64,6 +65,7 @@ async function resolveRecipients(envName = 'prod', filters = {}) {
     throw new Error('--audience must be utah, outside, unknown or all');
   }
   if (filters.petition && !/^[a-z0-9][a-z0-9-]{0,63}$/.test(filters.petition)) throw new Error('--petition must be a campaign slug');
+  if (filters.history && !['never', 'reached'].includes(filters.history)) throw new Error('--history must be never or reached');
 
   // Subscribers UNION opted-in members, narrowed by the audience filters.
   const { sql, params } = audienceQuery(filters, { columns: 'a.email', orderBy: 'a.email' });

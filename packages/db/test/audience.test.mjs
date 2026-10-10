@@ -11,11 +11,27 @@ test('every 84xxx ZIP is Utah, nothing else is', () => {
 });
 
 test('filters normalize to a closed set (nothing user-supplied reaches SQL text)', () => {
-  assert.deepEqual(normalizeFilters({}), { residency: 'all', donors: false, petition: '' });
-  assert.deepEqual(normalizeFilters({ residency: 'utah', donors: '1', petition: 'udot-alpr-permits' }),
-    { residency: 'utah', donors: true, petition: 'udot-alpr-permits' });
-  assert.deepEqual(normalizeFilters({ residency: "x' OR 1=1", donors: 'maybe', petition: 'Bad Slug' }),
-    { residency: 'all', donors: false, petition: '' });
+  assert.deepEqual(normalizeFilters({}), { residency: 'all', donors: false, petition: '', history: 'all', list: '' });
+  assert.deepEqual(normalizeFilters({ residency: 'utah', donors: '1', petition: 'udot-alpr-permits', history: 'never', list: '2B9D3F6A-0000-4000-8000-000000000001' }),
+    { residency: 'utah', donors: true, petition: 'udot-alpr-permits', history: 'never', list: '2b9d3f6a-0000-4000-8000-000000000001' });
+  assert.deepEqual(normalizeFilters({ residency: "x' OR 1=1", donors: 'maybe', petition: 'Bad Slug', history: 'yes', list: 'not-a-uuid' }),
+    { residency: 'all', donors: false, petition: '', history: 'all', list: '' });
+});
+
+test('history filter reads the send ledger; memberOf narrows to a frozen snapshot', () => {
+  const never = audienceQuery({ history: 'never' }, { columns: 'a.email' });
+  assert.match(never.sql, /NOT EXISTS \(SELECT 1 FROM newsletter_deliveries nd WHERE nd\.email = a\.email AND nd\.status = 'sent'\)/);
+  const reached = audienceQuery({ history: 'reached' });
+  assert.match(reached.sql, /WHERE EXISTS \(SELECT 1 FROM newsletter_deliveries/);
+  const id = '2b9d3f6a-0000-4000-8000-000000000001';
+  const frozen = audienceQuery({}, { memberOf: id, columns: 'a.email' });
+  assert.deepEqual(frozen.params, [id]);
+  assert.match(frozen.sql, /mailing_list_members lm WHERE lm\.list_id = \$1::uuid AND lm\.email = a\.email/);
+  assert.throws(() => audienceQuery({}, { memberOf: 'x' }), /list id/);
+  // `list` is carried, never applied here (the resolver in lists.js applies it).
+  assert.deepEqual(audienceQuery({ list: id }).params, []);
+  assert.equal(describeFilters({ history: 'never' }), 'never received a newsletter');
+  assert.equal(describeFilters({ residency: 'utah', history: 'reached' }), 'Utah residents · received a newsletter before');
 });
 
 test('audienceQuery binds every filter as a parameter', () => {
@@ -49,7 +65,7 @@ test('the audience is the confirmed, still-subscribed, non-suppressed rows; the 
 });
 
 test('directory filters: status defaults to subscribed, search is bound and escaped', () => {
-  assert.deepEqual(normalizeDirectoryFilters({}), { residency: 'all', donors: false, petition: '', status: 'subscribed', q: '' });
+  assert.deepEqual(normalizeDirectoryFilters({}), { residency: 'all', donors: false, petition: '', history: 'all', list: '', status: 'subscribed', q: '' });
   assert.equal(normalizeDirectoryFilters({ status: 'all' }).status, 'all');
   assert.equal(normalizeDirectoryFilters({ status: 'bogus' }).status, 'subscribed');
   const q = directoryQuery({ status: 'unsubscribed', residency: 'utah', q: '50%_off' }, { limit: 5, deliveries: true });

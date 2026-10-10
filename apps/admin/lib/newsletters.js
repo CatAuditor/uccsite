@@ -9,13 +9,14 @@
 // unpublished site save.
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
-import { audienceQuery, normalizeFilters, describeFilters } from '@uccsite/db/audience';
+import { normalizeFilters, describeFilters, DIRECTORY_ROWS_SQL } from '@uccsite/db/audience';
+import { audienceFor, listLists } from '@uccsite/db/lists';
 import * as db from '@uccsite/db/newsletters';
 import { renderEmail, normalizeBlocks, normalizeTheme, fromHeader, rawBlock, UNSUBSCRIBE_TOKEN } from '@uccsite/newsletter/render';
 import { sanitizeRich } from './newsletter-import.mjs';
 import { renderWebBody, archiveSlug } from '@uccsite/newsletter/web';
 import { parseSchedule, formatZoned } from '@uccsite/newsletter/schedule';
-import { fillHtml, fillText, sampleVars } from '@uccsite/newsletter/fill';
+import { fillHtml, fillText, sampleVars, recipientVars } from '@uccsite/newsletter/fill';
 import { requireRole } from './auth';
 import { withDb, withWriteTx, recordChange } from './data';
 import { notifyNewsletterRequested } from './notify';
@@ -37,14 +38,35 @@ export async function authorNameFor(client, email) {
     .map((p) => p[0].toUpperCase() + p.slice(1)).join(' ');
 }
 
+// recipientNameFor(client, email) → { firstName, lastName }: the name the
+// Mailing list page shows for this address (subscriber row, else member —
+// DIRECTORY_ROWS_SQL, the same rows the sender reads), else the admin's team
+// name split in two, else the address made readable. A test send fills
+// {first_name} with this so the tester sees exactly what a reader sees.
+export async function recipientNameFor(client, email) {
+  const r = (await client.query(`SELECT a.first_name, a.last_name FROM (${DIRECTORY_ROWS_SQL}) a WHERE a.email = $1 LIMIT 1`, [String(email || '').toLowerCase()])).rows[0];
+  if (r && (r.first_name || r.last_name)) return { firstName: r.first_name || '', lastName: r.last_name || '' };
+  const [firstName = '', ...rest] = (await authorNameFor(client, email)).split(' ');
+  return { firstName, lastName: rest.join(' ') };
+}
+
 export async function teamNames(client) {
   return (await client.query(`SELECT name FROM team_members WHERE name <> '' ORDER BY sort_order`)).rows.map((r) => r.name);
 }
 
-// audienceCount(client, audience) → how many people the saved filters reach.
+// audienceInfo(client, audience) → { count, description, list } for a
+// newsletter's stored audience: ad-hoc filters, or a saved list (lists.js
+// audienceFor — the SAME resolver the Lambda mails with). A list that was
+// deleted since the draft chose it → { count: null, missing: true }.
+export async function audienceInfo(client, audience) {
+  const r = await audienceFor(client, audience, { columns: 'count(*)::int AS n', orderBy: null });
+  if (!r) return { count: null, description: 'a saved list that has since been deleted — choose another audience', list: null, missing: true };
+  return { count: (await client.query(r.sql, r.params)).rows[0].n, description: r.description, list: r.list, missing: false };
+}
+
+// audienceCount(client, audience) → how many people the saved audience reaches (null: its list is gone).
 export async function audienceCount(client, audience) {
-  const { sql, params } = audienceQuery(normalizeFilters(audience), { columns: 'count(*)::int AS n', orderBy: null });
-  return (await client.query(sql, params)).rows[0].n;
+  return (await audienceInfo(client, audience)).count;
 }
 
 export async function petitionSlugs(client) {
@@ -74,13 +96,15 @@ export async function newsletterPage(id) {
     // Sequential: the shared read client is one pg connection (concurrent
     // query() calls on it are deprecated and serialise anyway).
     const names = await teamNames(client);
-    const count = await audienceCount(client, newsletter.audience);
+    const audience = await audienceInfo(client, newsletter.audience);
+    const count = audience.count;
     const petitions = await petitionSlugs(client);
+    const lists = await listLists(client);
     const deliveries = ['sending', 'sent', 'failed'].includes(newsletter.status) ? await db.deliveryCounts(client, newsletter.id) : null;
     const opens = deliveries ? (await db.openCounts(client, [newsletter.id])).get(newsletter.id) || 0 : 0;
     const defaults = await db.getDefaults(client);
     const diff = newsletter.status === 'pending' && newsletter.priorBlocks ? blockDiff(newsletter.priorBlocks, newsletter.requestedBlocks || newsletter.blocks) : null;
-    return { newsletter, names, count, petitions, deliveries, defaults, diff, opens };
+    return { newsletter, names, count, audience, lists, petitions, deliveries, defaults, diff, opens };
   });
 }
 
@@ -135,7 +159,7 @@ export async function saveNewsletter(id, formData) {
       .filter((b) => b.type !== 'rich' || b.html);
   } catch (err) { throw new Error(`Blocks could not be read: ${err.message}`); }
   try { theme = normalizeTheme(JSON.parse(String(formData.get('theme') || '{}'))); } catch { throw new Error('Theme could not be read'); }
-  const audience = normalizeFilters({ residency: formData.get('residency'), donors: formData.get('donors'), petition: formData.get('petition') });
+  const audience = normalizeFilters({ residency: formData.get('residency'), donors: formData.get('donors'), petition: formData.get('petition'), history: formData.get('history'), list: formData.get('list') });
   const fields = {
     subject: clip(formData.get('subject'), 200), preheader: clip(formData.get('preheader'), 200), headline: clip(formData.get('headline'), 200),
     fromName: clip(formData.get('fromName'), 60), blocks, theme, audience, publishToSite: formData.get('publishToSite') === '1',
@@ -154,7 +178,7 @@ export async function saveNewsletter(id, formData) {
       if (row.status !== 'draft') throw new Error(`This newsletter is ${row.status} — it can only be edited as a draft (withdraw or cancel the request first).`);
       throw new Error('Someone else saved this newsletter since you opened it — reload to see their version.');
     }
-    await recordChange(client, { actor: s.email, action: 'newsletter.save', entityType: 'newsletter', entityId: nid, snapshot: { ...fields }, diff: { subject: fields.subject, blocks: blocks.length, audience: describeFilters(audience), publishToSite: fields.publishToSite } });
+    await recordChange(client, { actor: s.email, action: 'newsletter.save', entityType: 'newsletter', entityId: nid, snapshot: { ...fields }, diff: { subject: fields.subject, blocks: blocks.length, audience: audience.list ? `saved list ${audience.list}` : describeFilters(audience), publishToSite: fields.publishToSite } });
   });
   return fields;
 }
@@ -185,8 +209,10 @@ export async function requestSend(id, note, scheduleLocal) {
     if (n.kind === 'transactional') throw new Error('This is an automatic email — it never goes to the mailing list. Untick "Automatic email" to send it as a newsletter.');
     if (!n.subject.trim()) throw new Error('Give the email a subject line first.');
     if (!normalizeBlocks(n.blocks).length) throw new Error('The email has no content yet — add at least one block and save.');
-    const recipients = await audienceCount(client, n.audience);
-    if (!recipients) throw new Error(`Nobody matches the audience (${describeFilters(normalizeFilters(n.audience))}).`);
+    const audience = await audienceInfo(client, n.audience);
+    if (audience.missing) throw new Error('The saved list this email was going to has been deleted — choose another audience and save.');
+    const recipients = audience.count;
+    if (!recipients) throw new Error(`Nobody matches the audience (${audience.description}).`);
     const slug = n.slug || archiveSlug(n.subject, at || new Date());
     const { html, text, webHtml } = renderFrozen(n, slug, { pixel: true });
     const ok = await db.requestSend(client, {
@@ -194,7 +220,7 @@ export async function requestSend(id, note, scheduleLocal) {
       html, text, webHtml, slug, recipients, blocks: n.blocks,
     });
     if (!ok) throw new Error('This newsletter was just changed by someone else — reload.');
-    await recordChange(client, { actor: s.email, action: 'newsletter.request', entityType: 'newsletter', entityId: nid, diff: { recipients, scheduledFor: at ? at.toISOString() : null, audience: describeFilters(normalizeFilters(n.audience)), publishToSite: n.publishToSite, slug } });
+    await recordChange(client, { actor: s.email, action: 'newsletter.request', entityType: 'newsletter', entityId: nid, diff: { recipients, scheduledFor: at ? at.toISOString() : null, audience: audience.description, publishToSite: n.publishToSite, slug } });
     return { recipients, subject: n.subject };
   });
   const needsReview = s.role !== 'owner';
@@ -327,33 +353,35 @@ export async function sendTest(id, { all = false } = {}) {
   if (!n) throw new Error('This newsletter no longer exists.');
   if (!n.subject.trim()) throw new Error('Give the email a subject line first.');
   const to = all ? [...new Set([s.email, ...PUBLISH_REVIEWERS])] : [s.email];
-  let { html, text } = renderFrozen(n, n.slug || archiveSlug(n.subject));
-  let subject = n.subject;
-  if (n.kind === 'transactional') {
-    // An automatic email: fill every placeholder with a stand-in (the tester's
-    // first name, $25.00, today, the real receipt block) so the test shows
-    // what a signer or donor will get — the API fills the same way.
-    const vars = sampleVars({ firstName: (await withDb((client) => authorNameFor(client, s.email))).split(' ')[0] });
-    html = fillHtml(html, vars); text = fillText(text, vars.text); subject = fillText(subject, vars.text);
-  }
+  const { html, text } = renderFrozen(n, n.slug || archiveSlug(n.subject));
   const link = `${config.appOrigin}/mail/${nid}`;
   const replyTo = await withDb((client) => db.authorReplyTo(client, n.fromName)); // same header the real send carries
+  // One copy per tester, filled for THAT person the way the real send fills
+  // each reader's copy: {first_name} etc. from their mailing-list row
+  // (recipientNameFor). An automatic email fills every trigger placeholder
+  // with a stand-in besides (tester's first name, $25.00, today, the real
+  // receipt block) — the API fills the same way.
+  const names = await withDb(async (client) => { const m = new Map(); for (const e of to) m.set(e, await recipientNameFor(client, e)); return m; });
   const client = new SESv2Client({ region: config.region, requestHandler: { requestTimeout: 8000 } });
-  try {
-    const res = await client.send(new SendEmailCommand({
-      FromEmailAddress: fromHeader(n.fromName),
-      Destination: { ToAddresses: to },
-      ...(replyTo ? { ReplyToAddresses: [replyTo] } : {}),
-      ...(config.envName === 'prod' ? { ConfigurationSetName: 'ucc-prod' } : {}),
-      Content: { Simple: {
-        Subject: { Data: `TEST: ${subject}`, Charset: 'UTF-8' },
-        Body: { Html: { Data: html.replaceAll(UNSUBSCRIBE_TOKEN, link), Charset: 'UTF-8' }, Text: { Data: text.replaceAll(UNSUBSCRIBE_TOKEN, link), Charset: 'UTF-8' } },
-      } },
-    }));
-    console.log(`[admin] newsletter ${nid} test sent ${res.MessageId} to ${to.length}`);
-  } catch (err) {
-    console.error(`[admin] newsletter ${nid} test SES error: ${err?.name} ${err?.message}`);
-    throw new Error(`The test email could not be sent (${err?.name || 'error'}).`);
+  for (const addr of to) {
+    const who = names.get(addr);
+    const vars = n.kind === 'transactional' ? sampleVars({ firstName: who.firstName || undefined }) : recipientVars({ ...who, email: addr });
+    try {
+      const res = await client.send(new SendEmailCommand({
+        FromEmailAddress: fromHeader(n.fromName),
+        Destination: { ToAddresses: [addr] },
+        ...(replyTo ? { ReplyToAddresses: [replyTo] } : {}),
+        ...(config.envName === 'prod' ? { ConfigurationSetName: 'ucc-prod' } : {}),
+        Content: { Simple: {
+          Subject: { Data: `TEST: ${fillText(n.subject, vars.text)}`, Charset: 'UTF-8' },
+          Body: { Html: { Data: fillHtml(html, vars).replaceAll(UNSUBSCRIBE_TOKEN, link), Charset: 'UTF-8' }, Text: { Data: fillText(text, vars.text).replaceAll(UNSUBSCRIBE_TOKEN, link), Charset: 'UTF-8' } },
+        } },
+      }));
+      console.log(`[admin] newsletter ${nid} test sent ${res.MessageId} (name ${who.firstName ? 'from list/team' : 'none -> "there"'})`);
+    } catch (err) {
+      console.error(`[admin] newsletter ${nid} test SES error: ${err?.name} ${err?.message}`);
+      throw new Error(`The test email could not be sent (${err?.name || 'error'}).`);
+    }
   }
   await withWriteTx((client) => recordChange(client, { actor: s.email, action: 'newsletter.test', entityType: 'newsletter', entityId: nid, diff: { to: to.length } }));
   return to;

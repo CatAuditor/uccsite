@@ -68,6 +68,11 @@ apps/admin/
                            actions.js = Remove / Undo removal / Erase record (audited);
                            query = packages/db/audience.js (shared with the sender) —
                            docs/systems/newsletters.md "Mailing list management"
+  app/lists                Saved lists (editor+): named audiences for the composer — the
+                           Mailing list filters (+ newsletter history) with a name, DYNAMIC
+                           (re-run at send) or FROZEN (snapshot; Update re-takes it);
+                           actions.js; rules lib/lists.js; db packages/db/lists.js —
+                           docs/systems/newsletters.md "Saved lists"
   app/petitions            Petitions (editor+): the list (project, status, homepage hero,
                            address, Utah/outside counts), New petition; [id] = one petition's
                            record + copy, thank-you email picker, signatures, CSV, delete;
@@ -133,6 +138,7 @@ scripts/admin-env.mjs      stack outputs → apps/admin/.env.local
 | Donors — every gift with filters (when, amount, Utah / outside, one-time / monthly, plan state, ticker, search) and each donor's monthly-plan state; the mailing list with audience controls (residency, donors, petition signers) + CSV; remove / restore / erase people on the list | Financial → Donations, Mail → Mailing list |
 | What the site costs: AWS by service and month, Stripe gross / fees / net / payouts, active monthly plans, the free services | Financial → Costs (docs/systems/finance.md) |
 | Newsletters: write (blocks or a .docx/.md/.html import), site letterhead look, live audience count, preview (phone, light/dark), test, request → approve → send (now or scheduled) | Mail → Outgoing emails (docs/systems/newsletters.md) |
+| Saved lists: name a set of mailing-list filters (residency, petition, donors, newsletter history — e.g. "never received a newsletter"), keep it dynamic or freeze it as of today (Update re-takes the snapshot), send to it from the composer's "Send to", CSV per list | Mail → Saved lists (docs/systems/newsletters.md "Saved lists") |
 | Automatic emails: compose the petition thank-you or the donation receipt as a newsletter under Outgoing emails ("Send me a test" fills the placeholders and the receipt with sample values), then CHOOSE it from the dropdown on a petition's page (after signing — each petition has its own choice) or the Appeals page (after a donation); "Built-in email" returns to the fixed body | Mail → Outgoing emails + Petitions / Appeals (docs/systems/email.md "Attached emails") |
 | Confidential tips: read, triage status, delete | Tips (editor+; delete is owner) |
 | Accounts, roles, MFA, security keys | Users (owners), My profile (everyone) |

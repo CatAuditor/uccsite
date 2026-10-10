@@ -30,6 +30,14 @@ css/newsletters.css                archive page styles
 apps/admin/app/mail/[id]/ledger/route.js  owner CSV of one send's delivery ledger
 packages/db/newsletters.js         tables newsletters + newsletter_deliveries (DDL wired into content-schema.js);
                                    conditional-update state machine; claimForSending mutex; delivery ledger
+packages/db/lists.js               SAVED LISTS: tables mailing_lists + mailing_list_members; listQuery (dynamic: filters,
+                                   frozen: snapshot ∩ eligible); freezeList; audienceFor() — THE resolver every sender,
+                                   count and CSV goes through (filters OR { list: id })
+apps/admin/lib/lists.js            list rules: create / save / freeze ("Update") / setMode / delete, audit `list.<verb>`,
+                                   in-flight lock (a pending/approved/sending newsletter on the list blocks freeze/mode/delete)
+apps/admin/app/lists/page.js       Mail → Saved lists (editor+): new-list form (seeded from the Mailing list page's
+                                   "Save these filters as a list" link), one card per list with Update / Make dynamic /
+                                   Freeze now / CSV / Delete; actions.js = the server actions
 aws/newsletter/handler.mjs         NewsletterSendFn: {id} | {id,resume} | {tick} | {id,recipientsOverride}
 aws/newsletter/send.js             the per-recipient loop (injected deps, tested)
 infra/cdk/lib/ucc-stack.js         "newsletter send Lambda" block (both stacks): IAM, self-invoke policy,
@@ -53,7 +61,7 @@ scripts/newsletter-smoke.mjs       E2E of the Lambda with recipientsOverride (ma
 
 Nav: group **Mail** → **Outgoing emails** (`/mail`; renamed from
 "Newsletters" 2026-10-09 when automatic emails joined it), Mailing list
-(`/subscribers`, moved from Operations).
+(`/subscribers`, moved from Operations), **Saved lists** (`/lists`, 2026-10-10).
 
 ## Kinds (2026-10-09)
 
@@ -74,7 +82,7 @@ detail: docs/systems/email.md "Attached emails".
 |---|---|
 | `status` | `draft` → `pending` → `approved` → `sending` → `sent` \| `failed`; decline / withdraw / cancel-before-start return to `draft` |
 | `subject, preheader, headline, from_name` | what the composer edits; `from_name` is the author shown in the From display name |
-| `blocks, theme, audience` | JSON: the block list (`heading, text, rich, button, image, quote, divider`; `rich` = sanitized document HTML, see Rendering), the look (`accent, highlight, font, eyebrow` (optional label; '' by default), `footer`; the letterhead itself is fixed), the audience filters (`residency, donors, petition` — packages/db/audience.js, same as the Mailing list page) |
+| `blocks, theme, audience` | JSON: the block list (`heading, text, rich, button, image, quote, divider`; `rich` = sanitized document HTML, see Rendering), the look (`accent, highlight, font, eyebrow` (optional label; '' by default), `footer`; the letterhead itself is fixed), the audience (`residency, donors, petition, history` — packages/db/audience.js, same as the Mailing list page — OR `list` = a saved list's id, which overrides the filters; see "Saved lists") |
 | `html, text` | **frozen at request time** — what the reviewer approves is what is sent, even though the send happens later |
 | `requested_by/_user, request_note, requested_at, scheduled_for, recipients` | the request; `recipients` = the audience count the writer saw |
 | `reviewed_by, review_note, reviewed_at` | the latest review (kept on a declined draft so the writer sees the note) |
@@ -103,11 +111,15 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    from the same renderer; toggles: Light / Dark (dark = the email's own
    `prefers-color-scheme` rules applied unconditionally), Phone (375 px) /
    Desktop.
-   - **Audience**: the legend shows the count for the SAVED filters;
-     **Apply filters** fetches the count for the chosen ones
-     (`GET /mail/audience-count`, same `audienceCount`) without saving — the
-     legend then says "match these filters" until a filter changes again.
-     Saving stores the filters (and the page reloads the saved count).
+   - **Audience**: **Send to** = "People matching the filters below"
+     (residency / petition / newsletter history / donors) or a **saved
+     list** (hides the filters; shows frozen date or "dynamic"). The legend
+     shows the count for the SAVED choice; **Apply filters** / **Count**
+     fetches the count for the chosen one (`GET /mail/audience-count`, same
+     `audienceInfo` → `lists.js audienceFor`) without saving. Saving stores
+     the choice (and the page reloads the saved count). A draft whose saved
+     list was deleted shows that in red and the request refuses until another
+     audience is chosen.
    - **Import a file** (Content fieldset): a .docx (Word / Google Docs /
      Claude Docs), .md, .txt or .html file goes to `importUpload` (server
      action, editor+, 8 MB): `convert-upload.mjs uploadToHtml` (mammoth with
@@ -126,18 +138,28 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    - **Look**: defaults copy the live site; **Reset to the site look** puts
      `DEFAULT_THEME` back on a draft that carries an older look.
 2. **Save & send me a test** (editor+): saves what is on screen, then sends
-   it to the signed-in admin's address only, subject prefixed `[TEST]`, through the admin's SSR role
+   it to the signed-in admin's address only, subject prefixed `TEST:`, through the admin's SSR role
    (`ses:SendEmail`, From pinned to hello@; same `Reply-To` as the real
-   send). The unsubscribe link points back at the editor. For an automatic
-   email the placeholders (and `{receipt}`) are filled with sample values —
-   docs/systems/email.md "Seeing it before a donation". Audit `newsletter.test`.
+   send). The unsubscribe link points back at the editor. **One copy per
+   tester, filled for that person** (2026-10-10): `{first_name}` /
+   `{last_name}` / `{email}` come from `recipientNameFor` — the tester's
+   row in `DIRECTORY_ROWS_SQL` (subscriber name, else member), the same rows
+   the sender reads for the list; an admin with no row falls back to their
+   team-member name split in two (else the address made readable). So the
+   test shows the greeting a reader gets, and an admin who is not on the
+   list still sees a name. For an automatic email every trigger placeholder
+   (and `{receipt}`) is filled with sample values besides, the first name
+   from the same lookup — docs/systems/email.md "Seeing it before a
+   donation". Audit `newsletter.test`.
 3. **Save & request send** (editor+): saves what is on screen first (Save,
    both test buttons and the request are one form, `then` = the clicked
    button — before 2026-10-08 they were separate forms and a test of an
    unsaved draft went out without the new text); subject and ≥1 block required; the audience
    must match ≥1 person; optional *Send at* (Mountain time, ≥5 minutes
    ahead). Renders and freezes `html/text`, stores the count, status
-   `pending`, audit `newsletter.request`. After the commit, the four admins
+   `pending`, audit `newsletter.request` (diff carries the audience
+   description — filters, or `saved list <name> (frozen <date>, N people)`).
+   After the commit, the four admins
    minus the requester are emailed (editor requests only; owner requests
    mail nobody — same `publishReviewRecipients` rules and `PUBLISH_NOTIFY_TO`
    override as publish requests).
@@ -156,8 +178,13 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
      `newsletter.cancel`. Once the Lambda has claimed the row it finishes.
 5. **Send** (Lambda): `claimForSending` = conditional `approved → sending`
    (the mutex between the direct invoke and the tick); recipients from the
-   frozen audience filters **at send time** (new sign-ups since the request
-   are included; unsubscribes excluded); per recipient: `beginDelivery`
+   frozen audience **at send time** via `lists.js audienceFor` — ad-hoc
+   filters or a dynamic list: whoever matches now (new sign-ups since the
+   request are included; unsubscribes excluded); a frozen list: its
+   snapshot minus anyone no longer eligible. A deleted list fails the run
+   (`FAILED: … no longer exists`; the admin lock makes that a race only).
+   Rows carry `email, first_name, last_name` (one per address); per
+   recipient: `beginDelivery`
    (skip if the row exists), sign a 1-year unsubscribe token
    (`@uccsite/tokens`, purpose `unsubscribe`, same format as the API's
    welcome email and `send-periodical.js`), SESv2 `SendEmail` with
@@ -256,6 +283,59 @@ the migration (`UPDATE … WHERE confirmed_at IS NULL AND created_at <
 press the button. Mailing list page shows them as status "Not confirmed
 yet" (filterable).
 
+### Saved lists (2026-10-10)
+
+A **saved list** (`mailing_lists`) is a named set of the Mailing list page's
+filters, in one of two modes:
+
+| mode | who an email goes to | table |
+|---|---|---|
+| `dynamic` | whoever matches the filters when the email is sent (how ad-hoc filters have always worked) | filters only |
+| `frozen` | the people who matched when the list was last **frozen** — `mailing_list_members` (list_id, email) is that snapshot; **Update** re-takes it. Nobody joins a frozen list by signing up. | `frozen_at`, `frozen_count` + the members table |
+
+Either way the **eligibility rules still apply at send time**: a frozen list
+is `audienceQuery({}, { memberOf: id })` — the snapshot joined back to the
+audience rows, so anyone who unsubscribed, bounced or was removed since the
+freeze is skipped. Freezing never overrides an unsubscribe. The Saved lists
+page shows "reaches N today" next to the frozen count so the drift is
+visible.
+
+**Newsletter history filter** (`history: 'never' | 'reached'`, all three
+places: Mailing list page, composer, saved lists): whether
+`newsletter_deliveries` holds a `sent` row for the address. `never` = the
+dormant part of the list. The ledger starts 2026-10-05 (the admin sender);
+the June 2026 issue (`docs/emails/`) and anything else sent by other tools
+is NOT in it, so "never received" means never via the admin. The purpose
+this was built for: a frozen list of `history = never`, mailed once, then
+(if wanted) **Update** before the next one — the people just mailed drop
+out because the ledger now holds them.
+
+**Resolver.** `packages/db/lists.js audienceFor(client, audience, opts)` is
+the one function that turns a stored audience (`{ residency, donors,
+petition, history }` or `{ list }`) into `{ sql, params, description }`:
+the composer count, the Mailing list CSV, the request's frozen recipient
+count and the Lambda's recipient query all call it. `null` = the audience
+names a list that no longer exists (admin: "choose another audience";
+Lambda: the run fails). A list's own filters never carry `list`
+(`ownFilters`), so a list cannot point at a list.
+
+**Rules** (`apps/admin/lib/lists.js`, editor+, audit `list.<verb>`,
+entityType `mailing_list`; not matched by `CONTENT_ACTION_RE`):
+
+| Action | audit | Effect | Refuses when |
+|---|---|---|---|
+| New list | `list.create` | insert; a `frozen` list is frozen in the same transaction (never empty) | no name |
+| Save name & filters | `list.save` | name + filters; a frozen list's snapshot is NOT retaken (press Update) | — |
+| Update | `list.freeze` | snapshot ← everyone the filters match now; `frozen_count` stamped | list is dynamic; a newsletter on the list is pending / approved / sending ("in flight": the reviewer approved a number) |
+| Freeze now / Make dynamic | `list.mode` | → frozen snapshots now; → dynamic drops the snapshot | in flight |
+| Delete list | `list.delete` | members + row | in flight (drafts and sent newsletters keep their `{ list }`; a draft then shows "deleted — choose another audience") |
+| Download CSV | `subscribers.export` (diff `audience` = the description) | `POST /subscribers/export` with `list=<id>` → `audienceFor` | list gone → 404 |
+
+The Mailing list page's filter form gained **Newsletter history** and a
+**Save these filters as a list** link (`/lists?residency=…&history=…`,
+which seeds the new-list form). Logs: `[lists] <who> created/froze/mode/deleted …`
+(id, name, mode, counts — no addresses).
+
 ### Mailing list management (2026-10-06)
 
 `/subscribers` (editor+) is both the audience dashboard and the list manager.
@@ -268,9 +348,9 @@ Two row sets come from ONE template in `packages/db/audience.js`
 | `DIRECTORY_ROWS_SQL` / `directoryQuery` | everyone we hold a row for, each with `status` (`subscribed` · `unconfirmed` · `unsubscribed` · `suppressed`, in that precedence), `confirmed_at`, `unsubscribed_at`, `unsubscribed_by`; `deliveries: true` adds `sent_count` / `failed_count` / `last_sent_at` from `newsletter_deliveries` | the page's table and status counts |
 
 `status = 'subscribed'` is exactly the audience. Directory filters
-(`normalizeDirectoryFilters`): the audience filters + `status`
-(default `subscribed`; `all` = everyone) + `q` (email/name substring, bound
-and backslash-escaped for ILIKE). A member with ANY `subscribers` row is
+(`normalizeDirectoryFilters`): the audience filters (incl. `history`, see
+"Saved lists") + `status` (default `subscribed`; `all` = everyone) + `q`
+(email/name substring, bound and backslash-escaped for ILIKE). A member with ANY `subscribers` row is
 represented by that row alone in both sets.
 
 **Soft unsubscribe.** `subscribers.unsubscribed_at` / `unsubscribed_by`
@@ -369,6 +449,19 @@ postal address (CAN-SPAM). Editors are trusted; the admin preview iframe is
   `**bold**`, `*italic*`, `[text](https://…)`. Author text is escaped FIRST;
   link/image URLs must be `http(s):` (`mailto:` for links); anything else
   is dropped silently by `normalizeBlocks`.
+- **Recipient placeholders** (2026-10-10, `packages/newsletter/fill.cjs
+  recipientVars`; filled per copy in `send.js buildMessage` — subject, HTML
+  (escaped) and text — and in the admin's test send): `{first_name}`,
+  `{last_name}`, `{email}` from the audience row (the Mailing list page's
+  name for the address: subscriber row, else member). No first name on file
+  → `there` (`NO_NAME`), so "Hi {first_name}," never reads "Hi ,". Word-style
+  `[First name]` / `[Last name]` / `[Email]` are aliases (`aliasTokens`);
+  any other bracketed text is left as typed. Unknown `{tokens}` stay as
+  typed. The `{{unsubscribe_url}}` token is untouched by the fill (its inner
+  `{unsubscribe_url}` is not a known key) and replaced afterwards. The
+  frozen `html`/`text` keep the tokens — the fill happens at send time, so
+  the web copy (`web_html`) shows them literally; a newsletter meant for the
+  archive should avoid them or accept that.
 - Footer: theme footer text + an always-present Unsubscribe link
   (`{{unsubscribe_url}}`), plain-text twin ends with `Unsubscribe: <url>`.
 - `fromHeader(name)`: display name limited to letters/space/.'-, 60 chars;

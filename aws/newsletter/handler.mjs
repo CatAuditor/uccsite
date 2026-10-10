@@ -9,14 +9,14 @@
 //                            skipped and only these addresses are mailed
 // Everything else (what the mail says, who approved it) was decided in the
 // admin; this only moves approved rows to sent. Recipients are read from the
-// frozen audience filters at send time (packages/db/audience.js), each one
+// frozen audience at send time (filters, or a saved list — packages/db/lists.js), each one
 // gets its own signed unsubscribe link, and the per-recipient delivery row
 // makes any resume idempotent.
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { withConnection } from '@uccsite/db';
-import { audienceQuery, normalizeFilters } from '@uccsite/db/audience';
+import { audienceFor } from '@uccsite/db/lists';
 import { claimForSending, dueNewsletters, deliveryCounts, finishNewsletter, authorReplyTo } from '@uccsite/db/newsletters';
 import { fromHeader } from '@uccsite/newsletter/render';
 import { sendNewsletter } from './send.js';
@@ -50,11 +50,21 @@ async function runOne({ id, resume = false, recipientsOverride }, context) {
   let result;
   try {
     const secret = await tokenSecret();
+    // Ad-hoc filters or a saved list (dynamic: re-run now; frozen: its
+    // snapshot minus anyone no longer eligible) — packages/db/lists.js.
+    let audienceLabel = 'override';
     const recipients = recipientsOverride || await withConnection(db, async (client) => {
-      const { sql, params } = audienceQuery(normalizeFilters(newsletter.audience), { columns: 'a.email', orderBy: 'a.email' });
-      return [...new Set((await client.query(sql, params)).rows.map((r) => r.email).filter(Boolean))];
+      const r = await audienceFor(client, newsletter.audience, { columns: 'a.email, a.first_name, a.last_name', orderBy: 'a.email' });
+      if (!r) throw new Error('The saved list this newsletter was going to no longer exists');
+      audienceLabel = r.description;
+      // One row per address (the names fill {first_name} etc. — send.js).
+      const seen = new Map();
+      for (const row of (await client.query(r.sql, r.params)).rows) {
+        if (row.email && !seen.has(row.email)) seen.set(row.email, { email: row.email, firstName: row.first_name || '', lastName: row.last_name || '' });
+      }
+      return [...seen.values()];
     });
-    console.log(`[newsletter] ${id} recipients=${recipients.length}${recipientsOverride ? ' (override)' : ''}`);
+    console.log(`[newsletter] ${id} recipients=${recipients.length} audience=${audienceLabel}`);
     const replyTo = await withConnection(db, (client) => authorReplyTo(client, newsletter.fromName));
     console.log(`[newsletter] ${id} reply-to=${replyTo || '(none: hello@)'}`);
     result = await withConnection(db, (client) => sendNewsletter({

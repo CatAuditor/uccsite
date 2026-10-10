@@ -53,6 +53,21 @@ test('sends once per recipient with a signed per-recipient unsubscribe link in b
   assert.notEqual(/href="([^"]+)"/.exec(sent[1].Content.Simple.Body.Html.Data)[1], href);
 });
 
+test('recipient placeholders: name from the audience row, "there" without one; subject, html and text; strings still work', async () => {
+  const personal = { ...newsletter, subject: 'Hi {first_name}', html: '<p>Hi {first_name} {last_name} &lt;{email}&gt;</p><a href="{{unsubscribe_url}}">u</a>', text: 'Hi [First name]\nu: {{unsubscribe_url}}' };
+  const sent = [];
+  const r = await sendNewsletter(base(fakeDb(), async (input) => { sent.push(input); return { MessageId: 'ok' }; }, {
+    newsletter: personal, recipients: [{ email: 'a@x.y', firstName: 'Ada', lastName: 'L<' }, 'b@x.y'], log: () => {} }));
+  assert.equal(r.sent, 2);
+  assert.equal(sent[0].Content.Simple.Subject.Data, 'Hi Ada');
+  assert.match(sent[0].Content.Simple.Body.Html.Data, /<p>Hi Ada L&lt; &lt;a@x\.y&gt;<\/p><a href="https:/);
+  assert.match(sent[0].Content.Simple.Body.Text.Data, /^Hi Ada\n/);
+  assert.deepEqual(sent[1].Destination.ToAddresses, ['b@x.y']);
+  assert.equal(sent[1].Content.Simple.Subject.Data, 'Hi there');
+  assert.match(sent[1].Content.Simple.Body.Html.Data, /<p>Hi there  &lt;b@x\.y&gt;<\/p>/);
+  assert.ok(!sent[1].Content.Simple.Body.Html.Data.includes('{{unsubscribe_url}}'), 'the unsubscribe token survives the fill and is replaced after it');
+});
+
 test('a resume skips recipients already attempted and records failures without stopping', async () => {
   const db = fakeDb(new Set(['a@x.y']));
   const r = await sendNewsletter(base(db, async (input) => {

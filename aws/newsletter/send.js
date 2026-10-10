@@ -5,6 +5,8 @@
 //
 // sendNewsletter({ client, send, newsletter, recipients, secret, origin, timeLeftMs, log })
 //   → { sent, failed, skipped, done }
+// recipients: addresses, or { email, firstName, lastName } rows (the names
+// fill the recipient placeholders — buildMessage).
 // For each recipient: beginDelivery (the per-recipient idempotency row —
 // false = already attempted by an earlier invocation, skip), one SES send
 // (retried with backoff on throttling / transient errors), finishDelivery.
@@ -12,6 +14,7 @@
 // the caller can re-invoke itself and resume.
 const { signToken } = require('@uccsite/tokens');
 const { beginDelivery, finishDelivery } = require('@uccsite/db/newsletters');
+const { fillHtml, fillText, recipientVars } = require('@uccsite/newsletter/fill');
 
 const UNSUB_TTL_SECONDS = 60 * 60 * 24 * 365;
 const UNSUBSCRIBE_TOKEN = '{{unsubscribe_url}}';
@@ -36,14 +39,19 @@ async function unsubscribeUrl(secret, email, origin) {
   return `${origin}/api/unsubscribe?token=${encodeURIComponent(token)}`;
 }
 
-// buildMessage(newsletter, { to, unsub, from, replyTo }) → the SESv2 SendEmail input.
+// buildMessage(newsletter, { to, unsub, from, replyTo, recipient }) → the SESv2 SendEmail input.
 // List-Id + Precedence: bulk mark it as list mail (bulk-sender
 // classification; keeps auto-replies and out-of-office off hello@).
 // replyTo (the author's org mailbox, db authorReplyTo) sets Reply-To so a
 // reader's reply reaches the person, not the shared inbox; absent → no header.
-function buildMessage(newsletter, { to, unsub, from, replyTo, configurationSet }) {
-  const body = { Html: { Data: newsletter.html.replaceAll(UNSUBSCRIBE_TOKEN, unsub), Charset: 'UTF-8' } };
-  if (newsletter.text) body.Text = { Data: newsletter.text.replaceAll(UNSUBSCRIBE_TOKEN, unsub), Charset: 'UTF-8' };
+// recipient ({ email, firstName, lastName }) fills {first_name} / {last_name}
+// / {email} (and Word-style [First name]) in subject, HTML and text — the
+// name the Mailing list page shows for that address; "there" when none.
+function buildMessage(newsletter, { to, unsub, from, replyTo, configurationSet, recipient }) {
+  const vars = recipientVars({ ...recipient, email: to });
+  const html = fillHtml(newsletter.html, vars).replaceAll(UNSUBSCRIBE_TOKEN, unsub);
+  const body = { Html: { Data: html, Charset: 'UTF-8' } };
+  if (newsletter.text) body.Text = { Data: fillText(newsletter.text, vars.text).replaceAll(UNSUBSCRIBE_TOKEN, unsub), Charset: 'UTF-8' };
   return {
     FromEmailAddress: from,
     Destination: { ToAddresses: [to] },
@@ -51,7 +59,7 @@ function buildMessage(newsletter, { to, unsub, from, replyTo, configurationSet }
     ...(configurationSet ? { ConfigurationSetName: configurationSet } : {}),
     Content: {
       Simple: {
-        Subject: { Data: newsletter.subject, Charset: 'UTF-8' },
+        Subject: { Data: fillText(newsletter.subject, vars.text), Charset: 'UTF-8' },
         Body: body,
         Headers: [
           { Name: 'List-Unsubscribe', Value: `<${unsub}>` },
@@ -85,11 +93,12 @@ async function sendNewsletter({ client, send, newsletter, recipients, secret, or
       log(`[newsletter] ${newsletter.id} pausing at ${i}/${recipients.length} (time); will resume`);
       return { sent, failed, skipped, done: false };
     }
-    const to = recipients[i];
+    const recipient = typeof recipients[i] === 'string' ? { email: recipients[i] } : recipients[i];
+    const to = recipient.email;
     if (!(await beginDelivery(client, newsletter.id, to))) { skipped++; continue; }
     try {
       const unsub = await unsubscribeUrl(secret, to, origin);
-      const res = await sendWithRetry(send, buildMessage(newsletter, { to, unsub, from, replyTo, configurationSet }), { sleep, log, label: `${newsletter.id} send #${i}` });
+      const res = await sendWithRetry(send, buildMessage(newsletter, { to, unsub, from, replyTo, configurationSet, recipient }), { sleep, log, label: `${newsletter.id} send #${i}` });
       await finishDelivery(client, newsletter.id, to, { status: 'sent', messageId: res?.MessageId });
       sent++;
     } catch (err) {

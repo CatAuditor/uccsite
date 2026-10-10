@@ -8,7 +8,6 @@
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
-import { describeFilters, normalizeFilters } from '@uccsite/db/audience';
 import { formatZoned, ZONE_LABEL, toLocalInput } from '@uccsite/newsletter/schedule';
 import { requireSession } from '../../../lib/auth';
 import {
@@ -32,7 +31,7 @@ export default async function NewsletterPage({ params }) {
   const { id } = await params;
   const page = await newsletterPage(id);
   if (!page) notFound();
-  const { newsletter: n, names, count, petitions, deliveries, defaults, diff, opens } = page;
+  const { newsletter: n, names, count, audience, lists, petitions, deliveries, defaults, diff, opens } = page;
   // Automatic email (docs/systems/email.md "Attached emails"): no audience, no
   // send request — it is ATTACHED to a trigger and the API sends it.
   const isTx = n.kind === 'transactional';
@@ -149,7 +148,7 @@ export default async function NewsletterPage({ params }) {
           {n.status === 'failed' && <h2>Send failed</h2>}
           <p>
             <strong>{n.requestedBy}</strong> asked at {when(n.requestedAt)} to send to <strong>{n.recipients}</strong> people
-            ({describeFilters(normalizeFilters(n.audience))}), {n.scheduledFor ? `at ${formatZoned(n.scheduledFor)}` : 'as soon as approved'}.
+            ({audience.description}), {n.scheduledFor ? `at ${formatZoned(n.scheduledFor)}` : 'as soon as approved'}.
             {n.reviewedBy && n.status !== 'pending' ? ` Approved by ${n.reviewedBy} at ${when(n.reviewedAt)}.` : ''}
           </p>
           {n.requestNote && <blockquote>{n.requestNote}</blockquote>}
@@ -225,7 +224,7 @@ export default async function NewsletterPage({ params }) {
 
       <ActionForm action={save} className="editor">
         <input type="hidden" name="updatedAt" value={n.updatedAt} />
-        <Composer newsletter={n} names={names} count={count} petitions={petitions} readOnly={!canAct || !isDraft} publicOrigin={config.publicOrigin} />
+        <Composer newsletter={n} names={names} count={count} audience={audience} lists={lists} petitions={petitions} readOnly={!canAct || !isDraft} publicOrigin={config.publicOrigin} />
         {canAct && isDraft && (
           <label className="mail-check"><input type="checkbox" name="automatic" value="1" defaultChecked={isTx} /> Automatic email — sent by the site to one person after they act (choose it on the <Link href="/petition">Petition</Link> or <Link href="/appeals">Appeals</Link> page), not to the mailing list. Takes effect on Save.</label>
         )}
@@ -240,7 +239,7 @@ export default async function NewsletterPage({ params }) {
           <div className="request-send">
             <h2>Request the send</h2>
             <p className="hint">
-              Saves first. Audience: <strong>{count}</strong> people ({describeFilters(normalizeFilters(n.audience))}).
+              Saves first. Audience: <strong>{count ?? 0}</strong> people ({audience.description}).
               Leave the time empty to send as soon as someone approves; set one to schedule it ({ZONE_LABEL}, at least 5 minutes from now).
             </p>
             <label htmlFor="schedule">Send at ({ZONE_LABEL}) — optional</label>
