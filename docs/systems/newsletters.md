@@ -92,7 +92,7 @@ detail: docs/systems/email.md "Attached emails".
 | `subject, preheader, headline, from_name` | what the composer edits; `from_name` is the author shown in the From display name |
 | `blocks, theme, audience` | JSON: the block list (`heading, text, rich, button, image, quote, divider`; `rich` = sanitized document HTML, see Rendering), the look (`accent, highlight, font, eyebrow` (optional label; '' by default), `footer`; the letterhead itself is fixed), the audience (`residency, donors, petition, history` — packages/db/audience.js, same as the Mailing list page — OR `list` = a saved list's id, which overrides the filters; see "Saved lists") |
 | `html, text` | **frozen at request time** — what the reviewer approves is what is sent, even though the send happens later |
-| `requested_by/_user, request_note, requested_at, scheduled_for, recipients` | the request; `recipients` = the audience count the writer saw |
+| `requested_by/_user, request_note, requested_at, scheduled_for, recipients` | the request; `recipients` = the audience count the writer saw. `scheduled_for` is ALSO stored on a draft by Save (2026-10-10, "Send at" remembered); the request re-validates it (≥ 5 min) |
 | `reviewed_by, review_note, reviewed_at` | the latest review (kept on a declined draft so the writer sees the note) |
 | `send_started_at, sent_at, sent_count, failed_count, error` | the run |
 | `kind` | `'newsletter'` (NULL) or `'transactional'` — see "Kinds" |
@@ -122,10 +122,12 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    - **Audience**: not in the composer (removed 2026-10-10, later the same
      day). The audience is chosen in **Request the send** → **Send to**: a
      saved list or **All** (everyone on the mailing list); ad-hoc filters
-     live only on the Mailing list / Saved lists pages. A plain Save keeps
-     the chosen list (hidden `list` field). A draft whose saved list was
-     deleted (or that carries a pre-2026-10-10 filter set) says so and the
-     request demands a fresh choice.
+     live only on the Mailing list / Saved lists pages. **Save stores the
+     choice and the "Send at" time** (`saveNewsletter`: `sendTo` → audience
+     `{ list }` / `{}`; `schedule` → `scheduled_for`, any parseable time,
+     empty = on approval; nothing chosen keeps the hidden `list`). A draft
+     whose saved list was deleted (or that carries a pre-2026-10-10 filter
+     set) says so and the request demands a fresh choice.
    - **Import a file** (Content fieldset): a .docx (Word / Google Docs /
      Claude Docs), .md, .txt or .html file goes to `importUpload` (server
      action, editor+, 8 MB): `convert-upload.mjs uploadToHtml` (mammoth with
@@ -158,11 +160,12 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    from the same lookup — docs/systems/email.md "Seeing it before a
    donation". Audit `newsletter.test`.
 3. **Save & request send** (editor+): the request block's **Send to**
-   (`sendTo`, required: `all` = everyone — every filter key cleared, or a
-   saved list id → `list`; options show each list's current count and the
-   mailing-list total, `newsletterPage` → `lists[].count`, `everyone`) is
-   applied to the form before the save, so the stored audience is what is
-   requested (2026-10-10). No choice → "Choose who this email goes to".
+   (`sendTo`: `all` = everyone, or a saved list id → `list`; options show
+   each list's current count and the mailing-list total, `newsletterPage` →
+   `lists[].count`, `everyone`) and **Send at** are stored by the same
+   `saveNewsletter` a plain Save uses; the request then requires a choice
+   ("Choose who this email goes to") and a time ≥ 5 minutes out
+   (`parseSchedule`).
    `request` is a PLAIN function the `save` action calls — never a second
    inline Server Action (that failed every request 2026-10-08 → 10-10,
    docs/error-handling/client-side-error/2026-10-10-admin-server-components-digest.md).

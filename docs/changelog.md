@@ -23,6 +23,15 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.10 — 2026-10-10 — Save stores Send to and Send at
+
+- `lib/newsletters.js saveNewsletter`: reads `sendTo` (`all` → `{}`, list id → `{ list }`, '' → form's hidden
+  `list`) and `schedule` (`zonedLocalToUtc`; empty → null; unparseable refuses; past allowed — the request's
+  `parseSchedule` enforces the lead) → `db.saveNewsletter({ scheduledFor })`, new `CASE WHEN $12` column
+  update (undefined = untouched). Audit diff carries `scheduledFor`. Test added.
+- `page.js request()`: validates the choice only; `required` dropped from the select so a plain Save works
+  without a choice. Hint explains Save vs request.
+
 ## v0.29.9 — 2026-10-10 — FIX: send request never worked since 2026-10-08
 
 - `app/mail/[id]/page.js`: `request` is no longer an inline `'use server'` function; it is a plain async helper

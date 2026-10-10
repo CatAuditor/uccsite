@@ -47,6 +47,20 @@ test('state transitions are conditional updates on the current status', async ()
   assert.match(c.calls[5].sql, /WHERE id = \$1 AND status = 'failed'/);
 });
 
+test('saveNewsletter stores the draft send time when given, leaves it alone when undefined', async () => {
+  const base = { id: 'a', subject: 's', preheader: '', headline: '', fromName: 'J', blocks: [], theme: {}, audience: {}, expectedUpdatedAt: 't1' };
+  let c = fakeClient([{ rowCount: 1 }]);
+  await nl.saveNewsletter(c, { ...base, scheduledFor: '2026-10-12T15:00:00.000Z' });
+  assert.match(c.calls[0].sql, /scheduled_for = CASE WHEN \$12 THEN \$13::timestamptz ELSE scheduled_for END/);
+  assert.equal(c.calls[0].params[11], true); assert.equal(c.calls[0].params[12], '2026-10-12T15:00:00.000Z');
+  c = fakeClient([{ rowCount: 1 }]);
+  await nl.saveNewsletter(c, { ...base, scheduledFor: null });
+  assert.equal(c.calls[0].params[11], true); assert.equal(c.calls[0].params[12], null, 'empty = on approval');
+  c = fakeClient([{ rowCount: 1 }]);
+  await nl.saveNewsletter(c, base);
+  assert.equal(c.calls[0].params[11], false, 'undefined = column untouched');
+});
+
 test('saveNewsletter sets the kind when given (the "Automatic email" tick box), keeps it otherwise', async () => {
   const c = fakeClient([{ rowCount: 1 }, { rowCount: 1 }, { rowCount: 1 }]);
   const base = { id: 'a', subject: 's', preheader: '', headline: '', fromName: 'J', blocks: [], theme: {}, audience: {}, expectedUpdatedAt: 't1' };

@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
 import { formatZoned, ZONE_LABEL, toLocalInput } from '@uccsite/newsletter/schedule';
-import { FILTER_KEYS, UUID_RE } from '@uccsite/db/audience';
+import { UUID_RE } from '@uccsite/db/audience';
 import { requireSession } from '../../../lib/auth';
 import {
   newsletterPage, saveNewsletter, requestSend, approveSend, declineSend, withdrawSend, cancelSend, retrySend, sendTest, deleteNewsletter,
@@ -77,13 +77,10 @@ export default async function NewsletterPage({ params }) {
   // (docs/error-handling/client-side-error/2026-10-10-admin-server-components-digest.md).
   async function request(prev, formData) {
     return runAction(async () => {
-      // "Send to" is the audience: 'all' = everyone on the mailing list (every
-      // filter cleared), or a saved list id → { list }. Applied to the form
-      // before the save, so the stored audience is what gets requested.
+      // "Send to" and "Send at" are stored by saveNewsletter on every Save; a
+      // request additionally needs a choice and a time at least 5 minutes out.
       const sendTo = String(formData.get('sendTo') || '');
-      for (const k of FILTER_KEYS) formData.set(k, '');
-      if (UUID_RE.test(sendTo)) formData.set('list', sendTo.toLowerCase());
-      else if (sendTo !== 'all') throw new Error('Choose who this email goes to (a saved list, or All) before requesting the send.');
+      if (sendTo !== 'all' && !UUID_RE.test(sendTo)) throw new Error('Choose who this email goes to (a saved list, or All) before requesting the send.');
       await saveNewsletter(id, formData);
       const { needsReview, notified, scheduledFor } = await requestSend(id, String(formData.get('note') || ''), String(formData.get('schedule') || ''));
       revalidatePath(path); revalidatePath('/mail'); revalidatePath('/');
@@ -258,16 +255,17 @@ export default async function NewsletterPage({ params }) {
           <div className="request-send">
             <h2>Request the send</h2>
             <p className="hint">
-              Saves first. Leave the time empty to send as soon as someone approves; set one to schedule it ({ZONE_LABEL}, at least 5 minutes from now).
+              <strong>Save</strong> keeps the choice and the time below with the draft; <strong>Save &amp; request send</strong> sends it for review.
+              Leave the time empty to send as soon as someone approves; set one to schedule it ({ZONE_LABEL}, at least 5 minutes from now).
               {savedChoice === '' && audience.description !== 'everyone' && <> This draft still carries an older filter set ({audience.description}, {count ?? 0} people) — choose a list or All below.</>}
             </p>
             <label htmlFor="sendTo">Send to</label>
-            <select id="sendTo" name="sendTo" defaultValue={savedChoice} required>
+            <select id="sendTo" name="sendTo" defaultValue={savedChoice}>
               <option value="">Choose…</option>
               <option value="all">All — everyone on the mailing list ({everyone})</option>
               {lists.map((l) => <option key={l.id} value={l.id}>Saved list: {l.name} — {l.count} {l.count === 1 ? 'person' : 'people'}{l.mode === 'frozen' ? ` (frozen ${String(l.frozenAt || '').slice(0, 10)})` : ' (dynamic)'}</option>)}
             </select>
-            <div className="hint">Lists are made under <Link href="/lists">Mail → Saved lists</Link> from the Mailing list filters. Counts are as of now; a dynamic list is re-counted when the email goes out.</div>
+            <div className="hint">Lists are made under <Link href="/lists">Mail → Saved lists</Link> from the Mailing list filters. Counts are as of now; a dynamic list is re-counted when the email goes out.{savedChoice ? ' Saved with the draft.' : ''}</div>
             <label htmlFor="schedule">Send at ({ZONE_LABEL}) — optional</label>
             <input type="datetime-local" id="schedule" name="schedule" defaultValue={n.scheduledFor ? toLocalInput(n.scheduledFor) : ''} />
             <label htmlFor="request-note">Note for the reviewer (optional)</label>

@@ -15,7 +15,7 @@ import * as db from '@uccsite/db/newsletters';
 import { renderEmail, normalizeBlocks, normalizeTheme, fromHeader, rawBlock, UNSUBSCRIBE_TOKEN } from '@uccsite/newsletter/render';
 import { sanitizeRich } from './newsletter-import.mjs';
 import { renderWebBody, archiveSlug } from '@uccsite/newsletter/web';
-import { parseSchedule, formatZoned } from '@uccsite/newsletter/schedule';
+import { parseSchedule, formatZoned, zonedLocalToUtc } from '@uccsite/newsletter/schedule';
 import { fillHtml, fillText, sampleVars, recipientVars } from '@uccsite/newsletter/fill';
 import { requireRole } from './auth';
 import { withDb, withWriteTx, recordChange } from './data';
@@ -165,11 +165,30 @@ export async function saveNewsletter(id, formData) {
       .filter((b) => b.type !== 'rich' || b.html);
   } catch (err) { throw new Error(`Blocks could not be read: ${err.message}`); }
   try { theme = normalizeTheme(JSON.parse(String(formData.get('theme') || '{}'))); } catch { throw new Error('Theme could not be read'); }
-  const audience = normalizeFilters({ residency: formData.get('residency'), donors: formData.get('donors'), petition: formData.get('petition'), history: formData.get('history'), list: formData.get('list') });
+  // Audience: the request block's "Send to" (sendTo = 'all' | a saved list
+  // id) is saved on every Save, not only on request; '' (nothing chosen yet)
+  // keeps what the form carries (the hidden `list`, or legacy filter fields).
+  const sendTo = String(formData.get('sendTo') || '');
+  const audience = sendTo === 'all' ? normalizeFilters({})
+    : UUID_RE.test(sendTo) ? normalizeFilters({ list: sendTo })
+    : normalizeFilters({ residency: formData.get('residency'), donors: formData.get('donors'), petition: formData.get('petition'), history: formData.get('history'), list: formData.get('list') });
+  // "Send at" is saved too (a draft remembers its time); an unparseable value
+  // refuses the save, a past one is allowed here — the request enforces the
+  // 5-minute lead (parseSchedule). Absent field (automatic emails) = untouched.
+  let scheduledFor;
+  if (formData.has('schedule')) {
+    const local = String(formData.get('schedule') || '').trim();
+    if (!local) scheduledFor = null;
+    else {
+      const at = zonedLocalToUtc(local);
+      if (!at) throw new Error('Send time must be a date and time (YYYY-MM-DD HH:MM).');
+      scheduledFor = at.toISOString();
+    }
+  }
   const fields = {
     subject: clip(formData.get('subject'), 200), preheader: clip(formData.get('preheader'), 200), headline: clip(formData.get('headline'), 200),
     fromName: clip(formData.get('fromName'), 60), blocks, theme, audience, publishToSite: formData.get('publishToSite') === '1',
-    kind: formData.get('automatic') === '1' ? 'transactional' : 'newsletter',
+    kind: formData.get('automatic') === '1' ? 'transactional' : 'newsletter', scheduledFor,
   };
   await withWriteTx(async (client) => {
     // Unticking "Automatic email" while a trigger still sends it would leave
@@ -184,7 +203,7 @@ export async function saveNewsletter(id, formData) {
       if (row.status !== 'draft') throw new Error(`This newsletter is ${row.status} — it can only be edited as a draft (withdraw or cancel the request first).`);
       throw new Error('Someone else saved this newsletter since you opened it — reload to see their version.');
     }
-    await recordChange(client, { actor: s.email, action: 'newsletter.save', entityType: 'newsletter', entityId: nid, snapshot: { ...fields }, diff: { subject: fields.subject, blocks: blocks.length, audience: audience.list ? `saved list ${audience.list}` : describeFilters(audience), publishToSite: fields.publishToSite } });
+    await recordChange(client, { actor: s.email, action: 'newsletter.save', entityType: 'newsletter', entityId: nid, snapshot: { ...fields }, diff: { subject: fields.subject, blocks: blocks.length, audience: audience.list ? `saved list ${audience.list}` : describeFilters(audience), publishToSite: fields.publishToSite, scheduledFor: scheduledFor === undefined ? '(unchanged)' : scheduledFor } });
   });
   return fields;
 }

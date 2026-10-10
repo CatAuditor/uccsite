@@ -181,11 +181,16 @@ async function duplicateNewsletter(client, { id, createdBy, fromName, subject })
 // was still a draft AND unchanged since the form was rendered (lost-update
 // guard, same idea as lib/data.js stamps); false otherwise. kind: one of
 // KINDS (the editor's "Automatic email" tick box); omitted = unchanged.
-async function saveNewsletter(client, { id, subject, preheader, headline, fromName, blocks, theme, audience, publishToSite = true, kind, expectedUpdatedAt }) {
+// scheduledFor (2026-10-10): the draft's "Send at" — an ISO string, null
+// (= on approval), or undefined to leave the column alone; the request
+// re-reads it from the form and enforces the lead time.
+async function saveNewsletter(client, { id, subject, preheader, headline, fromName, blocks, theme, audience, publishToSite = true, kind, scheduledFor, expectedUpdatedAt }) {
   const res = await client.query(
-    `UPDATE newsletters SET subject = $2, preheader = $3, headline = $4, from_name = $5, blocks = $6, theme = $7, audience = $8, publish_to_site = $10, kind = COALESCE($11, kind), updated_at = now()
+    `UPDATE newsletters SET subject = $2, preheader = $3, headline = $4, from_name = $5, blocks = $6, theme = $7, audience = $8, publish_to_site = $10, kind = COALESCE($11, kind),
+       scheduled_for = CASE WHEN $12 THEN $13::timestamptz ELSE scheduled_for END, updated_at = now()
      WHERE id = $1 AND status = 'draft' AND updated_at::text = $9`,
-    [id, subject, preheader, headline, fromName, JSON.stringify(blocks), JSON.stringify(theme), JSON.stringify(audience), expectedUpdatedAt, publishToSite ? 1 : 0, KINDS.includes(kind) ? kind : null]);
+    [id, subject, preheader, headline, fromName, JSON.stringify(blocks), JSON.stringify(theme), JSON.stringify(audience), expectedUpdatedAt, publishToSite ? 1 : 0, KINDS.includes(kind) ? kind : null,
+      scheduledFor !== undefined, scheduledFor || null]);
   return res.rowCount === 1;
 }
 

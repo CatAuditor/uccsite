@@ -113,6 +113,11 @@ Nothing.
 **Technical detail**: docs/systems/newsletters.md "Saved lists" and
 "Recipient placeholders".
 
+**Save remembers the audience and the time.** Choosing a list (or All) under
+*Send to* and a *Send at* time, then pressing **Save**, now keeps both with the
+draft — before, only *Save & request send* used them. A time in the past can
+be saved; requesting the send still needs it at least 5 minutes ahead.
+
 **Fixed: "Save & request send" always failed** (since October 8, when Save,
 test and request became one set of buttons). Every attempt showed the "Server
 Components render" error and nothing was requested — no newsletter has been
