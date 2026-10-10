@@ -21,7 +21,7 @@ test('list actions are not site content', () => {
 
 test('rowToList normalizes the stored filters and never lets a list point at a list', () => {
   const l = lists.rowToList({ id: ID, name: 'Dormant', filters: JSON.stringify({ history: 'never', list: ID, residency: 'bogus' }), mode: 'frozen', frozen_at: '2026-10-09 01:02:03+00', frozen_count: 412 });
-  assert.deepEqual(l.filters, { residency: 'all', donors: false, petition: '', history: 'never', list: '' });
+  assert.deepEqual(l.filters, { residency: 'all', donors: false, petition: '', not_petition: '', history: 'never', list: '', not_list: '', giving: '', via: '', joined_after: '', joined_before: '', zip: '', last_sent_before: '' });
   assert.equal(l.mode, 'frozen');
   assert.equal(lists.rowToList({ id: ID, filters: 'junk', mode: 'weird' }).mode, 'dynamic');
   assert.equal(lists.describeList(l), 'Dormant (frozen 2026-10-09, 412 people)');
@@ -30,8 +30,9 @@ test('rowToList normalizes the stored filters and never lets a list point at a l
 
 test('a dynamic list re-runs its filters; a frozen list reads its snapshot with the eligibility rules kept', () => {
   const dyn = lists.listQuery({ id: ID, mode: 'dynamic', filters: { history: 'never', residency: 'utah' } }, { columns: 'a.email' });
-  assert.deepEqual(dyn.params, ['utah']);
+  assert.deepEqual(dyn.params, ['utah', ID], 'dynamic: filters OR the people added by hand');
   assert.match(dyn.sql, /NOT EXISTS \(SELECT 1 FROM newsletter_deliveries/);
+  assert.match(dyn.sql, /OR EXISTS \(SELECT 1 FROM mailing_list_members lm WHERE lm\.list_id = \$2::uuid AND lm\.source = 'manual'/);
   const frz = lists.listQuery({ id: ID, mode: 'frozen', filters: { history: 'never', residency: 'utah' } }, { columns: 'a.email' });
   assert.deepEqual(frz.params, [ID]);
   assert.match(frz.sql, /mailing_list_members lm WHERE lm\.list_id = \$1::uuid/);
@@ -39,16 +40,27 @@ test('a dynamic list re-runs its filters; a frozen list reads its snapshot with 
   assert.match(frz.sql, /s\.unsubscribed_at IS NULL/, 'frozen: the audience rules still apply');
 });
 
-test('freezeList replaces the snapshot with the current match and stamps the count', async () => {
-  const c = fakeClient([{ rowCount: 0 }, { rowCount: 7 }, { rowCount: 1 }]);
+test('freezeList replaces the snapshot rows only (people added by hand stay) and stamps the total', async () => {
+  const c = fakeClient([{ rowCount: 0 }, { rowCount: 7 }, { rows: [{ n: 9 }] }, { rowCount: 1 }]);
   const n = await lists.freezeList(c, ID, { donors: true });
-  assert.equal(n, 7);
-  assert.match(c.calls[0].sql, /^DELETE FROM mailing_list_members WHERE list_id = \$1/);
-  assert.match(c.calls[1].sql, /^INSERT INTO mailing_list_members \(list_id, email\) SELECT \$1::uuid, q\.email FROM \(SELECT a\.email FROM/);
+  assert.equal(n, 9);
+  assert.match(c.calls[0].sql, /^DELETE FROM mailing_list_members WHERE list_id = \$1 AND COALESCE\(source, 'snapshot'\) = 'snapshot'/);
+  assert.match(c.calls[1].sql, /^INSERT INTO mailing_list_members \(list_id, email, source\) SELECT \$1::uuid, q\.email, 'snapshot' FROM \(SELECT a\.email FROM/);
   assert.match(c.calls[1].sql, /a\.donor/);
   assert.deepEqual(c.calls[1].params, [ID]);
-  assert.match(c.calls[2].sql, /frozen_at = now\(\), frozen_count = \$2/);
-  assert.deepEqual(c.calls[2].params, [ID, 7]);
+  assert.match(c.calls[3].sql, /frozen_at = now\(\), frozen_count = \$2/);
+  assert.deepEqual(c.calls[3].params, [ID, 9]);
+});
+
+test('addMembers upserts by hand (lower-cased, de-duplicated, junk skipped); removeMember deletes one', async () => {
+  const c = fakeClient([{ rowCount: 1 }, { rowCount: 1 }]);
+  assert.equal(await lists.addMembers(c, ID, [' A@X.Y ', 'a@x.y', 'nope', 'b@x.y']), 2);
+  assert.equal(c.calls.length, 2);
+  assert.deepEqual(c.calls[0].params, [ID, 'a@x.y']);
+  assert.match(c.calls[0].sql, /VALUES \(\$1, \$2, 'manual'\) ON CONFLICT \(list_id, email\) DO UPDATE SET source = 'manual'/);
+  const d = fakeClient([{ rowCount: 1 }]);
+  assert.equal(await lists.removeMember(d, ID, 'B@x.y'), true);
+  assert.deepEqual(d.calls[0].params, [ID, 'b@x.y']);
 });
 
 test('audienceFor: ad-hoc filters, a saved list, or null when the list is gone', async () => {
@@ -59,7 +71,8 @@ test('audienceFor: ad-hoc filters, a saved list, or null when the list is gone',
   const row = { id: ID, name: 'Dormant', filters: '{"history":"never"}', mode: 'dynamic' };
   const found = await lists.audienceFor(fakeClient([{ rows: [row], rowCount: 1 }]), { list: ID, residency: 'utah' }, { columns: 'a.email' });
   assert.equal(found.description, 'saved list Dormant (dynamic: never received a newsletter)');
-  assert.deepEqual(found.params, [], "the newsletter's own filters are ignored when a list is chosen");
+  assert.deepEqual(found.params, [ID], "the newsletter's own filters are ignored when a list is chosen (only the list's manual-members id is bound)");
+  assert.ok(!/a\.residency/.test(found.sql));
   assert.match(found.sql, /NOT EXISTS \(SELECT 1 FROM newsletter_deliveries/);
   assert.equal(await lists.audienceFor(fakeClient(), { list: ID }), null);
 });

@@ -68,6 +68,24 @@ Nothing.
   their Team card — so the test proves the placeholder works before the real
   send. Automatic emails (petition / donation thank-yous) take the tester's
   first name from the same lookup.
+- **More filters, same controls everywhere** (later the same evening):
+  residency, **ZIP starts with**, **giving** (donors / monthly members /
+  one-time only / non-donors — replaces the "donors only" tick box, which
+  still works on old drafts), **joined via** (join form & petitions, or
+  donation checkout), **joined on or after / on or before** a date,
+  **signed** a petition (a specific one, any, or none), **did NOT sign** a
+  petition (filter people OUT), newsletter history, **not emailed since** a
+  date, and **not on** another saved list (e.g. everyone except the people
+  the dormant mailing already went to). The Mailing list page, the Saved
+  lists page and the composer all show the same filter box.
+- **Add people to a list by hand.** On a list's card, "People added by hand"
+  takes pasted addresses (one per line, optionally `email, First, Last`); on
+  the Mailing list page every subscribed person has an **Add to list**
+  button. People added by hand stay on the list through Updates and can be
+  removed one by one. Only people who are on the mailing list and still
+  subscribed are ever mailed; the card shows each added person's status. A
+  consent box lets you also add unknown addresses to the mailing list as
+  confirmed subscribers — tick it only when the person asked for our emails.
 
 **What editors do differently**
 
@@ -78,6 +96,10 @@ Nothing.
   the list so the people already mailed drop out (the send record now holds
   them).
 - `{first_name}` in a newsletter is safe to use; check your test copy.
+- To mail everyone EXCEPT a group: set **Not on saved list** to that list, or
+  **Did NOT sign** to a petition.
+- To add a board member or partner to a list: Mailing list → find them →
+  **Add to list**; or paste addresses on the list's card.
 
 **Technical detail**: docs/systems/newsletters.md "Saved lists" and
 "Recipient placeholders".

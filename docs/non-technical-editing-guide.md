@@ -238,8 +238,16 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
 - **Saved lists** (Mail → Saved lists) — named audiences for the composer.
   **Dynamic** = whoever matches when the email goes out; **Frozen** = the
   people who matched when you last pressed **Update** (nobody joins a frozen
-  list on their own). Either way, anyone who unsubscribes or bounces is
-  skipped. Pick a list in the composer's **Send to** box.
+  list on their own). You can also **add people by hand** (paste addresses
+  on the list's card, or press **Add to list** next to a person on the
+  Mailing list page); they stay through Updates. Either way, only people on
+  the mailing list and still subscribed are mailed. Pick a list in the
+  composer's **Send to** box.
+- **Filters** (same controls everywhere): residency, ZIP starts with, giving
+  (donors / monthly members / one-time / non-donors), joined via, joined
+  on-or-after / on-or-before, signed a petition, **did NOT sign** a petition,
+  newsletter history, not emailed since a date, and **not on** another saved
+  list (e.g. everyone except the people a mailing already went to).
 - **Tips** — confidential tipline submissions. Open one to read it and mark
   it *In review* or *Closed*; owners can delete a tip. Nobody can edit what
   the tipster wrote. Never copy tip contents out of the admin.

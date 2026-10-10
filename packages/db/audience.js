@@ -49,7 +49,20 @@ const STATUSES = ['subscribed', 'unconfirmed', 'unsubscribed', 'suppressed'];
 // ledger starts 2026-10-05 — issues sent by other tools before that are not
 // in it (docs/systems/newsletters.md "Saved lists").
 const HISTORIES = ['never', 'reached'];
+// giving: any = a donor (≥1 donation or a live subscription — same as `donor`);
+// monthly = a live subscription; onetime = donor without one; none = not a donor.
+const GIVINGS = ['any', 'monthly', 'onetime', 'none'];
+// via: how we hold the person — 'subscriber' (join form / petition) or
+// 'member' (donation checkout opt-in with no subscribers row).
+const VIAS = ['subscriber', 'member'];
+// petition: a slug, or 'any' (signed something) / 'none' (signed nothing).
+const PETITION_SPECIALS = ['any', 'none'];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const ZIP_PREFIX_RE = /^\d{1,5}$/;
+// Every filter key a form / query string may carry (lib/lists.js filtersFrom,
+// the audience-count route, the CSV route read them generically).
+const FILTER_KEYS = ['residency', 'donors', 'petition', 'not_petition', 'history', 'list', 'not_list', 'giving', 'via', 'joined_after', 'joined_before', 'zip', 'last_sent_before'];
 
 const STATUS_SQL = `CASE WHEN p.unsubscribed_at IS NOT NULL THEN 'unsubscribed'
               WHEN ${SUPPRESSED_SQL('p.email')} THEN 'suppressed'
@@ -71,6 +84,7 @@ function peopleRowsSql(everyone) {
          p.confirmed_at::text AS confirmed_at, p.unsubscribed_at::text AS unsubscribed_at, p.unsubscribed_by` : '';
   return `
   SELECT p.email, p.first_name, p.last_name, p.address, p.zip, p.created_at::text AS created_at, p.via,
+         z.best_zip,
          CASE WHEN ${utahZipSql('z.best_zip')} THEN 'utah'
               WHEN z.best_zip IS NULL OR z.best_zip = '' THEN 'unknown'
               ELSE 'outside' END AS residency,
@@ -121,43 +135,81 @@ const DELIVERY_STATS_SQL = `
     FROM newsletter_deliveries nd WHERE nd.email = a.email
   ) dl ON true`;
 
-// normalizeFilters(raw) → { residency: 'all'|'utah'|'outside'|'unknown', donors: bool, petition: ''|slug,
-//                           history: 'all'|'never'|'reached', list: ''|uuid }
+// normalizeFilters(raw) → { residency: 'all'|'utah'|'outside'|'unknown', donors: bool, petition: ''|slug|'any'|'none',
+//                           history: 'all'|'never'|'reached', list: ''|uuid, giving: ''|GIVINGS, via: ''|VIAS,
+//                           joined_after: ''|date, joined_before: ''|date, zip: ''|digits, last_sent_before: ''|date,
+//                           not_petition: ''|slug|'any' (EXCLUDE signers), not_list: ''|uuid (EXCLUDE a saved list's members) }
 // list = a saved list's id (packages/db/lists.js): when set, the OTHER
 // filters are ignored by the resolver (audienceFor) — the list carries its
 // own. It is kept here so a newsletter's stored audience round-trips.
+// donors (the pre-2026-10-10 checkbox) is kept for stored audiences; it means
+// the same as giving = 'any'.
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const dateOr = (v) => (typeof v === 'string' && DATE_RE.test(v) ? v : '');
 function normalizeFilters(raw = {}) {
   const residency = RESIDENCIES.includes(raw.residency) ? raw.residency : 'all';
   const donors = raw.donors === true || raw.donors === '1' || raw.donors === 'on' || raw.donors === 'true';
-  const petition = typeof raw.petition === 'string' && SLUG_RE.test(raw.petition) ? raw.petition : '';
+  const petition = typeof raw.petition === 'string' && (SLUG_RE.test(raw.petition) || PETITION_SPECIALS.includes(raw.petition)) ? raw.petition : '';
   const history = HISTORIES.includes(raw.history) ? raw.history : 'all';
   const list = typeof raw.list === 'string' && UUID_RE.test(raw.list) ? raw.list.toLowerCase() : '';
-  return { residency, donors, petition, history, list };
+  const giving = GIVINGS.includes(raw.giving) ? raw.giving : '';
+  const via = VIAS.includes(raw.via) ? raw.via : '';
+  const zip = typeof raw.zip === 'string' && ZIP_PREFIX_RE.test(raw.zip.trim()) ? raw.zip.trim() : '';
+  const not_petition = typeof raw.not_petition === 'string' && (SLUG_RE.test(raw.not_petition) || raw.not_petition === 'any') ? raw.not_petition : '';
+  const not_list = typeof raw.not_list === 'string' && UUID_RE.test(raw.not_list) ? raw.not_list.toLowerCase() : '';
+  return { residency, donors, petition, not_petition, history, list, not_list, giving, via, joined_after: dateOr(raw.joined_after), joined_before: dateOr(raw.joined_before), zip, last_sent_before: dateOr(raw.last_sent_before) };
 }
 
 const REACHED_SQL = (email) => `EXISTS (SELECT 1 FROM newsletter_deliveries nd WHERE nd.email = ${email} AND nd.status = 'sent')`;
+const MONTHLY_SQL = `EXISTS (SELECT 1 FROM members mo JOIN subscriptions xo ON xo.member_id = mo.id WHERE mo.email = a.email AND xo.status <> 'canceled')`;
 
 // Shared WHERE fragments over the alias `a` for the audience filters.
 function audienceWhere(f, params) {
   const where = [];
   if (f.residency !== 'all') { params.push(f.residency); where.push(`a.residency = $${params.length}`); }
-  if (f.donors) where.push('a.donor');
-  if (f.petition) {
+  if (f.donors || f.giving === 'any') where.push('a.donor');
+  if (f.giving === 'monthly') where.push(MONTHLY_SQL);
+  if (f.giving === 'onetime') where.push(`a.donor AND NOT ${MONTHLY_SQL}`);
+  if (f.giving === 'none') where.push('NOT a.donor');
+  if (f.petition === 'any') where.push(`a.petitions <> ''`);
+  else if (f.petition === 'none') where.push(`a.petitions = ''`);
+  else if (f.petition) {
     params.push(f.petition);
     where.push(`EXISTS (SELECT 1 FROM petition_signatures px WHERE px.email = a.email AND px.petition = $${params.length})`);
   }
+  if (f.not_petition === 'any') where.push(`a.petitions = ''`);
+  else if (f.not_petition) {
+    params.push(f.not_petition);
+    where.push(`NOT EXISTS (SELECT 1 FROM petition_signatures pn WHERE pn.email = a.email AND pn.petition = $${params.length})`);
+  }
+  if (f.not_list) {
+    // everyone on that saved list (snapshot + by hand) is left out — e.g. "all
+    // except the people the dormant mailing already went to"
+    params.push(f.not_list);
+    where.push(`NOT EXISTS (SELECT 1 FROM mailing_list_members ln WHERE ln.list_id = $${params.length}::uuid AND ln.email = a.email)`);
+  }
   if (f.history === 'never') where.push(`NOT ${REACHED_SQL('a.email')}`);
   if (f.history === 'reached') where.push(REACHED_SQL('a.email'));
+  if (f.via) { params.push(f.via); where.push(`a.via = $${params.length}`); }
+  if (f.joined_after) { params.push(f.joined_after); where.push(`a.created_at::timestamptz >= $${params.length}::date`); }
+  if (f.joined_before) { params.push(f.joined_before); where.push(`a.created_at::timestamptz < $${params.length}::date + 1`); }
+  if (f.zip) { params.push(`${f.zip}%`); where.push(`a.best_zip LIKE $${params.length}`); }
+  if (f.last_sent_before) {
+    // nothing sent on or after the date (never emailed counts too)
+    params.push(f.last_sent_before);
+    where.push(`NOT EXISTS (SELECT 1 FROM newsletter_deliveries nd2 WHERE nd2.email = a.email AND nd2.status = 'sent' AND nd2.at >= $${params.length}::date)`);
+  }
   return where;
 }
 
-// audienceQuery(filters, { columns, orderBy, limit, memberOf }) → { sql, params }
+// audienceQuery(filters, { columns, orderBy, limit, memberOf, orManualOf }) → { sql, params }
 // columns: the SELECT list over the alias `a` (default: everything).
-// memberOf: a FROZEN saved list's id — only addresses in its snapshot
-// (mailing_list_members) are returned; the filters passed are still applied
-// (pass {} for "the snapshot, minus anyone no longer eligible").
-function audienceQuery(filters, { columns = 'a.*', orderBy = 'a.created_at DESC', limit, memberOf } = {}) {
+// memberOf: a FROZEN saved list's id — only addresses in its members table
+// (snapshot + added by hand) are returned; the filters passed are still
+// applied (pass {} for "the members, minus anyone no longer eligible").
+// orManualOf: a DYNAMIC list's id — the filters OR the people added to the
+// list by hand (source 'manual'); eligibility rules apply to both.
+function audienceQuery(filters, { columns = 'a.*', orderBy = 'a.created_at DESC', limit, memberOf, orManualOf } = {}) {
   const f = normalizeFilters(filters);
   const params = [];
   const where = audienceWhere(f, params);
@@ -166,8 +218,14 @@ function audienceQuery(filters, { columns = 'a.*', orderBy = 'a.created_at DESC'
     params.push(String(memberOf).toLowerCase());
     where.push(`EXISTS (SELECT 1 FROM mailing_list_members lm WHERE lm.list_id = $${params.length}::uuid AND lm.email = a.email)`);
   }
+  let whereSql = where.join(' AND ');
+  if (orManualOf && where.length) {
+    if (!UUID_RE.test(String(orManualOf))) throw new Error('orManualOf must be a list id');
+    params.push(String(orManualOf).toLowerCase());
+    whereSql = `(${whereSql}) OR EXISTS (SELECT 1 FROM mailing_list_members lm WHERE lm.list_id = $${params.length}::uuid AND lm.source = 'manual' AND lm.email = a.email)`;
+  }
   const sql = `SELECT ${columns} FROM (${AUDIENCE_ROWS_SQL}) a`
-    + (where.length ? ` WHERE ${where.join(' AND ')}` : '')
+    + (whereSql ? ` WHERE ${whereSql}` : '')
     + (orderBy ? ` ORDER BY ${orderBy}` : '')
     + (limit ? ` LIMIT ${Number(limit)}` : '');
   return { sql, params, filters: f };
@@ -209,14 +267,28 @@ function describeFilters(filters) {
   if (f.residency === 'utah') parts.push('Utah residents');
   if (f.residency === 'outside') parts.push('outside Utah');
   if (f.residency === 'unknown') parts.push('ZIP unknown');
-  if (f.donors) parts.push('donors only');
-  if (f.petition) parts.push(`signed ${f.petition}`);
+  if (f.donors || f.giving === 'any') parts.push('donors only');
+  if (f.giving === 'monthly') parts.push('monthly members');
+  if (f.giving === 'onetime') parts.push('one-time donors');
+  if (f.giving === 'none') parts.push('non-donors');
+  if (f.petition === 'any') parts.push('signed a petition');
+  else if (f.petition === 'none') parts.push('signed no petition');
+  else if (f.petition) parts.push(`signed ${f.petition}`);
+  if (f.not_petition === 'any') parts.push('signed no petition');
+  else if (f.not_petition) parts.push(`did not sign ${f.not_petition}`);
+  if (f.not_list) parts.push('not on a saved list');
   if (f.history === 'never') parts.push('never received a newsletter');
   if (f.history === 'reached') parts.push('received a newsletter before');
+  if (f.via === 'subscriber') parts.push('via join form / petition');
+  if (f.via === 'member') parts.push('via donation checkout');
+  if (f.joined_after) parts.push(`joined ${f.joined_after} or later`);
+  if (f.joined_before) parts.push(`joined by ${f.joined_before}`);
+  if (f.zip) parts.push(`ZIP starts ${f.zip}`);
+  if (f.last_sent_before) parts.push(`not emailed since ${f.last_sent_before}`);
   return parts.length ? parts.join(' · ') : 'everyone';
 }
 
 module.exports = {
-  UTAH_ZIP_PREFIX, RESIDENCIES, STATUSES, HISTORIES, UUID_RE, isUtahZip, utahZipSql, AUDIENCE_ROWS_SQL, DIRECTORY_ROWS_SQL,
+  UTAH_ZIP_PREFIX, RESIDENCIES, STATUSES, HISTORIES, GIVINGS, VIAS, PETITION_SPECIALS, FILTER_KEYS, UUID_RE, isUtahZip, utahZipSql, AUDIENCE_ROWS_SQL, DIRECTORY_ROWS_SQL,
   normalizeFilters, audienceQuery, normalizeDirectoryFilters, directoryQuery, describeFilters,
 };

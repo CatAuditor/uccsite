@@ -1,4 +1,4 @@
-// GET /mail/audience-count?residency=&donors=&petition=&history=&list= → { count, description }
+// GET /mail/audience-count?<any FILTER_KEYS> → { count, description }
 // for the composer's "Apply filters" button (docs/systems/newsletters.md
 // "Audience"): the same audienceCount the page shows for the SAVED filters,
 // run on the filters currently chosen, without saving. Any signed-in admin
@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request) {
   if (!(await getSession())) return Response.json({ error: 'Not signed in' }, { status: 401 });
   const q = new URL(request.url).searchParams;
-  const filters = normalizeFilters({ residency: q.get('residency'), donors: q.get('donors'), petition: q.get('petition'), history: q.get('history'), list: q.get('list') });
+  const filters = normalizeFilters(Object.fromEntries(q));
   try {
     const { count, description, missing } = await withDb((client) => audienceInfo(client, filters));
     console.log(`[newsletter] audience-count ${description} -> ${count}`);

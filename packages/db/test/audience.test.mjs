@@ -11,11 +11,51 @@ test('every 84xxx ZIP is Utah, nothing else is', () => {
 });
 
 test('filters normalize to a closed set (nothing user-supplied reaches SQL text)', () => {
-  assert.deepEqual(normalizeFilters({}), { residency: 'all', donors: false, petition: '', history: 'all', list: '' });
-  assert.deepEqual(normalizeFilters({ residency: 'utah', donors: '1', petition: 'udot-alpr-permits', history: 'never', list: '2B9D3F6A-0000-4000-8000-000000000001' }),
-    { residency: 'utah', donors: true, petition: 'udot-alpr-permits', history: 'never', list: '2b9d3f6a-0000-4000-8000-000000000001' });
-  assert.deepEqual(normalizeFilters({ residency: "x' OR 1=1", donors: 'maybe', petition: 'Bad Slug', history: 'yes', list: 'not-a-uuid' }),
-    { residency: 'all', donors: false, petition: '', history: 'all', list: '' });
+  const none = { residency: 'all', donors: false, petition: '', not_petition: '', history: 'all', list: '', not_list: '', giving: '', via: '', joined_after: '', joined_before: '', zip: '', last_sent_before: '' };
+  assert.deepEqual(normalizeFilters({}), none);
+  assert.deepEqual(normalizeFilters({ residency: 'utah', donors: '1', petition: 'udot-alpr-permits', history: 'never', list: '2B9D3F6A-0000-4000-8000-000000000001',
+    giving: 'monthly', via: 'member', joined_after: '2026-01-01', joined_before: '2026-10-01', zip: ' 841 ', last_sent_before: '2026-09-01' }),
+    { residency: 'utah', donors: true, petition: 'udot-alpr-permits', not_petition: '', history: 'never', list: '2b9d3f6a-0000-4000-8000-000000000001', not_list: '',
+      giving: 'monthly', via: 'member', joined_after: '2026-01-01', joined_before: '2026-10-01', zip: '841', last_sent_before: '2026-09-01' });
+  assert.deepEqual(normalizeFilters({ residency: "x' OR 1=1", donors: 'maybe', petition: 'Bad Slug', history: 'yes', list: 'not-a-uuid',
+    giving: 'lots', via: 'x', joined_after: '1/1/2026', joined_before: "2026-01-01' --", zip: '84a', last_sent_before: 'yesterday' }), none);
+  assert.equal(normalizeFilters({ petition: 'any' }).petition, 'any');
+  assert.equal(normalizeFilters({ petition: 'none' }).petition, 'none');
+  assert.equal(normalizeFilters({ not_petition: 'any' }).not_petition, 'any');
+  assert.equal(normalizeFilters({ not_petition: 'Bad Slug' }).not_petition, '');
+});
+
+test('exclusions: did not sign a petition / not on a saved list', () => {
+  const id = '2b9d3f6a-0000-4000-8000-000000000001';
+  const q = audienceQuery({ petition: 'udot-alpr-permits', not_petition: 'data-centers', not_list: id }, { columns: 'a.email' });
+  assert.deepEqual(q.params, ['udot-alpr-permits', 'data-centers', id]);
+  assert.match(q.sql, /NOT EXISTS \(SELECT 1 FROM petition_signatures pn WHERE pn\.email = a\.email AND pn\.petition = \$2\)/);
+  assert.match(q.sql, /NOT EXISTS \(SELECT 1 FROM mailing_list_members ln WHERE ln\.list_id = \$3::uuid AND ln\.email = a\.email\)/);
+  assert.match(audienceQuery({ not_petition: 'any' }).sql, /WHERE a\.petitions = ''/);
+  assert.equal(describeFilters({ not_petition: 'data-centers', not_list: id }), 'did not sign data-centers · not on a saved list');
+});
+
+test('the 2026-10-10 filters bind their values and read back', () => {
+  const q = audienceQuery({ giving: 'onetime', petition: 'any', via: 'member', joined_after: '2026-01-01', joined_before: '2026-10-01', zip: '841', last_sent_before: '2026-09-01' }, { columns: 'a.email' });
+  assert.deepEqual(q.params, ['member', '2026-01-01', '2026-10-01', '841%', '2026-09-01']);
+  assert.match(q.sql, /a\.donor AND NOT EXISTS \(SELECT 1 FROM members mo JOIN subscriptions xo/);
+  assert.match(q.sql, /a\.petitions <> ''/);
+  assert.match(q.sql, /a\.via = \$1/);
+  assert.match(q.sql, /a\.created_at::timestamptz >= \$2::date/);
+  assert.match(q.sql, /a\.created_at::timestamptz < \$3::date \+ 1/);
+  assert.match(q.sql, /a\.best_zip LIKE \$4/);
+  assert.match(q.sql, /nd2\.at >= \$5::date/);
+  assert.match(audienceQuery({ giving: 'none' }).sql, /WHERE NOT a\.donor/);
+  assert.match(audienceQuery({ petition: 'none' }).sql, /a\.petitions = ''/);
+  assert.equal(describeFilters({ giving: 'monthly', petition: 'none', via: 'subscriber', joined_after: '2026-01-01', zip: '841', last_sent_before: '2026-09-01' }),
+    'monthly members · signed no petition · via join form / petition · joined 2026-01-01 or later · ZIP starts 841 · not emailed since 2026-09-01');
+  assert.equal(describeFilters({ donors: true }), describeFilters({ giving: 'any' }));
+  // dynamic list: filters OR the people added by hand; no filters → everyone already
+  const id = '2b9d3f6a-0000-4000-8000-000000000001';
+  const dyn = audienceQuery({ residency: 'utah' }, { orManualOf: id });
+  assert.deepEqual(dyn.params, ['utah', id]);
+  assert.match(dyn.sql, /WHERE \(a\.residency = \$1\) OR EXISTS \(SELECT 1 FROM mailing_list_members lm WHERE lm\.list_id = \$2::uuid AND lm\.source = 'manual'/);
+  assert.deepEqual(audienceQuery({}, { orManualOf: id }).params, []);
 });
 
 test('history filter reads the send ledger; memberOf narrows to a frozen snapshot', () => {
@@ -65,7 +105,7 @@ test('the audience is the confirmed, still-subscribed, non-suppressed rows; the 
 });
 
 test('directory filters: status defaults to subscribed, search is bound and escaped', () => {
-  assert.deepEqual(normalizeDirectoryFilters({}), { residency: 'all', donors: false, petition: '', history: 'all', list: '', status: 'subscribed', q: '' });
+  assert.deepEqual(normalizeDirectoryFilters({}), { residency: 'all', donors: false, petition: '', not_petition: '', history: 'all', list: '', not_list: '', giving: '', via: '', joined_after: '', joined_before: '', zip: '', last_sent_before: '', status: 'subscribed', q: '' });
   assert.equal(normalizeDirectoryFilters({ status: 'all' }).status, 'all');
   assert.equal(normalizeDirectoryFilters({ status: 'bogus' }).status, 'subscribed');
   const q = directoryQuery({ status: 'unsubscribed', residency: 'utah', q: '50%_off' }, { limit: 5, deliveries: true });

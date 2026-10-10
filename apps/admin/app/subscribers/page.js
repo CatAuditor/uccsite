@@ -13,7 +13,10 @@
 // Actions (remove / restore / erase) live in ./actions.js — docs/systems/
 // newsletters.md "Mailing list management".
 import Link from 'next/link';
-import { audienceQuery, directoryQuery, normalizeDirectoryFilters, describeFilters, RESIDENCIES, STATUSES, HISTORIES } from '@uccsite/db/audience';
+import { audienceQuery, directoryQuery, normalizeDirectoryFilters, describeFilters, STATUSES, FILTER_KEYS } from '@uccsite/db/audience';
+import { listLists } from '@uccsite/db/lists';
+import AudienceFilters from '../audience-filters';
+import { addToListAction } from '../lists/actions';
 import { requireRole } from '../../lib/auth';
 import { withDb } from '../../lib/data';
 import { latestEvents, suppressionFor } from '@uccsite/db/email-events';
@@ -23,19 +26,18 @@ import { removeFromList, restoreToList, eraseRecord } from './actions';
 export const dynamic = 'force-dynamic';
 
 const LIST_LIMIT = 500;
-const RESIDENCY_LABEL = { utah: 'Utah residents', outside: 'outside Utah', unknown: 'ZIP unknown' };
 const STATUS_LABEL = { subscribed: 'Subscribed', unconfirmed: 'Not confirmed yet', unsubscribed: 'Unsubscribed', suppressed: 'Bounced / complained' };
-const HISTORY_LABEL = { never: 'never received a newsletter', reached: 'received a newsletter before' };
 const day = (ts) => (ts ? ts.slice(0, 10) : '');
 
 export default async function SubscribersPage({ searchParams }) {
   await requireRole('editor');
   const sp = await searchParams;
   const pick = (k) => (typeof sp?.[k] === 'string' ? sp[k] : '');
-  const filters = normalizeDirectoryFilters({
-    residency: pick('residency') || 'all', donors: sp?.donors, petition: pick('petition'), history: pick('history'), status: pick('status') || 'subscribed', q: pick('q'),
-  });
-  const { rows, matching, recipients, byStatus, byResidency, petitions, events, suppression } = await withDb(async (client) => {
+  const raw = { status: pick('status') || 'subscribed', q: pick('q') };
+  for (const k of FILTER_KEYS) raw[k] = pick(k);
+  const filters = normalizeDirectoryFilters(raw);
+  const filterParams = Object.fromEntries(FILTER_KEYS.map((k) => [k, filters[k] === true ? '1' : String(filters[k] || '')]));
+  const { rows, matching, recipients, byStatus, byResidency, petitions, events, suppression, lists } = await withDb(async (client) => {
     const list = directoryQuery(filters, { limit: LIST_LIMIT, deliveries: true });
     const count = directoryQuery(filters, { columns: 'count(*)::int AS n', orderBy: null });
     const audience = audienceQuery(filters, { columns: 'count(*)::int AS n', orderBy: null });
@@ -51,6 +53,7 @@ export default async function SubscribersPage({ searchParams }) {
       petitions: (await client.query('SELECT DISTINCT petition FROM petition_signatures ORDER BY petition')).rows.map(r => r.petition),
       events: await latestEvents(client, 50),
       suppression: await suppressionFor(client, listRows.filter(r => r.status === 'suppressed').map(r => r.email)),
+      lists: await listLists(client),
     };
   });
   const totalAll = byResidency.reduce((s, r) => s + r.n, 0);
@@ -80,24 +83,9 @@ export default async function SubscribersPage({ searchParams }) {
           <option value="all">everyone we hold</option>
           {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
         </select>
-        <label htmlFor="residency">Residency</label>
-        <select id="residency" name="residency" defaultValue={filters.residency}>
-          <option value="all">everyone</option>
-          {RESIDENCIES.map(r => <option key={r} value={r}>{RESIDENCY_LABEL[r]}</option>)}
-        </select>
-        <label htmlFor="petition">Signed petition</label>
-        <select id="petition" name="petition" defaultValue={filters.petition}>
-          <option value="">any / none</option>
-          {petitions.map(p => <option key={p} value={p}>{p}</option>)}
-        </select>
-        <label htmlFor="history">Newsletter history</label>
-        <select id="history" name="history" defaultValue={filters.history}>
-          <option value="all">anyone</option>
-          {HISTORIES.map(h => <option key={h} value={h}>{HISTORY_LABEL[h]}</option>)}
-        </select>
-        <label htmlFor="donors"><input type="checkbox" id="donors" name="donors" value="1" defaultChecked={filters.donors} /> donors only</label>
         <input type="search" name="q" placeholder="Search email or name" defaultValue={filters.q} aria-label="Search email or name" />
         <button type="submit">Apply</button>
+        <AudienceFilters f={filters} petitions={petitions} lists={lists} prefix="dir" />
       </form>
 
       <p>
@@ -105,14 +93,11 @@ export default async function SubscribersPage({ searchParams }) {
         {!audienceOnly && <> The table below shows <strong>{matching}</strong> {filters.status === 'all' ? 'of everyone we hold' : STATUS_LABEL[filters.status].toLowerCase()}{filters.q ? ` matching “${filters.q}”` : ''}; the count and the CSV are the recipients only.</>}
       </p>
       <form action="/subscribers/export" method="post" className="inline">
-        <input type="hidden" name="residency" value={filters.residency} />
-        <input type="hidden" name="donors" value={filters.donors ? '1' : ''} />
-        <input type="hidden" name="petition" value={filters.petition} />
-        <input type="hidden" name="history" value={filters.history} />
+        {FILTER_KEYS.map((k) => <input key={k} type="hidden" name={k} value={filterParams[k]} />)}
         <button type="submit">Download CSV — {describeFilters(filters)} ({recipients} rows)</button>
       </form>
       <p className="hint">
-        <Link href={`/lists?${new URLSearchParams({ residency: filters.residency, donors: filters.donors ? '1' : '', petition: filters.petition, history: filters.history })}`}>Save these filters as a list</Link>
+        <Link href={`/lists?${new URLSearchParams(filterParams)}`}>Save these filters as a list</Link>
         {' '}— a named audience the composer can send to, frozen as of today or kept dynamic. &ldquo;Newsletter history&rdquo; is
         read from the admin&rsquo;s send ledger (sends since October 5, 2026).
       </p>
@@ -153,6 +138,15 @@ export default async function SubscribersPage({ searchParams }) {
                     <ActionForm className="inline" action={restoreToList} successMessage="Restored.">
                       <input type="hidden" name="email" value={r.email} />
                       <button type="submit" className="secondary">Undo removal</button>
+                    </ActionForm>
+                  )}
+                  {lists.length > 0 && r.status === 'subscribed' && (
+                    <ActionForm className="inline" action={addToListAction}>
+                      <input type="hidden" name="email" value={r.email} />
+                      <select name="list" aria-label="Saved list" defaultValue={lists[0].id}>
+                        {lists.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+                      </select>{' '}
+                      <button type="submit" className="secondary">Add to list</button>
                     </ActionForm>
                   )}
                 </td>

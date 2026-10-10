@@ -37,7 +37,10 @@ apps/admin/lib/lists.js            list rules: create / save / freeze ("Update")
                                    in-flight lock (a pending/approved/sending newsletter on the list blocks freeze/mode/delete)
 apps/admin/app/lists/page.js       Mail → Saved lists (editor+): new-list form (seeded from the Mailing list page's
                                    "Save these filters as a list" link), one card per list with Update / Make dynamic /
-                                   Freeze now / CSV / Delete; actions.js = the server actions
+                                   Freeze now / CSV / Delete + "People added by hand" (paste addresses, remove);
+                                   actions.js = the server actions
+apps/admin/app/audience-filters.js THE filter controls (client, uncontrolled, names = FILTER_KEYS) rendered by the
+                                   Mailing list page, the Saved lists page and the composer
 aws/newsletter/handler.mjs         NewsletterSendFn: {id} | {id,resume} | {tick} | {id,recipientsOverride}
 aws/newsletter/send.js             the per-recipient loop (injected deps, tested)
 infra/cdk/lib/ucc-stack.js         "newsletter send Lambda" block (both stacks): IAM, self-invoke policy,
@@ -300,6 +303,29 @@ freeze is skipped. Freezing never overrides an unsubscribe. The Saved lists
 page shows "reaches N today" next to the frozen count so the drift is
 visible.
 
+**Filters** (`packages/db/audience.js normalizeFilters`; every key in
+`FILTER_KEYS`; one control set, `app/audience-filters.js`, in all three
+places; `describeFilters` reads them back for the audit rows and the review
+panel):
+
+| key | values | meaning |
+|---|---|---|
+| `residency` | `all` · `utah` · `outside` · `unknown` | best ZIP we hold (84xxx = Utah) |
+| `zip` | 1–5 digits | best ZIP starts with (e.g. `841` = Salt Lake area) |
+| `giving` | `any` · `monthly` · `onetime` · `none` | `any` = ≥1 donation or live subscription (same as the old `donors` tick box, still honoured); `monthly` = live subscription; `onetime` = donor without one; `none` = not a donor |
+| `via` | `subscriber` · `member` | join form / petition row, or donation-checkout opt-in with no subscribers row |
+| `petition` | slug · `any` · `none` | signed that petition / any / none at all |
+| `not_petition` | slug · `any` | **EXCLUDE** signers of that petition (or of anything) |
+| `history` | `never` · `reached` | a `sent` row in `newsletter_deliveries` or not (see below) |
+| `last_sent_before` | date | no `sent` row on or after that date (never emailed counts) — "not emailed since" |
+| `joined_after` / `joined_before` | date | `created_at` of the row (join / first signature / checkout), inclusive |
+| `not_list` | list id | **EXCLUDE** everyone on that saved list (snapshot + by hand) — e.g. all except the people the dormant mailing went to |
+| `list` | list id | send to a saved list instead (composer only; the other keys are then ignored) |
+
+Dates and the ZIP prefix are bound parameters; every other value is a
+closed set, so nothing user-typed reaches SQL text (tests in
+`packages/db/test/audience.test.mjs`).
+
 **Newsletter history filter** (`history: 'never' | 'reached'`, all three
 places: Mailing list page, composer, saved lists): whether
 `newsletter_deliveries` holds a `sent` row for the address. `never` = the
@@ -309,6 +335,26 @@ is NOT in it, so "never received" means never via the admin. The purpose
 this was built for: a frozen list of `history = never`, mailed once, then
 (if wanted) **Update** before the next one — the people just mailed drop
 out because the ledger now holds them.
+
+**People added by hand** (`mailing_list_members.source = 'manual'`;
+snapshot rows are `'snapshot'`, NULL for rows from before the column). Two
+ways in: the Saved lists card's "People added by hand" (paste `email`, or
+`email, First, Last`, one per line — `parsePeople`, ≤500 at a time) and the
+Mailing list page's per-row **Add to list** select. A frozen list mails them
+with the snapshot (`memberOf` = every row); a dynamic list mails them in
+addition to the filter match (`audienceQuery(filters, { orManualOf })` →
+`(filters) OR EXISTS manual`). **Update** / **Make dynamic** replace or drop
+the snapshot rows only; by-hand rows stay. Eligibility still rules: a pasted
+address with no mailing-list row, or one that is unconfirmed / unsubscribed
+/ bounced, stays on the list and is never mailed — the card shows each
+person's status and the add result says how many will not be mailed. Tick
+**Also add anyone not yet on the mailing list as a confirmed subscriber**
+and the unknown addresses get a `subscribers` row with `confirmed_at = now()`
+(the editor is asserting the person asked for our emails; audit
+`subscribers.add` per address, entityType `subscriber`); an existing
+unconfirmed or unsubscribed row is never changed. "Remove from list" deletes
+the member row only (the person stays on the mailing list). Audits
+`list.add` (counts) and `list.remove`.
 
 **Resolver.** `packages/db/lists.js audienceFor(client, audience, opts)` is
 the one function that turns a stored audience (`{ residency, donors,
@@ -330,10 +376,13 @@ entityType `mailing_list`; not matched by `CONTENT_ACTION_RE`):
 | Freeze now / Make dynamic | `list.mode` | → frozen snapshots now; → dynamic drops the snapshot | in flight |
 | Delete list | `list.delete` | members + row | in flight (drafts and sent newsletters keep their `{ list }`; a draft then shows "deleted — choose another audience") |
 | Download CSV | `subscribers.export` (diff `audience` = the description) | `POST /subscribers/export` with `list=<id>` → `audienceFor` | list gone → 404 |
+| Add people (paste) / Add to list (Mailing list row) | `list.add` (+ `subscribers.add` per new subscriber when ticked) | `addMembers` upsert `source = 'manual'` | no valid address; > 500; list gone |
+| Remove from list | `list.remove` | deletes the member row | not on the list |
 
-The Mailing list page's filter form gained **Newsletter history** and a
-**Save these filters as a list** link (`/lists?residency=…&history=…`,
-which seeds the new-list form). Logs: `[lists] <who> created/froze/mode/deleted …`
+The Mailing list page's filter form is the shared `AudienceFilters` control
+set plus status + search, with a **Save these filters as a list** link
+(`/lists?<FILTER_KEYS>`, which seeds the new-list form) and, per subscribed
+row, **Add to list**. Logs: `[lists] <who> created/froze/mode/deleted/added/removed …`
 (id, name, mode, counts — no addresses).
 
 ### Mailing list management (2026-10-06)

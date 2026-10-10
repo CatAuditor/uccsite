@@ -22,9 +22,7 @@ export async function POST(request) {
   const form = await request.formData().catch(() => null);
   // Ad-hoc filters from the Mailing list page, or a saved list (`list`) from
   // the Saved lists page — the same resolver the sender uses.
-  const audience = {
-    residency: form?.get('residency'), donors: form?.get('donors'), petition: form?.get('petition'), history: form?.get('history'), list: form?.get('list'),
-  };
+  const audience = Object.fromEntries([...(form?.entries() || [])].filter(([, v]) => typeof v === 'string'));
   const resolved = await withDb(async (client) => {
     const r = await audienceFor(client, audience, { orderBy: 'a.created_at' });
     return r ? { rows: (await client.query(r.sql, r.params)).rows, description: r.description } : null;

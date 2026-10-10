@@ -10,11 +10,17 @@
 //            (unsubscribed, bounced, unconfirmed): audienceQuery({}, { memberOf })
 //            keeps the eligibility rules, so freezing never overrides an
 //            unsubscribe.
+// People can also be ADDED BY HAND (mailing_list_members.source = 'manual'):
+// a frozen list mails them with the snapshot; a dynamic list mails them in
+// addition to the filter match. "Update" replaces the snapshot rows only.
+// Someone added by hand who is not an eligible mailing-list row (no
+// subscribers row, unconfirmed, unsubscribed, bounced) is kept on the list
+// but never mailed — the admin page says so per person.
 // The one resolver every sender uses is audienceFor(): a newsletter's stored
 // audience is either ad-hoc filters or { list: <id> }; the admin's count, the
 // CSV, the request's recipient count and the Lambda's recipients all go
 // through it, so the number an editor sees is the number that is mailed.
-const { audienceQuery, normalizeFilters, describeFilters, UUID_RE } = require('./audience');
+const { audienceQuery, normalizeFilters, describeFilters, UUID_RE, DIRECTORY_ROWS_SQL } = require('./audience');
 
 const DDL = [
   `CREATE TABLE IF NOT EXISTS mailing_lists (
@@ -34,7 +40,10 @@ const DDL = [
     added_at TIMESTAMPTZ DEFAULT now(),
     PRIMARY KEY (list_id, email)
   )`,
+  // 2026-10-10: 'snapshot' (NULL = snapshot, rows from before the column) | 'manual'
+  `ALTER TABLE mailing_list_members ADD COLUMN IF NOT EXISTS source TEXT`,
 ];
+const SNAPSHOT_SQL = `COALESCE(source, 'snapshot') = 'snapshot'`;
 
 const MODES = ['dynamic', 'frozen'];
 const NAME_MAX = 120;
@@ -83,22 +92,54 @@ async function updateList(client, { id, name, filters, mode }) {
   return res.rowCount === 1;
 }
 
-// freezeList(client, id, filters) → count. Replaces the snapshot with
-// everyone the filters match NOW (the audience rules included — only people
-// who could be mailed today are captured).
+// freezeList(client, id, filters) → count (snapshot + manual). Replaces the
+// SNAPSHOT rows with everyone the filters match NOW (the audience rules
+// included — only people who could be mailed today are captured); people
+// added by hand stay.
 async function freezeList(client, id, filters) {
-  await client.query(`DELETE FROM mailing_list_members WHERE list_id = $1`, [id]);
+  await client.query(`DELETE FROM mailing_list_members WHERE list_id = $1 AND ${SNAPSHOT_SQL}`, [id]);
   const { sql, params } = audienceQuery(ownFilters(filters), { columns: 'a.email', orderBy: null });
-  const res = await client.query(
-    `INSERT INTO mailing_list_members (list_id, email) SELECT $${params.length + 1}::uuid, q.email FROM (${sql}) q WHERE q.email IS NOT NULL ON CONFLICT DO NOTHING`,
+  await client.query(
+    `INSERT INTO mailing_list_members (list_id, email, source) SELECT $${params.length + 1}::uuid, q.email, 'snapshot' FROM (${sql}) q WHERE q.email IS NOT NULL ON CONFLICT DO NOTHING`,
     [...params, id]);
-  await client.query(`UPDATE mailing_lists SET frozen_at = now(), frozen_count = $2, updated_at = now() WHERE id = $1`, [id, res.rowCount]);
-  return res.rowCount;
+  const count = (await client.query(`SELECT count(*)::int AS n FROM mailing_list_members WHERE list_id = $1`, [id])).rows[0].n;
+  await client.query(`UPDATE mailing_lists SET frozen_at = now(), frozen_count = $2, updated_at = now() WHERE id = $1`, [id, count]);
+  return count;
 }
 
+// clearSnapshot: → dynamic. The snapshot goes; people added by hand stay.
 async function clearSnapshot(client, id) {
-  await client.query(`DELETE FROM mailing_list_members WHERE list_id = $1`, [id]);
+  await client.query(`DELETE FROM mailing_list_members WHERE list_id = $1 AND ${SNAPSHOT_SQL}`, [id]);
   await client.query(`UPDATE mailing_lists SET frozen_at = NULL, frozen_count = NULL, updated_at = now() WHERE id = $1`, [id]);
+}
+
+// addMembers(client, id, emails) → how many are now on the list by hand
+// (an address already in the snapshot becomes 'manual' so an Update keeps it).
+async function addMembers(client, id, emails) {
+  let n = 0;
+  for (const email of new Set(emails.map((e) => String(e || '').trim().toLowerCase()).filter((e) => e.includes('@')))) {
+    const res = await client.query(
+      `INSERT INTO mailing_list_members (list_id, email, source) VALUES ($1, $2, 'manual')
+       ON CONFLICT (list_id, email) DO UPDATE SET source = 'manual'`, [id, email]);
+    n += res.rowCount;
+  }
+  return n;
+}
+
+async function removeMember(client, id, email) {
+  const res = await client.query(`DELETE FROM mailing_list_members WHERE list_id = $1 AND email = $2`, [id, String(email || '').trim().toLowerCase()]);
+  return res.rowCount === 1;
+}
+
+// manualMembers(client, id) → [{ email, addedAt, firstName, lastName, status }]
+// status = the directory status ('subscribed' = will be mailed), or '' when
+// the address is not on the mailing list at all.
+async function manualMembers(client, id) {
+  const res = await client.query(
+    `SELECT lm.email, lm.added_at::text AS added_at, a.first_name, a.last_name, a.status
+     FROM mailing_list_members lm LEFT JOIN (${DIRECTORY_ROWS_SQL}) a ON a.email = lm.email
+     WHERE lm.list_id = $1 AND lm.source = 'manual' ORDER BY lm.added_at, lm.email`, [id]);
+  return res.rows.map((r) => ({ email: r.email, addedAt: r.added_at || '', firstName: r.first_name || '', lastName: r.last_name || '', status: r.status || '' }));
 }
 
 async function deleteList(client, id) {
@@ -116,9 +157,11 @@ async function newslettersUsing(client, id) {
   return res.rows.map((r) => ({ id: r.id, subject: r.subject || '', status: r.status }));
 }
 
-// listQuery(list, opts) → { sql, params }: the recipients of a saved list.
+// listQuery(list, opts) → { sql, params }: the recipients of a saved list —
+// frozen: the members table (snapshot + by hand); dynamic: the filters OR the
+// people added by hand. Eligibility rules apply to both.
 function listQuery(list, opts = {}) {
-  return list.mode === 'frozen' ? audienceQuery({}, { ...opts, memberOf: list.id }) : audienceQuery(list.filters, opts);
+  return list.mode === 'frozen' ? audienceQuery({}, { ...opts, memberOf: list.id }) : audienceQuery(list.filters, { ...opts, orManualOf: list.id });
 }
 
 // describeList(list) → 'Dormant (frozen 2026-10-09, 412 people)' | 'Dormant (dynamic: never received a newsletter)'
@@ -142,5 +185,5 @@ async function audienceFor(client, audience, opts = {}) {
 
 module.exports = {
   DDL, MODES, NAME_MAX, rowToList, listLists, getList, createList, updateList, freezeList, clearSnapshot, deleteList,
-  newslettersUsing, listQuery, describeList, audienceFor,
+  addMembers, removeMember, manualMembers, newslettersUsing, listQuery, describeList, audienceFor,
 };
