@@ -7,6 +7,7 @@ import { requireSession } from '../lib/auth';
 import { withDb, latestPublishRuns, IN_FLIGHT_GRACE_MS } from '../lib/data';
 import { publishState, requestPublish, approvePublish, declinePublish, withdrawPublish } from '../lib/publish';
 import { pendingNewsletters } from '@uccsite/db/newsletters';
+import { approveSend, declineSend, withdrawSend, cancelSend } from '../lib/newsletters';
 import { formatZoned } from '@uccsite/newsletter/schedule';
 import Link from 'next/link';
 import { runAction } from '../lib/actions';
@@ -115,6 +116,27 @@ export default async function Dashboard() {
       };
     });
   }
+  // Newsletter review from the dashboard (2026-10-10): the same rules as the
+  // email's own page (lib/newsletters.js) — approve / decline / withdraw /
+  // cancel — so a reviewer need not open /mail first. Calls the lib directly
+  // (never another inline action: docs/error-handling/client-side-error/
+  // 2026-10-10-admin-server-components-digest.md).
+  async function decideNewsletter(prev, formData) {
+    'use server';
+    return runAction(async () => {
+      const id = String(formData.get('id'));
+      const note = String(formData.get('note') || '').trim().slice(0, 2000);
+      const decision = String(formData.get('decision'));
+      let message;
+      if (decision === 'approve') { const { scheduled } = await approveSend(id, note); message = scheduled ? `Approved — the email goes out ${scheduled}.` : 'Approved — sending now.'; }
+      else if (decision === 'decline') { await declineSend(id, note); message = 'Declined; the writer sees your note on the email.'; }
+      else if (decision === 'withdraw') { await withdrawSend(id); message = 'Request withdrawn — back to draft.'; }
+      else if (decision === 'cancel') { await cancelSend(id); message = 'Cancelled — back to draft.'; }
+      else throw new Error('Unknown decision');
+      revalidatePath('/'); revalidatePath('/mail'); revalidatePath(`/mail/${id}`);
+      return { ok: true, message };
+    });
+  }
   async function decide(prev, formData) {
     'use server';
     return runAction(async () => {
@@ -145,14 +167,45 @@ export default async function Dashboard() {
       {newsletters.length > 0 && (
         <section className="request pending">
           <h2>Newsletters needing attention</h2>
-          <ul>
-            {newsletters.map((n) => (
-              <li key={n.id}>
-                <Link href={`/mail/${n.id}`}><strong>{n.subject || '(no subject)'}</strong></Link> — {n.requestedBy}, {n.recipients} people:{' '}
-                {n.status === 'pending' ? 'waiting for review' : n.status === 'approved' ? `approved, sends ${formatZoned(n.scheduledFor)}` : 'sending now'}
-              </li>
-            ))}
-          </ul>
+          {newsletters.map((n) => {
+            const own = n.requestedByUser === session.username || n.requestedBy === session.email;
+            const mayReview = canAct && (!own || session.role === 'owner');
+            return (
+              <div key={n.id} className="item">
+                <p>
+                  <Link href={`/mail/${n.id}`}><strong>{n.subject || '(no subject)'}</strong></Link> — requested by {n.requestedBy} at {when(n.requestedAt)},
+                  to <strong>{n.recipients}</strong> people, {n.scheduledFor ? `scheduled for ${formatZoned(n.scheduledFor)}` : 'as soon as approved'}.{' '}
+                  {n.status === 'pending' ? 'Waiting for review.' : n.status === 'approved' ? 'Approved — waiting for its time.' : 'Sending now.'}
+                  {' '}<Link href={`/mail/${n.id}`}>Open the email</Link> to read it as it will arrive.
+                </p>
+                {n.requestNote && <blockquote>{n.requestNote}</blockquote>}
+                {n.status === 'pending' && canAct && !mayReview && (
+                  <ActionForm action={decideNewsletter} className="inline">
+                    <input type="hidden" name="id" value={n.id} />
+                    <span className="hint">Your request — another editor or an owner approves it. </span>
+                    <button type="submit" name="decision" value="withdraw" className="secondary">Withdraw request</button>
+                  </ActionForm>
+                )}
+                {n.status === 'pending' && mayReview && (
+                  <ActionForm action={decideNewsletter}>
+                    <input type="hidden" name="id" value={n.id} />
+                    {own && <p className="notice">Your own request — as an owner you can approve it yourself. Open the email first.</p>}
+                    <label htmlFor={`nl-note-${n.id}`}>Notes to the writer (required to decline)</label>
+                    <textarea id={`nl-note-${n.id}`} name="note" placeholder="What's wrong, or what you checked." />
+                    <button type="submit" name="decision" value="approve">{n.scheduledFor ? 'Approve (sends on schedule)' : 'Approve & send now'}</button>{' '}
+                    {!own && <button type="submit" name="decision" value="decline" className="secondary">Decline with notes</button>}
+                    {own && session.role === 'owner' && <button type="submit" name="decision" value="withdraw" className="secondary">Withdraw</button>}
+                  </ActionForm>
+                )}
+                {n.status === 'approved' && canAct && (
+                  <ActionForm action={decideNewsletter} className="inline">
+                    <input type="hidden" name="id" value={n.id} />
+                    <button type="submit" name="decision" value="cancel" className="secondary">Cancel the scheduled send</button>
+                  </ActionForm>
+                )}
+              </div>
+            );
+          })}
         </section>
       )}
 

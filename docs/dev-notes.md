@@ -113,6 +113,11 @@ Nothing.
 **Technical detail**: docs/systems/newsletters.md "Saved lists" and
 "Recipient placeholders".
 
+**Approve newsletters from the front page.** "Newsletters needing attention"
+on Publish & Status now has the Approve / Decline / Withdraw / Cancel buttons
+(same rules as the email's page: a different admin, or an owner for their own).
+Open the email first to read it.
+
 **Save remembers the audience and the time.** Choosing a list (or All) under
 *Send to* and a *Send at* time, then pressing **Save**, now keeps both with the
 draft — before, only *Save & request send* used them. A time in the past can

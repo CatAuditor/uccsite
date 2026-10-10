@@ -23,6 +23,13 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.11 — 2026-10-10 — Newsletter review on Publish & Status
+
+- `app/page.js`: `decideNewsletter` action (approve / decline / withdraw / cancel → `lib/newsletters.js`
+  approveSend / declineSend / withdrawSend / cancelSend; same two-person rules) rendered per pending /
+  approved newsletter in "Newsletters needing attention", with requester, time, note and a link to the email.
+  Admin only.
+
 ## v0.29.10 — 2026-10-10 — Save stores Send to and Send at
 
 - `lib/newsletters.js saveNewsletter`: reads `sendTo` (`all` → `{}`, list id → `{ list }`, '' → form's hidden

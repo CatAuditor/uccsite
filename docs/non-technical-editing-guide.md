@@ -285,6 +285,11 @@ visual; a developer changes the code and publishes.
 
 ## Outgoing emails (Mail → Outgoing emails)
 
+A requested newsletter can be approved or declined on **Publish & Status**
+(the first page after sign-in, "Newsletters needing attention") as well as on
+the email's own page — open the email first to read it as it will arrive.
+
+
 The page has two parts. **Automatic emails** are the ones a person gets right
 after doing something — signing the petition, donating. **Newsletters** go to
 the whole mailing list after a second admin approves them.

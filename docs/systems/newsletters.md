@@ -63,7 +63,9 @@ apps/admin/app/mail/[id]/actions.js   importUpload(formData): .docx/.md/.html �
 apps/admin/lib/newsletter-import.mjs  htmlToBlocks(html, {headline}) → {blocks, headline, notes}; sanitizeRich(html) (tested)
 apps/admin/app/mail/audience-count/route.js  GET ?residency&donors&petition → {count, description} (signed-in; no write)
 apps/admin/app/mail/status.js      status labels
-apps/admin/app/page.js             dashboard "Newsletters needing attention" (pending/approved/sending)
+apps/admin/app/page.js             Publish & Status: "Newsletters needing attention" — pending / approved / sending, WITH
+                                   approve / decline / withdraw / cancel (decideNewsletter → lib/newsletters.js, same rules
+                                   as the email page; 2026-10-10) and a link to read the email first
 scripts/newsletter-smoke.mjs       E2E of the Lambda with recipientsOverride (mailbox simulator)
 ```
 
@@ -182,7 +184,8 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    mail nobody — same `publishReviewRecipients` rules and `PUBLISH_NOTIFY_TO`
    override as publish requests).
 4. **Review** (a different editor/owner, or an owner for their own —
-   `selfApproved` audited):
+   `selfApproved` audited) — on the email's page OR on Publish & Status
+   (`/`, "Newsletters needing attention", same actions, 2026-10-10):
    - **Approve** → `approved` (conditional on `pending`); **send now** →
      the admin invokes `NewsletterSendFn` `{ id }` (async). Invoke failure
      reopens the request to `pending` with audit `newsletter.invoke_failed`
