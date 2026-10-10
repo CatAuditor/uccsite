@@ -23,6 +23,15 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.9 — 2026-10-10 — FIX: send request never worked since 2026-10-08
+
+- `app/mail/[id]/page.js`: `request` is no longer an inline `'use server'` function; it is a plain async helper
+  the `save` action calls for `then=request`. A bound inline server reference called from inside another
+  action failed before user code (masked digest; no audit row). Prod audit log: zero `newsletter.request`
+  rows and zero `requested_at` since the one-form change — every request attempt failed. Digests
+  3582361700 / 323675566 / 4003451880 all this (the first two also coincided with deploys).
+- Error log updated with the actual root cause; `admin.error` capture did not record this one (to watch).
+
 ## v0.29.8 — 2026-10-10 — Uncaught admin errors recorded in the audit log
 
 - `apps/admin/instrumentation.js`: `onRequestError` (Next 15) logs `[admin] request error digest=… path=…

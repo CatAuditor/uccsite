@@ -27,7 +27,37 @@ SSR logs to CloudWatch (`/aws/amplify/<appId>` did not exist).
 | ESLint `no-undef` over `apps/admin/app` + `apps/admin/lib` (Next build does not catch an undefined identifier in JSX; it would throw at render) | clean |
 | Amplify jobs | 110–115 all SUCCEED |
 
-## Root cause (after the user described the steps)
+## Actual root cause (third digest, 4003451880, 03:05–03:06Z — no deploy running)
+
+Build 120 had been live since 03:03:57Z; the user reloaded, saved twice
+(rows at 03:05:14 and 03:06:07) and pressed **Save & request send** → 5xx at
+03:05 and 03:06. So not the deploy race after all (that explained the two
+earlier hits only in part). Prod has **no newsletter with `requested_at`
+set and no `newsletter.request` audit row — ever**: the request path had
+been broken since 2026-10-08, when Save / test / request became one form
+whose `save` action does `if (then === 'request') return request(prev,
+formData)`. `request` was ALSO an inline `'use server'` function. Next
+compiles an inline server action inside a component into a *bound server
+reference* (its closure — `id`, `path` — encrypted into the reference), and
+`save` closing over that reference means the call from server code goes
+through the reference machinery, not a plain function; it fails before any
+user code runs, so `runAction` never sees it and nothing is audited. The
+test-send branch calls `sendTest` directly and always worked — the one
+difference. Fix (v0.29.9): `request` is a plain async function (no
+directive) that `save` calls; only `save`, `decide` and `test` are actions.
+
+Why the earlier two digests fit "deploy race" so well: both DID coincide
+with deploys, and a stale page produces the same masked message. Lesson:
+when every attempt fails the same way, check whether the path has EVER
+worked (the audit log said no) before accepting a coincidence.
+
+The `admin.error` capture added in v0.29.8 recorded nothing for 4003451880
+— either this failure is thrown outside the paths Next reports to
+`onRequestError`, or the DB write failed silently (only the console line
+exists, and Amplify keeps no log). Watch for a row on the next real error;
+if none appears, the reporter needs a second sink (S3 or SES).
+
+## First reading (deploy race) — kept for the record
 
 Steps: write the email, Save, choose a mailing list, Save, press "Save &
 request send" → error. Audit log for the draft (`08351b34…`): saves at

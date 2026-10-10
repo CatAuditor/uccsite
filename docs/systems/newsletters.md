@@ -163,6 +163,9 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    mailing-list total, `newsletterPage` → `lists[].count`, `everyone`) is
    applied to the form before the save, so the stored audience is what is
    requested (2026-10-10). No choice → "Choose who this email goes to".
+   `request` is a PLAIN function the `save` action calls — never a second
+   inline Server Action (that failed every request 2026-10-08 → 10-10,
+   docs/error-handling/client-side-error/2026-10-10-admin-server-components-digest.md).
    Then saves what is on screen first (Save,
    both test buttons and the request are one form, `then` = the clicked
    button — before 2026-10-08 they were separate forms and a test of an

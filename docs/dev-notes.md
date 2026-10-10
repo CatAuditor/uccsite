@@ -113,6 +113,13 @@ Nothing.
 **Technical detail**: docs/systems/newsletters.md "Saved lists" and
 "Recipient placeholders".
 
+**Fixed: "Save & request send" always failed** (since October 8, when Save,
+test and request became one set of buttons). Every attempt showed the "Server
+Components render" error and nothing was requested — no newsletter has been
+requested through the admin since then. Cause was in how the request button's
+code was wired to the save button's code; fixed tonight. Reload the editor and
+request again; it should go to the review step.
+
 **Error details are now kept.** When the admin shows "Something went wrong …
 ref 123", the real message is recorded in the Audit Log (Operations → Audit
 Log, action `admin.error`, open "error" under Detail). Tell whoever is fixing

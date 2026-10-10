@@ -69,8 +69,13 @@ export default async function NewsletterPage({ params }) {
       return { ok: true, message: 'Saved. The preview on the right is what goes out.' };
     });
   }
+  // NOT a Server Action on purpose: `save` calls it directly. An inline
+  // 'use server' function is compiled into a BOUND server reference (its
+  // closure encrypted), and calling one from inside another action fails on
+  // the server with the masked "Server Components render" digest — no send
+  // request ever succeeded between 2026-10-08 and 2026-10-10 because of it
+  // (docs/error-handling/client-side-error/2026-10-10-admin-server-components-digest.md).
   async function request(prev, formData) {
-    'use server';
     return runAction(async () => {
       // "Send to" is the audience: 'all' = everyone on the mailing list (every
       // filter cleared), or a saved list id → { list }. Applied to the form
