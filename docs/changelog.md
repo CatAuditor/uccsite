@@ -23,6 +23,43 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.0 — 2026-10-10 — Saved mailing lists, newsletter-history filter, recipient name placeholders
+
+- **Mailing list / audience** (`packages/db/audience.js`): new filter `history = never | reached`
+  (`NOT EXISTS`/`EXISTS` on `newsletter_deliveries status='sent'`) — the dormant part of the list; `list`
+  (uuid) carried in a newsletter's audience; `audienceQuery(…, { memberOf })` narrows to a frozen
+  snapshot. `normalizeFilters` now returns `{ residency, donors, petition, history, list }` (tests updated).
+- **Saved lists** (`packages/db/lists.js`, DDL wired into `content-schema.js`): tables `mailing_lists`
+  (name, filters JSON, mode dynamic|frozen, frozen_at, frozen_count) + `mailing_list_members` (list_id,
+  email). `listQuery` (dynamic = filters; frozen = snapshot ∩ eligibility rules), `freezeList`,
+  `audienceFor()` = THE resolver (filters or `{ list }`) used by the composer count, CSV, request count
+  and NewsletterSendFn; `null` when the list is gone. Tests `packages/db/test/lists.test.mjs`.
+- **Admin**: `app/lists` (Mail → Saved lists; `lib/lists.js` rules: create / save / freeze "Update" /
+  setMode / delete, audit `list.<verb>` entityType `mailing_list`, in-flight lock while a newsletter on
+  the list is pending/approved/sending); composer **Send to** (saved list or filters, + Newsletter history
+  select); `audience-count` route takes `history` + `list`; editor page shows `audience.description`;
+  Mailing list page gains the history filter, hidden CSV field and "Save these filters as a list";
+  `/subscribers/export` resolves via `audienceFor` (accepts `list`); nav item. `lib/newsletters.js
+  audienceInfo` replaces the raw count; request refuses a deleted list.
+- **Lambda** (`aws/newsletter/handler.mjs`): recipients via `audienceFor` with `email, first_name,
+  last_name`; a deleted list fails the run. `send.js buildMessage` fills `{first_name}` / `{last_name}` /
+  `{email}` (+ `[First name]` aliases) per copy from `packages/newsletter/fill.cjs recipientVars`
+  ("there" when no first name) in subject, HTML (escaped) and text; recipients may be strings (smoke) or
+  rows. Tests added in `aws/newsletter/test/send.test.mjs`, `packages/newsletter/test/fill.test.mjs`.
+- **Test sends** (`lib/newsletters.js sendTest`): one SES message per tester, filled with
+  `recipientNameFor` (tester's `DIRECTORY_ROWS_SQL` row, else team name split) — newsletters via
+  `recipientVars`, automatic emails via `sampleVars` with that first name.
+- `scripts/send-periodical.js`: `--history never|reached`.
+- **Deployed**: `migrate-schema --env staging` and `--env prod` (both tables created); `cdk deploy
+  UccStaging` + `UccProd` from a clean worktree at 9b41024 (Lambda code only in the diff);
+  `newsletter-smoke.mjs --env staging` → SMOKE OK (sent=1, archived). Admin ships with the Amplify
+  build of this push.
+- **Known limits**: the send ledger starts 2026-10-05, so "never received" ignores the June issue sent
+  by other tools; the web copy (`web_html`) shows `{first_name}` literally (fill is per email).
+- **Docs**: newsletters.md "Saved lists" + "Recipient placeholders", admin.md, email.md,
+  data-handling.md (two table rows), non-technical guide, debug/newsletters.md, dev-notes.
+- Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in — see `docs/for-conner.md`).
+
 ## v0.28.3 — 2026-10-10 — Project rename cascades coverage tokens
 
 - **Projects / publish**: `replaceProjects` (`packages/db/content.js`) now rewrites `{{coverage:<old slug>}}` →
