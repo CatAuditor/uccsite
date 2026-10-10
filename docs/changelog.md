@@ -23,6 +23,13 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.3 — 2026-10-10 — Apply filters placement
+
+- Mailing list page: `AudienceFilters` renders first, then search + **Apply filters** (the button sat above the
+  filter box). New `app/audience-count-button.js` ("Apply filters (count)": reads the form's `FILTER_KEYS` →
+  `GET /mail/audience-count`, nothing saved) on the Saved lists new-list form and every list card. Admin
+  only — no Lambda change, no deploy beyond the Amplify build.
+
 ## v0.29.2 — 2026-10-10 — Audience `via`: join form / petition / donation checkout
 
 - `packages/db/audience.js`: the subscribers row set labels `via` = `petition` when a signature was written
