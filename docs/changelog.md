@@ -23,6 +23,17 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.2 — 2026-10-10 — Audience `via`: join form / petition / donation checkout
+
+- `packages/db/audience.js`: the subscribers row set labels `via` = `petition` when a signature was written
+  within 5 minutes of the row's `created_at` (same request), else `join`; members stay `member`.
+  `VIAS` = join | petition | member (+ `subscriber` = join or petition, so filters saved earlier tonight
+  still apply). `describeFilters` + tests updated; `AudienceFilters` offers the three; Mailing list page
+  "Via" column shows them apart.
+- **Deployed**: `cdk deploy UccStaging UccProd` from a clean worktree at a3aadb8 (Lambda code only) before
+  the push; admin ships with the Amplify build.
+- Open P1s unchanged.
+
 ## v0.29.1 — 2026-10-10 — More audience filters, exclusions, people added to lists by hand
 
 - **Filters** (`packages/db/audience.js`): `giving` any|monthly|onetime|none (the `donors` tick box still reads
