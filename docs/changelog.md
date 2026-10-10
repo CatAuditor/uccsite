@@ -23,6 +23,29 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.1 — 2026-10-10 — More audience filters, exclusions, people added to lists by hand
+
+- **Filters** (`packages/db/audience.js`): `giving` any|monthly|onetime|none (the `donors` tick box still reads
+  as `any`), `via` subscriber|member, `joined_after` / `joined_before` (inclusive dates), `zip` prefix
+  (`best_zip` now a row column), `last_sent_before` ("not emailed since"), `petition` gains any|none,
+  **`not_petition`** (exclude signers of a slug or of anything), **`not_list`** (exclude a saved list's
+  members). `FILTER_KEYS` exported; `audienceQuery` gains `orManualOf`. `describeFilters` covers all.
+  Tests extended.
+- **Saved lists** (`packages/db/lists.js`): `mailing_list_members.source` snapshot|manual (ALTER, applied to
+  staging + prod); `freezeList` / `clearSnapshot` touch snapshot rows only; `addMembers` / `removeMember` /
+  `manualMembers`; `listQuery` dynamic = filters OR manual, frozen = every member.
+- **Admin**: new `app/audience-filters.js` (one uncontrolled control set, names = FILTER_KEYS) used by the
+  Mailing list page, the Saved lists page and the composer (state mirrors via `onChange`; count query is
+  `URLSearchParams(audience)`); list cards get "People added by hand" (`lib/lists.js parsePeople` /
+  `addPeople` with status report + optional confirmed-subscriber add audited `subscribers.add`,
+  `removePerson`); Mailing list rows get "Add to list" (`addToList`); `audience-count` and
+  `/subscribers/export` read every filter key generically.
+- **Deployed**: `cdk deploy UccStaging` + `UccProd` from a clean worktree at 68d6cbb (ApiFunction +
+  NewsletterSendFn code only); staging smoke OK. Admin ships with the Amplify build of this push.
+- **Docs**: newsletters.md "Filters" table + "People added by hand", admin.md, data-handling.md,
+  non-technical guide, debug/newsletters.md, dev-notes (today's entry extended).
+- Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in — see `docs/for-conner.md`).
+
 ## v0.29.0 — 2026-10-10 — Saved mailing lists, newsletter-history filter, recipient name placeholders
 
 - **Mailing list / audience** (`packages/db/audience.js`): new filter `history = never | reached`
