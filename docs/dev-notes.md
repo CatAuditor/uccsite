@@ -113,6 +113,11 @@ Nothing.
 **Technical detail**: docs/systems/newsletters.md "Saved lists" and
 "Recipient placeholders".
 
+**Also tonight**: an admin page showed "An error occurred in the Server
+Components render" once. The admin kept no server log, so the cause could not
+be read; a logs-only role was added so from now on the message lands in
+CloudWatch. If it happens again, note the page and the button pressed.
+
 **Left to do**
 
 - Deploy: the two tables exist on staging and prod (migration run tonight);

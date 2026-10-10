@@ -579,6 +579,12 @@ Amplify Hosting = the app's SSR compute role (wire-up pending; it needs
 on the domain identity + `ucc-prod` configuration set, From pinned to
 hello@utahciviccompact.org — role `UccProdAdminCompute`, inline policy
 `admin-runtime`, hand-managed per docs/for-conner.md §8.3).
+**SSR logs** (2026-10-10): the app's *service* role is
+`uccsite-admin-amplify-logs` (logs-only, hand-made; set with `aws amplify
+update-app --iam-service-role-arn`) so Amplify Hosting compute writes the
+server log to CloudWatch `/aws/amplify/dmfjtx0gh1s1n` — the only place a
+production "Server Components render" digest can be read
+(docs/error-handling/client-side-error/2026-10-10-admin-server-components-digest.md).
 
 ## Verified (2026-09-13, staging)
 
