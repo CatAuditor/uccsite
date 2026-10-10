@@ -23,6 +23,15 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.12 — 2026-10-10 — Step traces to S3 for the request path
+
+- Digest 473098759 on build 122 (post-fix): save row at 03:19:10 (list + schedule stored), no request row,
+  no `admin.error` row, latency < 4 s — the request action fails fast after the save with nothing logged.
+  Every step reproduced OK against prod (render, slug, parseSchedule, the UPDATE inside BEGIN/ROLLBACK).
+- `lib/debug-trace.js`: `trace(name)` → `_debug/<name>-<ts>.json` in the media bucket (compute role already
+  writes there). `page.js request()` traces every step incl. inside `requestSend` (`opts.step`);
+  `instrumentation.js onRequestError` writes a `request-error` trace as a second sink. Never throws.
+
 ## v0.29.11 — 2026-10-10 — Newsletter review on Publish & Status
 
 - `app/page.js`: `decideNewsletter` action (approve / decline / withdraw / cancel → `lib/newsletters.js`

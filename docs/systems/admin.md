@@ -579,6 +579,9 @@ Amplify Hosting = the app's SSR compute role (wire-up pending; it needs
 on the domain identity + `ucc-prod` configuration set, From pinned to
 hello@utahciviccompact.org — role `UccProdAdminCompute`, inline policy
 `admin-runtime`, hand-managed per docs/for-conner.md §8.3).
+**Traces** (2026-10-10): `lib/debug-trace.js` writes a step trace to the
+media bucket (`_debug/…json`) for "Save & request send" and for every
+uncaught error (instrumentation.js) — docs/error-handling/debug/admin.md.
 **Uncaught errors** (2026-10-10): `instrumentation.js onRequestError` writes
 every uncaught render / Server Action error to `audit_log` as `admin.error`
 (entity `request/<digest>`, diff = message + path + type + stack) — the Audit

@@ -223,12 +223,16 @@ function renderFrozen(n, slug, { pixel = false } = {}) {
 
 // requestSend(id, note, scheduleLocal) → { needsReview, notified, scheduledFor }
 // Freezes the rendered html/text/web copy, the slug and the recipient count.
-export async function requestSend(id, note, scheduleLocal) {
+// opts.step(label, extra): a step callback for the caller's trace (lib/debug-trace.js).
+export async function requestSend(id, note, scheduleLocal, { step = () => {} } = {}) {
   const s = await requireRole('editor');
   const nid = assertId(id);
   const { at } = parseSchedule(scheduleLocal);
+  step('parsed', { at: at ? at.toISOString() : null });
   const { recipients, subject } = await withWriteTx(async (client) => {
+    step('tx-open');
     const n = await db.getNewsletter(client, nid);
+    step('loaded', n ? { status: n.status, kind: n.kind, blocks: n.blocks.length } : null);
     if (!n) throw new Error('This newsletter no longer exists.');
     if (n.status !== 'draft') throw new Error(`This newsletter is already ${n.status}.`);
     if (n.kind === 'transactional') throw new Error('This is an automatic email — it never goes to the mailing list. Untick "Automatic email" to send it as a newsletter.');
@@ -237,22 +241,28 @@ export async function requestSend(id, note, scheduleLocal) {
     const audience = await audienceInfo(client, n.audience);
     if (audience.missing) throw new Error('The saved list this email was going to has been deleted — choose another audience and save.');
     const recipients = audience.count;
+    step('audience', { recipients, description: audience.description });
     if (!recipients) throw new Error(`Nobody matches the audience (${audience.description}).`);
     const slug = n.slug || archiveSlug(n.subject, at || new Date());
     const { html, text, webHtml } = renderFrozen(n, slug, { pixel: true });
+    step('rendered', { slug, html: html.length, text: text.length, web: (webHtml || '').length });
     const ok = await db.requestSend(client, {
       id: nid, requestedBy: s.email, requestedByUser: s.username, note: clip(note, NOTE_MAX), scheduledFor: at ? at.toISOString() : null,
       html, text, webHtml, slug, recipients, blocks: n.blocks,
     });
+    step('updated', { ok });
     if (!ok) throw new Error('This newsletter was just changed by someone else — reload.');
     await recordChange(client, { actor: s.email, action: 'newsletter.request', entityType: 'newsletter', entityId: nid, diff: { recipients, scheduledFor: at ? at.toISOString() : null, audience: audience.description, publishToSite: n.publishToSite, slug } });
+    step('audited');
     return { recipients, subject: n.subject };
   });
+  step('committed');
   const needsReview = s.role !== 'owner';
   const notified = await notifyNewsletterRequested({
     requestedBy: s.email, role: s.role, id: nid, subject, note: clip(note, NOTE_MAX), recipients,
     scheduledLabel: at ? formatZoned(at) : '',
   });
+  step('notified', { notified });
   return { needsReview, notified, scheduledFor: at ? formatZoned(at) : '' };
 }
 

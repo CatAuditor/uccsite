@@ -113,6 +113,11 @@ Nothing.
 **Technical detail**: docs/systems/newsletters.md "Saved lists" and
 "Recipient placeholders".
 
+**Still chasing the "request send" error** (ref 473098759, on the fixed
+build): every step of the request now leaves a trace in storage so the next
+attempt tells us exactly where it stops. Please try once more after the build
+and send the ref.
+
 **Approve newsletters from the front page.** "Newsletters needing attention"
 on Publish & Status now has the Approve / Decline / Withdraw / Cancel buttons
 (same rules as the email's page: a different admin, or an owner for their own).

@@ -31,6 +31,16 @@ export async function onRequestError(err, request, context) {
   const type = `${context?.routerKind || ''}/${context?.routeType || ''}${context?.renderSource ? `/${context.renderSource}` : ''}`;
   console.error(`[admin] request error digest=${digest || '-'} path=${where} type=${type} route=${context?.routePath || ''} ${err?.name || 'Error'}: ${message}`);
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // Second sink: S3 (lib/debug-trace.js) — survives a DB outage and needs
+    // only the compute role's media-bucket write.
+    try {
+      const { trace } = await import('./lib/debug-trace');
+      const t = trace('request-error', { digest, path: where, type, route: context?.routePath || '' });
+      t.fail(err);
+      await t.flush();
+    } catch (e) {
+      console.error(`[admin] request error trace could not be written: ${e?.message || e}`);
+    }
     try {
       const { withWriteDb } = await import('./lib/data');
       await withWriteDb((client) => client.query(
