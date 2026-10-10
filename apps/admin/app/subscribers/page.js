@@ -83,9 +83,9 @@ export default async function SubscribersPage({ searchParams }) {
           <option value="all">everyone we hold</option>
           {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
         </select>
-        <input type="search" name="q" placeholder="Search email or name" defaultValue={filters.q} aria-label="Search email or name" />
-        <button type="submit">Apply</button>
         <AudienceFilters f={filters} petitions={petitions} lists={lists} prefix="dir" />
+        <input type="search" name="q" placeholder="Search email or name" defaultValue={filters.q} aria-label="Search email or name" />
+        <button type="submit">Apply filters</button>
       </form>
 
       <p>

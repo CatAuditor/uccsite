@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { listsPage, filtersFrom } from '../../lib/lists';
 import ActionForm from '../action-form';
 import AudienceFilters from '../audience-filters';
+import AudienceCountButton from '../audience-count-button';
 import { createListAction, saveListAction, freezeListAction, setModeAction, deleteListAction, addPeopleAction, removePersonAction } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -46,6 +47,7 @@ export default async function ListsPage({ searchParams }) {
         <label htmlFor="new-name">Name</label>
         <input id="new-name" name="name" required maxLength={120} placeholder="e.g. Dormant — never emailed" />
         <AudienceFilters f={seed} petitions={petitions} lists={lists} prefix="new" />
+        <div className="mail-row"><AudienceCountButton /></div>
         <label htmlFor="new-mode">Mode</label>
         <select id="new-mode" name="mode" defaultValue="frozen">
           <option value="frozen">Frozen — the people who match right now; Update to refresh</option>
@@ -75,6 +77,7 @@ export default async function ListsPage({ searchParams }) {
             <input id={`${l.id}-name`} name="name" defaultValue={l.name} required maxLength={120} />
             <AudienceFilters f={l.filters} petitions={petitions} lists={lists.filter((x) => x.id !== l.id)} prefix={l.id} />
             <div className="item-tools">
+              <AudienceCountButton />{' '}
               <button type="submit">Save name &amp; filters</button>
               <span className="hint">{l.mode === 'frozen' ? ' Saving filters does not change who is on a frozen list — press Update for that.' : ''}</span>
             </div>

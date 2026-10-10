@@ -41,6 +41,8 @@ apps/admin/app/lists/page.js       Mail → Saved lists (editor+): new-list form
                                    actions.js = the server actions
 apps/admin/app/audience-filters.js THE filter controls (client, uncontrolled, names = FILTER_KEYS) rendered by the
                                    Mailing list page, the Saved lists page and the composer
+apps/admin/app/audience-count-button.js  "Apply filters (count)" for the Saved lists forms: reads the form's filter
+                                   fields → GET /mail/audience-count (nothing saved); the composer has its own
 aws/newsletter/handler.mjs         NewsletterSendFn: {id} | {id,resume} | {tick} | {id,recipientsOverride}
 aws/newsletter/send.js             the per-recipient loop (injected deps, tested)
 infra/cdk/lib/ucc-stack.js         "newsletter send Lambda" block (both stacks): IAM, self-invoke policy,

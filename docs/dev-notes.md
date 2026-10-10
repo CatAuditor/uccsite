@@ -79,7 +79,9 @@ Nothing.
   petition (filter people OUT), newsletter history, **not emailed since** a
   date, and **not on** another saved list (e.g. everyone except the people
   the dormant mailing already went to). The Mailing list page, the Saved
-  lists page and the composer all show the same filter box.
+  lists page and the composer all show the same filter box, each with an
+  **Apply filters** button under it (on a list's card it counts without
+  saving — press *Save name & filters* to keep the change).
 - **Add people to a list by hand.** On a list's card, "People added by hand"
   takes pasted addresses (one per line, optionally `email, First, Last`); on
   the Mailing list page every subscribed person has an **Add to list**
