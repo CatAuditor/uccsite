@@ -23,6 +23,13 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.4 — 2026-10-10 — "Send to" in the request block
+
+- `app/mail/[id]/page.js`: the "Request the send" block gets a **Send to** select (`sendTo`: `keep` = the
+  Audience box, `all` = everyone — every `FILTER_KEYS` field cleared, a saved list id → `list`), applied to
+  the form data before `saveNewsletter`, so the stored audience is what `requestSend` freezes and the
+  reviewer's count reflects it. Admin only (Amplify build); no Lambda change.
+
 ## v0.29.3 — 2026-10-10 — Apply filters placement
 
 - Mailing list page: `AudienceFilters` renders first, then search + **Apply filters** (the button sat above the
