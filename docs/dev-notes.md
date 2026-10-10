@@ -113,10 +113,17 @@ Nothing.
 **Technical detail**: docs/systems/newsletters.md "Saved lists" and
 "Recipient placeholders".
 
-**Also tonight**: an admin page showed "An error occurred in the Server
-Components render" once. The admin kept no server log, so the cause could not
-be read; a logs-only role was added so from now on the message lands in
-CloudWatch. If it happens again, note the page and the button pressed.
+**Also tonight**: pressing "Save & request send" showed "An error occurred in
+the Server Components render". Cause: the admin was being redeployed at that
+moment (several builds went out while the editor was open) and the open page
+belonged to the previous build — reload the page and it works. Not a fault in
+the email. A logs-only role was added so a future message lands in CloudWatch.
+Two things it surfaced: the Outgoing emails page had two identical **Start
+writing** buttons with the automatic-email one first — that email was started
+as an automatic email by mistake (untick **Automatic email** on it and save to
+turn it into a newsletter). Now Newsletters come first and the buttons say
+**Start a newsletter** / **Start an automatic email**. And choosing a list in
+"Request the send" takes effect when you request, not on Save.
 
 **Left to do**
 

@@ -23,6 +23,16 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.7 — 2026-10-10 — Outgoing emails: newsletters first, distinct Start buttons
+
+- `app/mail/page.js`: Newsletters section above Automatic emails; buttons **Start a newsletter** / **Start an
+  automatic email** (were both "Start writing", automatic first — tonight's newsletter draft was created as
+  an automatic email). Admin only.
+- Root cause of digest 3582361700 recorded: a deploy-while-editing race (inline server-action ids change
+  per build; six builds in 30 minutes), not a code fault —
+  `docs/error-handling/client-side-error/2026-10-10-admin-server-components-digest.md`. From now on the
+  changelog entry ships in the code commit so one push = one admin build.
+
 ## v0.29.6 — 2026-10-10 — Admin SSR logs (docs + IAM only)
 
 - A production "Server Components render" error (digest 3582361700, on v0.29.4) could not be read: the

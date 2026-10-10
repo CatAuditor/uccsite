@@ -70,52 +70,12 @@ export default async function MailPage() {
         petition&apos;s own page under Petitions (after signing — each petition has its own choice) or the Appeals page (after a donation); without a choice, a built-in email goes out. Every email is sent as &ldquo;<em>Your name</em> from Utah Civic Compact&rdquo; &lt;hello@utahciviccompact.org&gt;.
       </p>
 
-      <h2>Automatic emails</h2>
-      <table>
-        <thead><tr><th>Sent when</th><th>Email that goes out</th><th>Attached</th></tr></thead>
-        <tbody>
-          {slots.map((s) => (
-            <tr key={s.key}>
-              <td><strong>{s.label}</strong><br /><span className="hint">{s.when}</span></td>
-              <td>{s.attachment
-                ? <Link href={`/mail/${s.attachment.newsletterId}`}>{s.attachment.currentSubject || s.attachment.subject || '(no subject)'}</Link>
-                : <span className="hint">Built-in email</span>}
-                {' '}<span className="hint">· choose on {s.slug ? (s.petitionId ? <Link href={`/petitions/${s.petitionId}`}>Petitions › {s.slug}</Link> : <>Petitions › {s.slug} (no such petition any more)</>) : <Link href="/appeals">Appeals</Link>}</span></td>
-              <td>{s.attachment ? `${when(s.attachment.attachedAt)} · ${s.attachment.attachedBy}` : '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {canAct && (
-        <ActionForm action={createAutomatic} className="inline">
-          <label htmlFor="auto-subject">New automatic email — subject line</label>
-          <input id="auto-subject" name="subject" placeholder="Thank you for signing" maxLength={200} required />
-          <button type="submit">Start writing</button>
-        </ActionForm>
-      )}
-      {automatic.length > 0 && (
-        <table>
-          <thead><tr><th>Subject</th><th>Attached to</th><th>From</th><th>Created</th><th></th></tr></thead>
-          <tbody>
-            {automatic.map((n) => (
-              <tr key={n.id}>
-                <td><Link href={`/mail/${n.id}`}>{n.subject || '(no subject)'}</Link></td>
-                <td className={attachedTo.has(n.id) ? 'status-succeeded' : ''}>{attachedTo.has(n.id) ? attachedTo.get(n.id).label : 'not attached'}</td>
-                <td>{n.fromName}</td>
-                <td>{when(n.createdAt)} · {n.createdBy}</td>
-                <td>{copyButton(n)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
       <h2>Newsletters</h2>
       {canAct && (
         <ActionForm action={create} className="inline">
-          <label htmlFor="subject">New newsletter — subject line</label>
+          <label htmlFor="subject">New newsletter (to the mailing list) — subject line</label>
           <input id="subject" name="subject" placeholder="Latest from the Compact" maxLength={200} required />
-          <button type="submit">Start writing</button>
+          <button type="submit">Start a newsletter</button>
         </ActionForm>
       )}
 
@@ -140,6 +100,47 @@ export default async function MailPage() {
           {!newsletters.length && <tr><td colSpan="8">No newsletters yet.</td></tr>}
         </tbody>
       </table>
+
+      <h2>Automatic emails</h2>
+      <table>
+        <thead><tr><th>Sent when</th><th>Email that goes out</th><th>Attached</th></tr></thead>
+        <tbody>
+          {slots.map((s) => (
+            <tr key={s.key}>
+              <td><strong>{s.label}</strong><br /><span className="hint">{s.when}</span></td>
+              <td>{s.attachment
+                ? <Link href={`/mail/${s.attachment.newsletterId}`}>{s.attachment.currentSubject || s.attachment.subject || '(no subject)'}</Link>
+                : <span className="hint">Built-in email</span>}
+                {' '}<span className="hint">· choose on {s.slug ? (s.petitionId ? <Link href={`/petitions/${s.petitionId}`}>Petitions › {s.slug}</Link> : <>Petitions › {s.slug} (no such petition any more)</>) : <Link href="/appeals">Appeals</Link>}</span></td>
+              <td>{s.attachment ? `${when(s.attachment.attachedAt)} · ${s.attachment.attachedBy}` : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {canAct && (
+        <ActionForm action={createAutomatic} className="inline">
+          <label htmlFor="auto-subject">New automatic email (thank-you after a signature or donation) — subject line</label>
+          <input id="auto-subject" name="subject" placeholder="Thank you for signing" maxLength={200} required />
+          <button type="submit" className="secondary">Start an automatic email</button>
+        </ActionForm>
+      )}
+      {automatic.length > 0 && (
+        <table>
+          <thead><tr><th>Subject</th><th>Attached to</th><th>From</th><th>Created</th><th></th></tr></thead>
+          <tbody>
+            {automatic.map((n) => (
+              <tr key={n.id}>
+                <td><Link href={`/mail/${n.id}`}>{n.subject || '(no subject)'}</Link></td>
+                <td className={attachedTo.has(n.id) ? 'status-succeeded' : ''}>{attachedTo.has(n.id) ? attachedTo.get(n.id).label : 'not attached'}</td>
+                <td>{n.fromName}</td>
+                <td>{when(n.createdAt)} · {n.createdBy}</td>
+                <td>{copyButton(n)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
     </div>
   );
 }

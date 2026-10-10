@@ -27,9 +27,34 @@ SSR logs to CloudWatch (`/aws/amplify/<appId>` did not exist).
 | ESLint `no-undef` over `apps/admin/app` + `apps/admin/lib` (Next build does not catch an undefined identifier in JSX; it would throw at render) | clean |
 | Amplify jobs | 110–115 all SUCCEED |
 
-Root cause **not identified** from the outside. The page and the action the
-user took are unknown; the code involved (composer Audience box + "Send to"
-in the request block) was replaced in v0.29.5 the same evening.
+## Root cause (after the user described the steps)
+
+Steps: write the email, Save, choose a mailing list, Save, press "Save &
+request send" → error. Audit log for the draft (`08351b34…`): saves at
+02:29:50Z and 02:45:01Z succeeded; **no `newsletter.request` row and no save
+row at request time** — the request action never ran. The two 5xx responses
+sit exactly on deploy completions: 20:28:53 MDT (build 112 → 113 live) and
+20:45:58 MDT (job 116, a redeploy, live) — six admin builds went out in 30
+minutes while the editor was open. A page rendered by one build submitting
+an inline server action to the next build fails with Next's "Failed to find
+Server Action" (the action ids are hashes of the changed file), which
+production masks as the Server Components digest. **Not a code bug; a
+deploy-while-editing race.** Reloading the page fixes it.
+
+Two side findings from the same audit trail:
+
+- The draft was created as an **automatic email** (`newsletter.create …
+  kind: transactional`): the Outgoing emails page had two identical
+  **Start writing** buttons, the Automatic emails one first. Fixed the same
+  night (v0.29.7: newsletters section first, buttons say what they start).
+  The draft itself is rescued by unticking "Automatic email" and saving.
+- "Choose a mailing list, Save" left the audience at `everyone` in every
+  save row — on v0.29.4/5 the list is chosen in the request block and is
+  applied when the request is made, not on Save (by design; the hint now
+  says so).
+
+Lesson: do not push a chain of admin builds while someone is editing; bundle
+the changelog into the code commit so one push = one build.
 
 ## What was changed so the next one is readable
 

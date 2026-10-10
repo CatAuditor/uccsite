@@ -321,7 +321,10 @@ the whole mailing list after a second admin approves them.
 
 ### Newsletters
 
-1. **Start writing**: type the subject line and press *Start writing*.
+1. **Start a newsletter**: under *Newsletters*, type the subject line and
+   press *Start a newsletter* (the *Start an automatic email* button lower
+   down makes a thank-you email instead — if you picked it by mistake, untick
+   *Automatic email* on the draft and save).
 2. **Compose** on the left: preview text (the line inboxes show after the
    subject), an optional headline for the navy letterhead band (the logo
    and "Utah Civic Compact" are always there, copying the site), **From**

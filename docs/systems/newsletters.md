@@ -49,8 +49,10 @@ infra/cdk/lib/ucc-stack.js         "newsletter send Lambda" block (both stacks):
                                    EventBridge rate(1 minute) tick, outputs NewsletterFunctionName/Arn
 apps/admin/lib/newsletters.js      every rule: create/save/request/approve/decline/withdraw/cancel/retry/test/delete
 apps/admin/lib/notify.js           notifyNewsletterRequested (reviewer email, same recipients as publish)
-apps/admin/app/mail/page.js        Outgoing emails: Automatic emails (trigger slots + transactional drafts, "new
-                                   automatic email") then Newsletters (list + "new newsletter")
+apps/admin/app/mail/page.js        Outgoing emails: Newsletters (list + "Start a newsletter") first, then Automatic
+                                   emails (trigger slots + transactional drafts, "Start an automatic email") —
+                                   order and labels since 2026-10-10 (a newsletter was started as an automatic
+                                   email from two identical "Start writing" buttons)
 apps/admin/lib/transactional.js    kind 'transactional' rows: create / list / chooseEmail (attach to a trigger, or detach)
 apps/admin/app/automatic-email-picker.js  the dropdown on each petition's page (its own trigger `petition-thanks:<slug>`) and the Appeals page (docs/systems/email.md "Attached emails")
 apps/admin/app/mail/[id]/page.js   editor page: review panel, Composer in an ActionForm, test/request/delete
@@ -76,8 +78,8 @@ A transactional row is an **automatic email**: composed with the same blocks,
 preview and test send, but never requested or sent to the audience — it is
 **attached** to a trigger (petition signed, donation received) and the API
 Lambda sends it to the one person who acted. The list page shows the
-triggers first (what is attached, or "built-in email"), then the automatic
-drafts, then the newsletters. `duplicateNewsletter` keeps the kind. Full
+newsletters first, then the triggers (what is attached, or "built-in
+email") and the automatic drafts. `duplicateNewsletter` keeps the kind. Full
 detail: docs/systems/email.md "Attached emails".
 
 ## Data
