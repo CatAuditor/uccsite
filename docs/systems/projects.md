@@ -69,7 +69,7 @@ packages/render/test/projects.test.mjs, packages/db/test/redirects.test.mjs, nav
 | table / column | meaning |
 |---|---|
 | `projects.id` | STABLE across saves since 2026-10-09 (`replaceProjects` upserts) |
-| `projects.slug` | the link key everywhere; renaming cascades to `documents.project_slug`, `project_files.project_slug`, `project_notes.project_slug`, `press.project_slug` and the payload's `parent_slug`s inside the save transaction |
+| `projects.slug` | the link key everywhere; renaming cascades to `documents.project_slug`, `project_files.project_slug`, `project_notes.project_slug`, `press.project_slug`, `petitions.project_slug`, every `{{coverage:<old>}}` token inside document bodies (`body_html_raw` / `body_html_normalized` / `body_blocks`, literal replace — the coverage key IS the project slug, press.js) and the payload's `parent_slug`s inside the save transaction (2026-10-09 error log: a rename left `{{coverage:stratos}}` behind and every publish failed) |
 | `projects.parent_slug` | '' / NULL = top-level; a top-level project's slug = sub-project (a sub-project cannot have children) |
 | `projects.summary` | markdown intro for the hub (`summary_html`) |
 | `documents.project_slug` | '' = none (never NULL: the unique index is on `(project_slug, slug)`, and NULLs are distinct) |

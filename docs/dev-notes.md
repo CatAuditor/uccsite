@@ -6,6 +6,33 @@ engineers; the technical detail lives in `docs/changelog.md` and `docs/systems/`
 
 ---
 
+## 2026-10-10 — Publishing failed after a project was renamed (fixed)
+
+**What changed**
+
+Two publishes approved tonight failed with the same message: `unknown coverage
+key "stratos"`. The Data Centers project had just been renamed from `stratos`
+to `data-centers`. Renaming a project updates every document, file, note,
+story and petition filed under it — but the Data Centers report's body still
+contained the press-coverage placeholder `{{coverage:stratos}}`, which names
+the project by its old slug, so the site could not be built.
+
+- The report in production was corrected by hand (`stratos` → `data-centers`
+  in that one placeholder) and the site was republished.
+- From now on, renaming a project also rewrites that placeholder inside every
+  document under it, so this cannot recur.
+
+**What editors do differently**
+
+Nothing. If a publish ever fails again, the reason is shown on the Publish
+dashboard under the failed run — a message like `unknown coverage key "x"`
+means a document still refers to a project slug that no longer exists.
+
+**Left to do**
+
+Nothing. (Staging still calls the project `stratos`; rename it there whenever
+convenient — the fix applies automatically.)
+
 ## 2026-10-10 — Email footers say Farmington, UT
 
 **What changed**

@@ -316,6 +316,10 @@ async function saveHomepage(client, homepage, { tx = true } = {}) {
 // Tables whose rows point at a project by slug (soft links). A rename
 // cascades to each inside the save; a delete is refused while any row still
 // points at the project (docs/decisions/project-tree-nested-urls.md).
+// Document body columns that may carry a {{coverage:<project slug>}} token
+// (raw, normalized, and the builder's block model — all three hold it).
+const DOCUMENT_BODY_COLUMNS = ['body_html_raw', 'body_html_normalized', 'body_blocks'];
+
 const PROJECT_SLUG_REFS = [
   ['documents', 'project_slug', 'document', 'documents'],
   ['project_files', 'project_slug', 'file', 'files'],
@@ -383,6 +387,13 @@ async function replaceProjects(client, projects, { tx = true } = {}) {
     for (const row of existing) if (!claimed.has(row.id)) await client.query('DELETE FROM projects WHERE id = $1', [row.id]);
     for (const [from, to] of renames) {
       for (const [table, col] of PROJECT_SLUG_REFS) await client.query(`UPDATE ${table} SET ${col} = $2 WHERE ${col} = $1`, [from, to]);
+      // {{coverage:<slug>}} tokens inside document bodies name the project by
+      // slug too; left behind, the next publish fails with "unknown coverage
+      // key" (2026-10-09 error log). Literal replace in every body column.
+      for (const col of DOCUMENT_BODY_COLUMNS) {
+        await client.query(`UPDATE documents SET ${col} = replace(${col}, $1, $2) WHERE ${col} LIKE $3`,
+          [`{{coverage:${from}}}`, `{{coverage:${to}}}`, `%{{coverage:${from}}}%`]);
+      }
     }
     for (let i = 0; i < matched.length; i++) {
       const { p, row } = matched[i];
