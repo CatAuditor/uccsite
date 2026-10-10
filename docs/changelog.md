@@ -23,6 +23,16 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.8 — 2026-10-10 — Uncaught admin errors recorded in the audit log
+
+- `apps/admin/instrumentation.js`: `onRequestError` (Next 15) logs `[admin] request error digest=… path=…
+  type=… <message>` and inserts `audit_log` row `admin.error` (actor system, entity `request/<digest>`,
+  diff = message/name/path/route/type/12 stack lines) on a fresh write connection; never throws.
+- Audit Log page: "Detail" column expands `admin.error` rows. `app/error.js`: points at the Audit Log ref,
+  Reload button first. Second digest tonight (323675566): three 5xx at 02:53/02:55Z, builds 117/118
+  deploying — still the deploy-while-editing pattern; the new row will prove it next time.
+- Docs: debug/admin.md, admin.md, dev-notes.
+
 ## v0.29.7 — 2026-10-10 — Outgoing emails: newsletters first, distinct Start buttons
 
 - `app/mail/page.js`: Newsletters section above Automatic emails; buttons **Start a newsletter** / **Start an

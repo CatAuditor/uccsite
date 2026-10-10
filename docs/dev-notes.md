@@ -113,6 +113,11 @@ Nothing.
 **Technical detail**: docs/systems/newsletters.md "Saved lists" and
 "Recipient placeholders".
 
+**Error details are now kept.** When the admin shows "Something went wrong …
+ref 123", the real message is recorded in the Audit Log (Operations → Audit
+Log, action `admin.error`, open "error" under Detail). Tell whoever is fixing
+it the ref number.
+
 **Also tonight**: pressing "Save & request send" showed "An error occurred in
 the Server Components render". Cause: the admin was being redeployed at that
 moment (several builds went out while the editor was open) and the open page

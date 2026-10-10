@@ -579,6 +579,12 @@ Amplify Hosting = the app's SSR compute role (wire-up pending; it needs
 on the domain identity + `ucc-prod` configuration set, From pinned to
 hello@utahciviccompact.org — role `UccProdAdminCompute`, inline policy
 `admin-runtime`, hand-managed per docs/for-conner.md §8.3).
+**Uncaught errors** (2026-10-10): `instrumentation.js onRequestError` writes
+every uncaught render / Server Action error to `audit_log` as `admin.error`
+(entity `request/<digest>`, diff = message + path + type + stack) — the Audit
+Log page shows it under "Detail", so a production "ref <digest>" is looked
+up there (docs/error-handling/debug/admin.md). The error boundary
+(`app/error.js`) says so and offers Reload.
 **SSR logs** (2026-10-10): the app's *service* role is
 `uccsite-admin-amplify-logs` (logs-only, hand-made; set with `aws amplify
 update-app --iam-service-role-arn`) so Amplify Hosting compute writes the

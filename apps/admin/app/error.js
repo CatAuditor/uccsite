@@ -32,8 +32,13 @@ export default function Error({ error, reset }) {
         {error?.message || 'Unexpected error'}
         {error?.digest && <div className="hint">ref {error.digest}</div>}
       </div>
-      <p className="notice">Your last change may not have been saved. Reload the page and check before retrying.</p>
-      <button type="button" onClick={() => reset()}>Try again</button>
+      <p className="notice">
+        Your last change may not have been saved. <strong>Reload the page</strong> and check before retrying — this
+        also happens when the admin was updated while the page was open.
+        {error?.digest && <> The real message is recorded under <a href="/audit">Audit Log</a> as <code>admin.error</code> with ref {error.digest}.</>}
+      </p>
+      <button type="button" onClick={() => window.location.reload()}>Reload page</button>{' '}
+      <button type="button" className="secondary" onClick={() => reset()}>Try again</button>
     </div>
   );
 }
