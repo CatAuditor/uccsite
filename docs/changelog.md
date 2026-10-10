@@ -23,6 +23,15 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.6 — 2026-10-10 — Admin SSR logs (docs + IAM only)
+
+- A production "Server Components render" error (digest 3582361700, on v0.29.4) could not be read: the
+  Amplify app had no service role, so no SSR log existed. Added IAM role `uccsite-admin-amplify-logs`
+  (logs-only, trust amplify.amazonaws.com) as the app's service role and redeployed (job 116); the compute
+  role `UccProdAdminCompute` is untouched. Audience SQL probed OK on prod; `no-undef` lint clean; cause
+  unknown — `docs/error-handling/client-side-error/2026-10-10-admin-server-components-digest.md`.
+- Docs: admin.md (SSR logs), dev-notes.
+
 ## v0.29.5 — 2026-10-10 — Audience chosen only at request time
 
 - `composer.js`: the Audience fieldset (filters + Send to + live count) is gone; `publishToSite` moved into
