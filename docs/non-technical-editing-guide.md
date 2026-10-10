@@ -242,7 +242,8 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
   on the list's card, or press **Add to list** next to a person on the
   Mailing list page); they stay through Updates. Either way, only people on
   the mailing list and still subscribed are mailed. Pick a list in the
-  composer's **Send to** box.
+  composer's **Send to** box — or, when you request the send, pick **All**
+  or a list in the "Request the send" block's own **Send to**.
 - **Filters** (same controls everywhere): residency, ZIP starts with, giving
   (donors / monthly members / one-time / non-donors), joined via (the join
   form, signing a petition, or donation checkout), joined

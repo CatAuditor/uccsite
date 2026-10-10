@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
 import { formatZoned, ZONE_LABEL, toLocalInput } from '@uccsite/newsletter/schedule';
+import { FILTER_KEYS, UUID_RE } from '@uccsite/db/audience';
 import { requireSession } from '../../../lib/auth';
 import {
   newsletterPage, saveNewsletter, requestSend, approveSend, declineSend, withdrawSend, cancelSend, retrySend, sendTest, deleteNewsletter,
@@ -67,6 +68,13 @@ export default async function NewsletterPage({ params }) {
   async function request(prev, formData) {
     'use server';
     return runAction(async () => {
+      // "Send to" in the request block overrides the Audience box: 'all' =
+      // everyone on the mailing list (every filter cleared), a list id = that
+      // saved list, 'keep' = whatever the Audience box says. Applied to the
+      // form before the save, so the stored audience is what gets requested.
+      const sendTo = String(formData.get('sendTo') || 'keep');
+      if (sendTo === 'all') { for (const k of FILTER_KEYS) formData.set(k, ''); }
+      else if (UUID_RE.test(sendTo)) formData.set('list', sendTo.toLowerCase());
       await saveNewsletter(id, formData);
       const { needsReview, notified, scheduledFor } = await requestSend(id, String(formData.get('note') || ''), String(formData.get('schedule') || ''));
       revalidatePath(path); revalidatePath('/mail'); revalidatePath('/');
@@ -239,9 +247,16 @@ export default async function NewsletterPage({ params }) {
           <div className="request-send">
             <h2>Request the send</h2>
             <p className="hint">
-              Saves first. Audience: <strong>{count ?? 0}</strong> people ({audience.description}).
+              Saves first. Audience now: <strong>{count ?? 0}</strong> people ({audience.description}).
               Leave the time empty to send as soon as someone approves; set one to schedule it ({ZONE_LABEL}, at least 5 minutes from now).
             </p>
+            <label htmlFor="sendTo">Send to</label>
+            <select id="sendTo" name="sendTo" defaultValue="keep">
+              <option value="keep">What the Audience box above says ({audience.description})</option>
+              <option value="all">All — everyone on the mailing list</option>
+              {lists.map((l) => <option key={l.id} value={l.id}>Saved list: {l.name}{l.mode === 'frozen' ? ` (frozen ${String(l.frozenAt || '').slice(0, 10)}, ${l.frozenCount ?? 0})` : ' (dynamic)'}</option>)}
+            </select>
+            <div className="hint">Choosing All or a list here replaces the Audience box&rsquo;s choice when you request; the recipient count the reviewer sees is for that choice.</div>
             <label htmlFor="schedule">Send at ({ZONE_LABEL}) — optional</label>
             <input type="datetime-local" id="schedule" name="schedule" defaultValue={n.scheduledFor ? toLocalInput(n.scheduledFor) : ''} />
             <label htmlFor="request-note">Note for the reviewer (optional)</label>

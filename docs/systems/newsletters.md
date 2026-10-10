@@ -156,7 +156,11 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    (and `{receipt}`) is filled with sample values besides, the first name
    from the same lookup — docs/systems/email.md "Seeing it before a
    donation". Audit `newsletter.test`.
-3. **Save & request send** (editor+): saves what is on screen first (Save,
+3. **Save & request send** (editor+): the request block's **Send to**
+   (`sendTo`: `keep` = the Audience box, `all` = everyone — every filter key
+   cleared, or a saved list id → `list`) is applied to the form before the
+   save, so the stored audience is what is requested (2026-10-10). Then
+   saves what is on screen first (Save,
    both test buttons and the request are one form, `then` = the clicked
    button — before 2026-10-08 they were separate forms and a test of an
    unsaved draft went out without the new text); subject and ≥1 block required; the audience
