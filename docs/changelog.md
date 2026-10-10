@@ -4,6 +4,19 @@ One entry per push to the remote (CLAUDE.md rule). Version bumps: minor per
 migration phase, patch per fix push. Open P0/P1 items are listed at the time
 of each push.
 
+## v0.28.3 — 2026-10-10 — Project rename cascades coverage tokens
+
+- **Projects / publish**: `replaceProjects` (`packages/db/content.js`) now rewrites `{{coverage:<old slug>}}` →
+  `{{coverage:<new slug>}}` across `body_html_raw` / `body_html_normalized` / `body_blocks` in the rename
+  transaction (`DOCUMENT_BODY_COLUMNS`). Cause of two failed prod publishes tonight (`unknown coverage key
+  "stratos"` after `stratos` → `data-centers`). Error log:
+  `docs/error-handling/client-side-error/2026-10-09-publish-failed-unknown-coverage-key-after-project-rename.md`.
+- **Prod data**: the Data Centers report's token corrected by hand (same SQL, 1 row × 3 columns);
+  `publish.mjs --env prod --source db` succeeded (45 changed, 3 removed; `/stratos` and `/projects/stratos/report`
+  301 → `/projects/data-centers/report`; coverage strip renders 5 cards). Staging not renamed, nothing to fix.
+- Ships to the admin via the Amplify build of `refactor`; no cdk deploy needed (cascade runs in the admin save path).
+- Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in — see `docs/for-conner.md`).
+
 ## v0.28.2 — 2026-10-10 — Donate page deployed (docs-only push)
 
 - Staging and prod: `cdk deploy` UccStaging + UccProd from a clean worktree at 2a93228 (diff = ApiFunction +
