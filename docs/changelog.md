@@ -23,6 +23,17 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.5 — 2026-10-10 — Audience chosen only at request time
+
+- `composer.js`: the Audience fieldset (filters + Send to + live count) is gone; `publishToSite` moved into
+  the Email fieldset; props `count/audience/lists/petitions` dropped. `AudienceFilters` stays for the
+  Mailing list and Saved lists pages.
+- `page.js`: "Request the send" → **Send to** is required: `all` (every `FILTER_KEYS` cleared) or a saved
+  list id; no choice → error. Options carry counts (`newsletterPage` → `lists[].count` via `listQuery`,
+  `everyone` via `audienceInfo({})`). A hidden `list` field keeps the chosen list across plain Saves; a draft
+  with a pre-2026-10-10 filter set is flagged and must re-choose.
+- Admin only (Amplify build). Docs: newsletters.md flow 1/3 + Filters table, dev-notes, guide.
+
 ## v0.29.4 — 2026-10-10 — "Send to" in the request block
 
 - `app/mail/[id]/page.js`: the "Request the send" block gets a **Send to** select (`sendTo`: `keep` = the
