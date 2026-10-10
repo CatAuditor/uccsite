@@ -28,6 +28,46 @@ export const dynamic = 'force-dynamic';
 
 const when = (iso) => (iso ? iso.slice(0, 16).replace('T', ' ') : '');
 
+// The "Save & request send" flow, called by the page's `save` action. MODULE
+// level on purpose: an inline Server Action is hoisted out of the component
+// at build time and can only carry serialisable closure values (id, path) —
+// a helper FUNCTION defined inside the component is `undefined` there
+// ("ReferenceError: request is not defined", ref 4101828595), and an inline
+// 'use server' helper is a bound reference that cannot be called from
+// another action either. Both broke every send request 2026-10-08 → 10-10
+// (docs/error-handling/client-side-error/2026-10-10-admin-server-components-digest.md).
+async function requestFlow(id, path, formData) {
+  // Step trace to S3 (lib/debug-trace.js): the request path failed with a
+  // masked digest four times on 2026-10-10 with nothing in any log; this
+  // shows how far it got and what was thrown. Flushed in `finally` so a
+  // crash still leaves the steps.
+  const t = trace('newsletter-request', { id });
+  try {
+    return await runAction(async () => {
+      try {
+        // "Send to" and "Send at" are stored by saveNewsletter on every Save; a
+        // request additionally needs a choice and a time at least 5 minutes out.
+        const sendTo = String(formData.get('sendTo') || '');
+        t.step('start', { sendTo, schedule: String(formData.get('schedule') || ''), keys: [...formData.keys()].filter((k) => k !== 'blocks' && k !== 'theme') });
+        if (sendTo !== 'all' && !UUID_RE.test(sendTo)) throw new Error('Choose who this email goes to (a saved list, or All) before requesting the send.');
+        await saveNewsletter(id, formData);
+        t.step('saved');
+        const { needsReview, notified, scheduledFor } = await requestSend(id, String(formData.get('note') || ''), String(formData.get('schedule') || ''), { step: (l, x) => t.step(`request:${l}`, x) });
+        t.step('requested', { needsReview, notified, scheduledFor });
+        revalidatePath(path); revalidatePath('/mail'); revalidatePath('/');
+        t.step('revalidated');
+        const timing = scheduledFor ? `scheduled for ${scheduledFor}` : 'to go out on approval';
+        return {
+          ok: true,
+          message: needsReview
+            ? `Send requested (${timing}) — ${notified ? 'the other admins have been emailed to review it' : 'another admin or an owner has to approve it'}.`
+            : `Send requested (${timing}) — approve it below.`,
+        };
+      } catch (err) { t.fail(err); throw err; }
+    });
+  } finally { await t.flush(); }
+}
+
 export default async function NewsletterPage({ params }) {
   const session = await requireSession();
   const { id } = await params;
@@ -63,49 +103,12 @@ export default async function NewsletterPage({ params }) {
         return { ok: true, message: `Saved, and test sent to ${to.join(', ')} (subject starts with TEST:).` };
       });
     }
-    if (then === 'request') return request(prev, formData);
+    if (then === 'request') return requestFlow(id, path, formData);
     return runAction(async () => {
       await saveNewsletter(id, formData);
       revalidatePath(path); revalidatePath('/mail'); revalidatePath('/petition'); revalidatePath('/appeals');
       return { ok: true, message: 'Saved. The preview on the right is what goes out.' };
     });
-  }
-  // NOT a Server Action on purpose: `save` calls it directly. An inline
-  // 'use server' function is compiled into a BOUND server reference (its
-  // closure encrypted), and calling one from inside another action fails on
-  // the server with the masked "Server Components render" digest — no send
-  // request ever succeeded between 2026-10-08 and 2026-10-10 because of it
-  // (docs/error-handling/client-side-error/2026-10-10-admin-server-components-digest.md).
-  async function request(prev, formData) {
-    // Step trace to S3 (lib/debug-trace.js): the request path failed with a
-    // masked digest four times on 2026-10-10 with nothing in any log; this
-    // shows how far it got and what was thrown. Flushed in `finally` so a
-    // crash still leaves the steps.
-    const t = trace('newsletter-request', { id });
-    try {
-      return await runAction(async () => {
-        try {
-          // "Send to" and "Send at" are stored by saveNewsletter on every Save; a
-          // request additionally needs a choice and a time at least 5 minutes out.
-          const sendTo = String(formData.get('sendTo') || '');
-          t.step('start', { sendTo, schedule: String(formData.get('schedule') || ''), keys: [...formData.keys()].filter((k) => k !== 'blocks' && k !== 'theme') });
-          if (sendTo !== 'all' && !UUID_RE.test(sendTo)) throw new Error('Choose who this email goes to (a saved list, or All) before requesting the send.');
-          await saveNewsletter(id, formData);
-          t.step('saved');
-          const { needsReview, notified, scheduledFor } = await requestSend(id, String(formData.get('note') || ''), String(formData.get('schedule') || ''), { step: (l, x) => t.step(`request:${l}`, x) });
-          t.step('requested', { needsReview, notified, scheduledFor });
-          revalidatePath(path); revalidatePath('/mail'); revalidatePath('/');
-          t.step('revalidated');
-          const timing = scheduledFor ? `scheduled for ${scheduledFor}` : 'to go out on approval';
-          return {
-            ok: true,
-            message: needsReview
-              ? `Send requested (${timing}) — ${notified ? 'the other admins have been emailed to review it' : 'another admin or an owner has to approve it'}.`
-              : `Send requested (${timing}) — approve it below.`,
-          };
-        } catch (err) { t.fail(err); throw err; }
-      });
-    } finally { await t.flush(); }
   }
   async function decide(prev, formData) {
     'use server';

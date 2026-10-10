@@ -113,6 +113,11 @@ Nothing.
 **Technical detail**: docs/systems/newsletters.md "Saved lists" and
 "Recipient placeholders".
 
+**"Request send" — finally fixed** (ref 4101828595). The error capture added
+earlier tonight caught it on the next try: a wiring mistake in how the request
+button's code reached the save button's code (invisible until the message was
+recorded). Fixed; every send request since October 8 had failed on it.
+
 **Still chasing the "request send" error** (ref 473098759, on the fixed
 build): every step of the request now leaves a trace in storage so the next
 attempt tells us exactly where it stops. Please try once more after the build

@@ -27,7 +27,28 @@ SSR logs to CloudWatch (`/aws/amplify/<appId>` did not exist).
 | ESLint `no-undef` over `apps/admin/app` + `apps/admin/lib` (Next build does not catch an undefined identifier in JSX; it would throw at render) | clean |
 | Amplify jobs | 110–115 all SUCCEED |
 
-## Actual root cause (third digest, 4003451880, 03:05–03:06Z — no deploy running)
+## Final root cause (ref 4101828595, caught by the capture on build 124)
+
+```
+ReferenceError: request is not defined
+    at /tmp/app/.next/server/app/mail/[id]/page.js
+```
+
+(`audit_log` row `admin.error` + S3 `_debug/request-error-….json`, both written
+by `instrumentation.js onRequestError` — the capture works.) Next hoists an
+inline Server Action (`save`) out of the component at build time; its
+closure can carry only serialisable values (`id`, `path`). The helper
+`request`, a function defined inside the component, is therefore
+`undefined` inside the action → ReferenceError before any of our code,
+before `runAction`, before the trace. With `'use server'` on the helper
+(2026-10-08 → v0.29.8) the same call failed differently (a bound reference
+cannot be called from server code). Either way **no send request ever
+succeeded 2026-10-08 → 2026-10-10**. Fix (v0.29.13): `requestFlow(id, path,
+formData)` is a module-level function; `save` calls it. Rule for every
+page: an inline action may reference imports and serialisable locals only —
+never a function or object defined in the component body.
+
+## Earlier reading (nested inline action — half right)
 
 Build 120 had been live since 03:03:57Z; the user reloaded, saved twice
 (rows at 03:05:14 and 03:06:07) and pressed **Save & request send** → 5xx at

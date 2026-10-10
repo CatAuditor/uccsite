@@ -23,6 +23,13 @@ of each push.
 
 Open P1s unchanged (Resend key, Stripe webhook, Jarom sign-in).
 
+## v0.29.13 — 2026-10-10 — FIX (for real): request helper hoisted to module level
+
+- Capture (v0.29.8/12) recorded ref 4101828595: `ReferenceError: request is not defined` inside the hoisted
+  `save` Server Action — an inline action's closure cannot carry a function defined in the component body.
+  `app/mail/[id]/page.js`: `requestFlow(id, path, formData)` is module-level; `save` calls it. Error log
+  updated with the final root cause and the rule. Admin only.
+
 ## v0.29.12 — 2026-10-10 — Step traces to S3 for the request path
 
 - Digest 473098759 on build 122 (post-fix): save row at 03:19:10 (list + schedule stored), no request row,
