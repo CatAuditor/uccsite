@@ -242,8 +242,8 @@ Text fields that say so accept simple formatting: `**bold**`, `*italic*`,
   on the list's card, or press **Add to list** next to a person on the
   Mailing list page); they stay through Updates. Either way, only people on
   the mailing list and still subscribed are mailed. Pick a list in the
-  composer's **Send to** box — or, when you request the send, pick **All**
-  or a list in the "Request the send" block's own **Send to**.
+  "Request the send" block's **Send to** (a list, or **All**) — that is the
+  only place an email's audience is chosen.
 - **Filters** (same controls everywhere): residency, ZIP starts with, giving
   (donors / monthly members / one-time / non-donors), joined via (the join
   form, signing a petition, or donation checkout), joined
@@ -326,10 +326,6 @@ the whole mailing list after a second admin approves them.
    subject), an optional headline for the navy letterhead band (the logo
    and "Utah Civic Compact" are always there, copying the site), **From**
    (your name — the email arrives as "Your Name from Utah Civic Compact"),
-   the **audience** — **Send to** either "People matching the filters
-   below" (same choices as the Mailing list page, plus *Newsletter history*;
-   press **Apply filters** to see how many people they reach before you
-   save) or a **saved list** from Mail → Saved lists (press **Count**) —
    then the content as blocks — *Heading*, *Text* (plain writing; `**bold**`, `*italic*`,
    `[link text](https://…)`, "- " for bullets; write `{first_name}` to greet
    each reader by name — "there" when we hold no name — and your own name

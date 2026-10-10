@@ -100,9 +100,11 @@ Nothing.
   the list so the people already mailed drop out (the send record now holds
   them).
 - `{first_name}` in a newsletter is safe to use; check your test copy.
-- When requesting a send (scheduled or not), the **Send to** box in "Request
-  the send" lets you pick **All** (everyone on the mailing list) or a saved
-  list right there, instead of going back up to the Audience box.
+- **The Audience box is gone from the composer.** Who an email goes to is
+  chosen once, in "Request the send" → **Send to**: a saved list (with its
+  current count) or **All** (everyone on the mailing list). The request
+  refuses until you choose. Filters live only on the Mailing list and Saved
+  lists pages — build a list there first.
 - To mail everyone EXCEPT a group: set **Not on saved list** to that list, or
   **Did NOT sign** to a petition.
 - To add a board member or partner to a list: Mailing list → find them →

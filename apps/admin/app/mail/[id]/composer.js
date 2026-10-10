@@ -8,7 +8,6 @@
 import { useMemo, useState } from 'react';
 import { previewHtml, BLOCK_TYPES, DEFAULT_THEME, FONTS } from '@uccsite/newsletter/render';
 import InlineImageUpload from '../../media/inline-upload';
-import AudienceFilters from '../../audience-filters';
 import { importUpload } from './actions';
 
 const BLOCK_LABEL = { heading: 'Heading', text: 'Text', rich: 'Document (HTML)', button: 'Button', image: 'Image', quote: 'Quote', divider: 'Divider' };
@@ -70,7 +69,7 @@ function BlockFields({ block, onChange, readOnly, publicOrigin }) {
   }
 }
 
-export default function Composer({ newsletter, names, count, audience: saved, lists = [], petitions, readOnly, publicOrigin }) {
+export default function Composer({ newsletter, names, readOnly, publicOrigin }) {
   const [subject, setSubject] = useState(newsletter.subject);
   const [preheader, setPreheader] = useState(newsletter.preheader);
   const [headline, setHeadline] = useState(newsletter.headline);
@@ -96,36 +95,6 @@ export default function Composer({ newsletter, names, count, audience: saved, li
   const add = (type) => setBlocks((list) => [...list, withKey({ ...NEW_BLOCK[type] })]);
   const setT = (field) => (e) => setTheme((t) => ({ ...t, [field]: e.target.value }));
   const fromOptions = names.includes(fromName) || !fromName ? names : [fromName, ...names];
-
-  // Audience: the page's count is for the SAVED audience; "Apply filters"
-  // counts the chosen ones (GET /mail/audience-count) without saving. Either
-  // ad-hoc filters, or a saved list (docs/systems/newsletters.md "Saved
-  // lists") — `list` set means the filters are ignored by every resolver.
-  // Every filter key travels as a string (the old `donors` tick box reads as
-  // giving = 'any'); AudienceFilters renders the controls and reports changes.
-  const [audience, setAudience] = useState(() => {
-    const a = { ...newsletter.audience, list: newsletter.audience.list || '' };
-    if (a.donors && !a.giving) a.giving = 'any';
-    delete a.donors;
-    return Object.fromEntries(Object.entries(a).map(([k, v]) => [k, v == null ? '' : String(v)]));
-  });
-  const [live, setLive] = useState({ count: count ?? 0, applied: false, busy: false, error: saved?.missing ? saved.description : '' });
-  const setFilter = (name, value) => { setAudience((a) => ({ ...a, [name]: value })); setLive((l) => ({ ...l, applied: false })); };
-  const setA = (field) => (e) => setFilter(field, e.target.value);
-  const chosenList = lists.find((l) => l.id === audience.list) || null;
-  const listLabel = (l) => `${l.name} — ${l.mode === 'frozen' ? `frozen ${String(l.frozenAt || '').slice(0, 10)}, ${l.frozenCount ?? 0} people` : 'dynamic'}`;
-  async function applyFilters() {
-    setLive((l) => ({ ...l, busy: true, error: '' }));
-    try {
-      const q = new URLSearchParams(audience);
-      const res = await fetch(`/mail/audience-count?${q}`, { cache: 'no-store' });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok || typeof body.count !== 'number') throw new Error(body.error || `Count failed (${res.status})`);
-      setLive({ count: body.count, applied: true, busy: false, error: '' });
-    } catch (err) {
-      setLive((l) => ({ ...l, busy: false, error: err.message || 'Could not count the audience' }));
-    }
-  }
 
   // Import a .docx / .md / .html file: converted on the server into blocks,
   // appended after the current ones; an h1 fills an empty headline.
@@ -166,37 +135,8 @@ export default function Composer({ newsletter, names, count, audience: saved, li
             <option value="">Utah Civic Compact (no name)</option>
           </select>
           <div className="hint">Always sent from hello@utahciviccompact.org; the name is what the inbox shows.</div>
-        </fieldset>
-
-        <fieldset className="item">
-          <legend>Audience — {live.count} {live.count === 1 ? 'person' : 'people'} match {live.applied ? 'this choice' : 'the saved choice'}</legend>
-          <label>Send to
-            <select name="list" value={audience.list} onChange={setA('list')} disabled={readOnly}>
-              <option value="">People matching the filters below</option>
-              {lists.map((l) => <option key={l.id} value={l.id}>Saved list: {listLabel(l)}</option>)}
-              {audience.list && !chosenList && <option value={audience.list}>Saved list (deleted)</option>}
-            </select>
-          </label>
-          {audience.list ? (
-            <div className="mail-row">
-              <span className="hint">
-                {chosenList
-                  ? (chosenList.mode === 'frozen'
-                    ? `Frozen list: the people captured on ${String(chosenList.frozenAt || '').slice(0, 10)} (minus anyone who has since unsubscribed or bounced). Update it on the Saved lists page to refresh.`
-                    : 'Dynamic list: whoever matches its filters when the email goes out.')
-                  : 'This saved list has been deleted — choose another audience.'}
-              </span>
-              {!readOnly && <button type="button" className="secondary" onClick={applyFilters} disabled={live.busy}>{live.busy ? 'Counting…' : 'Count'}</button>}
-            </div>
-          ) : (
-            <>
-              <AudienceFilters f={audience} petitions={petitions} lists={lists} prefix="nl" disabled={readOnly} onChange={setFilter} />
-              {!readOnly && <div className="mail-row"><button type="button" className="secondary" onClick={applyFilters} disabled={live.busy}>{live.busy ? 'Counting…' : 'Apply filters'}</button></div>}
-            </>
-          )}
-          {live.error && <div className="error" role="alert">{live.error}</div>}
-          <div className="hint">Same rules as the Mailing list page. Apply filters / Count shows how many people the choice reaches; saving keeps it. Saved lists are managed under Mail → Saved lists.</div>
           <label className="mail-check"><input type="checkbox" name="publishToSite" value="1" defaultChecked={newsletter.publishToSite !== false} disabled={readOnly} /> Also publish a web copy at utahciviccompact.org/newsletters (adds a &ldquo;View in browser&rdquo; link)</label>
+          <div className="hint">Who it goes to is chosen below, under <strong>Request the send</strong> (a saved list, or everyone).</div>
         </fieldset>
 
         <fieldset className="item">

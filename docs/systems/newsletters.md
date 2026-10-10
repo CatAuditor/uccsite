@@ -55,7 +55,8 @@ apps/admin/lib/transactional.js    kind 'transactional' rows: create / list / ch
 apps/admin/app/automatic-email-picker.js  the dropdown on each petition's page (its own trigger `petition-thanks:<slug>`) and the Appeals page (docs/systems/email.md "Attached emails")
 apps/admin/app/mail/[id]/page.js   editor page: review panel, Composer in an ActionForm, test/request/delete
 apps/admin/app/mail/[id]/composer.js  client: block editor (image block has inline upload; file import) + look (reset to site look)
-                                   + audience ("Apply filters" live count) | phone/desktop, light/dark preview
+                                   | phone/desktop, light/dark preview. NO audience controls since 2026-10-10 —
+                                   the audience is chosen in the request block (page.js "Send to")
 apps/admin/app/mail/[id]/actions.js   importUpload(formData): .docx/.md/.html → blocks (convert-upload.mjs → newsletter-import.mjs)
 apps/admin/lib/newsletter-import.mjs  htmlToBlocks(html, {headline}) → {blocks, headline, notes}; sanitizeRich(html) (tested)
 apps/admin/app/mail/audience-count/route.js  GET ?residency&donors&petition → {count, description} (signed-in; no write)
@@ -116,15 +117,13 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    from the same renderer; toggles: Light / Dark (dark = the email's own
    `prefers-color-scheme` rules applied unconditionally), Phone (375 px) /
    Desktop.
-   - **Audience**: **Send to** = "People matching the filters below"
-     (residency / petition / newsletter history / donors) or a **saved
-     list** (hides the filters; shows frozen date or "dynamic"). The legend
-     shows the count for the SAVED choice; **Apply filters** / **Count**
-     fetches the count for the chosen one (`GET /mail/audience-count`, same
-     `audienceInfo` → `lists.js audienceFor`) without saving. Saving stores
-     the choice (and the page reloads the saved count). A draft whose saved
-     list was deleted shows that in red and the request refuses until another
-     audience is chosen.
+   - **Audience**: not in the composer (removed 2026-10-10, later the same
+     day). The audience is chosen in **Request the send** → **Send to**: a
+     saved list or **All** (everyone on the mailing list); ad-hoc filters
+     live only on the Mailing list / Saved lists pages. A plain Save keeps
+     the chosen list (hidden `list` field). A draft whose saved list was
+     deleted (or that carries a pre-2026-10-10 filter set) says so and the
+     request demands a fresh choice.
    - **Import a file** (Content fieldset): a .docx (Word / Google Docs /
      Claude Docs), .md, .txt or .html file goes to `importUpload` (server
      action, editor+, 8 MB): `convert-upload.mjs uploadToHtml` (mammoth with
@@ -157,10 +156,12 @@ AND updated_at::text = $stamp`, the lost-update guard from lib/data.js).
    from the same lookup — docs/systems/email.md "Seeing it before a
    donation". Audit `newsletter.test`.
 3. **Save & request send** (editor+): the request block's **Send to**
-   (`sendTo`: `keep` = the Audience box, `all` = everyone — every filter key
-   cleared, or a saved list id → `list`) is applied to the form before the
-   save, so the stored audience is what is requested (2026-10-10). Then
-   saves what is on screen first (Save,
+   (`sendTo`, required: `all` = everyone — every filter key cleared, or a
+   saved list id → `list`; options show each list's current count and the
+   mailing-list total, `newsletterPage` → `lists[].count`, `everyone`) is
+   applied to the form before the save, so the stored audience is what is
+   requested (2026-10-10). No choice → "Choose who this email goes to".
+   Then saves what is on screen first (Save,
    both test buttons and the request are one form, `then` = the clicked
    button — before 2026-10-08 they were separate forms and a test of an
    unsaved draft went out without the new text); subject and ≥1 block required; the audience
@@ -326,7 +327,7 @@ panel):
 | `last_sent_before` | date | no `sent` row on or after that date (never emailed counts) — "not emailed since" |
 | `joined_after` / `joined_before` | date | `created_at` of the row (join / first signature / checkout), inclusive |
 | `not_list` | list id | **EXCLUDE** everyone on that saved list (snapshot + by hand) — e.g. all except the people the dormant mailing went to |
-| `list` | list id | send to a saved list instead (composer only; the other keys are then ignored) |
+| `list` | list id | send to a saved list (a newsletter's stored audience is `{ list }` or `{}` = everyone; the other keys are then ignored) |
 
 Dates and the ZIP prefix are bound parameters; every other value is a
 closed set, so nothing user-typed reaches SQL text (tests in

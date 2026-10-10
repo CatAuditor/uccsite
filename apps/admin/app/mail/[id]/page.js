@@ -32,7 +32,11 @@ export default async function NewsletterPage({ params }) {
   const { id } = await params;
   const page = await newsletterPage(id);
   if (!page) notFound();
-  const { newsletter: n, names, count, audience, lists, petitions, deliveries, defaults, diff, opens } = page;
+  const { newsletter: n, names, count, audience, lists, everyone, deliveries, defaults, diff, opens } = page;
+  // The stored audience is { list } (a saved list) or {} (everyone). Anything
+  // else is a pre-2026-10-10 ad-hoc filter set: shown, but the request
+  // demands a fresh choice.
+  const savedChoice = n.audience.list ? n.audience.list : audience.description === 'everyone' ? 'all' : '';
   // Automatic email (docs/systems/email.md "Attached emails"): no audience, no
   // send request — it is ATTACHED to a trigger and the API sends it.
   const isTx = n.kind === 'transactional';
@@ -68,13 +72,13 @@ export default async function NewsletterPage({ params }) {
   async function request(prev, formData) {
     'use server';
     return runAction(async () => {
-      // "Send to" in the request block overrides the Audience box: 'all' =
-      // everyone on the mailing list (every filter cleared), a list id = that
-      // saved list, 'keep' = whatever the Audience box says. Applied to the
-      // form before the save, so the stored audience is what gets requested.
-      const sendTo = String(formData.get('sendTo') || 'keep');
-      if (sendTo === 'all') { for (const k of FILTER_KEYS) formData.set(k, ''); }
-      else if (UUID_RE.test(sendTo)) formData.set('list', sendTo.toLowerCase());
+      // "Send to" is the audience: 'all' = everyone on the mailing list (every
+      // filter cleared), or a saved list id → { list }. Applied to the form
+      // before the save, so the stored audience is what gets requested.
+      const sendTo = String(formData.get('sendTo') || '');
+      for (const k of FILTER_KEYS) formData.set(k, '');
+      if (UUID_RE.test(sendTo)) formData.set('list', sendTo.toLowerCase());
+      else if (sendTo !== 'all') throw new Error('Choose who this email goes to (a saved list, or All) before requesting the send.');
       await saveNewsletter(id, formData);
       const { needsReview, notified, scheduledFor } = await requestSend(id, String(formData.get('note') || ''), String(formData.get('schedule') || ''));
       revalidatePath(path); revalidatePath('/mail'); revalidatePath('/');
@@ -232,7 +236,9 @@ export default async function NewsletterPage({ params }) {
 
       <ActionForm action={save} className="editor">
         <input type="hidden" name="updatedAt" value={n.updatedAt} />
-        <Composer newsletter={n} names={names} count={count} audience={audience} lists={lists} petitions={petitions} readOnly={!canAct || !isDraft} publicOrigin={config.publicOrigin} />
+        {/* a plain Save keeps the chosen list; the request block's Send to replaces it */}
+        <input type="hidden" name="list" value={n.audience.list || ''} />
+        <Composer newsletter={n} names={names} readOnly={!canAct || !isDraft} publicOrigin={config.publicOrigin} />
         {canAct && isDraft && (
           <label className="mail-check"><input type="checkbox" name="automatic" value="1" defaultChecked={isTx} /> Automatic email — sent by the site to one person after they act (choose it on the <Link href="/petition">Petition</Link> or <Link href="/appeals">Appeals</Link> page), not to the mailing list. Takes effect on Save.</label>
         )}
@@ -247,16 +253,16 @@ export default async function NewsletterPage({ params }) {
           <div className="request-send">
             <h2>Request the send</h2>
             <p className="hint">
-              Saves first. Audience now: <strong>{count ?? 0}</strong> people ({audience.description}).
-              Leave the time empty to send as soon as someone approves; set one to schedule it ({ZONE_LABEL}, at least 5 minutes from now).
+              Saves first. Leave the time empty to send as soon as someone approves; set one to schedule it ({ZONE_LABEL}, at least 5 minutes from now).
+              {savedChoice === '' && audience.description !== 'everyone' && <> This draft still carries an older filter set ({audience.description}, {count ?? 0} people) — choose a list or All below.</>}
             </p>
             <label htmlFor="sendTo">Send to</label>
-            <select id="sendTo" name="sendTo" defaultValue="keep">
-              <option value="keep">What the Audience box above says ({audience.description})</option>
-              <option value="all">All — everyone on the mailing list</option>
-              {lists.map((l) => <option key={l.id} value={l.id}>Saved list: {l.name}{l.mode === 'frozen' ? ` (frozen ${String(l.frozenAt || '').slice(0, 10)}, ${l.frozenCount ?? 0})` : ' (dynamic)'}</option>)}
+            <select id="sendTo" name="sendTo" defaultValue={savedChoice} required>
+              <option value="">Choose…</option>
+              <option value="all">All — everyone on the mailing list ({everyone})</option>
+              {lists.map((l) => <option key={l.id} value={l.id}>Saved list: {l.name} — {l.count} {l.count === 1 ? 'person' : 'people'}{l.mode === 'frozen' ? ` (frozen ${String(l.frozenAt || '').slice(0, 10)})` : ' (dynamic)'}</option>)}
             </select>
-            <div className="hint">Choosing All or a list here replaces the Audience box&rsquo;s choice when you request; the recipient count the reviewer sees is for that choice.</div>
+            <div className="hint">Lists are made under <Link href="/lists">Mail → Saved lists</Link> from the Mailing list filters. Counts are as of now; a dynamic list is re-counted when the email goes out.</div>
             <label htmlFor="schedule">Send at ({ZONE_LABEL}) — optional</label>
             <input type="datetime-local" id="schedule" name="schedule" defaultValue={n.scheduledFor ? toLocalInput(n.scheduledFor) : ''} />
             <label htmlFor="request-note">Note for the reviewer (optional)</label>

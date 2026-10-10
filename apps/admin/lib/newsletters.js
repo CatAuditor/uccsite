@@ -10,7 +10,7 @@
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { normalizeFilters, describeFilters, DIRECTORY_ROWS_SQL } from '@uccsite/db/audience';
-import { audienceFor, listLists } from '@uccsite/db/lists';
+import { audienceFor, listLists, listQuery } from '@uccsite/db/lists';
 import * as db from '@uccsite/db/newsletters';
 import { renderEmail, normalizeBlocks, normalizeTheme, fromHeader, rawBlock, UNSUBSCRIBE_TOKEN } from '@uccsite/newsletter/render';
 import { sanitizeRich } from './newsletter-import.mjs';
@@ -99,12 +99,18 @@ export async function newsletterPage(id) {
     const audience = await audienceInfo(client, newsletter.audience);
     const count = audience.count;
     const petitions = await petitionSlugs(client);
-    const lists = await listLists(client);
+    // The request block's choices, each with what it reaches now.
+    const lists = [];
+    for (const l of await listLists(client)) {
+      const q = listQuery(l, { columns: 'count(*)::int AS n', orderBy: null });
+      lists.push({ ...l, count: (await client.query(q.sql, q.params)).rows[0].n });
+    }
+    const everyone = (await audienceInfo(client, {})).count;
     const deliveries = ['sending', 'sent', 'failed'].includes(newsletter.status) ? await db.deliveryCounts(client, newsletter.id) : null;
     const opens = deliveries ? (await db.openCounts(client, [newsletter.id])).get(newsletter.id) || 0 : 0;
     const defaults = await db.getDefaults(client);
     const diff = newsletter.status === 'pending' && newsletter.priorBlocks ? blockDiff(newsletter.priorBlocks, newsletter.requestedBlocks || newsletter.blocks) : null;
-    return { newsletter, names, count, audience, lists, petitions, deliveries, defaults, diff, opens };
+    return { newsletter, names, count, audience, lists, everyone, petitions, deliveries, defaults, diff, opens };
   });
 }
 
